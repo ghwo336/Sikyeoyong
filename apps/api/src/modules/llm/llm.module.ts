@@ -4,6 +4,7 @@ import { APP_CONFIG } from '../../config/config.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { BudgetModule } from '../budget/budget.module.js';
 import { UsersModule } from '../users/users.module.js';
+import { ChatHistoryService } from './chat-history.service.js';
 import { ChatController } from './chat.controller.js';
 import { ChatRepository } from './chat.repository.js';
 import { ChatService } from './chat.service.js';
@@ -20,6 +21,7 @@ import { LLM_PROVIDER } from './llm-provider.js';
     LlmToolHandlers,
     ChatRepository,
     ChatService,
+    ChatHistoryService,
     {
       provide: LLM_PROVIDER,
       inject: [APP_CONFIG],

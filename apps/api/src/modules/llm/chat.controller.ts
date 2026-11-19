@@ -1,16 +1,34 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
-import { type SendChatMessageBody, zSendChatMessageBody } from '@sikyeoyong/shared';
+import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
+import {
+  type ChatHistory,
+  type ChatHistoryQuery,
+  type SendChatMessageBody,
+  zChatHistoryQuery,
+  zSendChatMessageBody,
+} from '@sikyeoyong/shared';
 import type { Response } from 'express';
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
+import { ChatHistoryService } from './chat-history.service.js';
 import { ChatService } from './chat.service.js';
 
-/** POST /api/chat/messages: SSE stream of ChatEvent (tech-spec 2.4). HTTP and SSE framing only. */
+/** POST /api/chat/messages (SSE of ChatEvent, tech-spec 2.4) and GET /api/chat/history. HTTP only. */
 @Controller('chat')
 @UseGuards(SessionGuard)
 export class ChatController {
-  constructor(private readonly chat: ChatService) {}
+  constructor(
+    private readonly chat: ChatService,
+    private readonly history: ChatHistoryService,
+  ) {}
+
+  @Get('history')
+  getHistory(
+    @CurrentUser() user: SessionUser,
+    @Query(new ZodValidationPipe(zChatHistoryQuery)) query: ChatHistoryQuery,
+  ): ChatHistory {
+    return this.history.page(user.userId, query.cursor);
+  }
 
   @Post('messages')
   async send(

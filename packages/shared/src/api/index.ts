@@ -2,6 +2,7 @@ export { zBudgetView, type BudgetView } from './budget.js';
 export {
   zChatEvent,
   zChatHistory,
+  zChatHistoryQuery,
   zChatHistoryMessage,
   zLimitChangeCardView,
   zQuickReply,
@@ -9,6 +10,7 @@ export {
   type ChatEvent,
   type ChatEventType,
   type ChatHistory,
+  type ChatHistoryQuery,
   type ChatHistoryMessage,
   type LimitChangeCardView,
   type QuickReply,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DRAGON_MOODS } from '../domain/dragon-mood.js';
-import { zChatEvent, zChatHistory, zSendChatMessageBody } from './chat.js';
+import { zChatEvent, zChatHistory, zChatHistoryQuery, zSendChatMessageBody } from './chat.js';
 import { zAgentSetupView, zCreateAgentBody, zMeView, zSignupConfig } from './me.js';
 import {
   ORDER_STATUSES,
@@ -113,6 +113,13 @@ describe('zChatEvent (tech-spec 2.4)', () => {
     expect(
       zChatHistory.safeParse({ ...h, messages: [{ id: 'x', role: 'system', text: 'x' }] }).success,
     ).toBe(false);
+  });
+
+  it('takes an optional cursor and nothing else in the history query', () => {
+    expect(zChatHistoryQuery.parse({})).toEqual({});
+    expect(zChatHistoryQuery.parse({ cursor: 'm-1' })).toEqual({ cursor: 'm-1' });
+    expect(zChatHistoryQuery.safeParse({ cursor: '' }).success).toBe(false);
+    expect(zChatHistoryQuery.safeParse({ cursor: 'm', userId: 'u2' }).success).toBe(false);
   });
 
   it('takes a trimmed, non-empty message with a client id', () => {

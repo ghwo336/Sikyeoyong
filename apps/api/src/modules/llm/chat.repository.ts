@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lt, or } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { chatMessages } from '../../db/schema/index.js';
@@ -42,6 +42,37 @@ export class ChatRepository {
       .select(this.columns())
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId))
+      .orderBy(desc(chatMessages.createdAt), desc(chatMessages.id))
+      .limit(limit)
+      .all();
+  }
+
+  findOwn(userId: string, id: string): ChatRow | undefined {
+    return this.handle.db
+      .select(this.columns())
+      .from(chatMessages)
+      .where(and(eq(chatMessages.userId, userId), eq(chatMessages.id, id)))
+      .get();
+  }
+
+  /** Newest first, strictly older than `before` (by created_at, then id). */
+  olderThan(
+    userId: string,
+    before: { createdAt: number; id: string } | null,
+    limit: number,
+  ): ChatRow[] {
+    const mine = eq(chatMessages.userId, userId);
+    const older =
+      before === null
+        ? undefined
+        : or(
+            lt(chatMessages.createdAt, before.createdAt),
+            and(eq(chatMessages.createdAt, before.createdAt), lt(chatMessages.id, before.id)),
+          );
+    return this.handle.db
+      .select(this.columns())
+      .from(chatMessages)
+      .where(older === undefined ? mine : and(mine, older))
       .orderBy(desc(chatMessages.createdAt), desc(chatMessages.id))
       .limit(limit)
       .all();
