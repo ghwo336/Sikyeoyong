@@ -11,9 +11,14 @@ import type { LlmProvider } from './llm-provider.js';
  * naming the missing variables, never their values. makeClient is the seam
  * tests use to see that the key, model and effort come from config.
  */
+/** The production client. Exported so a test can check the key reaches the SDK. */
+export function defaultMessagesClient(apiKey: string): MessagesClient {
+  return new Anthropic({ apiKey });
+}
+
 export function createLlmProvider(
   config: AppConfig,
-  makeClient: (apiKey: string) => MessagesClient = (apiKey) => new Anthropic({ apiKey }),
+  makeClient: (apiKey: string) => MessagesClient = defaultMessagesClient,
 ): LlmProvider {
   const model = config.llm.model;
   const apiKey = config.secrets.anthropicApiKey;

@@ -8,10 +8,6 @@ import {
 } from '@sikyeoyong/shared';
 import { z } from 'zod';
 
-/**
- * Environment variables (tech-spec 8.3). Parsed once at boot; a bad value stops
- * the server. Secrets are optional in development and required in production.
- */
 /** Claude effort levels (D-22). One list for the env schema and AppConfig. */
 export const LLM_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type LlmEffort = (typeof LLM_EFFORTS)[number];
@@ -28,6 +24,10 @@ const optionalText = z
   .optional()
   .transform((v) => (v === undefined || v.trim() === '' ? undefined : v));
 
+/**
+ * Environment variables (tech-spec 8.3). Parsed once at boot; a bad value stops
+ * the server. Secrets are optional in development and required in production.
+ */
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: int(1, 65535).default(8787),

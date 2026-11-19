@@ -26,8 +26,9 @@ export interface MessagesClient {
  */
 export class AnthropicProvider implements LlmProvider {
   constructor(
-    private readonly client: MessagesClient,
-    private readonly options: AnthropicProviderOptions,
+    /** Public read-only so wiring tests can see what config reached the adapter. */
+    readonly client: MessagesClient,
+    readonly options: AnthropicProviderOptions,
   ) {}
 
   async turn(request: LlmTurnRequest, onText: (text: string) => void): Promise<Anthropic.Message> {
