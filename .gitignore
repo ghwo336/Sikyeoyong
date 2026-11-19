@@ -43,3 +43,6 @@ keys/
 
 # local claude state
 .claude/settings.local.json
+
+# next
+next-env.d.ts

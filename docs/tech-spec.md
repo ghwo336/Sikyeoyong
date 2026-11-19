@@ -857,6 +857,9 @@ DATABASE_URL=file:/data/sikyeoyong.db
 DEMO_MODE=false
 DEMO_BYPASS_SERVER_LIMIT=false
 
+# 웹 (개발 때만, next dev의 /api 전달 대상. 운영은 Caddy)
+API_DEV_ORIGIN=http://localhost:8787
+
 # 로그인
 KAKAO_REST_API_KEY=
 KAKAO_CLIENT_SECRET=
