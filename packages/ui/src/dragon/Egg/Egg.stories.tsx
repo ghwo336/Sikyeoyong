@@ -25,7 +25,7 @@ export const Sleeping: Story = { args: { state: 'sleeping', size: 168 } };
 /** 종 4가지 무늬 (잎 점, 물결, 꽃잎 점, 별과 달) */
 export const Species: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: 16 }}>
+    <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
       {DRAGON_SPECIES.map((species) => (
         <Egg key={species} state="closed" species={species} size={120} />
       ))}
