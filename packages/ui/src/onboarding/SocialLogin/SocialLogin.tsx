@@ -14,7 +14,7 @@ export interface SocialLoginProps {
 }
 
 /** Kakao's speech-bubble mark, as in Start.dc.html (Kakao login button guide colors). */
-function KakaoMark() {
+export function KakaoMark() {
   return (
     <svg className={styles.kakaoMark} viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z" />

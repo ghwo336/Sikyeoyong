@@ -1,0 +1,21 @@
+/* Verify.dc.html 35-36: the Kakao button, then one small centered line. */
+.verify {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--type-fine-size);
+  line-height: var(--type-fine-line-height);
+  color: var(--color-ink-secondary);
+  text-align: center;
+}
+
+.failed {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  color: var(--color-over-ink);
+  text-align: center;
+}

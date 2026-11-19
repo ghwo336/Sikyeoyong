@@ -23,6 +23,7 @@ export * from './limits/LimitChangeCard';
 export * from './onboarding/BudgetPicker';
 export * from './onboarding/EggPicker';
 export * from './onboarding/HatchProgress';
+export * from './onboarding/KakaoVerify';
 export * from './onboarding/SocialLogin';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';

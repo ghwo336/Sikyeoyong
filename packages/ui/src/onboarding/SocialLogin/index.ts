@@ -1,1 +1,1 @@
-export { SocialLogin, type SocialLoginProps, type SocialProvider } from './SocialLogin';
+export { KakaoMark, SocialLogin, type SocialLoginProps, type SocialProvider } from './SocialLogin';
