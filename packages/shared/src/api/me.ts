@@ -1,24 +1,24 @@
 import { z } from 'zod';
-import { AGENT_LEVELS } from '../config/policy.js';
+import { zAgentLevel } from './level.js';
 import { zDragonSpecies } from '../domain/dragon.js';
 import { zAokrwString } from '../money/money.js';
 
-const zLevel = z.union(
-  AGENT_LEVELS.map((l) => z.literal(l)) as [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>],
-);
-
-/** GET /me, the fields screens read. perOrderLimit is the limit of the current level. */
+/**
+ * GET /me (tech-spec 3.2): the dragon at a glance for the chat top bar. Budget numbers
+ * come from GET /budget. Before the dragon exists GET /me answers NOT_FOUND and the web
+ * goes to naming.
+ */
 export const zMeView = z
   .object({
     dragonName: z.string().min(1).max(8),
     dragonSpecies: zDragonSpecies,
-    level: zLevel,
+    level: zAgentLevel,
     perOrderLimit: zAokrwString,
   })
   .strict();
 export type MeView = z.infer<typeof zMeView>;
 
-/** Sign-up settings (D-16: the identity step is a server setting). */
+/** GET /signup/config (tech-spec 3.2). The identity step is a server setting (D-16). */
 export const zSignupConfig = z
   .object({ verifyMode: z.enum(['kakao', 'mock']), trialAllowance: zAokrwString })
   .strict();
@@ -26,7 +26,10 @@ export type SignupConfig = z.infer<typeof zSignupConfig>;
 
 export const AGENT_SETUP_STEP_KEYS = ['wallet', 'identity', 'limit'] as const;
 
-/** GET /agents/me while hatching: the three setup steps in order (user-flow 4). */
+/**
+ * GET /agents/me (tech-spec 3.2): the hatch status and its three setup steps in order
+ * (user-flow 4). Wallet and chain detail for the wallet screens join as optional fields later.
+ */
 export const zAgentSetupView = z
   .object({
     status: z.enum(['PENDING', 'ACTIVE', 'FAILED']),

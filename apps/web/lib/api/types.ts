@@ -41,7 +41,7 @@ export type AgentSetupStepStatus = AgentSetupView['steps'][number]['status'];
 
 // The server's mood list and the ui Dragon's must be the same set (compile-time check both ways).
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
-export const MOODS_MATCH: Same<DragonMoodKey, DragonMood> = true;
+true satisfies Same<DragonMoodKey, DragonMood>;
 
 /** Everything the screens call. lib/api picks the implementation (mock now, HTTP later). */
 export interface ApiClient {

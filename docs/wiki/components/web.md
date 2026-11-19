@@ -21,7 +21,7 @@ children: []
 - `packages/ui`(그리기), `packages/shared`(타입, zod 스키마, API 클라이언트, 금액 포맷)만 import한다. 구조 규칙은 `conventions/architecture.md`.
 - API는 같은 도메인 `/api`로 부른다 (Caddy가 API 서버로 넘김). 세션은 API가 발급한 httpOnly 쿠키라 웹 코드가 토큰을 만지지 않는다.
 - 서버 상태는 TanStack Query. 로컬 상태는 컴포넌트 안 `useState`로 충분하면 그것만, 여러 화면이 같이 쓰면 zustand.
-- 대화 스트리밍은 API의 SSE(`ChatEvent`, `packages/shared/src/chat-events.ts`). 이벤트를 프레임 단위로 묶어 그린다.
+- 대화 스트리밍은 API의 SSE(`packages/shared/src/api/chat.ts`의 `zChatEvent`). 이벤트를 프레임 단위로 묶어 그린다.
 
 ## 반드시 지킬 규칙 (MUST)
 - **페이지는 조립만** (`conventions/architecture.md`). `page.tsx`에 스타일, 상태 로직, `fetch`, 금액 계산을 두지 않는다.

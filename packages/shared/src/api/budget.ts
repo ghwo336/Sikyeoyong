@@ -1,10 +1,7 @@
 import { z } from 'zod';
-import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS, NAG_STAGES } from '../config/policy.js';
+import { zAgentLevel } from './level.js';
+import { MONTHLY_BUDGET_OPTION_IDS, NAG_STAGES } from '../config/policy.js';
 import { zAokrwString } from '../money/money.js';
-
-const zAgentLevel = z.union(
-  AGENT_LEVELS.map((l) => z.literal(l)) as [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>],
-);
 
 /**
  * GET /api/budget and the get_budget tool (tech-spec 3.2 BudgetView, D-21).

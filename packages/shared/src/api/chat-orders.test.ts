@@ -96,6 +96,7 @@ describe('zChatEvent (tech-spec 2.4)', () => {
   it('keeps history turns as the events they were made of', () => {
     const h = {
       startedAt: 1,
+      nextCursor: null,
       messages: [
         { id: 'u1', role: 'user', text: '점심 시켜 줘' },
         {

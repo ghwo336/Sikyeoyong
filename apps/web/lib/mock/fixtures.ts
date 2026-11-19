@@ -107,6 +107,7 @@ export function chatHistory(now: number): ChatHistory {
   );
   return {
     startedAt,
+    nextCursor: null,
     messages: [
       { id: 'm1', role: 'user', text: '점심 시켜 줘. 따뜻한 걸로' },
       {

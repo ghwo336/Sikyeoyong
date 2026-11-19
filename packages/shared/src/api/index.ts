@@ -42,3 +42,4 @@ export {
   type OrderView,
   type RecommendationCard,
 } from './orders.js';
+export { zAgentLevel } from './level.js';

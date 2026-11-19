@@ -1,12 +1,8 @@
 import { z } from 'zod';
-import { AGENT_LEVELS } from '../config/policy.js';
+import { zAgentLevel } from './level.js';
 import { APP_ERROR_CODES } from '../errors/app-error-code.js';
 import { zAokrwString } from '../money/money.js';
 import { zOrderQuote, zRecommendationCard } from './orders.js';
-
-const zLevel = z.union(
-  AGENT_LEVELS.map((l) => z.literal(l)) as [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>],
-);
 
 export const zQuickReply = z
   .object({ id: z.string().min(1), label: z.string().min(1).max(30) })
@@ -20,8 +16,8 @@ export const zLimitChangeCardView = z
     field: z.enum(['perOrder', 'monthlyBudget']),
     from: zAokrwString,
     to: zAokrwString,
-    levelFrom: zLevel.optional(),
-    levelTo: zLevel.optional(),
+    levelFrom: zAgentLevel.optional(),
+    levelTo: zAgentLevel.optional(),
     needsReauth: z.boolean(),
     rows: z.array(z.object({ label: z.string(), value: z.string() }).strict()),
   })
@@ -74,7 +70,7 @@ export const zSendChatMessageBody = z
   .strict();
 export type SendChatMessageBody = z.infer<typeof zSendChatMessageBody>;
 
-/** GET /chat/history item. The dragon's turn is kept as the events it was made of. */
+/** GET /chat/history item (tech-spec 3.2). The dragon's turn is kept as the events it was made of. */
 export const zChatHistoryMessage = z.discriminatedUnion('role', [
   z.object({ id: z.string().min(1), role: z.literal('user'), text: z.string() }).strict(),
   z
@@ -83,7 +79,15 @@ export const zChatHistoryMessage = z.discriminatedUnion('role', [
 ]);
 export type ChatHistoryMessage = z.infer<typeof zChatHistoryMessage>;
 
+/**
+ * GET /chat/history?cursor (tech-spec 3.2). startedAt is the unix ms of the first
+ * message shown (the "오늘 오후 12:28" stamp); nextCursor is null on the oldest page.
+ */
 export const zChatHistory = z
-  .object({ startedAt: z.number().int().nonnegative(), messages: z.array(zChatHistoryMessage) })
+  .object({
+    startedAt: z.number().int().nonnegative(),
+    messages: z.array(zChatHistoryMessage),
+    nextCursor: z.string().min(1).nullable(),
+  })
   .strict();
 export type ChatHistory = z.infer<typeof zChatHistory>;
