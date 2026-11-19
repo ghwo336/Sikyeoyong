@@ -13,7 +13,7 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, chatMessages, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
-import { REFUSAL_LINE } from './chat.service.js';
+import { ChatService, REFUSAL_LINE } from './chat.service.js';
 import { ScriptedProvider, type ScriptedTurn } from './harness/scripted-provider.js';
 import { LLM_PROVIDER, type LlmProvider } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
@@ -346,6 +346,101 @@ describe('POST /api/chat/messages (SSE)', () => {
         { role: 'assistant', content: '읽히는 답' },
         { role: 'user', content: '다음' },
       ]);
+    });
+
+    it('reads only the words of an older-schema answer, never its other events', async () => {
+      const provider = scripted([{ blocks: [{ text: '네' }] }]);
+      const { post, h } = await setup(provider);
+      h.db
+        .insert(chatMessages)
+        .values({
+          id: 'ou',
+          userId: 'u1',
+          role: 'user',
+          contentJson: '{"text":"옛 질문"}',
+          clientMessageId: 'old',
+          createdAt: 10,
+        })
+        .run();
+      h.db
+        .insert(chatMessages)
+        .values({
+          id: 'oa',
+          userId: 'u1',
+          role: 'assistant',
+          contentJson:
+            '{"events":[{"type":"token","text":"옛 답","extra":1},{"type":"card_v0","secret":"카드 속 글"}]}',
+          replyToId: 'ou',
+          createdAt: 11,
+        })
+        .run();
+      await post({ text: '지금', clientMessageId: 'now' });
+      expect(provider.requests.at(-1)?.messages).toEqual([
+        { role: 'user', content: '옛 질문' },
+        { role: 'assistant', content: '옛 답' },
+        { role: 'user', content: '지금' },
+      ]);
+    });
+
+    it('answers 409 to a resend whose stored answer cannot be replayed; a new id still works', async () => {
+      const provider = scripted([{ blocks: [{ text: '새 답' }] }]);
+      const { post, h } = await setup(provider);
+      h.db
+        .insert(chatMessages)
+        .values({
+          id: 'xu',
+          userId: 'u1',
+          role: 'user',
+          contentJson: '{"text":"점심"}',
+          clientMessageId: 'x',
+          createdAt: 10,
+        })
+        .run();
+      h.db
+        .insert(chatMessages)
+        .values({
+          id: 'xa',
+          userId: 'u1',
+          role: 'assistant',
+          contentJson: '{oops',
+          replyToId: 'xu',
+          createdAt: 11,
+        })
+        .run();
+      expect((await post({ text: '점심', clientMessageId: 'x' })).status).toBe(409);
+      expect(provider.requests).toHaveLength(0);
+      expect((await post({ text: '점심', clientMessageId: 'y' })).status).toBe(200);
+      expect(provider.requests).toHaveLength(1);
+    });
+
+    it('finishes the stream when storing the answer fails (logged, not thrown)', async () => {
+      const provider = scripted([{ blocks: [{ text: '답' }] }, { blocks: [{ text: '답2' }] }]);
+      const { post, h, app } = await setup(provider);
+      h.sqlite.exec(
+        "CREATE TRIGGER no_answers BEFORE INSERT ON chat_messages WHEN NEW.role = 'assistant' BEGIN SELECT RAISE(ABORT, 'disk full'); END;",
+      );
+      const res = await post({ text: '점심', clientMessageId: 's1' });
+      expect(res.status).toBe(200);
+      expect(events(res.text).at(-1)?.type).toBe('done');
+      const stream = app.get(ChatService).begin('u1', { text: '저녁', clientMessageId: 's2' });
+      await expect(stream(() => undefined)).resolves.toBeUndefined();
+    });
+
+    it('gives a failed turn a done id that names no stored row, even if cleanup fails', async () => {
+      const { post, h } = await setup(null); // every turn fails
+      h.sqlite.exec(
+        "CREATE TRIGGER keep_rows BEFORE DELETE ON chat_messages BEGIN SELECT RAISE(ABORT, 'locked'); END;",
+      );
+      const res = await post({ text: '점심', clientMessageId: 'f1' });
+      expect(res.status).toBe(200);
+      const done = events(res.text).at(-1);
+      const ids = h.db
+        .select()
+        .from(chatMessages)
+        .all()
+        .map((r) => r.id);
+      expect(ids).toHaveLength(1);
+      expect(done?.type === 'done' && ids.includes(done.messageId)).toBe(false);
     });
   });
 });
