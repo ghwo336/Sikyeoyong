@@ -41,7 +41,7 @@
   align-self: center;
   width: var(--size-sheet-handle-width);
   height: var(--size-sheet-handle-height);
-  border-radius: calc(var(--size-sheet-handle-height) / 2);
+  border-radius: var(--radius-sheet-handle);
   background: var(--color-line-strong);
 }
 

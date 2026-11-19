@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CLOSE_OFFSET, CLOSE_VELOCITY, Sheet, shouldClose } from './Sheet';
+import { CLOSE_OFFSET, CLOSE_VELOCITY, SHEET_SPRING, Sheet, shouldClose } from './Sheet';
 import styles from './Sheet.module.css';
 
 const reduced = vi.hoisted(() => ({ value: false }));
@@ -126,6 +126,63 @@ describe('Sheet (Sheet.md 테스트 기준)', () => {
     expect(dialog).toHaveFocus();
   });
 
+  /** Drags the dialog down by `to` px in small slow steps, then lets go. */
+  async function drag(to: number, step = 20) {
+    const dialog = screen.getByRole('dialog');
+    fireEvent.pointerDown(dialog, { clientX: 100, clientY: 10, isPrimary: true, button: 0 });
+    for (let y = step; y <= to; y += step) {
+      await new Promise((r) => setTimeout(r, 16));
+      fireEvent.pointerMove(window, { clientX: 100, clientY: 10 + y, isPrimary: true });
+    }
+    await new Promise((r) => setTimeout(r, 120));
+    fireEvent.pointerUp(window, { clientX: 100, clientY: 10 + to, isPrimary: true });
+  }
+
+  it('closes when the panel is dragged down far enough', async () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet open label="x" onClose={onClose}>
+        <Body />
+      </Sheet>,
+    );
+    await drag(CLOSE_OFFSET + 180);
+    await vi.waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('stays open after a small slow drag', async () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet open label="x" onClose={onClose}>
+        <Body />
+      </Sheet>,
+    );
+    await drag(30, 5);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('cannot be dragged closed under reduced motion', async () => {
+    reduced.value = true;
+    const onClose = vi.fn();
+    render(
+      <Sheet open label="x" onClose={onClose}>
+        <Body />
+      </Sheet>,
+    );
+    await drag(CLOSE_OFFSET + 180);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('matches tokens.json motion.sheet damping', () => {
+    const tokens = JSON.parse(
+      readFileSync(resolve(__dirname, '../../../../../design/tokens.json'), 'utf8'),
+    ) as { motion: { sheet: string } };
+    expect(tokens.motion.sheet).toContain(`damping ${String(SHEET_SPRING.damping)}`);
+  });
+
   it('closes on a drag down past the offset or a fast fling, not a small nudge', () => {
     const v = (y: number) => ({ x: 0, y });
     expect(shouldClose({ offset: v(CLOSE_OFFSET + 1), velocity: v(0) })).toBe(true);
@@ -190,6 +247,7 @@ describe('Sheet (Sheet.md 테스트 기준)', () => {
     expect(handle).toMatch(/width:\s*var\(--size-sheet-handle-width\)/);
     expect(handle).toMatch(/height:\s*var\(--size-sheet-handle-height\)/);
     expect(handle).toMatch(/background:\s*var\(--color-line-strong\)/);
+    expect(handle).toMatch(/border-radius:\s*var\(--radius-sheet-handle\)/);
     expect(handle).toMatch(/align-self:\s*center/);
     expect(rule('.body')).toMatch(/overflow-y:\s*auto/);
     expect(rule('.full')).toMatch(/height:\s*calc\(100% - var\(--size-top-bar\)\)/);
