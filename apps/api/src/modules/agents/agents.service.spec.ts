@@ -67,6 +67,8 @@ describe('AgentsService', () => {
       `0x${'a'.repeat(41)}`,
       `0x${'g'.repeat(40)}`,
       'a'.repeat(42),
+      'a'.repeat(40), // right length, no 0x
+      `0X${'a'.repeat(40)}`,
     ]) {
       h.db.update(agents).set({ walletAddress: bad }).where(eq(agents.id, 'a1')).run();
       expect(() => s.getForUser('u1'), bad).toThrow(expect.objectContaining({ code: 'INTERNAL' }));

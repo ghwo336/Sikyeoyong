@@ -93,16 +93,17 @@ const chainOf = (usedOkrw: bigint, resetAtSec: number | null): ChainReader => ({
 describe('BudgetService.getView (tech-spec 3.2, 3.7)', () => {
   it('builds a BudgetView from the user, the dragon, this month orders and the chain', async () => {
     // Every source differs: user budget 200,000 (policy default is 300,000), DB spend 219,000,
-    // chain 30-day use 250,000. Each field must come from its own source.
-    const { budget } = await setup(chainOf(250_000n, 1_767_225_600));
+    // chain 30-day use 120,000 (60% of the budget, a different nag stage). Each field
+    // must come from its own source.
+    const { budget } = await setup(chainOf(120_000n, 1_767_225_600));
     const view = await budget.getView('u1', NOW);
     expect(zBudgetView.parse(view)).toEqual({
       monthKst: '2026-12',
       personalBudget: s(200_000n),
       personalSpent: s(219_000n),
-      nagLevel: 'over100', // 219,000 / 200,000
+      nagLevel: 'over100', // DB spend 219,000 / 200,000 (chain 120,000 would be none)
       chainCap: s(500_000n),
-      chainUsed: s(250_000n),
+      chainUsed: s(120_000n),
       chainResetAtSec: 1_767_225_600,
       level: 2,
       perOrderLimit: s(30_000n),
