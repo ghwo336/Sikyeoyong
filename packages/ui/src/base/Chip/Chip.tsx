@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Chip.module.css';
 
-export type ChipSize = 'sm' | 'lg';
+export type ChipSize = 'sm' | 'lg' | 'tile';
 
 export interface ChipProps {
   /**
@@ -15,7 +15,10 @@ export interface ChipProps {
   readonly selected?: boolean;
   readonly onPress: () => void;
   readonly children: ReactNode;
-  /** sm: 36px pill (Main quick replies). lg: 52px tile (Budget, Arrived). Default sm. */
+  /**
+   * sm: 36px pill, 14px (Main quick replies). lg: 52px choice, 16/600 (Budget).
+   * tile: 52px, 15/400 (Arrived taste rating). Default sm.
+   */
   readonly size?: ChipSize;
   /** Tabular numbers for amounts (Budget "num" chips). */
   readonly numeric?: boolean;

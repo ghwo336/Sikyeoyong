@@ -58,6 +58,23 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     expect(rule('.chip[data-selected]')).toMatch(/background:\s*var\(--color-leaf-tint\)/);
   });
 
+  it('matches every design value per size (Main, Budget, Arrived)', () => {
+    // Main quick reply: padding 0 14px, 1px line-strong border on white
+    expect(rule('.sm')).toMatch(/padding:\s*0 var\(--size-chip-padding-x\)/);
+    expect(rule('.chip')).toMatch(/border:\s*1px solid var\(--color-line-strong\)/);
+    expect(rule('.chip')).toMatch(/background:\s*var\(--color-surface\)/);
+    // Budget choice 16/600, Arrived tile 15/400
+    expect(rule('.lg')).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    expect(rule('.lg')).toMatch(/font-weight:\s*var\(--type-row-weight\)/);
+    expect(rule('.tile')).toMatch(/min-height:\s*var\(--size-input\)/);
+    expect(rule('.tile')).toMatch(/border-radius:\s*var\(--radius-input\)/);
+    expect(rule('.tile')).toMatch(/font-size:\s*var\(--type-body-size\)/);
+    expect(rule('.tile')).toMatch(/font-weight:\s*var\(--type-body-weight\)/);
+    // selected text and focus ring
+    expect(rule('.chip[data-selected]')).toMatch(/color:\s*var\(--color-leaf-pressed\)/);
+    expect(rule('.chip:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+  });
+
   it('keeps a 44px touch target for the 36px pill', () => {
     expect(rule('.sm::after')).toMatch(
       /inset:\s*calc\(\(var\(--size-touch-min\) - var\(--size-chip\)\) \/ -2\) 0/,

@@ -24,6 +24,7 @@ export const Default: Story = {
 
 function TastePicker() {
   const [picked, setPicked] = useState('또 먹을래');
+  // Arrived uses the tile look (15px regular); shown here as a choice group.
   return (
     <div
       role="radiogroup"
@@ -38,7 +39,7 @@ function TastePicker() {
       {['또 먹을래', '괜찮았어', '별로였어'].map((label) => (
         <Chip
           key={label}
-          size="lg"
+          size="tile"
           selected={picked === label}
           onPress={() => {
             setPicked(label);
@@ -52,7 +53,7 @@ function TastePicker() {
 }
 
 function BudgetPicker() {
-  const [picked, setPicked] = useState('300,000원');
+  const [picked, setPicked] = useState('30만 원');
   return (
     <div
       role="radiogroup"

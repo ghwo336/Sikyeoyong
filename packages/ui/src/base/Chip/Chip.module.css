@@ -21,7 +21,7 @@
 /* Main.dc.html quick reply: 36px pill, 14px text, 0 14px padding. */
 .sm {
   height: var(--size-chip);
-  padding: 0 var(--space-3);
+  padding: 0 var(--size-chip-padding-x);
   border-radius: var(--radius-chip);
   font-size: var(--type-chip-size);
   font-weight: var(--type-chip-weight);
@@ -34,13 +34,22 @@
   inset: calc((var(--size-touch-min) - var(--size-chip)) / -2) 0;
 }
 
-/* Budget.dc.html, Arrived.dc.html: 52px tile, radius 14, 16px semibold. */
+/* Budget.dc.html: 52px choice, radius 14, 16px semibold. */
 .lg {
   min-height: var(--size-input);
   padding: 0 var(--space-4);
   border-radius: var(--radius-input);
   font-size: var(--type-row-size);
   font-weight: var(--type-row-weight);
+}
+
+/* Arrived.dc.html taste rating: same 52px tile, 15px regular. */
+.tile {
+  min-height: var(--size-input);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-input);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
 }
 
 .chip[data-selected] {
