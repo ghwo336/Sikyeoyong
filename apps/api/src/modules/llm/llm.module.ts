@@ -1,17 +1,22 @@
 import { Module } from '@nestjs/common';
 import { APP_CONFIG } from '../../config/config.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 import { BudgetModule } from '../budget/budget.module.js';
 import { UsersModule } from '../users/users.module.js';
+import { ChatController } from './chat.controller.js';
+import { ChatService } from './chat.service.js';
 import { LlmToolHandlers } from './tools/handlers.js';
 import type { AppConfig } from '../../config/env.js';
 import { createLlmProvider } from './llm-provider.factory.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 
-/** Binds LLM_PROVIDER from config and provides the tool handlers the chat runtime uses. */
+/** The chat endpoint, its runtime wiring, LLM_PROVIDER from config and the tool handlers. */
 @Module({
-  imports: [BudgetModule, UsersModule],
+  imports: [AuthModule, BudgetModule, UsersModule],
+  controllers: [ChatController],
   providers: [
     LlmToolHandlers,
+    ChatService,
     {
       provide: LLM_PROVIDER,
       inject: [APP_CONFIG],
