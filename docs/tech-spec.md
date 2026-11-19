@@ -243,7 +243,7 @@ apps/api/src/
 | GET | `/approvals` | user | `?status=pending` | `{ approvals }` |
 | POST | `/approvals/:id/approve` | user | | `{ approval, order? }`. 필요한 조치(레벨 상향, 가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌린다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
 | POST | `/approvals/:id/reject` | user | | `{ approval }` |
-| GET | `/health` | 없음 | | `{ status: 'ok' }`. 프로세스 살아있음만 (compose 헬스체크용, 2026-11-19 추가). 체인과 MAWS 상태는 `/admin/health` |
+| GET | `/health` | 공개 | | `{ status: 'ok' }`. 프로세스 살아있음만 (compose 헬스체크용, 2026-11-19 추가). 체인과 MAWS 상태는 `/admin/health` |
 | GET | `/admin/health` | operator | | 체인 연결, MAWS 연결, 인덱서 커서, 정책 동기화 상태 |
 | POST | `/admin/merchants/:id/attest` | operator | | `{ kybUid }` (EAS 발급) |
 | POST | `/admin/merchants/:id/activate` | operator | | `{ txHash }` |

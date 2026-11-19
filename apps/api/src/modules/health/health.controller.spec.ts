@@ -4,16 +4,15 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { API_PREFIX } from '../../app.constants.js';
 import { AppModule } from '../../app.module.js';
+import { configureApp } from '../../app.setup.js';
 
 describe('GET /api/health', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix(API_PREFIX);
+    app = configureApp(moduleRef.createNestApplication());
     await app.init();
   });
 
@@ -27,7 +26,7 @@ describe('GET /api/health', () => {
     expect(res.body).toEqual({ status: 'ok' });
   });
 
-  it('is not served without the prefix', async () => {
+  it('is not served without the prefix (Caddy forwards only /api)', async () => {
     const res = await request(app.getHttpServer() as Server).get('/health');
     expect(res.status).toBe(404);
   });

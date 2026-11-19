@@ -109,8 +109,6 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       'no-console': ['error', { allow: ['warn', 'error'] }],
-      // Nest modules are empty classes carrying a @Module decorator.
-      '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
       // Money must never be a JS number (CLAUDE.md rule 4).
       'no-restricted-globals': ['error', ...MONEY_GLOBALS],
     },
@@ -127,6 +125,11 @@ export default tseslint.config(
     files: ['**/*.tsx'],
     plugins: { 'react-hooks': reactHooks },
     rules: reactHooks.configs.recommended.rules,
+  },
+  // Nest modules are empty classes carrying a @Module decorator (api only).
+  {
+    files: ['apps/api/src/**/*.ts'],
+    rules: { '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }] },
   },
   // shared: pure. No runtime deps, no node builtins, no env, no network (architecture.md, code-style.md).
   {
