@@ -267,7 +267,7 @@ apps/api/src/
   level: 1 | 2 | 3,
   perOrderLimit: string,
   frozen: boolean,
-  budgetOptions: { id: 'small' | 'medium' | 'large'; amount: string }[]  // policy.ts monthlyBudgetOptions, D-21
+  budgetOptions: { id: 'small' | 'medium' | 'large'; amount: string }[]  // policy.ts monthlyBudgetOptions (예정, 금액 미정), D-21
 }
 ```
 
@@ -962,7 +962,7 @@ BIZNO_HMAC_KEY=
 - 판매자 입력 필드 길이 제한(이름 40자, 설명 200자), 지시문 패턴 필터(관리자 검토 대상 표시).
 - 쓰기 도구는 `place_order` 하나, 그것도 금액·주소를 받지 않으므로 인젝션 피해 상한 = 정상 주문 1건(레벨 한도 이내).
 - 한 메시지당 쓰기 1회 제한, 같은 가게 연속 주문 60초 쿨다운.
-- `propose_limit_change`(D-21)는 금액 없이 레벨이나 예산 선택지만 받고, 그 턴의 사용자 원문에 한도 의도 키워드(`policy.ts`)가 없으면 서버가 카드를 버린다. 도구 결과(메뉴 설명 등)만 보고 나온 제안은 인젝션으로 본다. 확정은 버튼과 재인증.
+- `propose_limit_change`(D-21)는 금액 없이 레벨이나 예산 선택지만 받고, 그 턴의 사용자 원문에 한도 의도 키워드(`policy.ts`)가 없으면 서버가 카드를 버린다. 도구 결과(메뉴 설명 등)만 보고 나온 제안은 인젝션으로 본다. 확정은 버튼으로만 (레벨 올리기는 재인증, 예산 변경과 내리기는 바로).
 - 도구가 다루는 "누구의 것"(사용자, 에이전트, 주문)은 LLM 입력이 아니라 로그인 세션에서 정한다. LLM이 준 ID는 그 사용자 것인지 서버가 확인한다.
 - 사용자별 메시지 수 제한(분당, 하루)으로 LLM 비용 공격을 막는다. 값은 설정.
 - 모델 답과 도구 결과는 글자로만 그린다. HTML로 넣지 않는다 (XSS).
