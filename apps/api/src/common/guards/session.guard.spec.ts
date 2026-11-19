@@ -107,6 +107,19 @@ describe('SessionGuard over HTTP', () => {
     expect(ok.status).toBe(201);
   });
 
+  it('treats a non-Bearer Authorization header as the cookie path, so CSRF still applies', async () => {
+    const res = await http()
+      .post('/api/probe')
+      .set('Authorization', 'Basic abc')
+      .set('Cookie', `sid=${token}`);
+    expect(res.status).toBe(403);
+  });
+
+  it('answers 401 to an empty Bearer token', async () => {
+    const res = await http().get('/api/probe').set('Authorization', 'Bearer ');
+    expect(res.status).toBe(401);
+  });
+
   it('ignores a user id sent in the body', async () => {
     const res = await http()
       .post('/api/probe')
