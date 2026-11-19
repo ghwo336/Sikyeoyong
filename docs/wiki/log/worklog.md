@@ -138,3 +138,13 @@ children: []
   - APPROVAL_REASONS, NAG_LEVELS를 shared 상수 하나로. 예산 초과 승인 금액 칸(approvals.amount)을 둘지.
   - enum 칸마다 정상 값 전부가 통과하는지 보는 테스트, 이름 없는 CHECK 개수 확인.
 - 다음 할 일: 도구 핸들러 모듈(budget, recommend, merchants/menus, orders 견적, approvals, agents level, 한도 카드), POST /api/chat/messages SSE, 결제·체인 모듈, 컨트랙트, apps/web 화면 조립.
+
+### 2026-11-19 apps/web 화면 조립 첫 조각, 목 데이터 (Claude, Claude Code)
+- 한 일:
+  - 목 API 경계(`lib/api`의 `ApiClient`, `lib/mock`), TanStack Query 5.106.0(2주 넘은 버전 고정).
+  - Main(대화, 추천, 빠른 답장, 예산 막대), Confirm(확인 시트, 시키기는 목 confirm만, 낙관적 이동, 실패 시 대화로 되돌림), Done(조리 중), 가입 다섯 장(Start, Verify, Name, Hatch, Budget)을 ui 컴포넌트로 조립.
+  - apps/web에 vitest. 결제 버튼 한 번에 confirm 한 번, 실패 재시도 없음, 추천과 빠른 답장은 confirm을 부르지 않음, 상태 단계 매핑, KST 날짜 경계.
+  - commit-verifier 1라운드 FAIL(실패 주문이 접수처럼 보임, 테스트 없음) 뒤 수정 커밋으로 PASS.
+- 막힌 것: ui에 없는 그림(Main 위 줄, 예산 카드, 추천 들여쓰기, 입력칸 띠, 가입 제목 묶음, Hatch 가운데 정렬 등)은 만들지 않고 `components/web.md` "ui에 없는 것"에 기록. 임시 API 타입은 `apps/web/lib/api/types.ts`(shared로 옮길 것).
+- 새로 안 마루 사실: 없음.
+- 다음 할 일: ui 부족분 컴포넌트, shared `ChatEvent`(quick_replies, order_failed)와 API 스키마, Tracking, Arrived, Receipt, 한도 화면, 허락 카드, 실제 API 클라이언트로 교체.
