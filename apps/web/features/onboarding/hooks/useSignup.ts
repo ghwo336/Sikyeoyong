@@ -3,6 +3,7 @@
 import type { DragonSpecies } from '@sikyeoyong/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type AokrwString } from '../../../lib/api';
+import { hatchPollInterval } from '../hatch';
 
 /** Sign-up settings: which identity check, how much trial allowance (D-16). */
 export function useSignupConfig() {
@@ -37,8 +38,8 @@ export function useAgentSetup() {
   return useQuery({
     queryKey: ['agent-setup'],
     queryFn: () => api.getAgentSetup(),
-    // Stops once the dragon is up or setup failed (then only "다시 깨우기" starts it again).
-    refetchInterval: (q) => (q.state.data?.status === 'PENDING' || !q.state.data ? 1_000 : false),
+    // The rule (including what a failed GET does) lives in hatchPollInterval.
+    refetchInterval: (q) => hatchPollInterval(q.state.data?.status),
     staleTime: 0,
   });
 }
