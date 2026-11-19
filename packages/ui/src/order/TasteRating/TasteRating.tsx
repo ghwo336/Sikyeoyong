@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Chip } from '../../base/Chip';
+import { radioGroupKeyDown, radioTabIndex } from '../../base/radio-group';
 import styles from './TasteRating.module.css';
 
 export type Taste = 'again' | 'okay' | 'meh';
@@ -26,12 +27,24 @@ export function TasteRating({ menu, value, onPick }: TasteRatingProps) {
       <p id={questionId} className={styles.question}>
         오늘 {menu} 어땠어요?
       </p>
-      <div className={styles.choices} role="radiogroup" aria-labelledby={questionId}>
-        {TASTES.map((t) => (
+      <div
+        className={styles.choices}
+        role="radiogroup"
+        aria-labelledby={questionId}
+        onKeyDown={radioGroupKeyDown((i) => {
+          const t = TASTES[i];
+          if (t) onPick(t.value);
+        })}
+      >
+        {TASTES.map((t, i) => (
           <Chip
             key={t.value}
             size="tile"
             selected={value === t.value}
+            tabIndex={radioTabIndex(
+              i,
+              TASTES.findIndex((x) => x.value === value),
+            )}
             onPress={() => {
               onPick(t.value);
             }}

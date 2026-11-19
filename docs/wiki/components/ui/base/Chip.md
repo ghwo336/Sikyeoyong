@@ -15,7 +15,7 @@ children: []
 여러 개 중 하나만 고르는 규칙 (부모나 `ChipGroup` 역할은 페이지 조립에서)
 
 ## props
-`selected?: boolean` (주면 여럿 중 하나 고르기라 radio와 aria-checked, 안 주면 빠른 답장 버튼), `onPress: () => void`, `children: ReactNode`, `size?: 'sm' | 'lg' | 'tile'` (기본 `sm`), `numeric?: boolean` (고정폭 숫자)
+`selected?: boolean` (주면 여럿 중 하나 고르기라 radio와 aria-checked, 안 주면 빠른 답장 버튼), `onPress: () => void`, `children: ReactNode`, `size?: 'sm' | 'lg' | 'tile'` (기본 `sm`), `numeric?: boolean` (고정폭 숫자), `tabIndex?: number` (radio 그룹이 Tab 순서를 정할 때, `base/radio-group.ts`)
 
 ## 하네스 상태
 `Chip.stories.tsx`에 아래를 전부 만든다.
@@ -36,3 +36,4 @@ Main, Budget, Arrived
 - `tile`은 Arrived 맛 평가: `lg`와 같은 52 칸이지만 글자는 15/400(`type.body`). Arrived 시안의 맛 평가에는 고른 상태가 없다. TasteRating이 고르기(radio)로 쓴다.
 - 고르면 2px 잎색 테두리, 연한 잎색 바탕, `leaf-pressed` 글자색.
 - 누름은 Button과 같은 0.97 스프링, 동작 줄이기면 없음.
+- 고르기 묶음의 키보드(Tab 한 번으로 들어가고 화살표로 옮기며 고름, Home, End)는 `base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`가 맡는다. TasteRating, BudgetPicker, EggPicker가 쓴다.

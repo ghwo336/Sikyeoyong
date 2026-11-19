@@ -29,6 +29,7 @@ Arrived
 - onPick 값 세 가지 (again, okay, meh)
 - 질문이 이름인 radiogroup, Chip tile 세 개가 시안 순서 (또 먹을래, 괜찮았어, 별로였어)
 - 고른 것만 aria-checked, 고르기 전에는 모두 false
+- 키보드: Tab은 고른 칸(없으면 첫 칸)으로 한 번만 들어가고, 화살표로 옮기며 고른다
 - Arrived 시안 값 (질문 15/600, 세 칸 같은 폭, 간격 8, 질문과 칸 사이 10)
 
 ## 메모

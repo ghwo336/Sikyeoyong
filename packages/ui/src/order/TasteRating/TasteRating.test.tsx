@@ -46,6 +46,17 @@ describe('TasteRating (TasteRating.md 테스트 기준)', () => {
     ]);
   });
 
+  it('moves and picks with arrow keys, entering the group once', async () => {
+    const onPick = vi.fn();
+    render(<TasteRating menu="돼지국밥" value="again" onPick={onPick} />);
+    const radios = screen.getAllByRole('radio');
+    expect(radios.map((r) => r.tabIndex)).toEqual([0, -1, -1]);
+    radios[0]?.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(onPick).toHaveBeenLastCalledWith('okay');
+    expect(radios[1]).toHaveFocus();
+  });
+
   // Arrived.dc.html 53-59.
   it('matches the design values', () => {
     expect(rule('.rating')).toMatch(/gap:\s*var\(--size-summary-gap\)/);

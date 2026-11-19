@@ -23,12 +23,21 @@ export interface ChipProps {
   readonly size?: ChipSize;
   /** Tabular numbers for amounts (Budget "num" chips). */
   readonly numeric?: boolean;
+  /** Set by radio groups (base/radio-group.ts) so Tab enters the group once. */
+  readonly tabIndex?: number;
 }
 
 const PRESS = { scale: PRESS_SCALE };
 
 /** Draws one small pill button that can be picked (Chip.md). The group rule lives in the parent. */
-export function Chip({ selected, onPress, children, size = 'sm', numeric = false }: ChipProps) {
+export function Chip({
+  selected,
+  onPress,
+  children,
+  size = 'sm',
+  numeric = false,
+  tabIndex,
+}: ChipProps) {
   const reduceMotion = useShouldReduceMotion();
   const choice = selected !== undefined;
   return (
@@ -38,6 +47,7 @@ export function Chip({ selected, onPress, children, size = 'sm', numeric = false
       aria-checked={choice ? selected : undefined}
       className={`${styles.chip} ${styles[size]}${numeric ? ` ${styles.numeric}` : ''}`}
       data-selected={selected || undefined}
+      tabIndex={tabIndex}
       whileTap={reduceMotion ? undefined : PRESS}
       transition={PRESS_SPRING}
       onClick={onPress}
