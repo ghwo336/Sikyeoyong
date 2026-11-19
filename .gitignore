@@ -50,3 +50,6 @@ apps/web/AGENTS.md
 
 # seed keys (merchant payout keys, never commit)
 seed/.keys/
+
+# 서브에이전트 git worktree (Claude Code)
+.claude/worktrees/
