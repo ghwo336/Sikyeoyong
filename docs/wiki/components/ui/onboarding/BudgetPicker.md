@@ -15,7 +15,7 @@ children: []
 저장
 
 ## props
-`options: readonly bigint[]` (aokrw), `value: bigint` (aokrw), `onChange: (value: bigint) => void`
+`options: readonly bigint[]` (aokrw, 세 개 기준. 메모 참고), `value: bigint` (aokrw), `onChange: (value: bigint) => void`
 
 ## 하네스 상태
 `BudgetPicker.stories.tsx`에 아래를 전부 만든다.
@@ -36,4 +36,5 @@ Budget
 - 제목과 칸 묶음, 키보드 규칙은 base `ChoiceGroup` columns이고, 이 컴포넌트는 Chip lg 금액 칸을 넘기기만 한다. 따로 CSS가 없다.
 - 금액 표시는 shared `formatOkrw` 하나로만 한다 (architecture.md, code-style.md). "만 원" 표기는 open-questions Q-23이 정한다.
 - options에 같은 값이 두 번 오지 않는다고 본다 (key가 금액).
+- 선택지 3개 기준이다. 정책(`packages/shared` `monthlyBudgetOptions`, D-21)이 세 개(small, medium, large)라 하네스와 테스트도 세 칸만 본다. 칸은 같은 너비로 나뉘므로 4개 이상도 그려지지만 360 화면에서 "500,000원" 칸이 좁아진다. 개수가 늘면 시안을 먼저 정하고 테스트를 늘린다.
 - 체험용 용돈 줄(Budget 시안 아래)은 이 컴포넌트가 아니라 `TrialAllowance`가 그린다.
