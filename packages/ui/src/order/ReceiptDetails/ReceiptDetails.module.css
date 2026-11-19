@@ -1,0 +1,106 @@
+/* Receipt.dc.html 37-48: a white card with a 52px toggle and 13px rows underneath. */
+.card {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--size-details-toggle);
+  padding: 0 var(--space-4);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: -2px;
+}
+
+.chevron {
+  width: var(--size-details-icon);
+  height: var(--size-details-icon);
+  color: var(--color-ink-secondary);
+  transition: rotate var(--motion-screen) var(--motion-screen-easing);
+}
+
+.chevron[data-open] {
+  rotate: 180deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-summary-gap);
+  padding: 0 var(--space-4) var(--space-4);
+  font-size: var(--type-caption-size);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--color-ink-secondary);
+}
+
+.code {
+  font-family: var(--font-code);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ruleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-code);
+  font-size: var(--type-code-size);
+  line-height: var(--type-code-line-height);
+  color: var(--color-ink-code);
+  overflow-wrap: anywhere;
+}
+
+/* 44px tall to the finger though the text is 13px (design-and-motion.md). */
+.link {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  font-weight: var(--type-label-weight);
+  color: var(--color-leaf);
+  text-decoration: none;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}

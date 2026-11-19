@@ -5,6 +5,7 @@
   --color-ink: #1E2320;
   --color-ink-secondary: #5D6660;
   --color-ink-muted: #8A938C;
+  --color-ink-code: #3E4742;
   --color-line: #E3E8E2;
   --color-line-strong: #D5DDD3;
   --color-track: #EEF2EC;
@@ -72,6 +73,9 @@
   --type-pay-letter-spacing: -0.02em;
   --type-total-size: 17px;
   --type-total-weight: 700;
+  --type-code-size: 12px;
+  --type-code-weight: 400;
+  --type-code-line-height: 1.7;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -133,6 +137,8 @@
   --size-badge-pad-x: 8px;
   --size-badge-pad-y: 2px;
   --size-summary-gap: 10px;
+  --size-details-toggle: 52px;
+  --size-details-icon: 18px;
   --size-limits-gap: 14px;
   --size-meter: 8px;
   --size-meter-limit-gap: 6px;
