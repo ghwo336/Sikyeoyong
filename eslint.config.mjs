@@ -180,6 +180,10 @@ export default tseslint.config(
         ...MONEY_GLOBALS,
         { name: 'fetch', message: 'shared에서 네트워크 금지. API 클라이언트는 fetch를 주입받는다' },
         { name: 'process', message: 'shared에서 process 금지' },
+        ...['self', 'window', 'eval', 'Function'].map((name) => ({
+          name,
+          message: 'shared에서 런타임 전역 금지 (architecture.md)',
+        })),
       ],
     },
   },
@@ -203,6 +207,10 @@ export default tseslint.config(
             '**/apps/**',
           ],
           message: 'ui 컴포넌트는 props와 콜백만 (architecture.md)',
+        },
+        {
+          regex: '^\\.\\.(/\\.\\.)*(/index)?/?$|(^|/)src/index$',
+          message: 'ui 루트 배럴로 다른 영역을 우회해서 가져오지 않는다 (architecture.md)',
         },
         ...(['base', 'dragon'].includes(area)
           ? []

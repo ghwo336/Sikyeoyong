@@ -152,6 +152,15 @@ const cases = [
     IMPORTS,
   ],
   ['packages/ui/src/order/X/X.tsx', "import { Y } from '../Y/Y';\nexport const a = Y;", null],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from '../../index';\nexport const a = L;",
+    IMPORTS,
+  ],
+  ['packages/ui/src/order/X/X.tsx', "import { L } from '../..';\nexport const a = L;", IMPORTS],
+  ['packages/ui/src/order/X/X.tsx', "import { Y } from './Y';\nexport const a = Y;", null],
+  ['packages/shared/src/a.ts', "export const a = self.fetch('/x');", 'no-restricted-globals'],
+  ['packages/shared/src/a.ts', "export const a = eval('1');", 'no-restricted-globals'],
   // api: any folder depth
   [
     'apps/api/src/modules/llm/tools/place-order.tool.ts',
