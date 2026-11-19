@@ -32,6 +32,7 @@ children: []
 - 영수증의 결제 기록 번호, 통과한 규칙 이름, 탐색기 링크는 "자세히 보기" 안에서만 보여 준다. 체인이 실제로 검사한 규칙만 넘긴다 (tech-spec 2.5).
 - 금액은 aokrw 문자열을 `bigint`로 받아 `formatOkrw`로만 표시한다.
 - 토큰과 글꼴은 루트 `app/layout.tsx`에서 한 번만 불러온다: `@sikyeoyong/ui/tokens.css`, Pretendard Variable(npm `pretendard`, 동적 서브셋), 고운돋움(npm `@fontsource/gowun-dodum`, 한글과 라틴 400). 토큰의 글꼴 이름과 같게 하려고 `next/font`(이름을 바꿈) 대신 자체 호스팅 CSS를 쓴다. 페이지 전체 기본값은 `app/globals.css`(토큰 변수만).
+- 동작 줄이기는 전역에서 끄지 않는다. 각 ui 컴포넌트가 Motion `useReducedMotion`이나 자기 CSS 모듈의 `prefers-reduced-motion`으로 "이동 없이 페이드만"을 구현한다 (design-and-motion.md).
 
 ## 하지 말 것 (MUST NOT)
 - 체인 ID, RPC, 컨트랙트 주소를 웹 코드에 넣지 않는다.

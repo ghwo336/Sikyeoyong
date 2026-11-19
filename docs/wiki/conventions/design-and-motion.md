@@ -50,7 +50,7 @@ children: []
 - 결제 버튼은 낙관적 UI: 누르는 즉시 조리 중 화면으로 넘어가고, 체인 확정은 뒤에서 받는다. 실패하면 되돌리고 드래곤이 이유를 말한다.
 - 로딩은 실제 화면 모양의 스켈레톤. 빈 스피너만 띄우지 않는다.
 - 다음 화면 데이터는 미리 불러 둔다 (TanStack Query prefetch).
-- 이미지는 `next/image`, 글꼴은 `next/font`(Pretendard 로컬, 고운돋움). 첫 화면 JS를 줄이려고 움직임 없는 부분은 Server Component.
+- 이미지는 `next/image`, 글꼴은 자체 호스팅 CSS(npm `pretendard` 동적 서브셋, `@fontsource/gowun-dodum`). 토큰의 글꼴 이름을 지키려고 `next/font`는 쓰지 않는다 (web.md). 첫 화면 JS를 줄이려고 움직임 없는 부분은 Server Component.
 - 대화 스트리밍은 토큰마다 렌더하지 않고 프레임 단위로 묶는다.
 - 출시 기준: 모바일 기기에서 60fps, Lighthouse 모바일 성능 90 이상, INP 200ms 이하 (프로덕션 빌드로 측정).
 

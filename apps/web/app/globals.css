@@ -17,19 +17,11 @@ body {
   color: var(--color-ink);
   font-family: var(--font-ui);
   font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
   line-height: var(--type-body-line-height);
   letter-spacing: var(--type-body-letter-spacing);
   word-break: keep-all;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
 }

@@ -31,7 +31,7 @@ packages/shared  ◀────── apps/api (NestJS)    돈, 체인, AI, 세
 ### 폴더
 ```
 apps/web/
-├── app/                      라우트. page.tsx, layout.tsx, loading.tsx, error.tsx만
+├── app/                      라우트. page.tsx, layout.tsx, loading.tsx, error.tsx, 루트의 globals.css(페이지 전체 기본값, 토큰 변수만)만
 │   ├── (onboarding)/start, verify, name, hatch, budget
 │   ├── (main)/page.tsx        대화(홈)
 │   ├── orders/[id]/page.tsx   조리 중, 배달 중, 도착 (상태별 조립)
