@@ -51,6 +51,10 @@
   --type-row-weight: 600;
   --type-caption-size: 13px;
   --type-caption-weight: 400;
+  --type-label-size: 13px;
+  --type-label-weight: 600;
+  --type-input-size: 17px;
+  --type-input-weight: 600;
   --type-chip-size: 14px;
   --type-chip-weight: 400;
   --type-button-size: 17px;

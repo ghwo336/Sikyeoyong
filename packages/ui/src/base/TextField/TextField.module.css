@@ -1,0 +1,47 @@
+/* Name.dc.html: label 13/600 over a 52px field, gap 6. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+  color: var(--color-ink-secondary);
+}
+
+.input {
+  box-sizing: border-box;
+  height: var(--size-input);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--type-input-size);
+  font-weight: var(--type-input-weight);
+  color: var(--color-ink);
+}
+
+.input::placeholder {
+  color: var(--color-ink-muted);
+  font-weight: var(--type-body-weight);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+/* The design has no error look; it borrows the caution colors of Blocked.dc.html (Q-27). */
+.input[data-error] {
+  border-color: var(--color-over);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-weight);
+  color: var(--color-over-ink);
+}

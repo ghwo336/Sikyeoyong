@@ -254,3 +254,12 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 결론:
 - 반영한 곳:
 
+
+### Q-27 입력칸 오류 모양을 시안에 넣을까?
+- 상태: 열림
+- 우선순위: P2
+- 배경: user-flow.md 3단계는 "이름 비면 버튼 비활성 대신 안내"라고 하지만 design/screens/Name.dc.html에는 오류 모양이 없다. TextField는 임시로 Blocked.dc.html의 주의 색을 빌려 테두리 `color.over`, 안내 문구 13px `color.overInk`로 그린다. 빨간색 토큰은 없다.
+- 확인 방법: 호재 님이 Name 시안에 오류 상태를 그리거나 지금 모양을 승인한다.
+- 담당: 호재 님
+- 결론:
+- 반영한 곳: packages/ui/src/base/TextField/TextField.module.css

@@ -4,6 +4,7 @@ export * from './base/Amount';
 export * from './base/Button';
 export * from './base/Chip';
 export * from './base/Switch';
+export * from './base/TextField';
 export * from './dragon/Dragon';
 export * from './dragon/Egg';
 export * from './dragon/DragonLine';
