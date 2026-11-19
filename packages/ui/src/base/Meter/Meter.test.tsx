@@ -19,6 +19,12 @@ function fill() {
   return screen.getByRole('meter').firstElementChild as HTMLElement;
 }
 
+// The numbers are base AmountRatio meter; their values live in AmountRatio.module.css.
+const ratioCss = readFileSync(resolve(__dirname, '../AmountRatio/AmountRatio.module.css'), 'utf8');
+const ratioRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(ratioCss)?.[2] ??
+  '';
+
 describe('Meter (Meter.md 테스트 기준)', () => {
   it('fills 100% when the value is over max, never more', () => {
     render(<Meter label="이번 달 배달비" value={won(320_000n)} max={BUDGET} tone="over" />);
@@ -93,9 +99,9 @@ describe('Meter (Meter.md 테스트 기준)', () => {
     expect(rule('.md')).toMatch(/font-size:\s*var\(--type-small-size\)/);
     expect(rule('.row')).toMatch(/justify-content:\s*space-between/);
     expect(rule('.label')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.value')).toMatch(/font-weight:\s*var\(--type-row-weight\)/);
-    expect(rule('.max')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.numbers')).toMatch(/tabular-nums/);
+    expect(ratioRule('.meter .value')).toMatch(/font-weight:\s*var\(--type-row-weight\)/);
+    expect(ratioRule('.meter .max')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(ratioRule('.ratio')).toMatch(/tabular-nums/);
   });
 
   it.each(['budget', 'limit'] as const)('puts only the %s kind class on the meter', (kind) => {

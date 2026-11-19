@@ -1,4 +1,5 @@
 import { formatOkrw } from '@sikyeoyong/shared';
+import { AmountRatio } from '../AmountRatio';
 import styles from './Meter.module.css';
 
 export type MeterTone = 'normal' | 'warn' | 'over';
@@ -45,10 +46,7 @@ export function Meter({ value, max, label, tone, size = 'sm', kind = 'budget' }:
     <div className={`${styles.meter} ${styles[size]} ${styles[kind]}`}>
       <div className={styles.row} aria-hidden="true">
         <span className={styles.label}>{label}</span>
-        <span className={styles.numbers}>
-          <span className={styles.value}>{valueText.replace(/원$/, '')}</span>
-          <span className={styles.max}> / {maxText}</span>
-        </span>
+        <AmountRatio value={value} max={max} size="meter" valueUnit={false} />
       </div>
       <div
         role="meter"

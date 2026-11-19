@@ -1,0 +1,35 @@
+/* Done.dc.html, Receipt.dc.html (body) and Confirm.dc.html 31-40 (row): name and count left,
+   price right, then the request in small secondary text. */
+.lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.body {
+  gap: var(--space-2);
+  font-size: var(--type-body-size);
+}
+
+.row {
+  gap: var(--size-summary-gap);
+  font-size: var(--type-row-size);
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.request {
+  margin: 0;
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

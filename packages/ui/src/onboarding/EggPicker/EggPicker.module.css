@@ -28,11 +28,6 @@
   color: var(--color-ink-secondary);
 }
 
-.options {
-  display: flex;
-  gap: var(--size-summary-gap);
-}
-
 .option {
   display: flex;
   align-items: center;

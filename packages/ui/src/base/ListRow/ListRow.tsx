@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useId } from 'react';
+import { Icon } from '../Icon';
 import styles from './ListRow.module.css';
 
 export type ListRowTone = 'default' | 'accent';
@@ -22,28 +23,11 @@ export interface ListRowProps {
   readonly onPress?: () => void;
 }
 
-function Chevron() {
-  return (
-    <svg
-      className={styles.icon}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 6l6 6-6 6" />
-    </svg>
-  );
-}
-
 /** Draws one settings row: name, value, then an arrow or a control (ListRow.md). */
 export function ListRow({ label, value, tone = 'default', trailing, onPress }: ListRowProps) {
   const labelId = useId();
   let end: ReactNode;
-  if (trailing === 'chevron') end = <Chevron />;
+  if (trailing === 'chevron') end = <Icon name="chevron-right" className={styles.icon} />;
   else if (typeof trailing === 'function') end = trailing(labelId);
   // Nothing to draw (undefined, null, false, '') still keeps the 16px so values line up.
   else if (trailing === undefined || trailing === null || trailing === false || trailing === '')

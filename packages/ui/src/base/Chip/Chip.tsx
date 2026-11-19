@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { PRESS_SCALE, PRESS_SPRING } from '../press';
+import { PRESS, PRESS_SPRING } from '../press';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Chip.module.css';
 
@@ -26,8 +26,6 @@ export interface ChipProps {
   /** Set by radio groups (base/radio-group.ts) so Tab enters the group once. */
   readonly tabIndex?: number;
 }
-
-const PRESS = { scale: PRESS_SCALE };
 
 /** Draws one small pill button that can be picked (Chip.md). The group rule lives in the parent. */
 export function Chip({

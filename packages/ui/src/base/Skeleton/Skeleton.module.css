@@ -1,0 +1,19 @@
+/* Loading: still bars the height of the text they stand for, no shimmer (nothing moves,
+   so reduced motion needs nothing). Wallet.dc.html and Main.dc.html have no loading look. */
+.bar {
+  display: block;
+  border-radius: var(--radius-chip);
+  background: var(--color-track);
+}
+
+.walletAmount {
+  height: var(--type-wallet-amount-size);
+}
+
+.caption {
+  height: var(--type-caption-size);
+}
+
+.meta {
+  height: var(--type-meta-size);
+}

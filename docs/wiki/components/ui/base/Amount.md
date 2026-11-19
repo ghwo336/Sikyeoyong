@@ -15,7 +15,7 @@ children: []
 금액 계산
 
 ## props
-`value: bigint`, `size: 'display' | 'title' | 'row'`, `animate?: boolean`
+`value: bigint`, `size: 'display' | 'title' | 'row' | 'inherit'` (inherit: 부모 글자 크기, AmountChange와 AmountRatio가 쓴다), `animate?: boolean`, `unit?: boolean` (false면 끝의 원을 뺀다, 기본 true)
 
 ## 하네스 상태
 `Amount.stories.tsx`에 아래를 전부 만든다.
@@ -24,10 +24,10 @@ children: []
 - 동작 줄이기 설정
 
 ## 쓰는 화면
-Confirm, Wallet, Blocked
+Confirm, Wallet, Blocked, LimitChat (AmountChange, AmountRatio를 거쳐서)
 
 ## 테스트 기준
-- formatOkrw 결과와 같은 글자
+- formatOkrw 결과와 같은 글자 (unit=false면 끝의 원만 뺀 글자)
 - reduced motion이면 애니메이션 없음
 
 ## 메모

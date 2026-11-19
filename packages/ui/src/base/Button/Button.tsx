@@ -2,12 +2,20 @@
 
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { PRESS_SCALE, PRESS_SPRING } from '../press';
+import { PRESS, PRESS_SPRING } from '../press';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Button.module.css';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'kakao';
-export type ButtonSize = 'lg' | 'md';
+/**
+ * primary: leaf fill. secondary: pale border. outline: ink border (Frozen "돌려받기").
+ * text: plain secondary ink. link: leaf text, no box ("다시 보내기"). kakao: Kakao yellow.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text' | 'link' | 'kakao';
+/**
+ * lg: 56 full width. md: 44 pill, content width. sm: 44 touch, small text, content width.
+ * choice: 52 full width (Blocked, LimitChat). tall: 64 full width, room for two lines (Blocked).
+ */
+export type ButtonSize = 'lg' | 'md' | 'sm' | 'choice' | 'tall';
 
 export interface ButtonProps {
   readonly variant: ButtonVariant;
@@ -17,9 +25,6 @@ export interface ButtonProps {
   readonly onPress: () => void;
   readonly children: ReactNode;
 }
-
-// design-and-motion.md: press is a 0.97 spring (tokens.json motion.press).
-const PRESS = { scale: PRESS_SCALE };
 
 /** Draws one button that calls onPress. It does not decide what happens (Button.md). */
 export function Button({

@@ -38,6 +38,7 @@ Main
 - Main 시안 값 (카드 1px `line` 반경 20, 줄 64 여백 14 16 간격 12, 구분선 `track`, 가게 12px, 메뉴와 가격 16/600, 허락 필요 11/600 `yolkInk` on `yolkTint`)
 
 ## 메모
+- 불러오는 중 줄의 막대는 base `Skeleton` meta(40%, 65%)다. 줄 틀(높이, 여백)은 이 컴포넌트가 그린다.
 - 추천이 없을 때 할 말은 용이 말(DragonLine)이 한다. 카드는 비워 두지 않고 아예 그리지 않는다.
 - 스켈레톤은 반짝임 없이 멈춘 회색 줄이다 (동작 줄이기와 상관없이 같다).
 - `type.meta`, `type.badge`, `size.pickRow`, `size.pickRowPadY`, `size.pickMetaGap`, `size.badgePadX/Y` 토큰을 쓴다.

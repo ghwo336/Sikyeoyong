@@ -6,6 +6,11 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TextField } from './TextField';
 
+const errCss = readFileSync(resolve(__dirname, '../ErrorLine/ErrorLine.module.css'), 'utf8');
+const errRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    errCss,
+  )?.[2] ?? '';
 const css = readFileSync(resolve(__dirname, 'TextField.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.[\]:]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
@@ -104,6 +109,6 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     expect(input).toMatch(/color:\s*var\(--color-ink\)/);
     expect(rule('.input:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
     expect(rule('.input[data-error]')).toMatch(/border-color:\s*var\(--color-over\)/);
-    expect(rule('.error')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
   });
 });

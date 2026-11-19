@@ -37,4 +37,4 @@ Frozen
 ## 메모
 - 돌려받기는 돈이 움직이는 일이라 이 버튼으로만 부모가 한다 (CLAUDE.md 절대 규칙 3).
 - 화면 바탕 `sleepGround`와 위 뒤로 버튼은 Frozen 화면이 그린다.
-- 깨우기 버튼은 base `Button` primary. 돌려받기는 ink 테두리 알약이라 이 컴포넌트 CSS로 그린다.
+- 깨우기 버튼은 base `Button` primary, 돌려받기는 base `Button` outline `md`(ink 테두리 44 알약, 0 18px). 돌려받는 중 누름 무시는 Button `loading`이 한다.

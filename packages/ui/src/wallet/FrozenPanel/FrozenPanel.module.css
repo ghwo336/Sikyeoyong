@@ -61,26 +61,3 @@
   font-size: var(--type-caption-size);
   color: var(--color-ink-secondary);
 }
-
-.refund {
-  min-height: var(--size-touch-min);
-  padding: 0 var(--size-pill-pad-x);
-  border: 1px solid var(--color-ink);
-  border-radius: var(--radius-chip);
-  background: var(--color-surface);
-  font-family: var(--font-ui);
-  font-size: var(--type-body-size);
-  font-weight: var(--type-label-weight);
-  color: var(--color-ink);
-  cursor: pointer;
-}
-
-.refund[data-loading] {
-  cursor: progress;
-  opacity: 0.6;
-}
-
-.refund:focus-visible {
-  outline: 2px solid var(--color-leaf);
-  outline-offset: 2px;
-}

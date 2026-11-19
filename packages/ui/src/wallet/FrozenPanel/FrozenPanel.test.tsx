@@ -12,6 +12,11 @@ const rule = (selector: string) =>
 const tokens = JSON.parse(
   readFileSync(resolve(__dirname, '../../../../../design/tokens.json'), 'utf8'),
 ) as { size: { eggSleeping: number } };
+// The take-back button is base Button; its size lives in Button.module.css.
+const buttonCss = readFileSync(resolve(__dirname, '../../base/Button/Button.module.css'), 'utf8');
+const buttonRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
+  '';
 
 const won = (n: bigint) => okrwToAokrw(n);
 const base = {
@@ -74,10 +79,14 @@ describe('FrozenPanel (FrozenPanel.md 테스트 기준)', () => {
     expect(rule('.pocketRow')).toMatch(/padding-top:\s*var\(--size-pocket-top\)/);
     expect(rule('.pocketLabel')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
     expect(rule('.pocketLeft')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
-    const refund = rule('.refund');
-    expect(refund).toMatch(/min-height:\s*var\(--size-touch-min\)/);
-    expect(refund).toMatch(/border:\s*1px solid var\(--color-ink\)/);
-    expect(refund).toMatch(/border-radius:\s*var\(--radius-chip\)/);
-    expect(refund).toMatch(/padding:\s*0 var\(--size-pill-pad-x\)/);
+    // Take back: Button outline md (44 pill, ink line, 0 18px).
+    render(<FrozenPanel {...base} />);
+    const refund = screen.getByRole('button', { name: '돌려받기' });
+    expect([...refund.classList]).toEqual(expect.arrayContaining(['outline', 'md']));
+    const md = buttonRule('.md');
+    expect(md).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(md).toMatch(/border-radius:\s*var\(--radius-chip\)/);
+    expect(md).toMatch(/padding:\s*0 var\(--size-pill-pad-x\)/);
+    expect(buttonRule('.outline')).toMatch(/border:\s*1px solid var\(--color-ink\)/);
   });
 });

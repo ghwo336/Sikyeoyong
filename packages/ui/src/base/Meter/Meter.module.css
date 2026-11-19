@@ -24,20 +24,6 @@
   color: var(--color-ink-secondary);
 }
 
-.numbers {
-  font-variant-numeric: tabular-nums;
-}
-
-.value {
-  font-weight: var(--type-row-weight);
-  color: var(--color-ink);
-}
-
-.max {
-  font-weight: var(--type-small-weight);
-  color: var(--color-ink-secondary);
-}
-
 .track {
   height: var(--size-meter);
   border-radius: calc(var(--size-meter) / 2);

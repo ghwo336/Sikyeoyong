@@ -1,7 +1,5 @@
-import { useId } from 'react';
 import { Chip } from '../../base/Chip';
-import { radioGroupKeyDown, radioTabIndex } from '../../base/radio-group';
-import styles from './TasteRating.module.css';
+import { ChoiceGroup } from '../../base/ChoiceGroup';
 
 export type Taste = 'again' | 'okay' | 'meh';
 
@@ -21,36 +19,22 @@ export interface TasteRatingProps {
 
 /** Lets the user pick one of three taste ratings (TasteRating.md). */
 export function TasteRating({ menu, value, onPick }: TasteRatingProps) {
-  const questionId = useId();
-  const selectedIndex = TASTES.findIndex((x) => x.value === value);
+  const picked = TASTES.find((t) => t.value === value);
   return (
-    <div className={styles.rating}>
-      <p id={questionId} className={styles.question}>
-        오늘 {menu} 어땠어요?
-      </p>
-      <div
-        className={styles.choices}
-        role="radiogroup"
-        aria-labelledby={questionId}
-        onKeyDown={radioGroupKeyDown((i) => {
-          const t = TASTES[i];
-          if (t) onPick(t.value);
-        })}
-      >
-        {TASTES.map((t, i) => (
-          <Chip
-            key={t.value}
-            size="tile"
-            selected={value === t.value}
-            tabIndex={radioTabIndex(i, selectedIndex)}
-            onPress={() => {
-              onPick(t.value);
-            }}
-          >
-            {t.label}
-          </Chip>
-        ))}
-      </div>
-    </div>
+    <ChoiceGroup
+      title={`오늘 ${menu} 어땠어요?`}
+      layout="columns"
+      options={TASTES}
+      value={picked}
+      onChange={(t) => {
+        onPick(t.value);
+      }}
+      keyOf={(t) => t.value}
+      renderOption={(t, s) => (
+        <Chip size="tile" selected={s.selected} tabIndex={s.tabIndex} onPress={s.select}>
+          {t.label}
+        </Chip>
+      )}
+    />
   );
 }

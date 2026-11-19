@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import * as shared from '@sikyeoyong/shared';
 import { DRAGON_SPECIES, okrwToAokrw } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,16 @@ const rule = (selector: string) =>
   )?.[2] ?? '';
 
 // 2026-12-01 09:00 KST
+// Label and value pairs are base DetailRows; their values live in DetailRows.module.css.
+const rowsCss = readFileSync(
+  resolve(__dirname, '../../base/DetailRows/DetailRows.module.css'),
+  'utf8',
+);
+const rowsRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    rowsCss,
+  )?.[2] ?? '';
+
 const BORN = Date.UTC(2026, 11, 1, 0, 0);
 const base: IdCardProps = {
   name: '용이',
@@ -28,6 +39,10 @@ function fact(term: string) {
 }
 
 describe('IdCard (IdCard.md 테스트 기준)', () => {
+  it('uses the shared KST date, not a copy of its own', () => {
+    expect(formatKstDate).toBe(shared.formatKstDate);
+  });
+
   it("says '실명 확인 전' when the owner is not verified", () => {
     const { rerender } = render(<IdCard {...base} />);
     expect(fact('주인')).toBe('실명 확인됨');
@@ -95,8 +110,15 @@ describe('IdCard (IdCard.md 테스트 기준)', () => {
     expect(rule('.portrait')).toMatch(/border-radius:\s*var\(--radius-portrait\)/);
     expect(rule('.portrait')).toMatch(/background:\s*var\(--color-egg-shell\)/);
     expect(rule('.name')).toMatch(/font-size:\s*var\(--type-card-name-size\)/);
-    expect(rule('.facts')).toMatch(/gap:\s*var\(--size-limits-gap\) var\(--space-3\)/);
-    expect(rule('.fact dt')).toMatch(/color:\s*var\(--color-card-ink\)/);
-    expect(rule('.fact dd')).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    // Facts: base DetailRows stacked (two columns, 14 by 12, card-ink labels, 16/600 values).
+    const { container } = render(<IdCard {...base} />);
+    const dl = container.querySelector('dl');
+    expect([...(dl?.classList ?? [])]).toEqual(
+      expect.arrayContaining(['stacked', 'caption', 'loose']),
+    );
+    expect(rowsRule('.loose')).toMatch(/gap:\s*var\(--size-limits-gap\)/);
+    expect(rowsRule('.stacked')).toMatch(/column-gap:\s*var\(--space-3\)/);
+    expect(rowsRule('.stacked .label')).toMatch(/color:\s*var\(--color-card-ink\)/);
+    expect(rowsRule('.stacked .value')).toMatch(/font-size:\s*var\(--type-row-size\)/);
   });
 });

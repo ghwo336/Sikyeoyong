@@ -7,6 +7,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { EggPicker, SPECIES_INFO } from './EggPicker';
 
 const css = readFileSync(resolve(__dirname, 'EggPicker.module.css'), 'utf8');
+// The row of eggs is base ChoiceGroup row; its gap lives in ChoiceGroup.module.css.
+const groupCss = readFileSync(
+  resolve(__dirname, '../../base/ChoiceGroup/ChoiceGroup.module.css'),
+  'utf8',
+);
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.:[\]]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
     css,
@@ -99,7 +104,12 @@ describe('EggPicker (EggPicker.md 테스트 기준)', () => {
     expect(rule('.option')).toMatch(/border:\s*2px solid transparent/);
     expect(rule('.option[data-selected]')).toMatch(/border-color:\s*var\(--color-leaf\)/);
     expect(rule('.option[data-selected]')).toMatch(/background:\s*var\(--color-surface\)/);
-    expect(rule('.options')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
+    expect(groupCss).toMatch(/\.row\s*\{[^}]*gap:\s*var\(--size-summary-gap\)/);
+    {
+      const { unmount } = render(<EggPicker value="forest" onChange={vi.fn()} />);
+      expect(screen.getByRole('radiogroup', { name: '알' }).classList).toContain('row');
+      unmount();
+    }
     expect(rule('.picker')).toMatch(/gap:\s*var\(--size-limits-gap\)/);
     expect(rule('.name')).toMatch(/font-size:\s*var\(--type-egg-name-size\)/);
     expect(rule('.name')).toMatch(/font-weight:\s*var\(--type-egg-name-weight\)/);

@@ -1,10 +1,7 @@
 'use client';
 
 import { type DragonSpecies, formatOkrw } from '@sikyeoyong/shared';
-import { motion } from 'motion/react';
 import { Button } from '../../base/Button';
-import { PRESS_SCALE, PRESS_SPRING } from '../../base/press';
-import { useShouldReduceMotion } from '../../base/reduced-motion';
 import { Egg } from '../../dragon/Egg';
 import styles from './FrozenPanel.module.css';
 
@@ -20,8 +17,6 @@ export interface FrozenPanelProps {
   readonly refunding?: boolean;
 }
 
-const PRESS = { scale: PRESS_SCALE };
-
 /** Draws the sleeping dragon (an egg with Zz), take back and wake buttons (FrozenPanel.md). */
 export function FrozenPanel({
   pocket,
@@ -30,7 +25,6 @@ export function FrozenPanel({
   onWake,
   refunding = false,
 }: FrozenPanelProps) {
-  const reduceMotion = useShouldReduceMotion();
   const hasPocket = pocket > 0n;
   return (
     <div className={styles.panel}>
@@ -48,19 +42,9 @@ export function FrozenPanel({
           <span className={styles.pocketLeft}>{formatOkrw(pocket)} 남음</span>
         </div>
         {hasPocket ? (
-          <motion.button
-            type="button"
-            className={styles.refund}
-            aria-busy={refunding || undefined}
-            data-loading={refunding || undefined}
-            whileTap={refunding || reduceMotion ? undefined : PRESS}
-            transition={PRESS_SPRING}
-            onClick={() => {
-              if (!refunding) onRefund();
-            }}
-          >
+          <Button variant="outline" size="md" loading={refunding} onPress={onRefund}>
             돌려받기
-          </motion.button>
+          </Button>
         ) : null}
       </div>
       <Button variant="primary" onPress={onWake}>

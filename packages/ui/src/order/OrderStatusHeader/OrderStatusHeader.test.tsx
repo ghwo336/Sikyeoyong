@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import * as shared from '@sikyeoyong/shared';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { formatKstClock, formatRemaining, OrderStatusHeader } from './OrderStatusHeader';
@@ -12,6 +13,10 @@ const rule = (selector: string) =>
 const ETA = Date.UTC(2026, 11, 9, 3, 55);
 
 describe('OrderStatusHeader (OrderStatusHeader.md 테스트 기준)', () => {
+  it('uses the shared KST clock, not a copy of its own', () => {
+    expect(formatKstClock).toBe(shared.formatKstClock);
+  });
+
   it('runs in a non-Seoul time zone (vitest.config env TZ)', () => {
     expect(new Date(ETA).getHours()).not.toBe(12);
   });

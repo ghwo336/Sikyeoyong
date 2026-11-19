@@ -1,4 +1,5 @@
 import { Button } from '../../base/Button';
+import { ErrorLine } from '../../base/ErrorLine';
 import { KakaoMark } from '../SocialLogin';
 import styles from './KakaoVerify.module.css';
 
@@ -25,18 +26,14 @@ export function KakaoVerify({ onVerify, mode, status }: KakaoVerifyProps) {
   return (
     <div className={styles.verify}>
       {status === 'failed' ? (
-        <p className={styles.failed} role="alert">
-          인증이 안 됐어요. 다시 해 주세요.
-        </p>
+        <ErrorLine align="center">인증이 안 됐어요. 다시 해 주세요.</ErrorLine>
       ) : null}
       {/* Kakao's color and mark only for a real Kakao check (brand guide); trial uses the plain button. */}
       <Button
         variant={mode === 'kakao' ? 'kakao' : 'primary'}
         icon={mode === 'kakao' ? <KakaoMark /> : undefined}
         loading={pending}
-        onPress={() => {
-          if (!pending) onVerify();
-        }}
+        onPress={onVerify}
       >
         {text.button}
       </Button>

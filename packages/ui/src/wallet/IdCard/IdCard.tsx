@@ -1,4 +1,5 @@
-import { type DragonSpecies, formatOkrw } from '@sikyeoyong/shared';
+import { type DragonSpecies, formatKstDate, formatOkrw } from '@sikyeoyong/shared';
+import { DetailRows } from '../../base/DetailRows';
 import { Dragon } from '../../dragon/Dragon';
 import styles from './IdCard.module.css';
 
@@ -17,19 +18,8 @@ export interface IdCardProps {
   readonly species: DragonSpecies;
 }
 
-const KST_DATE = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: 'Asia/Seoul',
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-});
-
-/** "2026. 12. 1." in Korea time (IdCard.dc.html). */
-export function formatKstDate(unixMs: number): string {
-  const parts = KST_DATE.formatToParts(new Date(unixMs));
-  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? '';
-  return `${get('year')}. ${get('month')}. ${get('day')}.`;
-}
+// The date format is shared (packages/shared time/kst); re-exported for older imports.
+export { formatKstDate };
 
 /** Wings grow at level 3 (Dragon.md). */
 const WINGS_LEVEL = 3;
@@ -55,24 +45,17 @@ export function IdCard({
           <span className={styles.owner}>{ownerName}님의 배달 비서</span>
         </div>
       </div>
-      <dl className={styles.facts}>
-        <div className={styles.fact}>
-          <dt>레벨</dt>
-          <dd>{String(level)}</dd>
-        </div>
-        <div className={styles.fact}>
-          <dt>한 번에</dt>
-          <dd className={styles.num}>{formatOkrw(perOrder)}까지</dd>
-        </div>
-        <div className={styles.fact}>
-          <dt>주인</dt>
-          <dd>{ownerVerified ? '실명 확인됨' : '실명 확인 전'}</dd>
-        </div>
-        <div className={styles.fact}>
-          <dt>태어난 날</dt>
-          <dd className={styles.num}>{formatKstDate(bornAt)}</dd>
-        </div>
-      </dl>
+      <DetailRows
+        layout="stacked"
+        size="caption"
+        gap="loose"
+        rows={[
+          { label: '레벨', value: String(level) },
+          { label: '한 번에', value: `${formatOkrw(perOrder)}까지` },
+          { label: '주인', value: ownerVerified ? '실명 확인됨' : '실명 확인 전' },
+          { label: '태어난 날', value: formatKstDate(bornAt) },
+        ]}
+      />
     </section>
   );
 }

@@ -102,7 +102,7 @@ apps/api/src/
 
 ## 공유 (packages/shared)
 - ESM 전용 패키지(`dist`, NodeNext)다. 소비자는 ESM으로 import하거나 Node 22.12 이상의 `require(esm)`을 쓴다. api tsconfig는 `module: nodenext`로 컴파일한다 (CommonJS `node16`은 TS1479로 깨진다).
-- 도메인 열거형과 그 zod 스키마(`domain/`, 예: `DragonSpecies`), zod 스키마(`api/`), 그 스키마에서 추론한 타입, 타입 있는 API 클라이언트, 체인 설정(`config/`), 정책값(`config/policy.ts`), `AppErrorCode`, `ChatEvent`, 금액·시간 유틸.
+- 도메인 열거형과 그 zod 스키마(`domain/`, 예: `DragonSpecies`), zod 스키마(`api/`), 그 스키마에서 추론한 타입, 타입 있는 API 클라이언트, 체인 설정(`config/`), 정책값(`config/policy.ts`), `AppErrorCode`, `ChatEvent`, 금액·시간(KST 글자 포함, `time/kst.ts`)·한국어 글자(`text/korean.ts`, 조사 고르기) 유틸. 웹과 UI 양쪽이 쓰는 순수 함수는 여기 둔다.
 - 웹과 API가 같은 스키마를 쓴다. 스키마를 바꾸면 양쪽 타입 검사가 함께 깨져야 정상이다.
 
 ## 하지 말 것 (MUST NOT)

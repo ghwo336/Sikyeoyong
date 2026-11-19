@@ -14,6 +14,48 @@ import {
 const css = readFileSync(resolve(__dirname, 'LimitChangeCard.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
+// The buttons are base Button; their sizes live in Button.module.css.
+const buttonCss = readFileSync(resolve(__dirname, '../../base/Button/Button.module.css'), 'utf8');
+const buttonRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
+  '';
+
+// Label and value pairs are base DetailRows; their values live in DetailRows.module.css.
+const rowsCss = readFileSync(
+  resolve(__dirname, '../../base/DetailRows/DetailRows.module.css'),
+  'utf8',
+);
+const rowsRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    rowsCss,
+  )?.[2] ?? '';
+
+// Buttons stack in base ActionPair; error lines are base ErrorLine. Their values live there.
+const pairCss = readFileSync(
+  resolve(__dirname, '../../base/ActionPair/ActionPair.module.css'),
+  'utf8',
+);
+const pairRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    pairCss,
+  )?.[2] ?? '';
+const errCss = readFileSync(
+  resolve(__dirname, '../../base/ErrorLine/ErrorLine.module.css'),
+  'utf8',
+);
+const errRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    errCss,
+  )?.[2] ?? '';
+
+// Before and after is base AmountChange; its values live there.
+const changeCss = readFileSync(
+  resolve(__dirname, '../../base/AmountChange/AmountChange.module.css'),
+  'utf8',
+);
+const changeRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(changeCss)?.[2] ??
+  '';
 
 const won = (n: bigint) => okrwToAokrw(n);
 const base: LimitChangeCardProps = {
@@ -114,7 +156,8 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     render(<LimitChangeCard {...base} />);
     const region = screen.getByRole('region', { name: '한도 바꾸기' });
     expect(region).toHaveTextContent('한 번에 쓸 수 있는 돈10,000원에서50,000원으로');
-    expect(screen.getByText('10,000원').tagName).toBe('S');
+    // The old amount is struck through (base AmountChange draws it inside <s>).
+    expect(screen.getByText('10,000원').closest('s')).not.toBeNull();
   });
 
   it('shows amounts past Number exactly', () => {
@@ -155,15 +198,37 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(card).toMatch(/padding:\s*var\(--space-4\)/);
     expect(card).toMatch(/gap:\s*var\(--size-limits-gap\)/);
     expect(rule('.title')).toMatch(/color:\s*var\(--color-leaf\)/);
-    expect(rule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
-    expect(rule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
-    expect(rule('.row')).toMatch(/font-size:\s*var\(--type-small-size\)/);
-    const confirm = rule('.confirm');
-    expect(confirm).toMatch(/min-height:\s*var\(--size-choice-button\)/);
-    expect(confirm).toMatch(/border-radius:\s*var\(--radius-card-button\)/);
-    expect(confirm).toMatch(/font-size:\s*var\(--type-row-size\)/);
-    expect(rule('.cancel')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
-    expect(rule('.actions')).toMatch(/gap:\s*6px/);
+    expect(changeRule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
+    expect(changeRule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
+    const { unmount } = render(<LimitChangeCard {...base} />);
+    const dl = screen.getByText('30일 한도').closest('dl');
+    expect([...(dl?.classList ?? [])]).toEqual(
+      expect.arrayContaining(['inline', 'small', 'loose']),
+    );
+    expect(rowsRule('.small')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    expect(rowsRule('.loose')).toMatch(/gap:\s*var\(--size-limits-gap\)/);
+    unmount();
+    // Confirm: Button primary choice (52, radius 16, 16/700). Cancel: Button text md (44, 15/400).
+    render(<LimitChangeCard {...base} />);
+    const confirm = screen.getByRole('button', { name: /바꾸기$/ });
+    expect([...confirm.classList]).toEqual(expect.arrayContaining(['primary', 'choice']));
+    const cancel = screen.getByRole('button', { name: '그만두기' });
+    expect([...cancel.classList]).toEqual(expect.arrayContaining(['text', 'md']));
+    expect(buttonRule('.choice')).toMatch(/min-height:\s*var\(--size-choice-button\)/);
+    const primaryChoice = buttonRule('.primary.choice');
+    expect(primaryChoice).toMatch(/border-radius:\s*var\(--radius-card-button\)/);
+    expect(primaryChoice).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    expect(primaryChoice).toMatch(/font-weight:\s*var\(--type-button-weight\)/);
+    expect(buttonRule('.md')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(buttonRule('.text')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(buttonRule('.text.md')).toMatch(/font-weight:\s*var\(--type-body-weight\)/);
+    {
+      const { unmount } = render(<LimitChangeCard {...base} status="failed" />);
+      expect(document.querySelector('.pair')?.classList).toContain('sm');
+      unmount();
+    }
+    expect(pairRule('.sm')).toMatch(/gap:\s*6px/);
+    expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
     expect(rule('.faceId')).toMatch(/width:\s*var\(--size-face-id-icon\)/);
   });
 });

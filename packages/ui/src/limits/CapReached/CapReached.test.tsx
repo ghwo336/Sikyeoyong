@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import * as shared from '@sikyeoyong/shared';
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -14,6 +15,16 @@ const rule = (selector: string) =>
 const RESET_MS = Date.UTC(2026, 11, 3, 5, 0);
 const RESET_S = RESET_MS / 1000;
 const DAY = 86_400_000;
+// Buttons stack in base ActionPair; error lines are base ErrorLine. Their values live there.
+const pairCss = readFileSync(
+  resolve(__dirname, '../../base/ActionPair/ActionPair.module.css'),
+  'utf8',
+);
+const pairRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    pairCss,
+  )?.[2] ?? '';
+
 const base = {
   resetAt: RESET_S,
   cap: okrwToAokrw(500_000n),
@@ -22,6 +33,11 @@ const base = {
 };
 
 describe('CapReached (CapReached.md 테스트 기준)', () => {
+  it('uses the shared KST helpers, not a copy of its own', () => {
+    expect(formatKstDateTime).toBe(shared.formatKstDateTime);
+    expect(kstDaysBetween).toBe(shared.kstDaysBetween);
+  });
+
   it('shows the refill time in KST like the design, whatever the device time zone', () => {
     render(<CapReached {...base} now={RESET_MS - 4 * DAY} />);
     expect(screen.getByText('12월 3일 오후 2시')).toBeInTheDocument();
@@ -99,6 +115,11 @@ describe('CapReached (CapReached.md 테스트 기준)', () => {
     expect(rule('.date')).toMatch(/letter-spacing:\s*var\(--type-display-letter-spacing\)/);
     expect(rule('.note')).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(rule('.note')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.actions')).toMatch(/gap:\s*var\(--space-2\)/);
+    {
+      const { unmount } = render(<CapReached {...base} now={RESET_MS - DAY} />);
+      expect(document.querySelector('.pair')?.classList).toContain('md');
+      unmount();
+    }
+    expect(pairRule('.md')).toMatch(/gap:\s*var\(--space-2\)/);
   });
 });

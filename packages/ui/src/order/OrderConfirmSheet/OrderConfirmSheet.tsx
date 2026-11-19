@@ -1,13 +1,16 @@
 'use client';
 
 import { type DragonSpecies, formatOkrw } from '@sikyeoyong/shared';
-import { useEffect, useId, useRef } from 'react';
+import { useId } from 'react';
 import { Button } from '../../base/Button';
 import { Meter, type MeterTone } from '../../base/Meter';
 import { Sheet } from '../../base/Sheet';
+import { useSubmitLock } from '../../base/useSubmitLock';
 import { DragonLine } from '../../dragon/DragonLine';
-import type { OrderLine } from '../OrderSummary';
+import { type OrderLine, OrderLines } from '../OrderLines';
 import styles from './OrderConfirmSheet.module.css';
+import { ActionPair } from '../../base/ActionPair';
+import { ErrorLine } from '../../base/ErrorLine';
 
 export interface LimitUse {
   /** aokrw used, counting this order. */
@@ -60,19 +63,8 @@ export function OrderConfirmSheet({
   confirming = false,
   priceChangedFrom,
 }: OrderConfirmSheetProps) {
-  // A double tap lands before the parent re-renders with confirming=true. The lock
-  // holds until a render where the parent is not paying (so a failed payment can be
-  // retried with the same order, D-19).
-  const lock = useRef(false);
-  useEffect(() => {
-    if (!confirming) lock.current = false;
-  });
-
-  function confirm() {
-    if (confirming || lock.current) return;
-    lock.current = true;
-    onConfirm();
-  }
+  // One press pays once; a failed payment can be pressed again with the same order (D-19).
+  const confirm = useSubmitLock(confirming, onConfirm);
 
   const limitsId = useId();
   const amount = formatOkrw(total);
@@ -84,20 +76,7 @@ export function OrderConfirmSheet({
 
       <section className={styles.order} aria-label="주문 내용">
         <p className={styles.route}>{route}</p>
-        <ul className={styles.lines}>
-          {items.map((l, i) => (
-            // Lines have no id and the order never changes.
-            <li key={i} className={styles.line}>
-              <span>
-                {l.name} {String(l.quantity)}개
-              </span>
-              <span className={styles.num}>{formatOkrw(l.price)}</span>
-            </li>
-          ))}
-        </ul>
-        {request !== undefined && request !== '' ? (
-          <p className={styles.request}>요청: {request}</p>
-        ) : null}
+        <OrderLines items={items} request={request} size="row" />
         <div className={styles.divider} aria-hidden="true" />
         <div className={styles.total}>
           <span className={styles.totalLabel}>결제할 금액</span>
@@ -126,19 +105,22 @@ export function OrderConfirmSheet({
       </section>
 
       {priceChangedFrom !== undefined ? (
-        <p className={styles.changed} role="alert">
-          가격이 {formatOkrw(priceChangedFrom)}에서 {amount}으로 바뀌었어요. 다시 확인해 주세요.
-        </p>
+        <ErrorLine>{`가격이 ${formatOkrw(priceChangedFrom)}에서 ${amount}으로 바뀌었어요. 다시 확인해 주세요.`}</ErrorLine>
       ) : null}
 
-      <div className={styles.actions}>
-        <Button variant="primary" loading={confirming} onPress={confirm}>
-          <span className={styles.num}>{amount}</span> 시키기
-        </Button>
-        <Button variant="text" onPress={onCancel}>
-          다시 고를래
-        </Button>
-      </div>
+      <ActionPair
+        gap="xs"
+        primary={
+          <Button variant="primary" loading={confirming} onPress={confirm}>
+            <span className={styles.num}>{amount}</span> 시키기
+          </Button>
+        }
+        secondary={
+          <Button variant="text" onPress={onCancel}>
+            다시 고를래
+          </Button>
+        }
+      />
     </Sheet>
   );
 }

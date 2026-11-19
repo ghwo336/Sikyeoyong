@@ -13,7 +13,7 @@ export interface SwitchProps {
 }
 
 // The knob stretches a little while pressed (Switch.md); the spring is tokens.json motion.press.
-const PRESS = { scaleX: 1.15 };
+const THUMB_PRESS = { scaleX: 1.15 };
 
 /** Draws one on/off switch (Switch.md). What turning it on does is the parent's callback. */
 export function Switch({ checked, onChange, labelId }: SwitchProps) {
@@ -32,7 +32,7 @@ export function Switch({ checked, onChange, labelId }: SwitchProps) {
     >
       <motion.span
         className={styles.knob}
-        variants={reduceMotion ? {} : { pressed: PRESS }}
+        variants={reduceMotion ? {} : { pressed: THUMB_PRESS }}
         transition={PRESS_SPRING}
         aria-hidden="true"
       />

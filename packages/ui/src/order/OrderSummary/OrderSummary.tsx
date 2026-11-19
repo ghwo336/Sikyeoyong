@@ -1,12 +1,10 @@
 import { formatOkrw } from '@sikyeoyong/shared';
+import { DetailRows } from '../../base/DetailRows';
+import { type OrderLine, OrderLines } from '../OrderLines';
 import styles from './OrderSummary.module.css';
 
-export interface OrderLine {
-  readonly name: string;
-  readonly quantity: number;
-  /** aokrw for the whole line, as the server priced it. */
-  readonly price: bigint;
-}
+// The line type lives with OrderLines; re-exported so callers keep importing it from here.
+export type { OrderLine } from '../OrderLines';
 
 export interface OrderDetail {
   readonly label: string;
@@ -36,34 +34,14 @@ export function OrderSummary({ store, when, items, request, total, details }: Or
         <span>{store}</span>
         {when !== undefined ? <span className={styles.num}>{when}</span> : null}
       </div>
-      <ul className={styles.lines}>
-        {items.map((line, i) => (
-          // Lines have no id and the order never changes.
-          <li key={i} className={styles.line}>
-            <span>
-              {line.name} {String(line.quantity)}개
-            </span>
-            <span className={styles.num}>{formatOkrw(line.price)}</span>
-          </li>
-        ))}
-      </ul>
-      {request !== undefined && request !== '' ? (
-        <p className={styles.request}>요청: {request}</p>
-      ) : null}
+      <OrderLines items={items} request={request} size="body" />
       <div className={styles.divider} aria-hidden="true" />
       <div className={styles.total}>
         <span className={styles.totalLabel}>결제한 금액</span>
         <span className={`${styles.totalAmount} ${styles.num}`}>{formatOkrw(total)}</span>
       </div>
       {details && details.length > 0 ? (
-        <dl className={styles.details}>
-          {details.map((d) => (
-            <div key={d.label} className={styles.detail}>
-              <dt>{d.label}</dt>
-              <dd className={styles.num}>{d.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <DetailRows rows={details} size="small" gap="tight" tone="secondary" />
       ) : null}
     </section>
   );

@@ -31,22 +31,3 @@
   font-size: var(--type-caption-size);
   color: var(--color-ink-secondary);
 }
-
-/* Loading: still bars the height of the text they stand for, no shimmer. */
-.barBig,
-.barSmall {
-  display: block;
-  border-radius: var(--radius-chip);
-  background: var(--color-track);
-}
-
-/* Widths in em of the 14px label, about the length of "81,000원" and its line. */
-.barBig {
-  width: 10em;
-  height: var(--type-wallet-amount-size);
-}
-
-.barSmall {
-  width: 7.5em;
-  height: var(--type-caption-size);
-}

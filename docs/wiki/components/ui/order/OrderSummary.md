@@ -36,6 +36,8 @@ Done, Receipt
 - 시안 값 (카드 여백 16 간격 10, 윗줄 13px, 메뉴 15px, 요청과 아래 줄 14px `ink-secondary`, 구분선 `track`, 결제한 금액 15/600과 17/700)
 
 ## 메모
+- 아래 작은 줄(`details`)은 base `DetailRows` inline small tight, 값도 `ink-secondary`(tone secondary)다.
+- 메뉴 줄과 요청은 같은 영역의 `OrderLines` `size="body"`(15px, 간격 8)로 그린다. OrderConfirmSheet와 같은 부품 (D-18 원칙 5). `OrderLine` 타입은 OrderLines에 있고 여기서 다시 내보낸다.
 - Receipt 카드의 "결제 수단, 한 번에 쓸 수 있는 돈, 30일 한도" 줄은 `details`로 이 컴포넌트가 그린다 (ListRow가 아니다).
 - Receipt 시안의 카드 간격은 8, 구분선 위아래 4다. Done 값(10, 2)으로 통일했다 (디자인 선택. Receipt 조립 때 시안을 따를지 다시 본다).
 - Confirm의 주문 내용(카드 없음, "결제할 금액" 24/700)은 OrderConfirmSheet가 그린다.

@@ -6,7 +6,11 @@ import { describe, expect, it, vi } from 'vitest';
 import chipStyles from '../../base/Chip/Chip.module.css';
 import { TasteRating } from './TasteRating';
 
-const css = readFileSync(resolve(__dirname, 'TasteRating.module.css'), 'utf8');
+// The title and choices are base ChoiceGroup columns; their values live in its CSS.
+const css = readFileSync(
+  resolve(__dirname, '../../base/ChoiceGroup/ChoiceGroup.module.css'),
+  'utf8',
+);
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
 
@@ -59,10 +63,14 @@ describe('TasteRating (TasteRating.md 테스트 기준)', () => {
 
   // Arrived.dc.html 53-59.
   it('matches the design values', () => {
-    expect(rule('.rating')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
-    expect(rule('.question')).toMatch(/font-size:\s*var\(--type-body-size\)/);
-    expect(rule('.question')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
-    expect(rule('.choices')).toMatch(/grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-    expect(rule('.choices')).toMatch(/gap:\s*var\(--space-2\)/);
+    render(<TasteRating menu="돼지국밥" onPick={vi.fn()} />);
+    expect(rule('.group')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
+    expect(rule('.title')).toMatch(/font-size:\s*var\(--type-body-size\)/);
+    expect(rule('.title')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
+    // Three equal columns: the columns layout with three radios.
+    expect(screen.getByRole('radiogroup').classList).toContain('columns');
+    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    expect(rule('.columns')).toMatch(/grid-auto-columns:\s*minmax\(0, 1fr\)/);
+    expect(rule('.columns')).toMatch(/gap:\s*var\(--space-2\)/);
   });
 });

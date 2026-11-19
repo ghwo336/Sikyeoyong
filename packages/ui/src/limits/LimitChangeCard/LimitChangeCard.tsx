@@ -1,12 +1,14 @@
 'use client';
 
-import { formatOkrw } from '@sikyeoyong/shared';
-import { motion } from 'motion/react';
-import { useEffect, useRef } from 'react';
-import { PRESS_SCALE, PRESS_SPRING } from '../../base/press';
-import { useShouldReduceMotion } from '../../base/reduced-motion';
-import { levelWithRo } from '../LimitBlocked';
+import { levelWithRo } from '@sikyeoyong/shared';
+import { AmountChange } from '../../base/AmountChange';
+import { Button } from '../../base/Button';
+import { DetailRows } from '../../base/DetailRows';
+import { useSubmitLock } from '../../base/useSubmitLock';
 import styles from './LimitChangeCard.module.css';
+import { Icon } from '../../base/Icon';
+import { ActionPair } from '../../base/ActionPair';
+import { ErrorLine } from '../../base/ErrorLine';
 
 export type LimitField = 'perOrder' | 'monthlyBudget';
 export type LimitChangeStatus = 'idle' | 'confirming' | 'failed';
@@ -39,25 +41,6 @@ const FIELD_LABEL: Record<LimitField, string> = {
   monthlyBudget: '이번 달 배달 예산',
 };
 
-const PRESS = { scale: PRESS_SCALE };
-
-function FaceIdIcon() {
-  return (
-    <svg
-      className={styles.faceId}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
-      <path d="M9 10v1M15 10v1M12 10v4h-1M9.5 16.5c1.4 1 3.6 1 5 0" />
-    </svg>
-  );
-}
-
 /** Shows a limit change asked for in words, before and after, with a confirm button. */
 export function LimitChangeCard({
   field,
@@ -71,83 +54,45 @@ export function LimitChangeCard({
   onCancel,
   status = 'idle',
 }: LimitChangeCardProps) {
-  const reduceMotion = useShouldReduceMotion();
-  const tap = reduceMotion ? undefined : PRESS;
   const confirming = status === 'confirming';
-  // Same double-tap lock as OrderConfirmSheet: holds until a render that is not confirming.
-  const lock = useRef(false);
-  useEffect(() => {
-    if (!confirming) lock.current = false;
-  });
-
-  function confirm() {
-    if (confirming || lock.current) return;
-    lock.current = true;
-    onConfirm();
-  }
+  // One press changes once; after a failure it can be pressed again.
+  const confirm = useSubmitLock(confirming, onConfirm);
 
   const showLevel = levelFrom !== undefined && levelTo !== undefined && levelFrom !== levelTo;
+  const detailRows = [
+    ...(showLevel
+      ? [{ label: '레벨', value: `${String(levelFrom)}에서 ${levelWithRo(levelTo)}` }]
+      : []),
+    ...(rows ?? []),
+  ];
   return (
     <section className={styles.card} aria-label="한도 바꾸기">
       <p className={styles.title}>한도 바꾸기</p>
       <div className={styles.change}>
         <span className={styles.field}>{FIELD_LABEL[field]}</span>
-        <span className={styles.amounts}>
-          <s className={styles.from}>{formatOkrw(from)}</s>
-          <svg
-            className={styles.arrow}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+        <AmountChange from={from} to={to} />
+      </div>
+      {detailRows.length > 0 ? <DetailRows rows={detailRows} size="small" gap="loose" /> : null}
+      {status === 'failed' ? <ErrorLine>못 바꿨어요. 다시 해 볼까요?</ErrorLine> : null}
+      <ActionPair
+        gap="sm"
+        primary={
+          <Button
+            variant="primary"
+            size="choice"
+            loading={confirming}
+            icon={needsReauth ? <Icon name="face-id" className={styles.faceId} /> : undefined}
+            onPress={confirm}
           >
-            <path d="M5 12h14" />
-            <path d="M13 6l6 6-6 6" />
-          </svg>
-          <span className={styles.srOnly}>에서</span>
-          <b className={styles.to}>{formatOkrw(to)}</b>
-          <span className={styles.srOnly}>으로</span>
-        </span>
-      </div>
-      {showLevel ? (
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>레벨</span>
-          <span>
-            {String(levelFrom)}에서 {levelWithRo(levelTo)}
-          </span>
-        </div>
-      ) : null}
-      {rows?.map((r, i) => (
-        <div key={`${String(i)}-${r.label}`} className={styles.row}>
-          <span className={styles.rowLabel}>{r.label}</span>
-          <span className={styles.num}>{r.value}</span>
-        </div>
-      ))}
-      {status === 'failed' ? (
-        <p className={styles.failed} role="alert">
-          못 바꿨어요. 다시 해 볼까요?
-        </p>
-      ) : null}
-      <div className={styles.actions}>
-        <motion.button
-          type="button"
-          className={styles.confirm}
-          aria-busy={confirming || undefined}
-          data-loading={confirming || undefined}
-          whileTap={confirming ? undefined : tap}
-          transition={PRESS_SPRING}
-          onClick={confirm}
-        >
-          {needsReauth ? <FaceIdIcon /> : null}
-          {needsReauth ? 'Face ID로 확인하고 바꾸기' : '바꾸기'}
-        </motion.button>
-        <button type="button" className={styles.cancel} onClick={onCancel}>
-          그만두기
-        </button>
-      </div>
+            {needsReauth ? 'Face ID로 확인하고 바꾸기' : '바꾸기'}
+          </Button>
+        }
+        secondary={
+          <Button variant="text" size="md" onPress={onCancel}>
+            그만두기
+          </Button>
+        }
+      />
     </section>
   );
 }

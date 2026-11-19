@@ -148,3 +148,20 @@ children: []
 - 막힌 것: ui에 없는 그림(Main 위 줄, 예산 카드, 추천 들여쓰기, 입력칸 띠, 가입 제목 묶음, Hatch 가운데 정렬 등)은 만들지 않고 `components/web.md` "ui에 없는 것"에 기록. 임시 API 타입은 `apps/web/lib/api/types.ts`(shared로 옮길 것).
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: ui 부족분 컴포넌트, shared `ChatEvent`(quick_replies, order_failed)와 API 스키마, Tracking, Arrived, Receipt, 한도 화면, 허락 카드, 실제 API 클라이언트로 교체.
+
+### 2026-11-19 packages/ui 재사용 리팩터링 (Claude, Claude Code, D-18 원칙 5)
+- 한 일 (커밋 10개, 겉 props 그대로):
+  - 새 base 부품: `useSubmitLock`(두 번 눌림 잠금 훅), `Icon`(한 가지 색 아이콘 7개), `DetailRows`(이름과 값 dl), `ErrorLine`(role alert 한 줄), `ActionPair`(주 버튼과 물러나는 버튼), `AmountChange`, `AmountRatio`(둘 다 Amount 위), `ChoiceGroup`(라디오 묶음), `Skeleton`. order 영역 `OrderLines`(OrderSummary와 OrderConfirmSheet 공유).
+  - Button에 종류 outline, link와 크기 sm, choice, tall. 화면마다 손으로 만든 motion.button 6곳을 Button으로. 누름 값은 `base/press.ts`의 `PRESS` 하나 (press.test가 다른 곳의 motion.button을 막는다).
+  - shared로 이동: `formatKstClock`, `formatKstDate`, `formatKstDateTime`, `kstDaysBetween`(time/kst), `levelWithRo`(text/korean). ui 컴포넌트는 예전 import를 위해 다시 내보내기만 한다.
+  - Dragon 318줄을 `DragonSpecies.tsx`, `DragonFace.tsx`, `DragonEffects.tsx`로 나눔. EggPicker 고르기는 ChoiceGroup, 설명 글은 `EggPickerCaption.tsx`.
+  - 화면 테스트의 디자인 값 검사는 지우지 않고 새 부품 CSS와 붙은 클래스로 옮겼다. 결제 안전장치(시트 첫 포커스, 두 번 눌러도 onConfirm 한 번) 테스트는 그대로 통과.
+- 판단:
+  - DetailRows와 ListRow는 합치지 않는다 (56px 누르는 설정 줄과 카드 안 읽기 전용 dl은 높이, 글자, 의미가 다르다).
+  - HatchProgress 상태 표시와 구글 G는 여러 색이라 Icon에 넣지 않았다. Icon 테스트가 직접 svg를 그려도 되는 파일 목록을 지킨다.
+  - OrderConfirmSheet 가격 변경 문장은 AmountChange가 아니라 ErrorLine 글자다.
+  - Dragon 부품을 `parts/` 하위 폴더에 두면 verify.py D18 ui-harness가 BLOCKER로 막아서 같은 폴더 `Dragon*.tsx`로 뒀다.
+  - Button md 옆 여백을 시안 값 0 18px로 고쳤다 (Wallet 채우기, Frozen 돌려받기).
+- 막힌 것: 없음.
+- 새로 안 마루 사실: 없음.
+- 후속: BudgetPicker, TasteRating은 자기 CSS가 없어져 verify REVIEW(ui-style)가 두 건 뜬다 (의도). apps/web이 ui의 KST 함수나 levelWithRo를 쓰기 시작하면 shared에서 바로 가져오게 하고 ui 다시 내보내기를 지운다.
