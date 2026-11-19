@@ -16,6 +16,8 @@ const createAgent = vi.fn();
 const verifyIdentity = vi.fn();
 const setMonthlyBudget = vi.fn();
 const claimTrialAllowance = vi.fn();
+const login = vi.fn();
+const getAgentSetup = vi.fn();
 vi.mock('../../../lib/api', () => ({
   api: {
     getMe: () => Promise.resolve(ME),
@@ -25,12 +27,17 @@ vi.mock('../../../lib/api', () => ({
     verifyIdentity: () => verifyIdentity() as unknown,
     setMonthlyBudget: (a: string) => setMonthlyBudget(a) as unknown,
     claimTrialAllowance: () => claimTrialAllowance() as unknown,
+    login: (p: string) => login(p) as unknown,
+    getAgentSetup: () => getAgentSetup() as unknown,
+    retryAgentSetup: () => Promise.resolve(),
   },
 }));
 
 const { NameContainer } = await import('./NameContainer');
 const { BudgetSetupContainer } = await import('./BudgetSetupContainer');
 const { VerifyContainer } = await import('./VerifyContainer');
+const { StartContainer } = await import('./StartContainer');
+const { HatchContainer } = await import('./HatchContainer');
 
 const won = (n: bigint) => okrwToAokrw(n).toString();
 
@@ -50,6 +57,8 @@ beforeEach(() => {
     verifyIdentity,
     setMonthlyBudget,
     claimTrialAllowance,
+    login,
+    getAgentSetup,
   ]) {
     f.mockReset();
   }
@@ -163,6 +172,54 @@ describe('VerifyContainer', () => {
     await userEvent.click(await screen.findByRole('button', { name: /본인 인증/ }));
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/name');
+    });
+  });
+});
+
+describe('StartContainer', () => {
+  it('draws the Start design: the forest egg, the title and the two sign-ins', async () => {
+    login.mockResolvedValue(undefined);
+    const { container } = wrap(<StartContainer />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('배달은용이한테 시켜용');
+    expect(container.querySelector('svg[data-species="forest"][width="168"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: /카카오로 시작하기/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /구글로 시작하기/ }));
+    expect(login).toHaveBeenCalledWith('google');
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/verify');
+    });
+  });
+});
+
+describe('HatchContainer', () => {
+  const steps = (s: readonly [string, string, string]) =>
+    (['wallet', 'identity', 'limit'] as const).map((key, i) => ({ key, status: s[i] }));
+
+  it('draws the hatch words and step labels while PENDING, and stays', async () => {
+    getAgentSetup.mockResolvedValue({
+      status: 'PENDING',
+      steps: steps(['done', 'doing', 'waiting']),
+    });
+    wrap(<HatchContainer />);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '알이 흔들려용...' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('1~3분 걸려요. 다 되면 알려 드릴게요.')).toBeInTheDocument();
+    for (const label of [
+      '용이 용돈 주머니 만들기',
+      '용이 신분증 만들기',
+      '한 번에 쓸 수 있는 돈 새기기',
+    ]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('moves on to /budget once the dragon is up', async () => {
+    getAgentSetup.mockResolvedValue({ status: 'ACTIVE', steps: steps(['done', 'done', 'done']) });
+    wrap(<HatchContainer />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/budget');
     });
   });
 });
