@@ -40,6 +40,7 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
       confirmations: 1,
     });
     expect(c.llm.weatherProvider).toBe('static');
+    expect(c.llm.effort).toBe('medium');
   });
 
   it('resolves chain and policy through shared config', () => {
@@ -64,6 +65,7 @@ describe('loadConfig overrides', () => {
       DEMO_MODE: 'true',
       DEMO_BYPASS_SERVER_LIMIT: 'true',
       WEATHER_PROVIDER: 'openmeteo',
+      LLM_EFFORT: 'low',
     });
     expect(c.port).toBe(9000);
     expect(c.chain.chainId).toBe(777);
@@ -74,6 +76,7 @@ describe('loadConfig overrides', () => {
     expect(c.payment.floatMultiplier).toBe(3n);
     expect(c.payment.submittingAlertMs).toBe(120_000);
     expect(c.demo).toEqual({ enabled: true, bypassServerLimit: true });
+    expect(c.llm.effort).toBe('low');
   });
 
   it('treats empty values as not set (.env.example style)', () => {

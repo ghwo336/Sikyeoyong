@@ -21,7 +21,7 @@ children: []
 - `LlmProvider` 인터페이스로 Claude API를 감싼다. 모델 이름은 설정값.
 - 도구 정의(JSON schema)와 zod 입력 검증은 `llm/tools/definitions.ts`, 허용 목록 비교 테스트는 `llm/tools/definitions.spec.ts`. 전문은 tech-spec "3.3 에이전트 런타임".
 - 대화 루프와 안전장치는 `llm/runtime.ts`의 `AgentRuntime`. 도구 핸들러는 `ToolHandlers`로 받고(각 모듈이 구현), 사용자는 늘 `SessionContext`(로그인 세션)에서 온다.
-- 모델 호출은 `llm/llm-provider.ts`의 `LlmProvider` 인터페이스 뒤에 둔다. 테스트는 `llm/harness/scripted-provider.ts`(녹화나 손으로 쓴 모델 턴을 재생, 네트워크와 비용 없음)로 돈다. 이것이 LLM 하네스 1층이다.
+- 모델 호출은 `llm/llm-provider.ts`의 `LlmProvider` 인터페이스 뒤에 둔다. 실제 구현은 `llm/anthropic-provider.ts`(`LLM_MODEL`, `LLM_EFFORT`, 시스템 프롬프트와 대화 캐시, 강제 tool_choice 없음, D-22). 테스트는 `llm/harness/scripted-provider.ts`(녹화나 손으로 쓴 모델 턴을 재생, 네트워크와 비용 없음)로 돈다. 이것이 LLM 하네스 1층이다.
 - 결제는 `PaymentProvider`, 추천은 `recommend`, 예산은 `budget`, 승인은 `approvals` 모듈. 모듈끼리는 각 모듈의 `service.ts`로만 부른다.
 
 ## 도구 화이트리스트 (D-06)

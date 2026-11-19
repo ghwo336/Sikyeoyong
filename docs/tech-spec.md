@@ -274,7 +274,7 @@ apps/api/src/
 ### 3.3 에이전트 런타임 (llm 모듈)
 
 **루프**
-1. 사용자 메시지 저장 → 최근 대화 20턴 + 요약 + 시스템 프롬프트로 `LlmProvider.stream()` 호출.
+1. 사용자 메시지 저장 → 최근 대화 20턴 + 요약 + 시스템 프롬프트로 `LlmProvider.turn()` 호출.
 2. 도구 호출이 오면 서버가 화이트리스트 핸들러 실행 → 결과를 다시 모델에 전달. 한 메시지당 도구 호출 최대 8회, 쓰기 도구(`place_order`)와 카드 도구(`propose_limit_change`)는 각각 최대 1회.
 3. 텍스트 토큰은 `token` 이벤트로, 도구 결과 중 UI용은 전용 이벤트(`recommendations`, `order_receipt` 등)로 스트리밍.
 
@@ -414,14 +414,14 @@ export interface MerchantSource {
 // 2단계: dbMerchantSource (판매자 콘솔로 등록된 가게), 같은 테이블 사용
 
 export interface LlmProvider {
-  stream(input: {
-    system: string;
-    messages: LlmMessage[];
-    tools: ToolDef[];
-    maxTokens: number;
-  }): AsyncIterable<LlmStreamEvent>;     // text_delta, tool_use, stop
+  // 한 턴: 글자는 onText로 흘려 보내고, 끝나면 전체 메시지(stop_reason, 도구 호출)를 준다.
+  // 타입은 @anthropic-ai/sdk의 Anthropic.Tool, Anthropic.MessageParam, Anthropic.Message.
+  turn(request: { system: string; tools: Tool[]; messages: MessageParam[] },
+       onText: (text: string) => void): Promise<Message>;
 }
-// 1단계: anthropicProvider (모델 이름은 LLM_MODEL 환경 변수)
+// 1단계: AnthropicProvider (apps/api/src/modules/llm/anthropic-provider.ts,
+//        모델은 LLM_MODEL, 생각 깊이는 LLM_EFFORT, D-22)
+// 테스트: ScriptedProvider (llm/harness/, 녹화 응답 재생, LLM 하네스 1층)
 ```
 
 ### 3.6 에러 코드와 드래곤 대사

@@ -38,6 +38,7 @@ const schema = z.object({
   GOOGLE_CLIENT_SECRET: optionalText,
   ANTHROPIC_API_KEY: optionalText,
   LLM_MODEL: optionalText,
+  LLM_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
   MAROO_RPC_URL: optionalText,
   CHAIN_ID: int(1).optional(),
@@ -73,6 +74,8 @@ export interface AppConfig {
   };
   readonly llm: {
     readonly model: string | undefined;
+    /** Claude effort for the chat agent (Opus 5.5 default medium). */
+    readonly effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
     readonly weatherProvider: 'static' | 'openmeteo';
   };
   /** Secrets stay here and are never logged (security.md). */
@@ -158,7 +161,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
       submittingAlertMs: env.SUBMITTING_ALERT_MS,
       confirmations: env.CONFIRMATIONS,
     },
-    llm: { model: env.LLM_MODEL, weatherProvider: env.WEATHER_PROVIDER },
+    llm: { model: env.LLM_MODEL, effort: env.LLM_EFFORT, weatherProvider: env.WEATHER_PROVIDER },
     secrets: {
       sessionSecret: env.SESSION_SECRET,
       anthropicApiKey: env.ANTHROPIC_API_KEY,
