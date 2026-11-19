@@ -12,6 +12,7 @@
   --color-leaf: #2E7D4F;
   --color-leaf-pressed: #1F5C3A;
   --color-leaf-tint: #E4F4E6;
+  --color-leaf-sub-ink: #CFEBD6;
   --color-dragon-green: #8FD694;
   --color-dragon-sky: #9AD3F0;
   --color-dragon-pink: #F7B7C8;
@@ -79,6 +80,9 @@
   --type-code-size: 12px;
   --type-code-weight: 400;
   --type-code-line-height: 1.7;
+  --type-blocked-amount-size: 36px;
+  --type-blocked-amount-weight: 700;
+  --type-blocked-amount-letter-spacing: -0.03em;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -140,6 +144,8 @@
   --size-badge-pad-x: 8px;
   --size-badge-pad-y: 2px;
   --size-summary-gap: 10px;
+  --size-raise-button: 64px;
+  --size-choice-button: 52px;
   --size-details-toggle: 52px;
   --size-details-icon: 18px;
   --size-limits-gap: 14px;

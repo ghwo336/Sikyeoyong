@@ -1,0 +1,83 @@
+/* Blocked.dc.html 30-46: the amount in amber over the limit, then the two choices. */
+.blocked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.compare {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: var(--size-summary-gap);
+  margin: 0;
+  padding-top: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.attempted {
+  font-size: var(--type-blocked-amount-size);
+  font-weight: var(--type-blocked-amount-weight);
+  letter-spacing: var(--type-blocked-amount-letter-spacing);
+  color: var(--color-over-ink);
+}
+
+.limit {
+  font-size: var(--type-row-size);
+  color: var(--color-ink-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.raise:focus-visible,
+.repick:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+.raise {
+  border-radius: var(--radius-button);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Blocked.dc.html line gap; the 4px space scale has no 2, so it stays literal. */
+  gap: 2px;
+  min-height: var(--size-raise-button);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: var(--color-leaf);
+  color: var(--color-surface);
+}
+
+.raiseMain {
+  font-size: var(--type-button-size);
+  font-weight: var(--type-button-weight);
+}
+
+.raiseSub {
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-leaf-sub-ink);
+}
+
+.repick {
+  border-radius: var(--radius-button);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  min-height: var(--size-choice-button);
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+}

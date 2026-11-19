@@ -17,6 +17,7 @@ export * from './chat/UserBubble';
 export * from './dragon/Dragon';
 export * from './dragon/Egg';
 export * from './dragon/DragonLine';
+export * from './limits/LimitBlocked';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';
 export * from './order/OrderStatusHeader';
