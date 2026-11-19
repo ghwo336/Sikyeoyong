@@ -8,6 +8,8 @@ children:
   - Switch.md
   - Meter.md
   - Amount.md
+  - AmountChange.md
+  - AmountRatio.md
   - StepProgress.md
   - Sheet.md
   - ListRow.md
@@ -33,6 +35,8 @@ children:
 | [Switch](Switch.md) | 켜고 끄는 스위치 하나를 그린다. |
 | [Meter](Meter.md) | 현재 값과 한도를 막대로 그린다 (예산, 한 번에, 30일). |
 | [Amount](Amount.md) | 금액 숫자를 그리고, 값이 바뀌면 자리별로 굴러가며 바뀐다. |
+| [AmountChange](AmountChange.md) | 한 금액의 전(취소선)과 후(크게)를 화살표로 그린다. |
+| [AmountRatio](AmountRatio.md) | 두 금액을 "값 / 한도"로 그린다. |
 | [StepProgress](StepProgress.md) | 몇 단계 중 몇 번째인지 칸으로 그린다 (가입 3단계, 주문 4단계). |
 | [Sheet](Sheet.md) | 아래에서 올라오는 시트 틀과 손잡이를 그린다. |
 | [ListRow](ListRow.md) | 설정 화면의 한 줄(이름, 값, 화살표 또는 스위치)을 그린다. |

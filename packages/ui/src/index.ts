@@ -2,6 +2,8 @@
 // (docs/wiki/components/ui). Import tokens once from the app: '@sikyeoyong/ui/tokens.css'.
 export * from './base/ActionPair';
 export * from './base/Amount';
+export * from './base/AmountChange';
+export * from './base/AmountRatio';
 export * from './base/Button';
 export * from './base/Chip';
 export * from './base/DetailRows';

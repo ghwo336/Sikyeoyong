@@ -1,0 +1,35 @@
+/* "value / max": Main.dc.html and Confirm.dc.html meters, Blocked.dc.html 30-34. */
+.ratio {
+  font-variant-numeric: tabular-nums;
+}
+
+.meter .value {
+  font-weight: var(--type-row-weight);
+  color: var(--color-ink);
+}
+
+.meter .max {
+  font-weight: var(--type-small-weight);
+  color: var(--color-ink-secondary);
+}
+
+/* Blocked: the amount over the limit, large in amber, and the limit beside it. */
+.blocked {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: var(--size-summary-gap);
+}
+
+.blocked .value {
+  font-size: var(--type-blocked-amount-size);
+  font-weight: var(--type-blocked-amount-weight);
+  letter-spacing: var(--type-blocked-amount-letter-spacing);
+  color: var(--color-over-ink);
+}
+
+.blocked .max {
+  font-size: var(--type-row-size);
+  color: var(--color-ink-secondary);
+}

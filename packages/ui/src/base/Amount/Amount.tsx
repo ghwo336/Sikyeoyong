@@ -5,7 +5,8 @@ import { motion } from 'motion/react';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Amount.module.css';
 
-export type AmountSize = 'display' | 'title' | 'row';
+/** inherit: the parent's text size (AmountChange, AmountRatio set it per screen). */
+export type AmountSize = 'display' | 'title' | 'row' | 'inherit';
 
 export interface AmountProps {
   /** aokrw. Display goes through formatOkrw only (architecture.md). */
@@ -13,6 +14,8 @@ export interface AmountProps {
   readonly size: AmountSize;
   /** Roll each digit when the value changes. Ignored under reduced motion. */
   readonly animate?: boolean;
+  /** false drops the trailing 원 ("9,000 / 10,000원" shows the unit once). Default true. */
+  readonly unit?: boolean;
 }
 
 const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
@@ -20,9 +23,9 @@ const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 const ROLL = { duration: 0.4, ease: 'easeOut' } as const;
 
 /** Draws an amount; when it changes, each digit rolls to its new value (Amount.md). */
-export function Amount({ value, size, animate = false }: AmountProps) {
+export function Amount({ value, size, animate = false, unit = true }: AmountProps) {
   const reduceMotion = useShouldReduceMotion();
-  const text = formatOkrw(value);
+  const text = unit ? formatOkrw(value) : formatOkrw(value).replace(/원$/, '');
   const className = `${styles.amount} ${styles[size]}`;
 
   if (!animate || reduceMotion) {

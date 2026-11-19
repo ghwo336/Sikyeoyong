@@ -4,6 +4,7 @@ import { formatOkrw, levelWithRo } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
 import styles from './LimitBlocked.module.css';
 import { ActionPair } from '../../base/ActionPair';
+import { AmountRatio } from '../../base/AmountRatio';
 
 export interface NextLevel {
   readonly level: number;
@@ -38,8 +39,7 @@ export function LimitBlocked({
   return (
     <div className={styles.blocked}>
       <p className={styles.compare}>
-        <span className={styles.attempted}>{formatOkrw(attempted)}</span>{' '}
-        <span className={styles.limit}>/ {limitText}까지</span>
+        <AmountRatio value={attempted} max={limit} size="blocked" suffix="까지" />
       </p>
       <ActionPair
         gap="md"

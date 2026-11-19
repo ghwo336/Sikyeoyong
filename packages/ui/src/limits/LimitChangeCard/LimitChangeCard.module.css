@@ -27,39 +27,6 @@
   color: var(--color-ink-secondary);
 }
 
-.amounts {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.from {
-  font-size: var(--type-body-size);
-  color: var(--color-ink-muted);
-}
-
-.arrow {
-  align-self: center;
-  width: var(--size-arrow-icon);
-  height: var(--size-arrow-icon);
-  color: var(--color-ink-secondary);
-}
-
-.to {
-  font-size: var(--type-change-to-size);
-  font-weight: var(--type-change-to-weight);
-}
-
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* The two buttons are base Button: primary choice (52, radius 16) and text md (44). */
 .faceId {
   width: var(--size-face-id-icon);

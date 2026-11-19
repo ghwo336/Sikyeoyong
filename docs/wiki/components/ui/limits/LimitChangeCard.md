@@ -36,6 +36,7 @@ LimitChat
 - LimitChat 시안 값 (2px 잎색 테두리 반경 20, 여백 16, 간격 14, 바뀐 뒤 22/700, 확인 버튼 52 반경 16, 그만두기 44, 버튼 사이 6)
 
 ## 메모
+- 전후 금액은 base `AmountChange`다 (화살표 아이콘과 "에서, 으로" 숨은 글자 포함).
 - 실패 줄은 base `ErrorLine`, 두 버튼 묶음은 base `ActionPair` sm(6)이다.
 - 레벨 줄과 `rows`는 base `DetailRows` inline small loose 하나로 그린다 (레벨 줄이 맨 위).
 - 전후 사이 화살표는 base `Icon` `arrow-right`, Face ID 그림은 base `Icon` `face-id`(선 1.8)다.

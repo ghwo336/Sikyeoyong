@@ -26,6 +26,15 @@ const pairRule = (selector: string) =>
     pairCss,
   )?.[2] ?? '';
 
+// The amount and limit are base AmountRatio blocked; their values live there.
+const ratioCss = readFileSync(
+  resolve(__dirname, '../../base/AmountRatio/AmountRatio.module.css'),
+  'utf8',
+);
+const ratioRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(ratioCss)?.[2] ??
+  '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base = {
   attempted: won(45_000n),
@@ -101,11 +110,16 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
 
   // Blocked.dc.html 30-46.
   it('matches the design values', () => {
-    expect(rule('.attempted')).toMatch(/font-size:\s*var\(--type-blocked-amount-size\)/);
-    expect(rule('.attempted')).toMatch(/color:\s*var\(--color-over-ink\)/);
-    expect(rule('.limit')).toMatch(/font-size:\s*var\(--type-row-size\)/);
-    expect(rule('.limit')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.compare')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
+    {
+      const { container, unmount } = render(<LimitBlocked {...base} />);
+      expect(container.querySelector('.compare > .ratio')?.classList).toContain('blocked');
+      unmount();
+    }
+    expect(ratioRule('.blocked .value')).toMatch(/font-size:\s*var\(--type-blocked-amount-size\)/);
+    expect(ratioRule('.blocked .value')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    expect(ratioRule('.blocked .max')).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    expect(ratioRule('.blocked .max')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(ratioRule('.blocked')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     {
       const { unmount } = render(<LimitBlocked {...base} />);
       expect(document.querySelector('.pair')?.classList).toContain('md');

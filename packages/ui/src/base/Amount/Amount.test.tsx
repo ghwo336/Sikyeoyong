@@ -79,8 +79,17 @@ describe('Amount (Amount.md 테스트 기준)', () => {
     );
   });
 
-  it.each(['display', 'title', 'row'] as const)('applies the %s size class', (size) => {
+  it.each(['display', 'title', 'row', 'inherit'] as const)('applies the %s size class', (size) => {
     const { container } = render(<Amount value={won(1n)} size={size} />);
     expect(container.firstElementChild?.className).toContain(size);
+  });
+
+  it('drops the trailing 원 only when asked, still through formatOkrw', () => {
+    const { container, rerender } = render(<Amount value={won(210_000n)} size="inherit" />);
+    expect(container.textContent).toBe('210,000원');
+    rerender(<Amount value={won(210_000n)} size="inherit" unit={false} />);
+    expect(container.textContent).toBe('210,000');
+    rerender(<Amount value={won(123_456_789_012_345_678n)} size="inherit" unit={false} />);
+    expect(container.textContent).toBe('123,456,789,012,345,678');
   });
 });

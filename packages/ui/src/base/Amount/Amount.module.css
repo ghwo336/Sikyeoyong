@@ -23,6 +23,11 @@
   font-weight: var(--type-row-weight);
 }
 
+.inherit {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 .roll {
   display: inline-flex;
   line-height: 1;

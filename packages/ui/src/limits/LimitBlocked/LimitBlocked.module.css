@@ -5,27 +5,12 @@
   gap: var(--space-5);
 }
 
+/* Centers the amount and the limit (base AmountRatio blocked). */
 .compare {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  align-items: baseline;
-  gap: var(--size-summary-gap);
   margin: 0;
   padding-top: var(--space-1);
-  font-variant-numeric: tabular-nums;
-}
-
-.attempted {
-  font-size: var(--type-blocked-amount-size);
-  font-weight: var(--type-blocked-amount-weight);
-  letter-spacing: var(--type-blocked-amount-letter-spacing);
-  color: var(--color-over-ink);
-}
-
-.limit {
-  font-size: var(--type-row-size);
-  color: var(--color-ink-secondary);
 }
 
 /* The raise button is base Button primary tall (64); its two lines stack here. */

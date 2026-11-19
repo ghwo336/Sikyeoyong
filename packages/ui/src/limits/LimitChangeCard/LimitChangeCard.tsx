@@ -1,6 +1,7 @@
 'use client';
 
-import { formatOkrw, levelWithRo } from '@sikyeoyong/shared';
+import { levelWithRo } from '@sikyeoyong/shared';
+import { AmountChange } from '../../base/AmountChange';
 import { Button } from '../../base/Button';
 import { DetailRows } from '../../base/DetailRows';
 import { useSubmitLock } from '../../base/useSubmitLock';
@@ -69,13 +70,7 @@ export function LimitChangeCard({
       <p className={styles.title}>한도 바꾸기</p>
       <div className={styles.change}>
         <span className={styles.field}>{FIELD_LABEL[field]}</span>
-        <span className={styles.amounts}>
-          <s className={styles.from}>{formatOkrw(from)}</s>
-          <Icon name="arrow-right" className={styles.arrow} />
-          <span className={styles.srOnly}>에서</span>
-          <b className={styles.to}>{formatOkrw(to)}</b>
-          <span className={styles.srOnly}>으로</span>
-        </span>
+        <AmountChange from={from} to={to} />
       </div>
       {detailRows.length > 0 ? <DetailRows rows={detailRows} size="small" gap="loose" /> : null}
       {status === 'failed' ? <ErrorLine>못 바꿨어요. 다시 해 볼까요?</ErrorLine> : null}

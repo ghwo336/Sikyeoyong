@@ -48,6 +48,15 @@ const errRule = (selector: string) =>
     errCss,
   )?.[2] ?? '';
 
+// Before and after is base AmountChange; its values live there.
+const changeCss = readFileSync(
+  resolve(__dirname, '../../base/AmountChange/AmountChange.module.css'),
+  'utf8',
+);
+const changeRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(changeCss)?.[2] ??
+  '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base: LimitChangeCardProps = {
   field: 'perOrder',
@@ -147,7 +156,8 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     render(<LimitChangeCard {...base} />);
     const region = screen.getByRole('region', { name: '한도 바꾸기' });
     expect(region).toHaveTextContent('한 번에 쓸 수 있는 돈10,000원에서50,000원으로');
-    expect(screen.getByText('10,000원').tagName).toBe('S');
+    // The old amount is struck through (base AmountChange draws it inside <s>).
+    expect(screen.getByText('10,000원').closest('s')).not.toBeNull();
   });
 
   it('shows amounts past Number exactly', () => {
@@ -188,8 +198,8 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(card).toMatch(/padding:\s*var\(--space-4\)/);
     expect(card).toMatch(/gap:\s*var\(--size-limits-gap\)/);
     expect(rule('.title')).toMatch(/color:\s*var\(--color-leaf\)/);
-    expect(rule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
-    expect(rule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
+    expect(changeRule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
+    expect(changeRule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
     const { unmount } = render(<LimitChangeCard {...base} />);
     const dl = screen.getByText('30일 한도').closest('dl');
     expect([...(dl?.classList ?? [])]).toEqual(
