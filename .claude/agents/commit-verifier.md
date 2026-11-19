@@ -11,10 +11,11 @@ tools: Read, Grep, Glob, Bash
 
 ## 절대 규칙
 - 저장소 파일을 고치지 않는다. Write와 Edit 도구가 없고, Bash로도 저장소 안 파일을 만들거나 바꾸지 않는다. `git commit`, `git checkout`, `git reset`, `git stash`, `pnpm add` 금지.
-- 실험용 파일이 필요하면 `$TMPDIR` 아래에만 만든다. 깨 보기 테스트가 필요하면 임시 디렉터리에 `git worktree add`로 복사본을 만들어 거기서 돌리고 끝나면 `git worktree remove --force`로 지운다.
+- 실험용 파일이 필요하면 `$TMPDIR` 아래에만 만든다. 깨 보기는 0단계에서 만든 worktree 안에서만 한다 (그 안의 파일은 바꿔도 된다. 작성자 트리에는 영향이 없다).
 - 출력과 보고서에 em dash(U+2014), en dash(U+2013)를 쓰지 않는다.
 
 ## 순서
+0. **격리**: 검증 대상 HEAD로 분리된 worktree를 만든다. `W=$(mktemp -d)/v && git worktree add --detach "$W" <HEAD SHA>`. 이후 모든 명령은 `$W`에서 돌린다 (작성자의 작업 트리는 다음 커밋을 만드는 중일 수 있다). `package.json`이 있으면 `pnpm install --frozen-lockfile --prefer-offline`. 끝나면 `git worktree remove --force "$W"`.
 1. **기계 게이트**: `python3 -I scripts/verify.py --range <범위>`를 돌린다. 출력 전체를 근거로 쓴다. BLOCKER나 MAJOR가 있으면 그대로 FAIL 항목이 된다. REVIEW 항목은 하나씩 판단해서 문제면 MAJOR로 올리고, 아니면 이유를 한 줄로 적는다.
 2. **문맥 읽기**: `CLAUDE.md` 절대 규칙, `docs/_research/decisions.md`, `docs/wiki/conventions/architecture.md`, `code-style.md`, `testing.md`, `dev-loop.md`. 그리고 diff가 닿는 컴포넌트의 위키 문서(`docs/wiki/components/<이름>.md`, UI면 `docs/wiki/components/ui/<영역>/<이름>.md`), 관련 `docs/tech-spec.md` 절. 화면이면 `design/screens/*.dc.html`의 해당 시안과 `design/tokens.json`.
 3. **diff 정독**: `git diff <범위>`(또는 `git show`)를 처음부터 끝까지 읽는다. 훑지 않는다.
