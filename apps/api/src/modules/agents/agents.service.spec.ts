@@ -43,7 +43,7 @@ describe('AgentsService', () => {
   it('returns the level and not frozen for an active dragon', () => {
     const { h, s } = setup();
     h.db.update(agents).set({ status: 'ACTIVE' }).where(eq(agents.id, 'a1')).run();
-    expect(s.getForUser('u1')).toEqual({ id: 'a1', level: 2, frozen: false });
+    expect(s.getForUser('u1')).toEqual({ id: 'a1', level: 2, frozen: false, wallet: null });
   });
 
   it.each([
@@ -55,6 +55,15 @@ describe('AgentsService', () => {
     const { h, s } = setup();
     h.db.update(agents).set({ status }).where(eq(agents.id, 'a1')).run();
     expect(s.getForUser('u1').frozen).toBe(frozen);
+  });
+
+  it('returns the wallet once it exists, and refuses a malformed stored value', () => {
+    const { h, s } = setup();
+    const wallet = `0x${'ab'.repeat(20)}`;
+    h.db.update(agents).set({ walletAddress: wallet }).where(eq(agents.id, 'a1')).run();
+    expect(s.getForUser('u1').wallet).toBe(wallet);
+    h.db.update(agents).set({ walletAddress: 'not-an-address' }).where(eq(agents.id, 'a1')).run();
+    expect(() => s.getForUser('u1')).toThrow(AppError);
   });
 
   it('answers NOT_FOUND when the user has no dragon yet', () => {

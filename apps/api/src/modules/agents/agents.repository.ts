@@ -11,7 +11,12 @@ export class AgentsRepository {
 
   findByUserId(userId: string) {
     return this.handle.db
-      .select({ id: agents.id, level: agents.level, status: agents.status })
+      .select({
+        id: agents.id,
+        level: agents.level,
+        status: agents.status,
+        walletAddress: agents.walletAddress,
+      })
       .from(agents)
       .where(eq(agents.userId, userId))
       .get();
