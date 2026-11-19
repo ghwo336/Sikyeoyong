@@ -36,6 +36,7 @@ children: []
 ## 테스트 기준
 - onPress 호출
 - 로딩 중 두 번 누름 방지
+- 누름은 `press.ts` PRESS(0.97). 동작 줄이기와 로딩 중에는 whileTap이 없다 (`../reduced-motion`을 vi.mock으로 바꾸고 motion.button이 받은 값을 본다)
 - 키보드 포커스 표시
 - 터치 영역 44 이상
 - 종류와 크기 클래스가 붙고, 화면에서 옮겨 온 크기 값(sm 44, choice 52, tall 64, md 0 18px, outline ink 테두리, accent 잎색 테두리와 글자, link 잎색)이 시안대로다

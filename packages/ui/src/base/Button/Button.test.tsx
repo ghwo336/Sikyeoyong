@@ -2,12 +2,64 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PRESS } from '../press';
 import { Button } from './Button';
+
+// The device preference is cached by motion, so the preference hook is controlled here (Amount.test).
+const reduced = vi.hoisted(() => ({ value: false }));
+vi.mock('../reduced-motion', () => ({ useShouldReduceMotion: () => reduced.value }));
+
+// whileTap never reaches the DOM, so the real motion.button is wrapped to see what it was given.
+const tap = vi.hoisted((): { last: unknown } => ({ last: undefined }));
+vi.mock('motion/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('motion/react')>();
+  const { createElement } = await import('react');
+  const Real = actual.motion.button;
+  return {
+    ...actual,
+    motion: {
+      button: (props: Parameters<typeof Real>[0]) => {
+        tap.last = props.whileTap;
+        return createElement(Real, props);
+      },
+    },
+  };
+});
+
+afterEach(() => {
+  reduced.value = false;
+  tap.last = undefined;
+});
 
 const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8');
 
 describe('Button (Button.md 테스트 기준)', () => {
+  it('presses at 0.97 normally and not at all under reduced motion', () => {
+    const { rerender } = render(
+      <Button variant="primary" onPress={() => undefined}>
+        시켜용
+      </Button>,
+    );
+    expect(tap.last).toEqual(PRESS);
+    reduced.value = true;
+    rerender(
+      <Button variant="primary" onPress={() => undefined}>
+        시켜용
+      </Button>,
+    );
+    expect(tap.last).toBeUndefined();
+  });
+
+  it('does not press while loading', () => {
+    render(
+      <Button variant="primary" loading onPress={() => undefined}>
+        시켜용
+      </Button>,
+    );
+    expect(tap.last).toBeUndefined();
+  });
+
   it('calls onPress once per press', async () => {
     const onPress = vi.fn();
     render(
