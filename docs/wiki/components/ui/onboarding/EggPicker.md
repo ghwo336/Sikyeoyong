@@ -26,7 +26,7 @@ Name
 
 ## 테스트 기준
 - role=radiogroup
-- 화살표 키 이동
+- 화살표 키 이동 (`base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`를 쓴다)
 
 ## 메모
 알 그림은 `Egg`를 쓴다. 고르면 알 아래에 그 종의 한마디(도감의 대사)를 `DragonLine`으로 보여 줄 수 있다. 종 이름(숲용 등)은 보여 주되 설명 문단은 쓰지 않는다 (D-17).

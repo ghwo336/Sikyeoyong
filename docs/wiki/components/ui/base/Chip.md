@@ -36,4 +36,4 @@ Main, Budget, Arrived
 - `tile`은 Arrived 맛 평가: `lg`와 같은 52 칸이지만 글자는 15/400(`type.body`). Arrived 시안의 맛 평가에는 고른 상태가 없다. TasteRating이 고르기(radio)로 쓴다.
 - 고르면 2px 잎색 테두리, 연한 잎색 바탕, `leaf-pressed` 글자색.
 - 누름은 Button과 같은 0.97 스프링, 동작 줄이기면 없음.
-- 고르기 묶음의 키보드(Tab 한 번으로 들어가고 화살표로 옮기며 고름, Home, End)는 `base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`가 맡는다. TasteRating, BudgetPicker, EggPicker가 쓴다.
+- 고르기 묶음의 키보드(Tab 한 번으로 들어가고 화살표로 옮기며 고름, Home, End)는 `base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`가 맡는다. TasteRating, BudgetPicker가 쓰고 EggPicker도 쓸 예정이다. 보조키(Alt, Ctrl, Cmd)와 함께 누른 화살표는 브라우저에 맡긴다.

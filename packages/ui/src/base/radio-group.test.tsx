@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -70,6 +70,23 @@ describe('radio group keyboard (WAI-ARIA)', () => {
     await userEvent.keyboard('{End}');
     expect(radio('다')).toHaveAttribute('aria-checked', 'true');
     await userEvent.keyboard('{Home}');
+    expect(radio('가')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('stops the page from scrolling on handled keys only', () => {
+    render(<Group initial={0} />);
+    radio('가').focus();
+    // fireEvent returns false when the default was prevented
+    expect(fireEvent.keyDown(radio('가'), { key: 'ArrowDown' })).toBe(false);
+    expect(fireEvent.keyDown(radio('나'), { key: 'a' })).toBe(true);
+  });
+
+  it('leaves Alt, Ctrl and Cmd with arrows to the browser', () => {
+    render(<Group initial={0} />);
+    radio('가').focus();
+    for (const mod of [{ altKey: true }, { ctrlKey: true }, { metaKey: true }]) {
+      expect(fireEvent.keyDown(radio('가'), { key: 'ArrowLeft', ...mod })).toBe(true);
+    }
     expect(radio('가')).toHaveAttribute('aria-checked', 'true');
   });
 

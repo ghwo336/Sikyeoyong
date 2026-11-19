@@ -22,6 +22,7 @@ export interface TasteRatingProps {
 /** Lets the user pick one of three taste ratings (TasteRating.md). */
 export function TasteRating({ menu, value, onPick }: TasteRatingProps) {
   const questionId = useId();
+  const selectedIndex = TASTES.findIndex((x) => x.value === value);
   return (
     <div className={styles.rating}>
       <p id={questionId} className={styles.question}>
@@ -41,10 +42,7 @@ export function TasteRating({ menu, value, onPick }: TasteRatingProps) {
             key={t.value}
             size="tile"
             selected={value === t.value}
-            tabIndex={radioTabIndex(
-              i,
-              TASTES.findIndex((x) => x.value === value),
-            )}
+            tabIndex={radioTabIndex(i, selectedIndex)}
             onPress={() => {
               onPick(t.value);
             }}
