@@ -40,5 +40,6 @@ Main, Arrived (예산), Confirm (한도)
 ## 메모
 - 막대는 두 종류다. 이번 달 예산(Main 70%, Arrived 73%)은 노른자, 용이 한도(Confirm "한 번에" 90%, "30일 동안" 44%)는 잎색이다. 시안에서 읽은 구분이다 (추론, Q-28).
 - 색: `normal`은 종류에 따라 노른자(budget) 또는 잎색(limit), `warn`은 노른자, `over`는 호박색(`color.over`, D-17 빨강 대신 호박색). 예산 막대는 평소에도 노른자라 70% 알림은 색보다 용이 말로 준다. 확정은 open-questions Q-28.
+- `limit`은 `sm`과만 쓴다 (Confirm). `.meter.limit`의 간격 6이 size 간격보다 우선한다.
 - tone을 고르는 기준은 부모가 `nagStage`(packages/shared policy)로 정한다. 막대는 받은 tone만 칠한다.
 - 퍼센트는 표시용 숫자로만 바꾼다. 돈 계산이 아니다.
