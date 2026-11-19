@@ -20,6 +20,7 @@ ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=Tr
 os.chdir(ROOT)
 
 findings = []
+DASH_RE = "[" + chr(0x2013) + chr(0x2014) + "]"
 
 
 def add(sev, rule, where, msg):
@@ -99,7 +100,7 @@ for rev in revs:
         add("BLOCKER", "G2 commit-format", rev[:8], f"커밋 제목 형식 위반 (git-and-review.md): {subj!r}")
     if "Co-Authored-By:" not in msg:
         add("MAJOR", "G2 attribution", rev[:8], "AI 세션 커밋에 Co-Authored-By 줄이 없다")
-    if re.search("[–—]", msg):
+    if re.search(DASH_RE, msg):
         add("BLOCKER", "R1 dash", rev[:8], "커밋 메시지에 em/en dash")
     n = len(sh(["git", "show", "--name-only", "--pretty=format:", rev]).stdout.split())
     units = set()
@@ -120,7 +121,7 @@ for p in tracked:
     if txt is None:
         continue
     for i, line in enumerate(txt.splitlines(), 1):
-        if re.search("[–—]", line):
+        if re.search(DASH_RE, line):
             add("BLOCKER", "R1 dash", f"{p}:{i}", "em/en dash")
 
 # 4. wiki tree --------------------------------------------------------------
