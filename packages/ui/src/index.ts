@@ -22,6 +22,7 @@ export * from './limits/LimitBlocked';
 export * from './limits/LimitChangeCard';
 export * from './onboarding/BudgetPicker';
 export * from './onboarding/EggPicker';
+export * from './onboarding/HatchProgress';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';
 export * from './order/OrderStatusHeader';

@@ -15,20 +15,25 @@ children: []
 상태 폴링 (부모 훅)
 
 ## props
-`steps: { label, status: 'done' | 'doing' | 'waiting' | 'failed' }[]`, `onRetry?`
+`steps: readonly { label: string; status: 'done' | 'doing' | 'waiting' | 'failed' }[]`, `onRetry?: () => void` ("다시 깨우기")
 
 ## 하네스 상태
 `HatchProgress.stories.tsx`에 아래를 전부 만든다.
-- 처음
-- 신분증 중
-- 모두 완료
-- 실패와 다시 깨우기
+- 처음 (`Start`)
+- 신분증 중 (`IdCardDoing`, Hatch 시안)
+- 모두 완료 (`AllDone`)
+- 실패와 다시 깨우기 (`Failed`)
 
 ## 쓰는 화면
 Hatch
 
 ## 테스트 기준
-- failed일 때만 onRetry
+- failed일 때만 onRetry ("다시 깨우기" 버튼, 그 단계 줄에). onRetry가 없으면 "안 됐어요"만
+- 단계 이름과 상태 말(완료, 하는 중, 대기)을 순서대로, 상태별 아이콘 (아이콘은 aria-hidden)
+- 하는 중 고리는 돌고, 동작 줄이기면 멈춘다
+- Hatch 시안 값 (카드 여백 16 간격 14, 줄 간격 12, 15px, 하는 중 600과 잎색 상태, 대기 `ink-muted`, 아이콘 22)
 
 ## 메모
-없음
+- 실패 모양(호박 고리와 느낌표, "다시 깨우기")은 시안에 없다 (디자인 선택). user-flow 4단계의 "다시 깨우기" 문구를 따랐다.
+- 대기 줄의 `ink-muted`는 흰 바탕 대비가 4.5:1보다 낮다 (시안 값, 디자인 판단 필요).
+- 위의 흔들리는 알과 "알이 흔들려용..."은 화면이 `Egg`와 `DragonLine`으로 그린다.

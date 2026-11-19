@@ -1,0 +1,132 @@
+/* Hatch.dc.html 27-31: a white card of steps, an icon, the name and a small state. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-limits-gap);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--type-body-size);
+  color: var(--color-ink);
+}
+
+.step[data-status='doing'] {
+  font-weight: var(--type-label-weight);
+}
+
+.step[data-status='waiting'] {
+  color: var(--color-ink-muted);
+}
+
+.label {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.state {
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-body-weight);
+}
+
+.step[data-status='done'] .state {
+  color: var(--color-ink-secondary);
+}
+
+.step[data-status='doing'] .state {
+  font-weight: var(--type-label-weight);
+  color: var(--color-leaf);
+}
+
+.step[data-status='failed'] .state {
+  color: var(--color-over-ink);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: var(--size-status-icon);
+  height: var(--size-status-icon);
+}
+
+.doneDot {
+  fill: var(--color-leaf);
+}
+
+.check {
+  fill: none;
+  stroke: var(--color-surface);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.track {
+  fill: none;
+  stroke: var(--color-line);
+  stroke-width: 3;
+}
+
+.arc {
+  fill: none;
+  stroke: var(--color-leaf);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transform-origin: 12px 12px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arc {
+    animation: none;
+  }
+}
+
+.waitRing {
+  fill: none;
+  stroke: var(--color-line-strong);
+  stroke-width: 2;
+}
+
+.failRing {
+  fill: none;
+  stroke: var(--color-over);
+  stroke-width: 2;
+}
+
+.failMark {
+  fill: none;
+  stroke: var(--color-over-ink);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.retry {
+  min-height: var(--size-touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-label-weight);
+  color: var(--color-leaf);
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
