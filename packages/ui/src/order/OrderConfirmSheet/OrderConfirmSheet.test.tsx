@@ -170,6 +170,7 @@ describe('OrderConfirmSheet (OrderConfirmSheet.md 테스트 기준)', () => {
   // Confirm.dc.html 31-60.
   it('matches the design values', () => {
     expect(rule('.order')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
+    expect(rule('.lines')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     expect(rule('.route')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.line')).toMatch(/font-size:\s*var\(--type-row-size\)/);
     expect(rule('.request')).toMatch(/font-size:\s*var\(--type-small-size\)/);
