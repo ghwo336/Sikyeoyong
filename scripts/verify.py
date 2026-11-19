@@ -5,14 +5,16 @@ Mechanical checks for CLAUDE.md absolute rules and docs/wiki/conventions.
 
 Usage:
   python3 -I scripts/verify.py                       # last commit (HEAD~1..HEAD)
-  python3 -I scripts/verify.py --range A..B          # a commit range
+  python3 -I scripts/verify.py --range A..B          # a commit range; B must be the checked-out HEAD
   python3 -I scripts/verify.py --range A..B --msg-range C..B
                                                      # re-verify: check messages only for new commits
   python3 -I scripts/verify.py --precommit           # before committing: working tree incl. untracked
   add --skip-build to skip lint, typecheck, test, build, forge
+  `pnpm verify --precommit` works too (a literal `--` from pnpm is ignored).
 
 Exceptions: a line (or the line above it) may carry `verify-allow: <RULE> <reason>`,
 for example `// verify-allow: R4 ratio display, not money`. The reason is required.
+Rules that judge a whole file (page, container, controller) accept the marker anywhere in the file.
 
 Severity: BLOCKER and MAJOR fail (exit 1). REVIEW must be judged by the verifier agent.
 MINOR is a note. Exit 2 means the gate could not run (bad range, not a git repo).
@@ -25,7 +27,7 @@ import sys
 
 DASH_RE = "[" + chr(0x2013) + chr(0x2014) + "]"
 TESTNET_CHAIN_ID = 450815
-CHAIN_ID_RE = r"\b(450_?815|" + hex(TESTNET_CHAIN_ID) + r")\b"
+CHAIN_ID_RE = r"\b(450_?815|" + hex(TESTNET_CHAIN_ID) + r")n?\b"
 COMMIT_TYPES = ("feat", "fix", "contract", "docs", "infra", "chore", "test", "refactor")  # git-and-review.md
 ALLOWED_TOOLS = {"get_budget", "get_order_history", "get_context", "recommend_merchants", "get_menu",
                  "place_order", "request_owner_approval"}  # CLAUDE.md 3, tech-spec 3.3
@@ -36,6 +38,26 @@ WEB_APP_FILES = {"page.tsx", "layout.tsx", "loading.tsx", "error.tsx", "not-foun
 CODE_EXT = (".ts", ".tsx", ".js", ".mjs", ".cjs", ".sol", ".css")
 TS_EXT = (".ts", ".tsx")
 CONFIG_SCAN_EXT = CODE_EXT + (".json", ".yml", ".yaml", ".sh", ".toml")
+CSS_NAMED_COLORS = (
+    "aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown "
+    "burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan "
+    "darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred "
+    "darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink "
+    "deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold "
+    "goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush "
+    "lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey "
+    "lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime "
+    "limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen "
+    "mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin "
+    "navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise "
+    "palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue "
+    "saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow "
+    "springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen"
+).split()
+COLOR_PROPS_CSS = r"(color|background|background-color|border|border-(?:top|right|bottom|left)(?:-color)?|border-color|" \
+                  r"outline|outline-color|fill|stroke|caret-color|text-decoration-color|accent-color)"
+COLOR_PROPS_JS = r"(color|background|backgroundColor|border|borderColor|outline|outlineColor|fill|stroke|caretColor)"
+HEX_COLOR = r"#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b"
 
 # Where chain config may appear, and why.
 CHAIN_ID_OK = (
@@ -50,7 +72,8 @@ ADDRESS_OK = CHAIN_ID_OK + (
     "contracts/test/",  # forge fixtures
     "contracts/lib/",   # vendored libraries
 )
-MONEY_NAME = r"\w*(Aokrw|AOKRW|Okrw|OKRW|okrw|aokrw|[Aa]mount|[Pp]rice|[Bb]alance|[Bb]udget|[Ss]pent|[Ss]ubtotal|[Ff]ee)\b"
+MONEY_NAME = r"\w*(Aokrw|AOKRW|Okrw|OKRW|okrw|aokrw|[Aa]mount|[Pp]rice|[Bb]alance|[Bb]udget|[Ss]pent|[Ss]ubtotal|[Ff]ee)s?\b"
+LIMIT_NAME = r"\w*[Ll]imit\b"
 
 findings = []
 
@@ -59,12 +82,16 @@ def add(sev, rule, where, msg):
     findings.append((sev, rule, where, msg))
 
 
+def gate_error(msg):
+    print(f"GATE ERROR: {msg}")
+    print("RESULT ERROR")
+    sys.exit(2)
+
+
 def git(*a, check=True):
     r = subprocess.run(["git"] + list(a), capture_output=True, text=True)
     if check and r.returncode != 0:
-        print(f"GATE ERROR: git {' '.join(a)}\n{r.stderr.strip()}")
-        print("RESULT ERROR")
-        sys.exit(2)
+        gate_error(f"git {' '.join(a)}\n{r.stderr.strip()}")
     return r.stdout
 
 
@@ -89,80 +116,114 @@ def is_fixture(p):
     return p.startswith("scripts/fixtures/")
 
 
-def allowed(lines, idx, rule):
-    """idx is 0-based. True if this or previous line has `verify-allow: <rule> <reason>`."""
+def strip_comments(txt, path):
+    """Replace comments with spaces, keeping strings and newlines (so line numbers stay).
+
+    JS/TS/Sol: // and /* */, strings in ' " and ` (template text is kept as string).
+    CSS: only /* */ (// is not a comment in CSS, and URLs contain it).
+    """
+    css = path.endswith(".css")
+    out = []
+    i, n = 0, len(txt)
+    quote = None
+    while i < n:
+        c = txt[i]
+        nxt = txt[i + 1] if i + 1 < n else ""
+        if quote:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(nxt)
+                i += 2
+                continue
+            if c == quote or (c == "\n" and quote != "`"):
+                quote = None
+            i += 1
+            continue
+        if c == "/" and nxt == "*":
+            end = txt.find("*/", i + 2)
+            end = n if end < 0 else end + 2
+            out.append("".join(ch if ch == "\n" else " " for ch in txt[i:end]))
+            i = end
+            continue
+        if not css and c == "/" and nxt == "/":
+            end = txt.find("\n", i)
+            end = n if end < 0 else end
+            out.append(" " * (end - i))
+            i = end
+            continue
+        if c in "'\"" or (c == "`" and not css):
+            quote = c
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def allowed(raw_lines, idx, rule):
+    """idx is 0-based. True if this or previous raw line has `verify-allow: <rule> <reason>`."""
     pat = re.compile(r"verify-allow:\s*" + re.escape(rule) + r"\s+\S")
-    for j in (idx, idx - 1):
-        if 0 <= j < len(lines) and pat.search(lines[j]):
-            return True
-    return False
+    return any(0 <= j < len(raw_lines) and pat.search(raw_lines[j]) for j in (idx, idx - 1))
+
+
+def file_allowed(txt, rule):
+    return bool(re.search(r"verify-allow:\s*" + re.escape(rule) + r"\s+\S", txt or ""))
 
 
 def code_lines(p):
-    """Yield (lineno, line, lines) skipping pure comment lines."""
+    """Yield (lineno, code_line, raw_lines) with comments removed; skip lines that are empty after that."""
     txt = read(p)
     if txt is None:
         return
-    lines = txt.splitlines()
-    in_block = False
-    for i, line in enumerate(lines, 1):
-        s = line.strip()
-        if in_block:
-            if "*/" in s:
-                in_block = False
-            continue
-        if s.startswith("/*") and "*/" not in s:
-            in_block = True
-            continue
-        if s.startswith(("//", "*", "/*", "#")) and not s.startswith("#!"):
-            if not (p.endswith(".css") and s.startswith("#")):  # css id selectors start with '#'
-                continue
-        yield i, line, lines
+    raw = txt.splitlines()
+    code = strip_comments(txt, p).splitlines() if p.endswith(CODE_EXT) else raw
+    for i, line in enumerate(code, 1):
+        if line.strip():
+            yield i, line, raw
+
+
+def code_text(p):
+    txt = read(p)
+    return strip_comments(txt, p) if txt is not None and p.endswith(CODE_EXT) else (txt or "")
 
 
 def imports_of(txt):
-    return re.findall(r"(?:from|import)\s*\(?\s*['\"]([^'\"]+)['\"]", txt)
+    return re.findall(r"(?:\bfrom|\bimport|\brequire)\s*\(?\s*['\"]([^'\"]+)['\"]", txt)
 
 
 # ---------------------------------------------------------------- setup
+argv = [a for a in sys.argv[1:] if a != "--"]  # pnpm forwards a literal `--`
 ap = argparse.ArgumentParser()
 ap.add_argument("--range", dest="rng")
 ap.add_argument("--msg-range", dest="msg_rng")
 ap.add_argument("--precommit", action="store_true")
 ap.add_argument("--skip-build", action="store_true")
-opt = ap.parse_args()
+opt = ap.parse_args(argv)
 
 top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
 if top.returncode != 0 or not top.stdout.strip():
-    print("GATE ERROR: git 저장소 안에서 실행해야 한다")
-    print("RESULT ERROR")
-    sys.exit(2)
+    gate_error("git 저장소 안에서 실행해야 한다")
 os.chdir(top.stdout.strip())
 
 has_head = subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD"], capture_output=True).returncode == 0
 
 
-def verify_rev(r):
-    if subprocess.run(["git", "rev-parse", "--verify", "-q", r + "^{commit}"], capture_output=True).returncode != 0:
-        print(f"GATE ERROR: 범위가 잘못됐다: {r}")
-        print("RESULT ERROR")
-        sys.exit(2)
+def rev_of(r):
+    out = subprocess.run(["git", "rev-parse", "--verify", "-q", r + "^{commit}"], capture_output=True, text=True)
+    if out.returncode != 0:
+        gate_error(f"범위가 잘못됐다: {r}")
+    return out.stdout.strip()
 
 
 def parse_range(rng):
     if ".." in rng:
         base, head = rng.split("..", 1)
-        verify_rev(base)
-        verify_rev(head or "HEAD")
-        return base, head or "HEAD"
-    verify_rev(rng)
-    return None, rng
+        return rev_of(base), rev_of(head or "HEAD")
+    return None, rev_of(rng)
 
 
 def commits_in(rng):
     base, head = parse_range(rng)
     if base is None:
-        return [git("rev-parse", head).strip()]
+        return [head]
     return git("rev-list", "--reverse", f"{base}..{head}").split()
 
 
@@ -170,30 +231,37 @@ def files_of_commit(rev):
     return zsplit(git("diff-tree", "-z", "--no-commit-id", "--name-only", "-r", "--root", "--diff-filter=AMR", rev))
 
 
+RANGE_BASE = RANGE_HEAD = None
 if opt.precommit:
     tracked = zsplit(git("ls-files", "-z", "--cached", "--others", "--exclude-standard"))
-    changed = zsplit(git("diff", "-z", "--name-only", "--diff-filter=AMR", "HEAD")) if has_head else []
-    changed += zsplit(git("ls-files", "-z", "--others", "--exclude-standard"))
-    if not has_head:
-        changed = list(tracked)
+    untracked = set(zsplit(git("ls-files", "-z", "--others", "--exclude-standard")))
+    changed = zsplit(git("diff", "-z", "--name-only", "--diff-filter=AMR", "HEAD")) if has_head else list(tracked)
+    changed += sorted(untracked)
     rng = "WORKTREE"
     msg_revs = []
 else:
     if not has_head:
-        print("GATE ERROR: 커밋이 없다. 첫 커밋 전에는 --precommit")
-        print("RESULT ERROR")
-        sys.exit(2)
+        gate_error("커밋이 없다. 첫 커밋 전에는 --precommit")
+    untracked = set()
     rng = opt.rng
     if rng is None:
         rng = "HEAD~1..HEAD" if subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD~1"],
                                                capture_output=True).returncode == 0 else "HEAD"
     RANGE_BASE, RANGE_HEAD = parse_range(rng)
+    if RANGE_HEAD != rev_of("HEAD"):
+        gate_error(f"범위 끝({RANGE_HEAD[:8]})이 체크아웃된 HEAD가 아니다. 내용 검사는 작업 트리를 읽으므로 "
+                   "범위 끝 커밋을 체크아웃(또는 worktree)한 뒤 돌린다")
     tracked = zsplit(git("ls-files", "-z"))
-    if RANGE_BASE is None:
-        changed = files_of_commit(RANGE_HEAD)
-    else:
-        changed = zsplit(git("diff", "-z", "--name-only", "--diff-filter=AMR", RANGE_BASE, RANGE_HEAD))
-    msg_revs = commits_in(opt.msg_rng or rng)
+    changed = files_of_commit(RANGE_HEAD) if RANGE_BASE is None else \
+        zsplit(git("diff", "-z", "--name-only", "--diff-filter=AMR", RANGE_BASE, RANGE_HEAD))
+    range_commits = commits_in(rng)
+    msg_revs = commits_in(opt.msg_rng) if opt.msg_rng else range_commits
+    if opt.msg_rng:
+        if not msg_revs:
+            gate_error(f"--msg-range {opt.msg_rng}에 커밋이 없다")
+        outside = [r for r in msg_revs if r not in set(range_commits)]
+        if outside:
+            gate_error(f"--msg-range 커밋이 --range 밖에 있다: {[r[:8] for r in outside]}")
 
 tracked = sorted({p for p in tracked if os.path.isfile(p)})
 changed = sorted({p for p in changed if os.path.isfile(p)})
@@ -258,10 +326,10 @@ SECRET_PATTERNS = [
     (r"\bxox[abp]-[0-9A-Za-z-]{10,}", "Slack 토큰"),
 ]
 for p in tracked:
-    base = os.path.basename(p)
-    if base.startswith(".env") and base != ".env.example":
+    base_name = os.path.basename(p)
+    if base_name.startswith(".env") and base_name != ".env.example":
         add("BLOCKER", "R5 secret-file", p, ".env 파일이 추적된다")
-    if p.endswith((".pem", ".key", ".p12")) or base == "credentials.json":
+    if p.endswith((".pem", ".key", ".p12")) or base_name == "credentials.json":
         add("BLOCKER", "R5 secret-file", p, "키 파일이 추적된다")
     if p.startswith("scripts/verify_test"):
         continue  # fixtures for this gate contain fake secrets on purpose
@@ -271,9 +339,9 @@ for p in tracked:
     for pat, name in SECRET_PATTERNS:
         for m in re.finditer(pat, txt):
             add("BLOCKER", "R5 secret", f"{p}:{txt[:m.start()].count(chr(10)) + 1}", name)
-    if base == ".env.example":
+    if base_name == ".env.example":
         for i, line in enumerate(txt.splitlines(), 1):
-            m = re.match(r"^([A-Z0-9_]*(SECRET|TOKEN|KEY|PASSWORD)[A-Z0-9_]*)=([^#]*)", line.strip())
+            m = re.match(r"^(?:export\s+)?([A-Z0-9_]*(SECRET|TOKEN|KEY|PASSWORD)[A-Z0-9_]*)\s*=\s*([^#]*)", line.strip())
             if m and m.group(3).strip() not in ("", '""', "''"):
                 add("BLOCKER", "R5 env-example", f"{p}:{i}", f"{m.group(1)}에 값이 있다. 예시는 빈 값만")
 
@@ -285,8 +353,8 @@ for p in tracked:
         continue
     if p.endswith(("pnpm-lock.yaml", "package.json")) or os.path.basename(p).startswith("tsconfig"):
         continue
-    for i, line, lines in code_lines(p):
-        if allowed(lines, i - 1, "R2"):
+    for i, line, raw in code_lines(p):
+        if allowed(raw, i - 1, "R2"):
             continue
         if not p.startswith(CHAIN_ID_OK):
             if re.search(CHAIN_ID_RE, line, re.I):
@@ -298,51 +366,55 @@ for p in tracked:
 
 # ---------------------------------------------------------------- R4 money
 for p in tracked:
-    if is_fixture(p):
+    if is_fixture(p) or not p.endswith(TS_EXT) or "/node_modules/" in p:
         continue
-    if not p.endswith(TS_EXT) or "/node_modules/" in p:
-        continue
-    for i, line, lines in code_lines(p):
-        if allowed(lines, i - 1, "R4"):
+    for i, line, raw in code_lines(p):
+        if allowed(raw, i - 1, "R4"):
             continue
         has_money = re.search(MONEY_NAME, line)
-        if re.search(r"\b" + MONEY_NAME + r"\??\s*:\s*number\b", line):
+        if re.search(r"\b" + MONEY_NAME + r"\??\s*:\s*(number\b|number\[\]|Array<number>|ReadonlyArray<number>)", line):
             add("BLOCKER", "R4 money-number", f"{p}:{i}", "금액 이름에 number 타입. bigint(aokrw) 또는 정수 문자열")
+        if re.search(r"\[\s*" + MONEY_NAME + r"\s*,[^\]]*\]\s*=\s*useState<\s*number", line) or \
+                re.search(r"\b" + MONEY_NAME + r"\s*=\s*useState<\s*number", line):
+            add("BLOCKER", "R4 money-number", f"{p}:{i}", "금액 상태를 number로. bigint 또는 정수 문자열")
         if has_money and (re.search(r"\bNumber\(", line) or re.search(r"\bas number\b", line)
                           or re.search(r"\bMath\.(round|floor|ceil|trunc)\(", line) or re.search(r"\bparseInt\(", line)):
             add("BLOCKER", "R4 money-number", f"{p}:{i}", "금액을 Number, Math, parseInt로 다룬다")
         if re.search(r"\b(parseFloat|toFixed)\s*\(", line):
             add("BLOCKER", "R4 money-float", f"{p}:{i}", "부동소수점 함수. 금액이 아니면 `verify-allow: R4 <사유>`")
-        if re.search(r"\b1e18\b|\b10\s*\*\*\s*18\b(?!n)", line) and not p.startswith("packages/shared/src/money"):
-            add("MAJOR", "R4 money-scale", f"{p}:{i}", "단위 변환은 packages/shared 금액 유틸에서만")
+        if not p.startswith("packages/shared/src/money/") and (
+                re.search(r"\b1e18\b|\b10\s*\*\*\s*18\b", line) or re.search(r"\b10n\s*\*\*\s*18n\b", line)
+                or re.search(r"\b\d*0{18,}n\b|\b\d{1,3}(_000){6,}n\b", line)):
+            add("MAJOR", "R4 money-scale", f"{p}:{i}", "단위 변환은 packages/shared 금액 유틸(okrwToAokrw)에서만")
+        if re.search(r"\b" + LIMIT_NAME + r"\??\s*:\s*number\b", line) and not re.search(MONEY_NAME, line):
+            add("REVIEW", "R4 limit-number", f"{p}:{i}", "한도 이름에 number. 금액 한도면 bigint aokrw, 횟수나 개수면 문제 아님")
+        if re.search(r"\$\{[^}]*\b\w*(Aokrw|aokrw)\b[^}]*\}", line) and \
+                not re.search(r"\$\{[^}]*(formatOkrw|aokrwToString)\(", line):
+            add("MAJOR", "R4 money-template", f"{p}:{i}", "aokrw를 그대로 문자열에 넣는다. 표시는 formatOkrw, 직렬화는 aokrwToString")
 
 # ---------------------------------------------------------------- S1 typescript hygiene
 for p in tracked:
-    if is_fixture(p):
+    if is_fixture(p) or not p.endswith(TS_EXT) or "/node_modules/" in p or p.endswith(".d.ts"):
         continue
-    if not p.endswith(TS_EXT) or "/node_modules/" in p or p.endswith(".d.ts"):
-        continue
-    for i, line, lines in code_lines(p):
+    for i, line, raw in code_lines(p):
         if re.search(r":\s*any\b|\bas any\b|<any>|\bany\[\]", line):
             add("MAJOR", "S1 no-any", f"{p}:{i}", "any 사용 (code-style.md)")
-        if "@ts-ignore" in line or "@ts-nocheck" in line:
-            add("MAJOR", "S1 ts-ignore", f"{p}:{i}", "@ts-ignore 금지. @ts-expect-error와 사유")
-        if "eslint-disable" in line and "--" not in line:
-            add("MAJOR", "S1 eslint-disable", f"{p}:{i}", "eslint-disable에 사유(-- 이유)가 없다")
         if re.search(r"\bthrow\s+['\"`]", line):
             add("MAJOR", "S1 string-throw", f"{p}:{i}", "문자열 throw 금지. AppError")
         if re.search(r"\bconsole\.log\(", line) and not is_test(p):
             add("MINOR", "S1 console", f"{p}:{i}", "console.log. Nest Logger 또는 제거")
-    for line in (read(p) or "").splitlines():
-        if re.search(r"^\s*//.*\beslint-disable", line) and "--" not in line:
-            add("MAJOR", "S1 eslint-disable", p, "eslint-disable에 사유(-- 이유)가 없다")
-            break
+    for i, line in enumerate((read(p) or "").splitlines(), 1):  # these directives live in comments
+        if "@ts-ignore" in line or "@ts-nocheck" in line:
+            add("MAJOR", "S1 ts-ignore", f"{p}:{i}", "@ts-ignore 금지. @ts-expect-error와 사유")
+        if re.search(r"\beslint-disable", line) and "--" not in line:
+            add("MAJOR", "S1 eslint-disable", f"{p}:{i}", "eslint-disable에 사유(-- 이유)가 없다")
 
 # ---------------------------------------------------------------- D18 web
 for p in tracked:
     if not p.startswith("apps/web/") or "/node_modules/" in p:
         continue
-    txt = read(p) or ""
+    txt = code_text(p)
+    raw = read(p) or ""
     if p.endswith(TS_EXT):
         for mod in imports_of(txt):
             if re.match(r"(viem|ethers|@anthropic-ai/|better-sqlite3|drizzle-orm|@sikyeoyong/api)", mod):
@@ -351,55 +423,85 @@ for p in tracked:
             add("MAJOR", "D18 web-fetch", p, "fetch는 features/*/hooks 또는 lib(API 클라이언트)에서만")
     m = re.match(r"apps/web/app/(.*)$", p)
     if m:
-        base = os.path.basename(p)
-        if p.endswith(CODE_EXT) and base not in WEB_APP_FILES:
+        base_name = os.path.basename(p)
+        if p.endswith(CODE_EXT) and base_name not in WEB_APP_FILES:
             add("MAJOR", "D18 app-files", p, "app/에는 page, layout, loading, error(와 not-found, template, globals.css)만")
-        if p.endswith(TS_EXT):
-            n = len(txt.splitlines())
-            if base == "page.tsx" and n > 60:
-                add("MAJOR", "D18 page-assembly", p, f"page.tsx {n}줄 (60 초과). 컨테이너로 쪼갠다")
+        if p.endswith(TS_EXT) and not file_allowed(raw, "D18"):
+            n = len([l for l in txt.splitlines() if l.strip()])
+            if base_name == "page.tsx" and n > 60:
+                add("MAJOR", "D18 page-assembly", p, f"page.tsx 코드 {n}줄 (60 초과). 컨테이너로 쪼갠다")
             checks = [(r"\bfetch\(", "fetch"), (r"\buse(State|Effect|Reducer|Memo|Callback|Ref)\b", "React 상태 훅"),
                       (r"style=\{", "인라인 스타일"), (r"\bformatOkrw\b|\bparseAokrw\b|\baokrw\b", "금액 계산")]
-            if base == "page.tsx":
+            if base_name == "page.tsx":
                 checks += [(r"\.module\.css", "CSS 모듈"), (r"className=", "className 스타일")]
             for pat, what in checks:
                 if re.search(pat, txt):
-                    add("MAJOR", "D18 page-assembly", p, f"{base}에 {what}. app/ 파일은 조립만")
-    if re.match(r"apps/web/features/[^/]+/containers/", p) and p.endswith(TS_EXT) and not is_test(p):
+                    add("MAJOR", "D18 page-assembly", p, f"{base_name}에 {what}. app/ 파일은 조립만")
+    if re.match(r"apps/web/features/[^/]+/containers/", p) and p.endswith(TS_EXT) and not is_test(p) \
+            and not file_allowed(raw, "D18"):
         for pat, what in [(r"className=", "className"), (r"style=\{", "인라인 스타일"), (r"\.module\.css", "CSS 모듈"),
                           (r"\bfetch\(", "fetch")]:
             if re.search(pat, txt):
                 add("MAJOR", "D18 container-thin", p, f"컨테이너에 {what}. 컨테이너는 훅 결과를 props로 넘기기만")
 
+
 # ---------------------------------------------------------------- D17 visual (ui and web)
+def color_value_bad(value):
+    v = value.strip().strip("'\"`").lower()
+    if not v or "var(" in v:
+        return False
+    if re.search(HEX_COLOR, v) or re.search(r"\b(rgba?|hsla?|hwb|lab|lch|oklch|oklab|color)\(", v):
+        return True
+    return any(re.search(r"(?<![\w-])" + name + r"(?![\w-])", v) for name in CSS_NAMED_COLORS)
+
+
 for p in tracked:
     if not (p.startswith("packages/ui/src/") or p.startswith("apps/web/")) or "/node_modules/" in p:
         continue
     if not p.endswith((".css", ".tsx", ".ts")) or is_test(p) or "/tokens/" in p or os.path.basename(p).startswith("tokens"):
         continue
-    for i, line, lines in code_lines(p):
-        if allowed(lines, i - 1, "D17"):
+    for i, line, raw in code_lines(p):
+        if allowed(raw, i - 1, "D17"):
             continue
-        if re.search(r"(?<![&\w])#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{1}|[0-9a-fA-F]{3}|[0-9a-fA-F]{5})?\b|\brgba?\(|\bhsla?\(", line):
-            add("MAJOR", "D17 tokens-only", f"{p}:{i}", "색 직접 사용. 토큰 CSS 변수만")
+        bad_color = False
+        if p.endswith(".css"):
+            for m in re.finditer(r"(?:^|[;{\s])" + COLOR_PROPS_CSS + r"\s*:\s*([^;}]+)", line):
+                bad_color = bad_color or color_value_bad(m.group(2))
+        else:
+            for m in re.finditer(r"\b" + COLOR_PROPS_JS + r"\s*:\s*(['\"`][^'\"`]*['\"`])", line):
+                bad_color = bad_color or color_value_bad(m.group(2))
+            if re.search(r"['\"`]\s*" + HEX_COLOR + r"\s*['\"`]", line) and \
+                    not re.search(r"\b(href|to|id)\s*=\s*\{?\s*['\"`]#", line):
+                bad_color = True
+            if re.search(r"\b(rgba?|hsla?)\(", line):
+                bad_color = True
+        if bad_color:
+            add("MAJOR", "D17 tokens-only", f"{p}:{i}", "색 직접 사용(16진, rgb, hsl, 이름 색). 토큰 CSS 변수만")
         if re.search(r"(linear|radial|conic)-gradient", line):
             add("MAJOR", "D17 no-slop", f"{p}:{i}", "그라데이션 금지")
-        if re.search(r"box-shadow\s*:(?![^;]*var\()", line) and "none" not in line:
+        if re.search(r"(box-shadow|boxShadow)\s*:(?![^;]*var\()", line) and "none" not in line:
             add("REVIEW", "D17 no-slop", f"{p}:{i}", "토큰 밖 그림자. 장식 그림자 금지")
         if re.search(r"transition(-property)?\s*:\s*[^;]*\b(top|left|right|bottom|height|width|margin|padding)\b", line):
             add("MAJOR", "D17 motion", f"{p}:{i}", "레이아웃 속성 애니메이션 금지")
-    if p.endswith(TS_EXT) and not p.endswith(".test.tsx"):
-        for i, line, lines in code_lines(p):
+    if p.endswith(TS_EXT):
+        for i, line, raw in code_lines(p):
             for w in BANNED_UI:
-                if re.search(r"[\"'`>][^\"'`<]*" + re.escape(w), line) and not allowed(lines, i - 1, "D17"):
+                if re.search(r"[\"'`>][^\"'`<]*" + re.escape(w), line) and not allowed(raw, i - 1, "D17"):
                     add("REVIEW", "D17 chain-words", f"{p}:{i}", f"화면 문구에 '{w}'. '자세히 보기' 안이 아니면 금지")
 
 # ---------------------------------------------------------------- D18 ui components
 ui_dirs = set()
 for p in tracked:
+    if not p.startswith("packages/ui/src/"):
+        continue
+    parts = p.split("/")
     m = re.match(r"packages/ui/src/([a-z]+)/([A-Z][A-Za-z0-9]+)/", p)
     if m:
         ui_dirs.add((m.group(1), m.group(2)))
+    if len(parts) >= 5 and parts[3] in UI_AREAS and p.endswith(".tsx") and not is_test(p):
+        comp = parts[4]
+        if not (len(parts) == 6 and re.match(r"[A-Z][A-Za-z0-9]+$", comp) and parts[5].startswith(comp)):
+            add("BLOCKER", "D18 ui-harness", p, "ui 컴포넌트는 packages/ui/src/<영역>/<Name>/<Name>.tsx 폴더 하나씩 (본체, 하네스, 테스트, 문서)")
 for area, name in sorted(ui_dirs):
     d = f"packages/ui/src/{area}/{name}"
     if area not in UI_AREAS:
@@ -428,7 +530,7 @@ for area, name in sorted(ui_dirs):
 for p in tracked:
     if not p.startswith("packages/ui/src/") or not p.endswith(TS_EXT):
         continue
-    txt = read(p) or ""
+    txt = code_text(p)
     parts = p.split("/")
     area = parts[3] if len(parts) > 4 else ""
     for mod in imports_of(txt):
@@ -437,9 +539,13 @@ for p in tracked:
             add("BLOCKER", "D18 ui-pure", p, f"ui 컴포넌트가 {mod} import. props와 콜백만")
         if mod.startswith("."):
             target = os.path.normpath(os.path.join(os.path.dirname(p), mod))
-            tm = re.match(r"packages/ui/src/([a-z]+)/", target + "/")
-            if tm and area and tm.group(1) != area and tm.group(1) not in ("base", "dragon") and tm.group(1) in UI_AREAS:
-                add("MAJOR", "D18 ui-cross-area", p, f"영역 사이 import {mod}. base와 dragon만 허용")
+            tm = re.match(r"packages/ui/src/([a-z]+)(/|$)", target)
+        else:
+            tm = re.match(r"@sikyeoyong/ui/([a-z]+)", mod)
+        target_area = tm.group(1) if tm else None
+        if target_area and area and target_area != area and target_area in UI_AREAS \
+                and target_area not in ("base", "dragon"):
+            add("MAJOR", "D18 ui-cross-area", p, f"영역 사이 import {mod}. base와 dragon만 허용")
     if re.search(r"\bfetch\(", txt) and not is_test(p):
         add("BLOCKER", "D18 ui-pure", p, "ui 컴포넌트에서 fetch")
 
@@ -447,11 +553,11 @@ for p in tracked:
 for p in tracked:
     if not p.startswith("packages/shared/src/") or not p.endswith(TS_EXT) or is_test(p):
         continue
-    txt = read(p) or ""
+    txt = code_text(p)
     if "process.env" in txt or "import.meta.env" in txt:
         add("BLOCKER", "A shared-pure", p, "shared에서 환경변수 읽기")
     for mod in imports_of(txt):
-        if re.match(r"(react|next|@nestjs|better-sqlite3|drizzle-orm|node:|fs$|path$|@anthropic-ai)", mod):
+        if re.match(r"(react|next|@nestjs|better-sqlite3|drizzle-orm|node:|fs$|fs/|path$|crypto$|child_process$|@anthropic-ai)", mod):
             add("BLOCKER", "A shared-pure", p, f"shared가 런타임 의존 {mod} import")
     if re.search(r"\bfetch\(", txt) and not p.startswith("packages/shared/src/api/"):
         add("MAJOR", "A shared-pure", p, "shared에서 네트워크. API 클라이언트(주입된 fetch)만 예외")
@@ -460,7 +566,8 @@ for p in tracked:
 for p in tracked:
     if not p.startswith("apps/api/src/") or not p.endswith(".ts"):
         continue
-    txt = read(p) or ""
+    txt = code_text(p)
+    raw = read(p) or ""
     m = re.match(r"apps/api/src/modules/([a-z0-9-]+)/", p)
     own = m.group(1) if m else None
     for mod in imports_of(txt):
@@ -475,39 +582,43 @@ for p in tracked:
         rest = tm.group(3) or ""
         if "repository" in rest or "/db" in rest or "schema" in rest:
             add("BLOCKER", "D18 api-boundary", p, f"다른 모듈 저장소/테이블 직접 import: {mod}")
-        elif not re.search(r"\.(service|module)$", rest):
+        elif not re.search(r"\.(service|module)(\.js)?$", rest):
             add("MAJOR", "D18 api-boundary", p, f"다른 모듈은 service.ts(와 module.ts)로만: {mod}")
-    if p.endswith(".controller.ts"):
+    if p.endswith(".controller.ts") and not file_allowed(raw, "D18"):
         if re.search(r"repository|drizzle-orm|['\"][^'\"]*/db/", txt):
             add("BLOCKER", "D18 controller-thin", p, "컨트롤러가 저장소/DB 직접 사용")
         if re.search(r"\b(for|while)\s*\(|\.reduce\(", txt):
             add("REVIEW", "D18 controller-thin", p, "컨트롤러에 반복/계산 로직이 보인다")
     if own == "payment" and not is_test(p):
-        for i, line, lines in code_lines(p):
-            if re.search(r"\b(retry|retries|attempts?|backoff)\w*\b", line, re.I):
+        for i, line, _raw in code_lines(p):
+            if re.search(r"(retry|retries|attempt|backoff)", line, re.I):
                 add("REVIEW", "R9 no-auto-retry", f"{p}:{i}", "결제 모듈에 재시도 흔적. 자동 재시도 금지 (같은 orderRef 수동만)")
 
 # ---------------------------------------------------------------- R3 llm tools
 TOOLS_DIR = "apps/api/src/modules/llm/tools/"
-TOOL_NAME_RE = re.compile(r"[\"']?name[\"']?\s*:\s*[\"'`]([^\"'`]+)[\"'`]")
+TOOL_NAME_RE = re.compile(r"(?<![\w$])[\"']?name[\"']?\s*:\s*[\"'`]([^\"'`]+)[\"'`]")
 for p in tracked:
-    if not p.startswith("apps/api/src/modules/llm/") or is_test(p) or not p.endswith(TS_EXT + (".json",)):
+    if not p.startswith("apps/api/") or is_test(p) or not p.endswith(TS_EXT + (".json",)):
         continue
-    txt = read(p) or ""
+    txt = code_text(p) if p.endswith(TS_EXT) else (read(p) or "")
     if p.startswith(TOOLS_DIR):
         for m in TOOL_NAME_RE.finditer(txt):
             if m.group(1) not in ALLOWED_TOOLS:
-                add("BLOCKER", "R3 llm-tools", p, f"허용 목록에 없는 LLM 도구 이름 {m.group(1)!r}")
-    elif re.search(r"input_schema|inputSchema", txt):
+                add("BLOCKER", "R3 llm-tools", f"{p}:{txt[:m.start()].count(chr(10)) + 1}",
+                    f"허용 목록에 없는 LLM 도구 이름 {m.group(1)!r}")
+    elif re.search(r"\binput_schema\b|\binputSchema\b", txt):
         add("MAJOR", "R3 llm-tools", p, f"도구 정의는 {TOOLS_DIR} 안에만 둔다")
-    for i, line, lines in code_lines(p):
-        for w in ("transfer", "fund", "createAgent", "agent_create", "setPolicy", "policy_set", "drain", "unfreeze", "withdraw"):
-            if re.search(r"\b" + w + r"\w*", line, re.I):
-                add("REVIEW", "R3 llm-tools", f"{p}:{i}", f"llm 모듈에 돈/정책 관련 식별자 '{w}'")
+    if p.startswith("apps/api/src/modules/llm/"):
+        for i, line, _raw in code_lines(p):
+            for w in ("transfer", "fund", "createAgent", "agent_create", "setPolicy", "policy_set", "drain", "unfreeze",
+                      "withdraw"):
+                if re.search(r"\b" + w + r"\w*", line, re.I):
+                    add("REVIEW", "R3 llm-tools", f"{p}:{i}", f"llm 모듈에 돈/정책 관련 식별자 '{w}'")
 if any(p.startswith(TOOLS_DIR) and not is_test(p) for p in tracked):
     tests = [read(p) or "" for p in tracked if p.startswith(TOOLS_DIR) and is_test(p)]
     if not any(all(t in txt for t in ALLOWED_TOOLS) for txt in tests):
         add("MAJOR", "R3 llm-tools", TOOLS_DIR, "도구 화이트리스트 자동 비교 테스트가 없다 (testing.md). 허용 목록 7개를 모두 적은 테스트")
+
 
 # ---------------------------------------------------------------- T1 tests accompany source changes
 def pkg_of(p):
@@ -519,20 +630,26 @@ def pkg_of(p):
     return None
 
 
-def comment_only_change(p):
-    """True if every added or removed line of this file is blank or a comment."""
+def old_content(p):
+    """Content before the change: range base (or parent), or HEAD in precommit. None if the file is new."""
     if opt.precommit:
-        diff = git("diff", "HEAD", "--", p, check=False) if has_head else ""
-        if not diff and p in zsplit(git("ls-files", "-z", "--others", "--exclude-standard")):
-            return False  # new untracked file
+        if p in untracked or not has_head:
+            return None
+        ref = "HEAD"
     else:
-        diff = (git("diff", RANGE_BASE, RANGE_HEAD, "--", p) if RANGE_BASE
-                else git("show", "--format=", RANGE_HEAD, "--", p))
-    lines = [l[1:].strip() for l in diff.splitlines()
-             if l[:1] in "+-" and not l.startswith(("+++", "---"))]
-    if not lines:
+        ref = RANGE_BASE or (RANGE_HEAD + "~1")
+    r = subprocess.run(["git", "show", f"{ref}:{p}"], capture_output=True, text=True)
+    return r.stdout if r.returncode == 0 else None
+
+
+def comment_only_change(p):
+    """True if the code with comments and whitespace removed is identical before and after."""
+    before, after = old_content(p), read(p)
+    if before is None or after is None:
         return False
-    return all(l == "" or l.startswith(("//", "/*", "*", "*/")) for l in lines)
+    def norm(t):
+        return re.sub(r"\s+", "", strip_comments(t, p))
+    return norm(before) == norm(after)
 
 
 src_by_pkg, test_by_pkg = {}, {}

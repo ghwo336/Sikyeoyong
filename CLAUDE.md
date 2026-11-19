@@ -83,6 +83,6 @@
 | `pnpm policy:apply` | `packages/shared/src/config/policy.ts` 값(프로필별)을 컨트랙트 범위 정책에 반영. `changeContractPolicies`는 전체 교체라 현재 값을 읽고 전체를 다시 쓴다 |
 | `pnpm demo:rehearse` | 데모 장면 1~8 자동 리허설 |
 | `pnpm check:dash` | em dash, en dash 검사 |
-| `pnpm verify` | 커밋 게이트 (`python3 -I scripts/verify.py`, 커밋 전에는 `-- --precommit`). 자체 테스트는 `pnpm verify:test` |
+| `pnpm verify` | 커밋 게이트 (`python3 -I scripts/verify.py`, 커밋 전에는 `pnpm verify --precommit`). 자체 테스트는 `pnpm verify:test` |
 | `pnpm wiki:gc` | 위키 정리 후보 찾기 (`python3 -I scripts/wiki-gc.py`, 이미 있음). 정리는 `wiki-gardener` 에이전트 |
 | `pnpm check:wiki` | 위키 트리 일관성 검사 (`python3 scripts/check-wiki.py docs/wiki`, 이미 있음) |
