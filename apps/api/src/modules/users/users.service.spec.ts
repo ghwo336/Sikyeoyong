@@ -1,4 +1,4 @@
-import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
+import { okrwToAokrw } from '@sikyeoyong/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
@@ -33,12 +33,8 @@ describe('UsersService', () => {
   });
 
   it('answers NOT_FOUND for an unknown user', () => {
-    const s = service();
-    expect(() => s.getMonthlyBudgetAokrw('nobody')).toThrow(AppError);
-    try {
-      s.getMonthlyBudgetAokrw('nobody');
-    } catch (e) {
-      expect((e as AppError).code).toBe('NOT_FOUND');
-    }
+    expect(() => service().getMonthlyBudgetAokrw('nobody')).toThrow(
+      expect.objectContaining({ code: 'NOT_FOUND' }),
+    );
   });
 });

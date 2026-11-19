@@ -68,6 +68,6 @@ describe('AgentsService', () => {
 
   it('answers NOT_FOUND when the user has no dragon yet', () => {
     const { s } = setup();
-    expect(() => s.getForUser('u2')).toThrow(AppError);
+    expect(() => s.getForUser('u2')).toThrow(expect.objectContaining({ code: 'NOT_FOUND' }));
   });
 });

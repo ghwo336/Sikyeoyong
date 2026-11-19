@@ -4,6 +4,11 @@ import type { AppConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import type { LlmProvider } from './llm-provider.js';
 
+/** The production client. Exported so a test can check the key reaches the SDK. */
+export function defaultMessagesClient(apiKey: string): MessagesClient {
+  return new Anthropic({ apiKey });
+}
+
 /**
  * Picks the LlmProvider from config (D-22). Production always has LLM_MODEL and
  * ANTHROPIC_API_KEY (env.ts refuses to start otherwise). In development or tests
@@ -11,11 +16,6 @@ import type { LlmProvider } from './llm-provider.js';
  * naming the missing variables, never their values. makeClient is the seam
  * tests use to see that the key, model and effort come from config.
  */
-/** The production client. Exported so a test can check the key reaches the SDK. */
-export function defaultMessagesClient(apiKey: string): MessagesClient {
-  return new Anthropic({ apiKey });
-}
-
 export function createLlmProvider(
   config: AppConfig,
   makeClient: (apiKey: string) => MessagesClient = defaultMessagesClient,
