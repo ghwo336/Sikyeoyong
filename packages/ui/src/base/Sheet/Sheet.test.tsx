@@ -138,6 +138,28 @@ describe('Sheet (Sheet.md 테스트 기준)', () => {
     fireEvent.pointerUp(window, { clientX: 100, clientY: 10 + to, isPrimary: true });
   }
 
+  it('uses the Sheet.md numbers: 120px or 500px/s', () => {
+    expect(CLOSE_OFFSET).toBe(120);
+    expect(CLOSE_VELOCITY).toBe(500);
+  });
+
+  it('does not stretch upward when dragged up', async () => {
+    render(
+      <Sheet open label="x" onClose={vi.fn()}>
+        <Body />
+      </Sheet>,
+    );
+    const dialog = screen.getByRole('dialog');
+    await new Promise((r) => setTimeout(r, 400));
+    fireEvent.pointerDown(dialog, { clientX: 100, clientY: 300, isPrimary: true, button: 0 });
+    for (let y = 20; y <= 200; y += 20) {
+      await new Promise((r) => setTimeout(r, 16));
+      fireEvent.pointerMove(window, { clientX: 100, clientY: 300 - y, isPrimary: true });
+    }
+    expect(dialog.style.transform).not.toMatch(/translateY\(-/);
+    fireEvent.pointerUp(window, { clientX: 100, clientY: 100, isPrimary: true });
+  });
+
   it('closes when the panel is dragged down far enough', async () => {
     const onClose = vi.fn();
     render(
