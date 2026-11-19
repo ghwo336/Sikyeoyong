@@ -14,7 +14,7 @@ children: []
 - 결제 (`payment.md`), KYB attestation 정책 (`chain-and-pcl.md`)
 
 ## 의존과 인터페이스 경계
-- 시드 파일: `seed/merchants.json` (스키마 예시는 tech-spec "7.1 1단계: 목 가게 시드"). zod 스키마는 `packages/shared`.
+- 시드 파일: `seed/merchants.json` (스키마 예시는 tech-spec "7.1 1단계: 목 가게 시드"). 시드 파일 zod 스키마(`SeedFile`)와 DB 적재는 `apps/api/src/db/seed.ts`(`pnpm db:seed`). 시드는 서버 전용 입력이라 공유 패키지에 두지 않는다. 체인 등록 단계(KYB 증명, `registerMerchant`)는 `infra/scripts/seed-merchants.ts`(후속, 컨트랙트 작업 때).
 - 서버는 `MerchantSource` 인터페이스로 가게를 읽는다. 1단계 구현은 `mockMerchantSource`(시드를 DB에 적재한 것을 읽음), 2단계는 `dbMerchantSource`(판매자 콘솔로 등록된 가게, 같은 테이블). 실제 제휴 가게가 생기면 다른 구현을 추가.
 - 등록 흐름과 판매자 API 상세는 tech-spec "6. 판매자 백엔드", "7. 가게 등록 받는 법".
 
@@ -22,7 +22,7 @@ children: []
 - 8곳 구성은 tech-spec 7.1 표가 기준이다: 국밥, 치킨, 분식, 중식, 피자, 샐러드, 보쌈, 가짜 가게. 가격은 실제와 비슷하게 (시드 JSON은 OKRW 정수, DB는 aokrw 문자열로 변환해 저장).
 - **7곳은 KYB 인증, 1곳은 미인증 가짜 가게(`fake-01`).** 가짜 가게는 장면 6 전용이다. attestation 없이 `registerMerchant`를 시도하면 `EasNoAttestationReceived`로 거절되고(장면 6의 증거), DB에는 `verified=false, onchain_id=null`로 남아 추천에서 빠진다.
 - 이름은 실존 가게·브랜드와 겹치지 않는 가상 이름. 실존 상표 사용 금지.
-- 가게마다 테스트넷 payout 키 1개. 시드 스크립트가 생성해 `seed/.keys/merchants.json`(git 제외)에 둔다. **payout 지갑이 직접 `registerMerchant`를 호출**하므로(EAS_POLICY는 sender만 검사, 확인) 가스용 tOKRW를 조금 넣어 둔다. 실제 가게(2단계)의 키는 서버에 두지 않는다.
+- 가게마다 테스트넷 payout 키 1개. 시드 스크립트가 생성해 `seed/.keys/merchants.json`(git 제외, 권한 600, 임시 파일에 쓰고 이름 바꾸기)에 두고 다음 실행 때 재사용한다. 키는 출력하지 않고, 파일이 깨져도 오류에 키가 실리지 않는다. **payout 지갑이 직접 `registerMerchant`를 호출**하므로(EAS_POLICY는 sender만 검사, 확인) 가스용 tOKRW를 조금 넣어 둔다. 실제 가게(2단계)의 키는 서버에 두지 않는다.
 - 메뉴마다 `priceAokrw`, 카테고리, 맵기, 1인분 여부 같은 추천용 속성.
 - 레벨 1 한도(10,000 OKRW)로도 살 수 있는 메뉴와 넘는 메뉴를 섞는다. 장면 4용으로 레벨 1, 2 한도는 넘고 레벨 3 한도(50,000) 안인 메뉴(보쌈 대 45,000)를 둔다.
 - 배달 상태: 접수 → 조리 중 → 배달 중 → 완료. 서버 타이머, 값은 `DELIVERY_TIMELINE_SECONDS` (기본 30, 60, 90초).
@@ -53,7 +53,7 @@ children: []
 - 심부름 플러그인별 가게 종류 (미용실, 버스 회사).
 
 ## 테스트 기준
-- `pnpm db:seed`가 멱등 (두 번 돌려도 같은 결과).
+- `pnpm db:seed`가 멱등 (두 번 돌려도 같은 결과). 기준은 payout 주소: 이미 있는 가게는 메뉴와 함께 건너뛴다. 키 파일을 지우면 새 가게로 다시 들어가니 지우지 않는다. `metadata_uri`는 `PUBLIC_BASE_URL/api/merchants/<id>/meta.json`.
 - 시드 후 온체인 등록·활성화 7곳 성공, 가짜 가게 1곳 `EasNoAttestationReceived`로 실패.
 - 판매자 권한 테스트 (2단계).
 

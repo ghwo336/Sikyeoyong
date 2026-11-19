@@ -23,6 +23,7 @@ children: []
 - **ID**: 내부 ID는 `text` UUID v7. `orderRef`(bytes32 hex)는 별도 컬럼 `order_ref`(유니크).
 - **마이그레이션**: `drizzle-kit`으로 생성(`pnpm --filter @sikyeoyong/api db:generate`), 커밋. 적용은 `pnpm db:migrate`. 스키마는 `apps/api/src/db/schema/`, SQL은 `apps/api/src/db/migrations/`(빌드 때 dist로 복사).
 - **연결**: `openDb`가 WAL, `foreign_keys=ON`, busy_timeout 5000ms를 켠다. 테스트는 `:memory:`. `DATABASE_URL`의 상대 경로는 실행 위치 기준이라 pnpm으로 돌리면 `apps/api/data/`에 생긴다. Postgres로 옮기면 금액 칸은 `numeric(78,0)`이 되고 SQLite용 GLOB CHECK는 지운다. 금액 칸에는 DB에서도 CHECK(숫자만, 앞자리 0 없음, 78자리 이하)를 건다.
+- **시드**: 진입점 `apps/api/src/db/seed.ts`(`pnpm db:seed`), 마이그레이션을 먼저 적용하고 한 트랜잭션으로 적재. 규칙은 merchants.md.
 - 수동으로 DB를 고치지 않는다. 되돌릴 수 없는 마이그레이션은 PR에 표시.
 - **체인 데이터 동기화**: 트랜잭션 해시, 블록 번호, 이벤트 로그 인덱스를 저장해서 재동기화 가능하게. 인덱서 이벤트는 `(tx_hash, log_index)` 유니크로 멱등, 커서는 `chain_cursor`를 같은 DB 트랜잭션에서 갱신.
 - **결제 제출 표시**: `orders`와 `wallet_txs`의 제출 시작 칸(`submit_started_at`, tx hash, nonce, `maws_request_id`)은 브로드캐스트나 MAWS 호출 전에 별도 DB 트랜잭션으로 커밋한다 (payment.md "confirm 상태 규칙", D-19).

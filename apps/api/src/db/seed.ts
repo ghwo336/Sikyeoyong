@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { AppError, aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
@@ -56,13 +56,29 @@ const KeyFile = z.record(Key, z.object({ privateKey: z.string().regex(/^0x[0-9a-
  * mode 600). Missing keys are created; existing ones are reused so addresses stay stable.
  * Returns addresses only. Keys are never printed.
  */
+/**
+ * Reads the key file without ever letting key material reach an error message:
+ * a JSON SyntaxError quotes the broken line, so the original error and cause are dropped.
+ */
+function readKeyFile(path: string): z.infer<typeof KeyFile> {
+  let json: unknown;
+  try {
+    json = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    throw new AppError('INTERNAL', { reason: 'payout key file is not valid JSON', path });
+  }
+  const parsed = KeyFile.safeParse(json);
+  if (!parsed.success) {
+    throw new AppError('INTERNAL', { reason: 'payout key file has an unexpected shape', path });
+  }
+  return parsed.data;
+}
+
 export function ensurePayoutKeys(
   keyFilePath: string,
   merchantKeys: readonly string[],
 ): Map<string, string> {
-  const stored = existsSync(keyFilePath)
-    ? KeyFile.parse(JSON.parse(readFileSync(keyFilePath, 'utf8')))
-    : {};
+  const stored = existsSync(keyFilePath) ? readKeyFile(keyFilePath) : {};
   let changed = false;
   for (const key of merchantKeys) {
     if (!stored[key]) {
@@ -71,9 +87,12 @@ export function ensurePayoutKeys(
     }
   }
   if (changed) {
+    // Write a temp file with 600 then rename, so a crash never leaves a truncated key file.
     mkdirSync(dirname(keyFilePath), { recursive: true });
-    writeFileSync(keyFilePath, `${JSON.stringify(stored, null, 2)}\n`, { mode: 0o600 });
-    chmodSync(keyFilePath, 0o600);
+    const tmp = `${keyFilePath}.${process.pid}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify(stored, null, 2)}\n`, { mode: 0o600 });
+    chmodSync(tmp, 0o600);
+    renameSync(tmp, keyFilePath);
   }
   return new Map(
     merchantKeys.map((key) => {
@@ -103,6 +122,9 @@ export function seedMerchants(
 ): SeedResult {
   let inserted = 0;
   let skipped = 0;
+  // Step the timestamp per row so UUID v7 order follows insert order within one run.
+  let clock = nowMs;
+  const nextId = () => uuidv7(clock++);
   db.transaction((tx) => {
     for (const m of seed.merchants) {
       const payout = payoutByKey.get(m.key);
@@ -117,7 +139,7 @@ export function seedMerchants(
         skipped += 1;
         continue;
       }
-      const id = uuidv7(nowMs);
+      const id = nextId();
       tx.insert(merchants)
         .values({
           id,
@@ -136,7 +158,7 @@ export function seedMerchants(
       for (const menu of m.menus) {
         tx.insert(menus)
           .values({
-            id: uuidv7(nowMs),
+            id: nextId(),
             merchantId: id,
             name: menu.name,
             priceAokrw: aokrwToString(okrwToAokrw(BigInt(menu.price))),

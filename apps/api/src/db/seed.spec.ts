@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { AppError } from '@sikyeoyong/shared';
@@ -100,6 +100,16 @@ describe('parseSeed', () => {
     expect(() => parseSeed(json)).toThrow();
   });
 
+  it('rejects duplicate menu keys within a merchant', () => {
+    const m = base.merchants[0];
+    expect(() =>
+      parseSeed({
+        ...base,
+        merchants: [{ ...m, menus: [...(m?.menus ?? []), ...(m?.menus ?? [])] }],
+      }),
+    ).toThrow(AppError);
+  });
+
   it('rejects duplicate merchant keys', () => {
     expect(() => parseSeed({ ...base, merchants: [base.merchants[0], base.merchants[0]] })).toThrow(
       AppError,
@@ -118,6 +128,33 @@ describe('ensurePayoutKeys', () => {
     expect(second.get('a')).toBe(first.get('a'));
     expect(second.get('b')).toBe(first.get('b'));
     expect(second.size).toBe(3);
+  });
+
+  it.each([
+    ['truncated JSON', (k: string) => `{"a":{"privateKey":"${k}`],
+    ['wrong shape', (k: string) => JSON.stringify({ a: { privateKey: k.toUpperCase() } })],
+  ])('never puts key material in the error for a broken key file (%s)', (_name, broken) => {
+    const file = join(tempDir(), 'k.json');
+    ensurePayoutKeys(file, ['a']);
+    const key =
+      (JSON.parse(readFileSync(file, 'utf8')) as Record<string, { privateKey: string }>).a
+        ?.privateKey ?? '';
+    writeFileSync(file, broken(key));
+    let caught: unknown;
+    try {
+      ensurePayoutKeys(file, ['a']);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(AppError);
+    const text = `${String(caught)} ${JSON.stringify((caught as AppError).detail)} ${String((caught as AppError).cause)}`;
+    expect(text.toLowerCase()).not.toContain(key.slice(2, 22).toLowerCase());
+  });
+
+  it('leaves no temp file behind', () => {
+    const dir = tempDir();
+    ensurePayoutKeys(join(dir, 'k.json'), ['a']);
+    expect(readdirSync(dir)).toEqual(['k.json']);
   });
 
   it('returns addresses only, never the private keys', () => {
@@ -158,6 +195,17 @@ describe('seedMerchants', () => {
     expect(db.select().from(menus).all()).toHaveLength(
       seed.merchants.reduce((n, m) => n + m.menus.length, 0),
     );
+  });
+
+  it('gives ids that sort in insert order within one run', () => {
+    const { db } = freshDb();
+    seedMerchants(db, seed, payouts(seed), 'http://x', 5_000);
+    const ids = db
+      .select({ id: merchants.id })
+      .from(merchants)
+      .all()
+      .map((r) => r.id);
+    expect([...ids].sort()).toEqual(ids);
   });
 
   it('is idempotent: a second run skips every merchant and adds no menus', () => {

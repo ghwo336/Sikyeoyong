@@ -773,7 +773,7 @@ await ownerWallet.writeContract({
 | bossam-01 | 한상보쌈 | 한식 | 예 | 보쌈 정식 12,000, 대(大) 45,000 (회식용, 레벨 한도 초과 장면) |
 | fake-01 | 초특가 아무거나 | 기타 | **아니오** | 무엇이든 1,000 (가짜 가게 장면) |
 
-**시드 절차 (`infra/scripts/seed-merchants.ts`)**
+**시드 절차** (1단계 DB 적재: `apps/api/src/db/seed.ts`, `pnpm db:seed`. 키 생성과 DB 적재까지 한다. 2~6단계 체인 등록: `infra/scripts/seed-merchants.ts`, 컨트랙트 작업 때)
 1. 가게마다 테스트넷 키 생성 → `seed/.keys/merchants.json`(git 제외, 암호화 옵션). payout 주소 = 이 키 주소.
 2. 각 payout에 faucet 또는 운영자 지갑으로 가스용 tOKRW 소액 전송.
 3. KYB 스키마 등록(최초 1회): SchemaRegistry `0x1000000000000000000000000000000000000006`에 `string bizName, bytes32 bizNoHash, uint8 status, uint64 checkedAt` 스키마 등록, resolver 없음, revocable=true. 자체 스키마 등록 가능 여부는 (미확인), 표준 EAS는 누구나 등록 가능하므로 (추론). 결과 UID를 `KYB_SCHEMA_UID`로 저장.
