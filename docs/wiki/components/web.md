@@ -34,6 +34,14 @@ children: []
 - 토큰과 글꼴은 루트 `app/layout.tsx`에서 한 번만 불러온다: `@sikyeoyong/ui/tokens.css`, Pretendard Variable(npm `pretendard`, 동적 서브셋), 고운돋움(npm `@fontsource/gowun-dodum`, 한글과 라틴 400). 토큰의 글꼴 이름과 같게 하려고 `next/font`(이름을 바꿈) 대신 자체 호스팅 CSS를 쓴다. 페이지 전체 기본값은 `app/globals.css`(토큰 변수만).
 - 동작 줄이기는 전역에서 끄지 않는다. 각 ui 컴포넌트가 Motion `useReducedMotion`이나 자기 CSS 모듈의 `prefers-reduced-motion`으로 "이동 없이 페이드만"을 구현한다 (design-and-motion.md).
 
+## API 경계와 목 데이터 (2026-11-19)
+- 훅은 `lib/api`의 `api`(`ApiClient` 인터페이스)만 부른다. 지금 구현은 `lib/mock/client.ts`(브라우저 안 가짜 서버)이고, 실제 API로 갈아 끼울 때는 `lib/api/index.ts` 한 줄만 바꾼다. 목은 `lib/mock/` 한 곳에만 둔다 (`fixtures.ts`는 시안 문구와 금액, `client.ts`는 동작).
+- `lib/api/types.ts`는 임시 타입이다 (파일 맨 위 "TODO: packages/shared/src/api로 교체"). shared에 스키마가 생기면 하나씩 지우고 shared에서 import한다. `BudgetView`는 이미 shared(`zBudgetView`)를 쓴다.
+- 목 `confirmOrder`는 결제하지 않는다. 주문을 조리 중으로 바꿀 뿐이다.
+- 목 `sendChatMessage`는 SSE 대신 이벤트 배열을 한 번에 준다. 실제 스트림으로 바꿀 때 훅이 이벤트를 대화 항목으로 묶는 부분은 그대로 쓴다.
+- 서버 상태는 TanStack Query(`lib/query-provider.tsx`, 루트 layout에서 한 번). mutation은 자동 재시도하지 않는다 (절대 규칙 9).
+- 화면 문자열 도우미(`lib/format.ts`): "25분", "가게에서 어디로, 25분쯤", "오늘 오후 12:28"(기기 시간대와 상관없이 KST).
+
 ## 하지 말 것 (MUST NOT)
 - 체인 ID, RPC, 컨트랙트 주소를 웹 코드에 넣지 않는다.
 - `number`로 금액을 계산하지 않는다.
