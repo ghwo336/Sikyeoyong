@@ -51,6 +51,8 @@
   --type-row-weight: 600;
   --type-caption-size: 13px;
   --type-caption-weight: 400;
+  --type-chip-size: 14px;
+  --type-chip-weight: 400;
   --type-button-size: 17px;
   --type-button-weight: 700;
   --type-button-sub-size: 16px;
@@ -81,4 +83,5 @@
   --size-button-primary: 56px;
   --size-button-secondary: 48px;
   --size-input: 52px;
+  --size-chip: 36px;
 }
