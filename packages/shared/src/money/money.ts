@@ -12,6 +12,8 @@ export const AOKRW_PER_OKRW = 10n ** 18n;
 export const MAX_AOKRW = 2n ** 256n - 1n;
 
 const AOKRW_STRING_RE = /^(0|[1-9][0-9]*)$/;
+// Length check first so absurdly long strings never reach the regex or BigInt.
+// Performance guard only: the BigInt comparison below gives the same answer.
 const MAX_AOKRW_DIGITS = MAX_AOKRW.toString().length;
 
 function assertAokrwRange(value: bigint): void {

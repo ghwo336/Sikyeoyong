@@ -67,6 +67,7 @@ children: []
 - PCL 의존 동작(한도 revert, EAS 거절)은 anvil에서 재현 불가. 테스트넷 TypeScript 통합 테스트로 (`conventions/testing.md`).
 
 ## 열린 질문
+- 금액 상한: `Order.amount`는 `uint128`이고 서버의 `zAokrwString`은 uint256까지 받는다. 컨트랙트가 `msg.value > type(uint128).max`면 `BadAmount`로 되돌리는지(tech-spec 5.2 의사 코드) 컨트랙트 구현과 리뷰에서 확인하고, 캐스트에 상한 검사 없이 내리지 않는다.
 - S10 (Q-10): 모드 V에서 컨트랙트가 내보낸 지급이 에이전트 한도로 집계되나
 - S11 (Q-11): 8004 `ownerOf`, `setMetadata` 시그니처
 - Q-13: `deployPclProxy` kind 값과 초기화 절차, PolicySet Solidity 타입
