@@ -1,0 +1,75 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-button);
+  font-family: var(--font-ui);
+  letter-spacing: var(--type-body-letter-spacing);
+  word-break: keep-all;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+.button[data-loading] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.lg {
+  min-height: var(--size-button-primary);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--type-row-size);
+  font-weight: var(--type-heading-weight);
+}
+
+.md {
+  min-height: var(--size-touch-min);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-chip);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-row-weight);
+}
+
+.primary {
+  background: var(--color-leaf);
+  color: var(--color-surface);
+}
+
+.primary:active {
+  background: var(--color-leaf-pressed);
+}
+
+.secondary {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
+}
+
+.text {
+  background: transparent;
+  color: var(--color-ink-secondary);
+  font-weight: var(--type-body-weight);
+}
+
+.kakao {
+  background: var(--color-kakao);
+  color: var(--color-kakao-ink);
+}
+
+.icon {
+  display: inline-flex;
+}
+
+.label {
+  min-width: 0;
+}

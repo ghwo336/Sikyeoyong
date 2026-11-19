@@ -15,7 +15,7 @@ children: []
 무엇을 할지 결정 (콜백만 부름), 로딩 중 API 대기 처리 (부모가 `loading`을 넘김)
 
 ## props
-`variant: 'primary' | 'secondary' | 'text' | 'kakao'`, `size: 'lg' | 'md'`, `loading?: boolean`, `icon?: ReactNode`, `onPress: () => void`, `children`
+`variant: 'primary' | 'secondary' | 'text' | 'kakao'`, `size?: 'lg' | 'md'` (기본 `lg`: 높이 56, 반경 18 / `md`: 높이 44 알약), `loading?: boolean`, `icon?: ReactNode` (스크린 리더에는 숨김), `onPress: () => void`, `children: ReactNode`
 
 ## 하네스 상태
 `Button.stories.tsx`에 아래를 전부 만든다.
@@ -35,4 +35,6 @@ children: []
 - 터치 영역 44 이상
 
 ## 메모
-없음
+- 누름은 Motion `whileTap` scale 0.97 스프링(damping 18, stiffness 300). 동작 줄이기면 누름 효과 없음.
+- 로딩 중에는 `aria-busy`, 흐리게, 누름 무시. 스피너는 넣지 않는다 (design-and-motion.md).
+- 하네스에는 문서 상태 다섯 개와 `md` 크기 스토리가 있다.
