@@ -1,7 +1,8 @@
 'use client';
 
 import { formatOkrw } from '@sikyeoyong/shared';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
+import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Amount.module.css';
 
 export type AmountSize = 'display' | 'title' | 'row';
@@ -20,7 +21,7 @@ const ROLL = { duration: 0.4, ease: 'easeOut' } as const;
 
 /** Draws an amount; when it changes, each digit rolls to its new value (Amount.md). */
 export function Amount({ value, size, animate = false }: AmountProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useShouldReduceMotion();
   const text = formatOkrw(value);
   const className = `${styles.amount} ${styles[size]}`;
 

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { okrwToAokrw } from '@sikyeoyong/shared';
+import { MotionConfig } from 'motion/react';
 import { Button } from '../Button';
 import { Amount, type AmountProps } from './Amount';
 
@@ -46,10 +47,11 @@ function Changing(props: Pick<AmountProps, 'size'>) {
 /** 값 변경 애니메이션 */
 export const Rolling: Story = { render: () => <Changing size="display" /> };
 
-/** 동작 줄이기 설정: 운영체제 "동작 줄이기"를 켜고 보면 숫자가 굴러가지 않고 바로 바뀐다 */
+/** 동작 줄이기 설정: 기기 설정과 상관없이 굴림 없이 바로 바뀐다 */
 export const ReducedMotion: Story = {
-  render: () => <Changing size="title" />,
-  parameters: {
-    docs: { description: { story: '시스템 동작 줄이기가 켜지면 굴림 없이 바로 바뀐다.' } },
-  },
+  render: () => (
+    <MotionConfig reducedMotion="always">
+      <Changing size="title" />
+    </MotionConfig>
+  ),
 };

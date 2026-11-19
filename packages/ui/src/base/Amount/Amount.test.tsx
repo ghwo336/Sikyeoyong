@@ -1,13 +1,10 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Amount } from './Amount';
 
-// motion caches the device preference on first use, so the hook is controlled here.
+// The device preference is cached by motion, so the preference hook is controlled here.
 const reduced = vi.hoisted(() => ({ value: false }));
-vi.mock('motion/react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('motion/react')>();
-  return { ...actual, useReducedMotion: () => reduced.value };
-});
+vi.mock('../reduced-motion', () => ({ useShouldReduceMotion: () => reduced.value }));
 
 // verify-allow: R4 independent oracle for expected values, not production code
 const won = (n: bigint) => n * 10n ** 18n;
@@ -47,13 +44,49 @@ describe('Amount (Amount.md 테스트 기준)', () => {
     expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
   });
 
-  it('updates the text when the value changes', () => {
-    const { rerender } = render(<Amount value={won(9_000n)} size="title" animate />);
+  // What the eye sees is decided by each column's offset: digit d shows at -d em.
+  const columns = (root: HTMLElement) =>
+    Array.from(root.querySelectorAll<HTMLElement>('.column')).map((c) => c.style.transform);
+
+  it.each([
+    [won(45_000n), ['translateY(-4em)', 'translateY(-5em)', 'none', 'none', 'none']],
+    [
+      won(1_234_567n),
+      [
+        'translateY(-1em)',
+        'translateY(-2em)',
+        'translateY(-3em)',
+        'translateY(-4em)',
+        'translateY(-5em)',
+        'translateY(-6em)',
+        'translateY(-7em)',
+      ],
+    ],
+    [won(9_080n), ['translateY(-9em)', 'none', 'translateY(-8em)', 'none']],
+  ])('shows the right digit in every window (%s)', (value, expected) => {
+    const { container } = render(<Amount value={value} size="display" animate />);
+    expect(columns(container)).toEqual(expected);
+  });
+
+  it('rolls each window to the new digit when the value changes', async () => {
+    const { container, rerender } = render(<Amount value={won(9_000n)} size="title" animate />);
     act(() => {
       rerender(<Amount value={won(10_500n)} size="title" animate />);
     });
     expect(screen.getByText('10,500원')).toBeInTheDocument();
     expect(screen.queryByText('9,000원')).toBeNull();
+    await waitFor(
+      () => {
+        expect(columns(container)).toEqual([
+          'translateY(-1em)',
+          'none',
+          'translateY(-5em)',
+          'none',
+          'none',
+        ]);
+      },
+      { timeout: 2000 },
+    );
   });
 
   it.each(['display', 'title', 'row'] as const)('applies the %s size class', (size) => {

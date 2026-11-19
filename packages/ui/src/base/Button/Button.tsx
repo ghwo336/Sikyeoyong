@@ -1,7 +1,8 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
+import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Button.module.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'kakao';
@@ -29,7 +30,7 @@ export function Button({
   onPress,
   children,
 }: ButtonProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useShouldReduceMotion();
   return (
     <motion.button
       type="button"
