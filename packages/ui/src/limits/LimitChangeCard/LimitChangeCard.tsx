@@ -1,9 +1,8 @@
 'use client';
 
-import { formatOkrw } from '@sikyeoyong/shared';
+import { formatOkrw, levelWithRo } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
 import { useSubmitLock } from '../../base/useSubmitLock';
-import { levelWithRo } from '../LimitBlocked';
 import styles from './LimitChangeCard.module.css';
 
 export type LimitField = 'perOrder' | 'monthlyBudget';

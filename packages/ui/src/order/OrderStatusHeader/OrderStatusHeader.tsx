@@ -1,3 +1,4 @@
+import { formatKstClock } from '@sikyeoyong/shared';
 import styles from './OrderStatusHeader.module.css';
 
 export type OrderStatusVariant = 'eta-first' | 'remaining-first';
@@ -13,20 +14,8 @@ export interface OrderStatusHeaderProps {
   readonly distance?: string;
 }
 
-const KST = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: 'Asia/Seoul',
-  hour: 'numeric',
-  minute: 'numeric',
-  hourCycle: 'h23',
-});
-
-/** "12시 55분" in Korea time, whatever the device time zone is. 24-hour clock. */
-export function formatKstClock(unixMs: number): string {
-  const parts = KST.formatToParts(new Date(unixMs));
-  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0');
-  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');
-  return `${String(hour)}시 ${String(minute)}분`;
-}
+// The arrival clock is shared (packages/shared time/kst); re-exported for older imports.
+export { formatKstClock };
 
 /** "8분 남았어요", or "곧 도착해요" once nothing is left. */
 export function formatRemaining(remainingMin: number): string {

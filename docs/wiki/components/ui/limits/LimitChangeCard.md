@@ -41,4 +41,4 @@ LimitChat
 - 버튼 두 개는 base `Button`이다: 바꾸기는 primary `choice`(52, 반경 16, 16/700, Face ID 아이콘은 `icon`), 그만두기는 text `md`(44, 15/400).
 - 두 번 누름 잠금은 base 훅 `useSubmitLock`(OrderConfirmSheet와 같은 훅)이다.
 - 실패 문구와 확인 중 모양은 시안에 없다 (디자인 선택).
-- 레벨 로/으로는 같은 영역의 `LimitBlocked`의 `levelWithRo`를 쓴다.
+- 레벨 로/으로는 `packages/shared`의 `levelWithRo`(text/korean)를 쓴다.

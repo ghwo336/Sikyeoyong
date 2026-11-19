@@ -1,4 +1,4 @@
-import { formatOkrw } from '@sikyeoyong/shared';
+import { formatKstDateTime, formatOkrw, kstDaysBetween } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
 import styles from './CapReached.module.css';
 
@@ -13,53 +13,8 @@ export interface CapReachedProps {
   readonly now: number;
 }
 
-const KST_PARTS = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: 'Asia/Seoul',
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: 'numeric',
-  hourCycle: 'h23',
-});
-
-interface KstParts {
-  readonly year: number;
-  readonly month: number;
-  readonly day: number;
-  readonly hour: number;
-  readonly minute: number;
-}
-
-function kstParts(unixMs: number): KstParts {
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(KST_PARTS.formatToParts(new Date(unixMs)).find((p) => p.type === type)?.value ?? '0');
-  return {
-    year: get('year'),
-    month: get('month'),
-    day: get('day'),
-    hour: get('hour'),
-    minute: get('minute'),
-  };
-}
-
-/** "12월 3일 오후 2시", "12월 3일 오전 9시 30분" in Korea time (Cap.dc.html). */
-export function formatKstDateTime(unixMs: number): string {
-  const p = kstParts(unixMs);
-  const half = p.hour < 12 ? '오전' : '오후';
-  const h12 = p.hour % 12 === 0 ? 12 : p.hour % 12;
-  const minute = p.minute === 0 ? '' : ` ${String(p.minute)}분`;
-  return `${String(p.month)}월 ${String(p.day)}일 ${half} ${String(h12)}시${minute}`;
-}
-
-/** Calendar days between two moments, counted on Korean dates (not 24-hour blocks). */
-export function kstDaysBetween(fromMs: number, toMs: number): number {
-  const a = kstParts(fromMs);
-  const b = kstParts(toMs);
-  const dayA = Date.UTC(a.year, a.month - 1, a.day);
-  const dayB = Date.UTC(b.year, b.month - 1, b.day);
-  return Math.round((dayB - dayA) / 86_400_000);
-}
+// The KST helpers are shared (packages/shared time/kst); re-exported for older imports.
+export { formatKstDateTime, kstDaysBetween };
 
 function whenText(days: number): string {
   if (days <= 0) return '오늘';

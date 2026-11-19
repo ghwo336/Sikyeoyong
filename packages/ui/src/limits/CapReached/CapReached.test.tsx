@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import * as shared from '@sikyeoyong/shared';
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -22,6 +23,11 @@ const base = {
 };
 
 describe('CapReached (CapReached.md 테스트 기준)', () => {
+  it('uses the shared KST helpers, not a copy of its own', () => {
+    expect(formatKstDateTime).toBe(shared.formatKstDateTime);
+    expect(kstDaysBetween).toBe(shared.kstDaysBetween);
+  });
+
   it('shows the refill time in KST like the design, whatever the device time zone', () => {
     render(<CapReached {...base} now={RESET_MS - 4 * DAY} />);
     expect(screen.getByText('12월 3일 오후 2시')).toBeInTheDocument();

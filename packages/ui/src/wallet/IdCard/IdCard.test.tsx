@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import * as shared from '@sikyeoyong/shared';
 import { DRAGON_SPECIES, okrwToAokrw } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -28,6 +29,10 @@ function fact(term: string) {
 }
 
 describe('IdCard (IdCard.md 테스트 기준)', () => {
+  it('uses the shared KST date, not a copy of its own', () => {
+    expect(formatKstDate).toBe(shared.formatKstDate);
+  });
+
   it("says '실명 확인 전' when the owner is not verified", () => {
     const { rerender } = render(<IdCard {...base} />);
     expect(fact('주인')).toBe('실명 확인됨');

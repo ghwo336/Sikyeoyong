@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import * as shared from '@sikyeoyong/shared';
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -24,6 +25,10 @@ const base = {
 };
 
 describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
+  it('uses the shared particle helper, not a copy of its own', () => {
+    expect(levelWithRo).toBe(shared.levelWithRo);
+  });
+
   it('has no explanation paragraph: only the numbers and the two choices (no slop)', () => {
     const { container } = render(
       <LimitBlocked {...base} nextLevel={{ level: 3, limit: won(50_000n) }} />,

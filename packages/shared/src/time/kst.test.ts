@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { kstMonthOf, kstMonthRange } from './kst.js';
+import {
+  formatKstClock,
+  formatKstDate,
+  formatKstDateTime,
+  kstDaysBetween,
+  kstMonthOf,
+  kstMonthRange,
+} from './kst.js';
 
 // Expected values written by hand: KST = UTC+9, no DST.
 describe('kstMonthOf', () => {
@@ -43,4 +50,54 @@ describe('kstMonthRange', () => {
       expect(() => kstMonthRange(bad)).toThrow();
     },
   );
+});
+
+// Moved from packages/ui (OrderStatusHeader, IdCard, CapReached). Same hand-written cases.
+describe('formatKstClock', () => {
+  it.each([
+    [Date.UTC(2026, 11, 9, 3, 55), '12시 55분'],
+    [Date.UTC(2026, 11, 9, 15, 5), '0시 5분'], // past midnight in Seoul
+    [Date.UTC(2026, 11, 9, 4, 5), '13시 5분'],
+  ])('%s is %s', (ms, text) => {
+    expect(formatKstClock(ms)).toBe(text);
+  });
+});
+
+describe('formatKstDate', () => {
+  it('turns the date at Seoul midnight', () => {
+    expect(formatKstDate(Date.UTC(2026, 10, 30, 15, 0))).toBe('2026. 12. 1.'); // 00:00 KST
+    expect(formatKstDate(Date.UTC(2026, 10, 30, 14, 59))).toBe('2026. 11. 30.');
+  });
+});
+
+describe('formatKstDateTime', () => {
+  it.each([
+    [Date.UTC(2026, 11, 3, 5, 0), '12월 3일 오후 2시'],
+    [Date.UTC(2026, 11, 3, 0, 30), '12월 3일 오전 9시 30분'],
+    [Date.UTC(2026, 11, 2, 15, 0), '12월 3일 오전 12시'], // midnight KST
+    [Date.UTC(2026, 11, 3, 3, 0), '12월 3일 오후 12시'], // noon KST
+    [Date.UTC(2026, 11, 31, 15, 1), '1월 1일 오전 12시 1분'],
+  ])('%s is %s', (ms, text) => {
+    expect(formatKstDateTime(ms)).toBe(text);
+  });
+});
+
+describe('kstDaysBetween', () => {
+  const reset = Date.UTC(2026, 11, 3, 5, 0); // Dec 3 14:00 KST
+  const day = 86_400_000;
+  it('counts Seoul calendar days, not 24-hour blocks', () => {
+    expect(kstDaysBetween(Date.UTC(2026, 11, 2, 14, 30), reset)).toBe(1); // Dec 2 23:30 KST
+    expect(kstDaysBetween(Date.UTC(2026, 11, 2, 15, 0), reset)).toBe(0); // Dec 3 00:00 KST
+    expect(kstDaysBetween(reset - 4 * day, reset)).toBe(4);
+    expect(kstDaysBetween(reset + day, reset)).toBe(-1);
+  });
+});
+
+describe('KST formatting input', () => {
+  it('refuses times that are not finite or out of Date range', () => {
+    expect(() => formatKstClock(Number.NaN)).toThrow();
+    expect(() => formatKstDate(Number.POSITIVE_INFINITY)).toThrow();
+    expect(() => formatKstDateTime(8.64e15 + 1)).toThrow();
+    expect(() => kstDaysBetween(0, Number.NaN)).toThrow();
+  });
 });
