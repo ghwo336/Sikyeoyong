@@ -158,6 +158,25 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     expect(h.place_order).toHaveBeenCalledTimes(1);
   });
 
+  it('counts approval requests, orders and cards apart from each other', async () => {
+    const { h } = await run(
+      [
+        {
+          blocks: [
+            tool('request_owner_approval', { reason: 'OVER_LEVEL_LIMIT' }),
+            tool('propose_limit_change', { field: 'perOrder', targetLevel: 2 }),
+            tool('place_order', ORDER),
+          ],
+        },
+        { blocks: [{ text: '끝' }] },
+      ],
+      '한도 올려 주고 보쌈 시켜 줘',
+    );
+    expect(h.request_owner_approval).toHaveBeenCalledTimes(1);
+    expect(h.propose_limit_change).toHaveBeenCalledTimes(1);
+    expect(h.place_order).toHaveBeenCalledTimes(1);
+  });
+
   it('D-21: one limit card per message even when the user asked', async () => {
     const { h, provider } = await run(
       [
