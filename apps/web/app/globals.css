@@ -40,3 +40,10 @@ body {
   margin: 0 auto;
   overflow: hidden;
 }
+
+/* Done.dc.html, Tracking.dc.html: 8 20 24 inside, 16 between blocks. */
+.screen.padded {
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-5) var(--space-6);
+  overflow-y: auto;
+}

@@ -44,11 +44,13 @@ children: []
 
 ## 화면 틀
 - 화면 틀(390 기준, 가운데 정렬, 최대 480, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
+- 여백이 있는 화면(Done, Tracking: 8 20 24, 사이 16)은 `.screen.padded`. 주문 현황 layout(`app/orders/[id]/layout.tsx`)이 쓴다.
 
 ## 조립 현황 (목 데이터)
 | 화면 | 경로 | 컨테이너 | 상태 |
 | --- | --- | --- | --- |
 | Main | `app/(main)/page.tsx` | `features/budget/containers/BudgetMeterContainer`, `features/chat/containers/ChatContainer` | 대화 기록, 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
+| Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 주문 상태를 4단계 중 하나로 바꿔 보인다. 배달 중(Tracking), 도착(Arrived)은 아직. 새로고침하면 목이 픽스처로 주문을 다시 만든다 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
 - Main 위 줄: 용이 44, 이름 18/700, "레벨 1, 한 번에 10,000원까지" 13px, 설정 버튼(…). 맡을 컴포넌트가 없다. 지금은 빠져 있다.
