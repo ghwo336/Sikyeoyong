@@ -71,3 +71,10 @@ children: []
 - 누가: 호재 님
 - 영향: decisions.md D-19, payment.md, server-api.md, tech-spec 1.4, 3.2
 
+### 2026-11-19 D-19 보강 (승인 흐름, 견적 유효 시간, 기본값)
+- 이전: 흐름 3에서 서버가 승인 뒤 원래 주문을 재시도, 승인 필요 실패의 상태 미정, 견적 만료를 재시도 불가 예로 듦.
+- 이후: 승인 필요는 `pending_approval`(승인 행을 주문에 묶어 같은 트랜잭션), 승인 뒤 `quoted`와 확인 카드, 결제는 confirm에서만. 견적 유효 시간 없음, 대신 confirm마다 가격 재계산(`SERVER_PRICE_CHANGED`). 애매한 실패의 기본값은 결과 모름. 경로 C는 Q-24 전까지 재시도 없음.
+- 이유: D-19 문서 검증 1, 2라운드 지적 (confirm 밖 결제 경로, 승인 행 없는 대기 주문, 옛 가격 결제).
+- 누가: 호재 님 결정(D-19)을 Claude가 구체화
+- 영향: decisions.md D-19, payment.md, tech-spec 1.4, 3.2, 3.6, 4, server-api.md
+

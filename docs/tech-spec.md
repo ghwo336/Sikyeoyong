@@ -83,7 +83,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 
 **흐름 3: 소유자 승인**
 1. 서버 사전 검사 결과가 "승인 필요"(레벨 초과, 처음 보는 가게, 개인 예산 100% 초과 후 주문)이면 Claude에게 도구 결과로 `APPROVAL_REQUIRED`를 돌려준다.
-2. Claude가 `request_owner_approval(reason, merchantId, items)` 호출 → `approvals` 행 생성(pending, 10분 만료).
+2. 주문은 `pending_approval`로 만들어지고, 같은 서비스 함수가 같은 DB 트랜잭션에서 `approvals` 행(`order_id`로 묶음, pending, 10분 만료)을 만든다. Claude가 `request_owner_approval(reason, merchantId, items)`를 부르면 서버는 같은 사용자의 대기 중 승인(같은 가게와 메뉴)에 메시지만 붙인다. 없으면 같은 함수로 주문과 승인을 함께 만든다. confirm 안에서 승인이 필요해진 경우도 같은 함수를 쓴다 (D-19).
 3. 앱이 승인 카드 표시. 사용자가 승인하면 서버가 필요한 조치를 수행: 레벨 상향(→ TransferLimit 메타데이터 갱신 트랜잭션) 또는 가게 허용 목록 추가(서버 `allowed_merchants`. MAWS `allowedTargets`는 주문 컨트랙트 주소 하나로 고정이라 바꾸지 않는다, D-13).
 4. 서버가 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 대화에 다시 보낸다. 결제는 사용자가 카드를 다시 눌렀을 때 confirm에서만 한다 (D-19, payment.md "confirm 상태 규칙"). 거절이나 만료면 주문은 재시도 불가 `failed`.
 
@@ -241,7 +241,7 @@ apps/api/src/
 | GET | `/orders/:id` | user | | `{ order, events, receipt }` |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
 | GET | `/approvals` | user | `?status=pending` | `{ approvals }` |
-| POST | `/approvals/:id/approve` | user | | `{ approval, resumed?: OrderResult }` |
+| POST | `/approvals/:id/approve` | user | | `{ approval, order? }`. 필요한 조치(레벨 상향, 가게 허용)를 하고 묶인 주문을 `quoted`로 되돌린다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
 | POST | `/approvals/:id/reject` | user | | `{ approval }` |
 | GET | `/admin/health` | operator | | 체인 연결, MAWS 연결, 인덱서 커서, 정책 동기화 상태 |
 | POST | `/admin/merchants/:id/attest` | operator | | `{ kybUid }` (EAS 발급) |
@@ -496,7 +496,7 @@ score(merchant, menu) =
 | `menus` | id, merchant_id, name, price, tags_json, description, available | 인덱스(merchant_id) |
 | `orders` | id, order_ref(bytes32 hex), user_id, agent_id, merchant_id, amount, items_json, note, status(`quoted`/`pending_approval`/`submitting`/`paid`/`preparing`/`delivering`/`delivered`/`failed`/`cancelled`/`refunded`), tx_hash?, error_code?, receipt_json?, created_at, updated_at | 유니크(order_ref), 인덱스(user_id, created_at) |
 | `order_events` | id, order_id, type, payload_json, source(`server`/`chain`), tx_hash?, log_index?, created_at | 유니크(tx_hash, log_index) |
-| `approvals` | id, user_id, agent_id, reason, payload_json, status(`pending`/`approved`/`rejected`/`expired`), expires_at, decided_at | 인덱스(user_id, status) |
+| `approvals` | id, user_id, agent_id, order_id(→ orders, 승인 대상 주문), reason, payload_json, status(`pending`/`approved`/`rejected`/`expired`), expires_at, decided_at | 인덱스(user_id, status), 유니크(order_id) where status=pending |
 | `allowed_merchants` | user_id, merchant_id, approved_at | PK(user_id, merchant_id) |
 | `chat_messages` | id, user_id, role, content_json, created_at | 인덱스(user_id, created_at) |
 | `nag_events` | id, user_id, month_kst, level, spent, budget, created_at | 유니크(user_id, month_kst, level) |

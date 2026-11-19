@@ -175,7 +175,11 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 ## D-19 결제 실패 뒤 다시 누르기: 같은 주문번호로 재시도 (2026-11-19, 호재)
 - 결제 확인(`POST /api/orders/:id/confirm`) 뒤 결제가 실패하거나 응답이 없던 주문에서 사용자가 다시 누르면, 새 견적을 만들지 않고 **같은 orderRef로** 다시 시도한다. 그 전에 체인에서 `OrderPlaced(orderRef)`를 조회해서 이미 결제됐으면 결제하지 않고 결제 완료로 맞춘다.
 - 결과를 모르는 제출(타임아웃, 네트워크 오류)은 실패(`failed`)가 아니라 결제 중(`submitting`)으로 둔다. 결론이 날 때까지 다시 눌러도 결제하지 않는다.
-- 재시도할 수 없는 실패(견적 만료, 가게 정지 등)만 새 견적을 만들고, 새 견적 전에 이전 orderRef가 체인에 없는지 확인한다.
+- 재시도할 수 없는 실패(가게 정지, 메뉴 없음, 가격 바뀜)만 새 견적을 만든다. 새 견적 전에 이전 제출 트랜잭션이 확정되었고 `OrderPlaced(orderRef)`가 없는지 확인한다.
+- 분류에 없거나 애매한 실패의 기본값은 "결과 모름"(`submitting`)이다.
+- 견적 유효 시간은 두지 않는다. 대신 confirm 사전 검사가 매번 현재 가격을 다시 계산하고, 다르면 `SERVER_PRICE_CHANGED`로 새 견적을 만들게 한다.
+- 승인 흐름(같은 날 바꿈): 승인 필요 사유는 `failed`가 아니라 `pending_approval`로 가고, 승인 행은 주문에 묶어 같은 트랜잭션에서 만든다. 승인되면 주문을 `quoted`로 되돌리고 확인 카드를 다시 보낸다. 서버가 승인 뒤 스스로 결제하지 않는다 (이전 tech-spec 흐름 3의 "서버가 원래 주문을 재시도"를 대체).
+- 경로 C는 같은 orderRef 중복 보호가 확인될 때까지(Q-24) `failed` 재시도를 하지 않는다.
 - 이유: 새 견적은 새 orderRef라 체인의 `OrderExists` 보호를 받지 못해 타임아웃 뒤 이중 결제가 날 수 있다. CLAUDE.md 9(같은 orderRef로만 재시도)를 결제 상태 규칙으로 구체화했다. 에러 코드 커밋 검증 3라운드 지적에서 나왔다.
-- 영향: payment.md "confirm 상태 규칙"(원본), server-api.md, tech-spec 1.4 흐름 1, 3.2 confirm 행.
+- 영향: payment.md "confirm 상태 규칙"(원본), server-api.md, tech-spec 1.4 흐름 1과 흐름 3, 3.2 confirm과 approve 행, 3.6 `SERVER_PRICE_CHANGED`, 4 `approvals.order_id`, 8.3 `SUBMITTING_ALERT_MS`, open-questions Q-24, Q-25.
 
