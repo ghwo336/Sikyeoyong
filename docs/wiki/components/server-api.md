@@ -18,7 +18,7 @@ children: []
 
 ## 의존과 인터페이스 경계
 - 모듈 구조와 규칙은 `conventions/architecture.md` "API". 모듈 목록: health(살아있음 확인만), auth, users, agents, payment, orders, merchants, recommend, budget, approvals, llm, chain, indexer, delivery, admin, demo, (2단계) merchant-api.
-- 공통 처리는 `src/common/`: 세션 가드, 역할 가드, zod 검증 파이프(nestjs-zod, 스키마는 `packages/shared/src/api`), `AppErrorCode` 예외 필터, 로깅과 감사 인터셉터.
+- 공통 처리는 `src/common/`: 세션 가드, 역할 가드, zod 검증 파이프(`common/pipes/zod-validation.pipe.ts`, 스키마는 `packages/shared/src/api`), `AppErrorCode` 예외 필터, 로깅과 감사 인터셉터.
 - DB는 `src/db`의 DbModule(Drizzle, SQLite WAL). 각 모듈의 저장소(repository)만 DB를 만진다.
 - 엔드포인트 목록은 tech-spec "3.2 REST API". 경로는 그대로 쓰고 구현만 Nest 컨트롤러로 옮긴다.
 
@@ -31,7 +31,7 @@ children: []
   { "error": { "code": "CHAIN_AGENT_LIMIT", "message": "사람이 읽을 문장", "dragonLine": "드래곤 대사(선택)", "detail": {} } }
   ```
   `code`는 `AppErrorCode`만 (tech-spec 3.6). 체인 revert는 `chain-and-pcl.md` 매핑으로 바꾼다. 원본은 `detail.chain`.
-  HTTP 상태, `message`, `dragonLine`은 `packages/shared`의 `APP_ERRORS[code]`에서만 가져온다(필터에서 따로 정하지 않는다). 요약: 검증 400, 로그인 401, 권한 403, 없음 404, 같은 멱등 키에 다른 내용 409, 체인·서버 규칙 거절 422, 멈춤 423, 레이트 리밋 429, 서버 설정·그 밖 500, 한도 메타데이터 미설정 503. 같은 멱등 키와 같은 내용의 재요청은 에러가 아니라 처음 응답을 그대로 돌려준다.
+  HTTP 상태, `message`, `dragonLine`은 `packages/shared`의 `APP_ERRORS[code]`에서만 가져온다(필터에서 따로 정하지 않는다). 필터는 `common/filters/app-error.filter.ts` 하나이고 `configureApp`이 전역으로 건다. `AppError.detail`에서 응답으로 나가는 것은 `detail.public`뿐이고(5xx는 그것도 내보내지 않는다), 대사 자리표시 값은 `detail.dragonParams`로 넘긴다. 자리표시 값이 빠지면 대사를 빼고 보낸다. 요약: 검증 400, 로그인 401, 권한 403, 없음 404, 같은 멱등 키에 다른 내용 409, 체인·서버 규칙 거절 422, 멈춤 423, 레이트 리밋 429, 서버 설정·그 밖 500, 한도 메타데이터 미설정 503. 같은 멱등 키와 같은 내용의 재요청은 에러가 아니라 처음 응답을 그대로 돌려준다.
 - **금액**: JSON에서 aokrw 정수 문자열. 숫자 타입 금지.
 - **시간**: unix ms 정수 (체인 `resetAt`은 unix 초, 필드 이름에 단위 표시).
 - **멱등성**: 주문 `clientOrderId`, 대화 `clientMessageId`, 충전과 회수도 클라이언트 요청 ID. 체인에서는 `orderRef`.

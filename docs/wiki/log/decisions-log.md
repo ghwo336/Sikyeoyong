@@ -85,3 +85,10 @@ children: []
 - 누가: 호재 님 결정(D-19)을 Claude가 구체화
 - 영향: decisions.md D-19, payment.md, tech-spec 1.4 흐름 3, 3.2 approve, 3.6, 4
 
+### 2026-11-19 D-03 입력 검증: nestjs-zod 대신 자체 파이프
+- 이전: 입력 검증은 공유 zod 스키마(nestjs-zod).
+- 이후: 공유 zod 스키마와 자체 `ZodValidationPipe` (apps/api/src/common/pipes).
+- 이유: nestjs-zod 5.6의 peer 범위가 @nestjs/common 10, 11이라 지금 쓰는 Nest 12와 맞지 않는다. 필요한 일은 parse와 400 변환뿐이라 직접 둔다.
+- 누가: Claude (구현 중)
+- 영향: decisions.md D-03, server-api.md
+

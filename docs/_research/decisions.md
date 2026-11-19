@@ -29,7 +29,7 @@
 | 움직임 | Motion(framer-motion), View Transitions. 규칙은 `conventions/design-and-motion.md` |
 | 웹 상태 | TanStack Query (서버 상태), zustand (가벼운 로컬 상태, 꼭 필요할 때만) |
 | 로그인 | 카카오, 구글. OAuth는 API 서버(NestJS)가 처리하고 httpOnly 쿠키 세션을 발급. 웹과 API는 같은 도메인(`/api`는 Caddy가 API로 넘김) |
-| 백엔드 | NestJS (Node 22, Express 어댑터) + TypeScript. 모듈, 컨트롤러, 서비스, 저장소로 단일 책임을 구조로 강제. 입력 검증은 공유 zod 스키마(nestjs-zod). 주기 작업(체인 인덱서, 배달 타이머)은 `@nestjs/schedule`로 같은 프로세스에서 |
+| 백엔드 | NestJS (Node 22, Express 어댑터) + TypeScript. 모듈, 컨트롤러, 서비스, 저장소로 단일 책임을 구조로 강제. 입력 검증은 공유 zod 스키마와 자체 `ZodValidationPipe`(2026-11-19 변경: nestjs-zod 5.6의 peer 범위가 Nest 10, 11까지라 Nest 12와 맞지 않아 파이프를 직접 둔다). 주기 작업(체인 인덱서, 배달 타이머)은 `@nestjs/schedule`로 같은 프로세스에서 |
 | DB | SQLite(better-sqlite3, WAL) + Drizzle ORM. 데모 단계라 사용자가 거의 없어서. 실제 가게가 붙거나 서버를 여러 대로 늘릴 때 Postgres로 옮긴다(Drizzle 설정과 마이그레이션만) |
 | AI | Anthropic Claude API 도구 호출. 모델 이름은 설정값. `LlmProvider` 인터페이스로 감싼다 |
 | 체인 | viem. 체인 ID, RPC, 주소는 `packages/shared/src/config` 설정 파일에만 |
