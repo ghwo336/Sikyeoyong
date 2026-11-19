@@ -12,6 +12,7 @@ children:
   - Sheet.md
   - ListRow.md
   - TopBar.md
+  - useSubmitLock.md
 ---
 
 # 기초 (base)
@@ -32,3 +33,4 @@ children:
 | [Sheet](Sheet.md) | 아래에서 올라오는 시트 틀과 손잡이를 그린다. |
 | [ListRow](ListRow.md) | 설정 화면의 한 줄(이름, 값, 화살표 또는 스위치)을 그린다. |
 | [TopBar](TopBar.md) | 화면 위 뒤로 가기와 제목을 그린다. |
+| [useSubmitLock](useSubmitLock.md) | 제출 콜백을 감싸 두 번 눌러도 한 번만 부르는 훅 (결제, 한도 바꾸기). |

@@ -39,5 +39,6 @@ LimitChat
 - LLM은 변경 카드만 만든다 (user-flow 13단계). Claude가 `propose_limit_change`로 레벨이나 예산 선택지를 고르면 서버가 전과 후 금액을 붙여 이 카드를 띄운다 (D-21). 바꾸는 일은 이 버튼을 누른 뒤 부모가 한다. 레벨 올리기는 재인증 뒤, 내리기와 예산 변경은 바로 (CLAUDE.md 절대 규칙 3, LLM 도구에 정책 변경 없음).
 - 확인 중에도 그만두기는 눌린다. 진행 중인 재인증이나 변경을 어떻게 할지는 부모(LimitChat 조립)가 정한다.
 - 버튼 두 개는 base Button과 크기가 달라(52 반경 16, 44 글자 버튼) 이 컴포넌트 CSS로 그리고, 누름은 `base/press.ts`.
+- 두 번 누름 잠금은 base 훅 `useSubmitLock`(OrderConfirmSheet와 같은 훅)이다.
 - 실패 문구와 확인 중 모양은 시안에 없다 (디자인 선택).
 - 레벨 로/으로는 같은 영역의 `LimitBlocked`의 `levelWithRo`를 쓴다.

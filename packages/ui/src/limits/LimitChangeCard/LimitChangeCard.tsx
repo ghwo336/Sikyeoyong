@@ -2,9 +2,9 @@
 
 import { formatOkrw } from '@sikyeoyong/shared';
 import { motion } from 'motion/react';
-import { useEffect, useRef } from 'react';
 import { PRESS_SCALE, PRESS_SPRING } from '../../base/press';
 import { useShouldReduceMotion } from '../../base/reduced-motion';
+import { useSubmitLock } from '../../base/useSubmitLock';
 import { levelWithRo } from '../LimitBlocked';
 import styles from './LimitChangeCard.module.css';
 
@@ -74,17 +74,8 @@ export function LimitChangeCard({
   const reduceMotion = useShouldReduceMotion();
   const tap = reduceMotion ? undefined : PRESS;
   const confirming = status === 'confirming';
-  // Same double-tap lock as OrderConfirmSheet: holds until a render that is not confirming.
-  const lock = useRef(false);
-  useEffect(() => {
-    if (!confirming) lock.current = false;
-  });
-
-  function confirm() {
-    if (confirming || lock.current) return;
-    lock.current = true;
-    onConfirm();
-  }
+  // One press changes once; after a failure it can be pressed again.
+  const confirm = useSubmitLock(confirming, onConfirm);
 
   const showLevel = levelFrom !== undefined && levelTo !== undefined && levelFrom !== levelTo;
   return (

@@ -1,10 +1,11 @@
 'use client';
 
 import { type DragonSpecies, formatOkrw } from '@sikyeoyong/shared';
-import { useEffect, useId, useRef } from 'react';
+import { useId } from 'react';
 import { Button } from '../../base/Button';
 import { Meter, type MeterTone } from '../../base/Meter';
 import { Sheet } from '../../base/Sheet';
+import { useSubmitLock } from '../../base/useSubmitLock';
 import { DragonLine } from '../../dragon/DragonLine';
 import type { OrderLine } from '../OrderSummary';
 import styles from './OrderConfirmSheet.module.css';
@@ -60,19 +61,8 @@ export function OrderConfirmSheet({
   confirming = false,
   priceChangedFrom,
 }: OrderConfirmSheetProps) {
-  // A double tap lands before the parent re-renders with confirming=true. The lock
-  // holds until a render where the parent is not paying (so a failed payment can be
-  // retried with the same order, D-19).
-  const lock = useRef(false);
-  useEffect(() => {
-    if (!confirming) lock.current = false;
-  });
-
-  function confirm() {
-    if (confirming || lock.current) return;
-    lock.current = true;
-    onConfirm();
-  }
+  // One press pays once; a failed payment can be pressed again with the same order (D-19).
+  const confirm = useSubmitLock(confirming, onConfirm);
 
   const limitsId = useId();
   const amount = formatOkrw(total);

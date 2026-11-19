@@ -34,9 +34,7 @@ export function KakaoVerify({ onVerify, mode, status }: KakaoVerifyProps) {
         variant={mode === 'kakao' ? 'kakao' : 'primary'}
         icon={mode === 'kakao' ? <KakaoMark /> : undefined}
         loading={pending}
-        onPress={() => {
-          if (!pending) onVerify();
-        }}
+        onPress={onVerify}
       >
         {text.button}
       </Button>

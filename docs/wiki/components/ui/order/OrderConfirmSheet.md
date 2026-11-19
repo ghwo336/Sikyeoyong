@@ -40,6 +40,6 @@ Confirm
 
 ## 메모
 - 틀은 base `Sheet`, 위 말은 `DragonLine` sheet 배치, 막대는 `Meter` limit, 버튼은 `Button` primary와 text다.
-- 두 번 누름 잠금은 ref로 잡고, 부모가 confirming을 내린 다음 그리기에서 풀린다. 부모는 onConfirm을 받으면 confirming을 올려야 한다.
+- 두 번 누름 잠금은 base 훅 `useSubmitLock`이다. ref로 잡고, 부모가 confirming을 내린 다음 그리기에서 풀린다. 부모는 onConfirm을 받으면 confirming을 올려야 한다.
 - 가격 변경 문구는 시안에 없다 (디자인 선택). 시안 문구가 생기면 바꾼다.
 - 결제는 하지 않는다. onConfirm은 `POST /api/orders/:id/confirm`을 부르는 부모 콜백이다 (CLAUDE.md 절대 규칙 3).
