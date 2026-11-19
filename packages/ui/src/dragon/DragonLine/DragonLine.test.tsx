@@ -21,16 +21,18 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
   it('never clips the text anywhere in the stylesheet', () => {
     // No rule in this file may clip, so check the whole file (container and
     // any selector), with comments removed. overflow-wrap is allowed.
-    const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const code = css.replace(/\/\*[\s\S]*?\*\//g, '').toLowerCase();
     for (const banned of [
-      'max-height',
-      'overflow:',
-      'line-clamp',
-      'text-overflow',
-      'nowrap',
-      '-webkit-box',
+      /\boverflow(-[xy])?\s*:/,
+      /max-height\s*:/,
+      /line-clamp/,
+      /text-overflow/,
+      /nowrap/,
+      /-webkit-box/,
+      /clip-path\s*:/,
+      /\bcontain\s*:/,
     ]) {
-      expect(code, banned).not.toContain(banned);
+      expect(code, String(banned)).not.toMatch(banned);
     }
   });
 
