@@ -120,8 +120,8 @@ export function LimitChangeCard({
           </span>
         </div>
       ) : null}
-      {rows?.map((r) => (
-        <div key={r.label} className={styles.row}>
+      {rows?.map((r, i) => (
+        <div key={`${String(i)}-${r.label}`} className={styles.row}>
           <span className={styles.rowLabel}>{r.label}</span>
           <span className={styles.num}>{r.value}</span>
         </div>

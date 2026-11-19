@@ -48,6 +48,24 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it('calls onConfirm once on a double tap even if the parent never re-renders (ref lock)', () => {
+    const onConfirm = vi.fn();
+    render(<LimitChangeCard {...base} onConfirm={onConfirm} />);
+    const button = screen.getByRole('button', { name: /바꾸기$/ });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onConfirm when drawn already confirming', () => {
+    const onConfirm = vi.fn();
+    render(<LimitChangeCard {...base} onConfirm={onConfirm} status="confirming" />);
+    const button = screen.getByRole('button', { name: /바꾸기$/ });
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(button);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('calls onConfirm once on a fast double tap, and again after a failure', () => {
     const onConfirm = vi.fn();
     function Parent() {
