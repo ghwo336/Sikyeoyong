@@ -39,6 +39,18 @@ describe('OrderSummary (OrderSummary.md 테스트 기준)', () => {
     expect(total(container)).toBe('9,000원');
   });
 
+  it('keeps amounts past Number exact (hand-written expectation)', () => {
+    const { container } = render(
+      <OrderSummary
+        store={STORE}
+        items={[{ name: '회식', quantity: 1, price: won(123_456_789_012_345_678n) }]}
+        total={won(123_456_789_012_345_678n)}
+      />,
+    );
+    expect(total(container)).toBe('123,456,789,012,345,678원');
+    expect(screen.getByRole('listitem')).toHaveTextContent('123,456,789,012,345,678원');
+  });
+
   it('shows each line as "name N개" with its price', () => {
     render(
       <OrderSummary
@@ -110,6 +122,8 @@ describe('OrderSummary (OrderSummary.md 테스트 기준)', () => {
     expect(rule('.line')).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(rule('.request')).toMatch(/font-size:\s*var\(--type-small-size\)/);
     expect(rule('.divider')).toMatch(/background:\s*var\(--color-track\)/);
+    expect(rule('.divider')).toMatch(/margin:\s*2px 0/);
+    expect(rule('.lines')).toMatch(/gap:\s*var\(--space-2\)/);
     expect(rule('.totalLabel')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
     expect(rule('.totalAmount')).toMatch(/font-size:\s*var\(--type-total-size\)/);
     expect(rule('.totalAmount')).toMatch(/font-weight:\s*var\(--type-total-weight\)/);

@@ -42,6 +42,7 @@
 
 .divider {
   height: 1px;
+  /* Done.dc.html optical gap; the 4px space scale has no 2, so it stays literal. */
   margin: 2px 0;
   background: var(--color-track);
 }
