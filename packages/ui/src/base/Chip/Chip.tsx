@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
+import { PRESS_SCALE, PRESS_SPRING } from '../press';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Chip.module.css';
 
@@ -24,8 +25,7 @@ export interface ChipProps {
   readonly numeric?: boolean;
 }
 
-const PRESS = { scale: 0.97 };
-const SPRING = { type: 'spring', damping: 18, stiffness: 300 } as const;
+const PRESS = { scale: PRESS_SCALE };
 
 /** Draws one small pill button that can be picked (Chip.md). The group rule lives in the parent. */
 export function Chip({ selected, onPress, children, size = 'sm', numeric = false }: ChipProps) {
@@ -39,7 +39,7 @@ export function Chip({ selected, onPress, children, size = 'sm', numeric = false
       className={`${styles.chip} ${styles[size]}${numeric ? ` ${styles.numeric}` : ''}`}
       data-selected={selected || undefined}
       whileTap={reduceMotion ? undefined : PRESS}
-      transition={SPRING}
+      transition={PRESS_SPRING}
       onClick={onPress}
     >
       {children}

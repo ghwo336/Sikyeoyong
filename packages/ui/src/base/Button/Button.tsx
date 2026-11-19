@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
+import { PRESS_SCALE, PRESS_SPRING } from '../press';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Button.module.css';
 
@@ -18,8 +19,7 @@ export interface ButtonProps {
 }
 
 // design-and-motion.md: press is a 0.97 spring (tokens.json motion.press).
-const PRESS = { scale: 0.97 };
-const SPRING = { type: 'spring', damping: 18, stiffness: 300 } as const;
+const PRESS = { scale: PRESS_SCALE };
 
 /** Draws one button that calls onPress. It does not decide what happens (Button.md). */
 export function Button({
@@ -38,7 +38,7 @@ export function Button({
       aria-busy={loading || undefined}
       data-loading={loading || undefined}
       whileTap={loading || reduceMotion ? undefined : PRESS}
-      transition={SPRING}
+      transition={PRESS_SPRING}
       onClick={() => {
         if (!loading) onPress();
       }}

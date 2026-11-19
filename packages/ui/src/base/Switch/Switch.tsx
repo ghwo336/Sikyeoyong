@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { PRESS_SPRING } from '../press';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Switch.module.css';
 
@@ -13,7 +14,6 @@ export interface SwitchProps {
 
 // The knob stretches a little while pressed (Switch.md); the spring is tokens.json motion.press.
 const PRESS = { scaleX: 1.15 };
-const SPRING = { type: 'spring', damping: 18, stiffness: 300 } as const;
 
 /** Draws one on/off switch (Switch.md). What turning it on does is the parent's callback. */
 export function Switch({ checked, onChange, labelId }: SwitchProps) {
@@ -33,7 +33,7 @@ export function Switch({ checked, onChange, labelId }: SwitchProps) {
       <motion.span
         className={styles.knob}
         variants={reduceMotion ? {} : { pressed: PRESS }}
-        transition={SPRING}
+        transition={PRESS_SPRING}
         aria-hidden="true"
       />
     </motion.button>
