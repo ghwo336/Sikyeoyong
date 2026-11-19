@@ -33,7 +33,7 @@ Name
 - error가 있으면 aria-invalid와 오류 테두리(`data-error`), 안내 문구를 aria-describedby로 잇고 `role="alert"`로 바로 읽힌다. 없거나 빈 문자열이면 셋 다 없다
 - hint가 있으면 칸 아래 `p`로 보이고 aria-describedby로 잇는다 (오류가 있으면 오류 다음). alert가 아니다. 빈 문자열이면 없다
 - 입력한 값을 그대로 부모에 넘긴다
-- Name 시안 값 (라벨 13/600 `ink-secondary`, 칸 52, 여백 16, 1px `line-strong`, 반경 14, 흰 바탕, 글자 17/600, 간격 6, 안내 줄 14px `ink-secondary` 칸 아래 10)
+- Name 시안 값 (라벨 13/600 `ink-secondary`, 칸 52, 여백 16, 1px `line-strong`, 반경 14, 흰 바탕, 글자 17/600, 간격 6, 안내 줄 14px `ink-secondary` 고정폭 숫자, 칸 아래 10)
 
 ## 메모
 - 오류 줄은 base `ErrorLine`(id로 입력칸이 가리킨다)이다.

@@ -137,5 +137,6 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     expect(rule('.hint')).toMatch(/margin:\s*var\(--space-1\) 0 0/);
     expect(rule('.hint')).toMatch(/font-size:\s*var\(--type-small-size\)/);
     expect(rule('.hint')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(rule('.hint')).toMatch(/font-variant-numeric:\s*tabular-nums/);
   });
 });

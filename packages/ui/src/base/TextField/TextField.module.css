@@ -44,4 +44,6 @@
   margin: var(--space-1) 0 0;
   font-size: var(--type-small-size);
   color: var(--color-ink-secondary);
+  /* Name.dc.html: the line is class="num" ("10,000원"). */
+  font-variant-numeric: tabular-nums;
 }
