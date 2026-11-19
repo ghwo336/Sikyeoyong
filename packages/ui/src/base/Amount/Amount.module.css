@@ -1,0 +1,57 @@
+.amount {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.display {
+  font-size: var(--type-display-size);
+  font-weight: var(--type-display-weight);
+  letter-spacing: var(--type-display-letter-spacing);
+}
+
+.title {
+  font-size: var(--type-title-size);
+  font-weight: var(--type-title-weight);
+  letter-spacing: var(--type-title-letter-spacing);
+}
+
+.row {
+  font-size: var(--type-row-size);
+  font-weight: var(--type-row-weight);
+}
+
+.roll {
+  display: inline-flex;
+  line-height: 1;
+}
+
+.window {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.cell,
+.static {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -31,4 +31,6 @@ Confirm, Wallet, Blocked
 - reduced motion이면 애니메이션 없음
 
 ## 메모
-없음
+- 글자는 `formatOkrw` 결과 그대로다. 굴릴 때는 자리마다 0~9 열을 `transform`으로 400ms 움직이고(tokens.json motion.number), 스크린 리더에는 숨김 처리한 열 대신 금액 한 줄만 읽힌다.
+- `animate`가 없거나 동작 줄이기가 켜지면 평범한 글자로 그린다.
+- 고정폭 숫자(tabular-nums).
