@@ -4,7 +4,7 @@ import type { KeyboardEvent } from 'react';
  * Keyboard rules for a group of role="radio" buttons (WAI-ARIA radio group):
  * Tab enters the group once, on the checked item (or the first); arrow keys move,
  * wrap around and select as they go; Home and End jump to the ends.
- * Used through ChoiceGroup (BudgetPicker, TasteRating).
+ * Used through ChoiceGroup (BudgetPicker, TasteRating, EggPicker).
  */
 export function radioTabIndex(index: number, selectedIndex: number): 0 | -1 {
   const entry = selectedIndex >= 0 ? selectedIndex : 0;
