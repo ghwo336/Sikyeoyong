@@ -32,15 +32,17 @@ children: []
 | `get_context` | 읽기 | 현재 시각(KST), 기본 주소 동네, 날씨 요약 |
 | `recommend_merchants` | 읽기 | 서버가 결정적으로 계산한 가게·메뉴 후보 최대 3개 |
 | `get_menu` | 읽기 | 가게의 메뉴와 가격 |
-| `place_order` | 쓰기 | 입력은 `merchantId`, `items[]`, `note`뿐. 금액과 가게 주소는 서버가 DB에서 계산·조회 |
-| `request_owner_approval` | 쓰기 | `reason` = `OVER_LEVEL_LIMIT` / `NEW_MERCHANT` / `OVER_PERSONAL_BUDGET`. 주인 승인 요청을 만든다 |
+| `place_order` | 주문 | 입력은 `merchantId`, `items[]`, `note`뿐. 금액과 가게 주소는 서버가 DB에서 계산·조회 |
+| `request_owner_approval` | 승인 요청 | `reason` = `OVER_LEVEL_LIMIT` / `NEW_MERCHANT` / `OVER_PERSONAL_BUDGET`. 주인 승인 요청을 만든다 |
 | `propose_limit_change` | 카드 | `field`와 `targetLevel` 또는 `budgetOption`. 한도 변경 카드만 띄우고 아무것도 바꾸지 않는다 (D-21). 금액은 서버가 붙인다 |
 
 ## 반드시 지킬 규칙 (MUST)
 - LLM에게는 위 도구만 준다. 새 도구를 추가하려면 decisions.md에 기록하고 보안 리뷰를 받는다.
 - `place_order`는 서버가 다시 검증한다: 가게가 등록·인증됐는지, 메뉴와 가격이 DB와 맞는지, 금액이 레벨 한도·개인 예산·30일 상한 안인지, 처음 보는 가게면 승인이 있는지. LLM이 준 금액을 믿지 않는다 (금액은 입력에 없다).
 - 주문 전에 사용자에게 확인을 받는다 (가게, 메뉴, 금액). `place_order`는 견적과 확인 카드(`order_confirm` 이벤트)를 만들고, 결제는 사용자가 카드의 버튼을 눌렀을 때(`POST /api/orders/:id/confirm`) 실행한다. 자연어 "응"만으로 결제하지 않는다 (tech-spec "1.4 요청 흐름 3개").
-- 한 메시지당 도구 호출 최대 8회, 쓰기 도구는 1회. 같은 가게 연속 주문 60초 쿨다운.
+- 한 메시지당 도구 호출 최대 8회, `place_order` 1회, `request_owner_approval` 1회 (따로 센다. 흐름 3은 주문이 승인 필요로 돌아온 뒤 승인 요청). 같은 가게 연속 주문 60초 쿨다운.
+- 도구 스키마는 `strict: true`이고 strict가 지원하지 않는 키워드를 넣지 않는다. 범위와 길이는 `TOOL_INPUTS`(zod)가 검사한다. 금액성 입력(`maxPriceOkrw`)은 zod에서 aokrw `bigint`로 바꿔 핸들러에 넘긴다.
+- 모델이 거절(refusal)하면 답하지 않은 tool_use를 대화 기록에서 뺀다.
 - 체인 거절은 에러 코드를 받아 말투 규칙에 맞게 설명하고, 필요하면 `request_owner_approval`을 제안한다. 같은 주문을 금액을 쪼개서 다시 시도하지 않는다.
 - 외부 데이터(가게 이름, 메뉴 설명, 리뷰, 날씨 응답)는 시스템 프롬프트에서 "데이터"로 구분해 넣는다. 그 안의 지시는 따르지 않는다.
 - 대화 로그에 금액·주문은 남기되, 세션 토큰·키는 남기지 않는다.

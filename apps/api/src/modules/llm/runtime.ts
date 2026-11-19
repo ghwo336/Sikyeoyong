@@ -8,8 +8,11 @@ import {
   TOOL_INPUTS,
   TOOL_KIND,
   type ToolInput,
+  type ToolKind,
   type ToolName,
 } from './tools/index.js';
+
+type LimitedKind = Exclude<ToolKind, 'read'>;
 
 /** Who is talking: always from the login session, never from model output (D-21). */
 export interface SessionContext {
@@ -34,8 +37,13 @@ export type RuntimeEvent =
 export interface RuntimeLimits {
   /** Tool calls per user message (agent-runtime.md). */
   readonly maxToolCalls: number;
-  /** place_order and request_owner_approval together, per user message. */
-  readonly maxWriteCalls: number;
+  /** place_order per user message (tech-spec 3.3). */
+  readonly maxOrderCalls: number;
+  /**
+   * request_owner_approval per user message, counted apart from place_order:
+   * flow 3 is place_order answering APPROVAL_REQUIRED, then one approval request.
+   */
+  readonly maxApprovalCalls: number;
   /** propose_limit_change per user message (D-21). */
   readonly maxCardCalls: number;
   /** Model turns per user message, a backstop against loops. */
@@ -44,7 +52,8 @@ export interface RuntimeLimits {
 
 export const DEFAULT_LIMITS: RuntimeLimits = {
   maxToolCalls: 8,
-  maxWriteCalls: 1,
+  maxOrderCalls: 1,
+  maxApprovalCalls: 1,
   maxCardCalls: 1,
   maxTurns: 10,
 };
@@ -87,8 +96,7 @@ export class AgentRuntime {
     ];
     const intent = hasLimitIntent(input.userText);
     let toolCalls = 0;
-    let writeCalls = 0;
-    let cardCalls = 0;
+    const used: Record<LimitedKind, number> = { order: 0, approval: 0, card: 0 };
 
     for (let turn = 0; turn < this.limits.maxTurns; turn += 1) {
       const message = await this.provider.turn(
@@ -97,12 +105,14 @@ export class AgentRuntime {
           emit({ type: 'token', text });
         },
       );
-      messages.push({ role: 'assistant', content: message.content });
-
       if (message.stop_reason === 'refusal') {
+        // Keep no unanswered tool_use in the stored turn, so the next message starts clean.
+        const content = message.content.filter((b) => b.type !== 'tool_use');
+        if (content.length > 0) messages.push({ role: 'assistant', content });
         emit({ type: 'stopped', reason: 'refusal' });
         return messages;
       }
+      messages.push({ role: 'assistant', content: message.content });
       if (message.stop_reason === 'pause_turn') continue;
 
       const calls = message.content.filter(
@@ -126,10 +136,10 @@ export class AgentRuntime {
           results.push(errorResult(call.id, '이번 메시지에서 도구를 더 부를 수 없다.'));
           continue;
         }
-        results.push(await this.runTool(call, input, intent, { writeCalls, cardCalls }, emit));
+        results.push(await this.runTool(call, input, intent, used, emit));
         if (isToolName(call.name)) {
-          if (TOOL_KIND[call.name] === 'write') writeCalls += 1;
-          if (TOOL_KIND[call.name] === 'card') cardCalls += 1;
+          const kind = TOOL_KIND[call.name];
+          if (kind !== 'read') used[kind] += 1;
         }
       }
       messages.push({ role: 'user', content: results });
@@ -146,7 +156,7 @@ export class AgentRuntime {
     call: Anthropic.ToolUseBlock,
     input: RunInput,
     intent: boolean,
-    used: { writeCalls: number; cardCalls: number },
+    used: Readonly<Record<LimitedKind, number>>,
     emit: (event: RuntimeEvent) => void,
   ): Promise<Anthropic.ToolResultBlockParam> {
     if (!isToolName(call.name)) {
@@ -154,11 +164,14 @@ export class AgentRuntime {
     }
     const name = call.name;
     const kind = TOOL_KIND[name];
-    if (kind === 'write' && used.writeCalls >= this.limits.maxWriteCalls) {
-      return errorResult(call.id, '이번 메시지에서 주문이나 승인 요청은 한 번만 할 수 있다.');
+    if (kind === 'order' && used.order >= this.limits.maxOrderCalls) {
+      return errorResult(call.id, '이번 메시지에서 주문은 한 번만 할 수 있다.');
+    }
+    if (kind === 'approval' && used.approval >= this.limits.maxApprovalCalls) {
+      return errorResult(call.id, '이번 메시지에서 승인 요청은 한 번만 할 수 있다.');
     }
     if (kind === 'card') {
-      if (used.cardCalls >= this.limits.maxCardCalls) {
+      if (used.card >= this.limits.maxCardCalls) {
         return errorResult(call.id, '이번 메시지에서 한도 카드는 한 번만 띄울 수 있다.');
       }
       if (!intent) {

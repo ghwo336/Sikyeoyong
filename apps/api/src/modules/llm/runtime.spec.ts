@@ -103,17 +103,81 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     expect(results.map((r) => r.is_error ?? false)).toEqual([false, true]);
   });
 
-  it('counts approval requests with orders: one write per message', async () => {
-    const { h } = await run(
+  // tech-spec flow 3: the server pre-check says "approval needed" (SERVER_OVER_LEVEL here).
+  it('flow 3: place_order needs approval, then one approval request goes out', async () => {
+    const h = handlers({
+      place_order: vi.fn(() => Promise.reject(new AppError('SERVER_OVER_LEVEL'))),
+    });
+    const { provider } = await run(
       [
         { blocks: [tool('place_order', ORDER)] },
+        { blocks: [tool('request_owner_approval', { reason: 'OVER_LEVEL_LIMIT', ...ORDER })] },
+        { blocks: [{ text: '주인님께 여쭤봤어용.' }] },
+      ],
+      '보쌈 대자 시켜 줘',
+      h,
+    );
+    expect(h.place_order).toHaveBeenCalledTimes(1);
+    expect(provider.resultsAfter(1)[0]?.is_error).toBe(true);
+    expect(provider.resultsAfter(1)[0]?.content).toContain('SERVER_OVER_LEVEL');
+    expect(h.request_owner_approval).toHaveBeenCalledExactlyOnceWith(ME, {
+      reason: 'OVER_LEVEL_LIMIT',
+      ...ORDER,
+    });
+    expect(provider.resultsAfter(2)[0]?.is_error ?? false).toBe(false);
+  });
+
+  it('injection: one approval request per message, not two', async () => {
+    const { h, provider } = await run(
+      [
+        {
+          blocks: [
+            tool('request_owner_approval', { reason: 'NEW_MERCHANT' }),
+            tool('request_owner_approval', { reason: 'OVER_PERSONAL_BUDGET' }),
+          ],
+        },
+        { blocks: [{ text: '끝' }] },
+      ],
+      '새 가게에서 시켜 줘',
+    );
+    expect(h.request_owner_approval).toHaveBeenCalledTimes(1);
+    expect(provider.resultsAfter(1).map((r) => r.is_error ?? false)).toEqual([false, true]);
+  });
+
+  it('an approval request does not use up the one order', async () => {
+    const { h } = await run(
+      [
         { blocks: [tool('request_owner_approval', { reason: 'NEW_MERCHANT' })] },
+        { blocks: [tool('place_order', ORDER)] },
+        { blocks: [tool('place_order', ORDER)] },
         { blocks: [{ text: '끝' }] },
       ],
       '시켜 줘',
     );
+    expect(h.request_owner_approval).toHaveBeenCalledTimes(1);
     expect(h.place_order).toHaveBeenCalledTimes(1);
-    expect(h.request_owner_approval).not.toHaveBeenCalled();
+  });
+
+  it('D-21: one limit card per message even when the user asked', async () => {
+    const { h, provider } = await run(
+      [
+        {
+          blocks: [
+            tool('propose_limit_change', { field: 'perOrder', targetLevel: 3 }),
+            tool('propose_limit_change', { field: 'monthlyBudget', budgetOption: 'large' }),
+          ],
+        },
+        { blocks: [tool('propose_limit_change', { field: 'perOrder', targetLevel: 2 })] },
+        { blocks: [{ text: '끝' }] },
+      ],
+      '한도랑 예산 다 올려 줘',
+    );
+    expect(h.propose_limit_change).toHaveBeenCalledExactlyOnceWith(ME, {
+      field: 'perOrder',
+      targetLevel: 3,
+    });
+    expect(provider.resultsAfter(1).map((r) => r.is_error ?? false)).toEqual([false, true]);
+    expect(provider.resultsAfter(2)[0]?.is_error).toBe(true);
   });
 
   it('injection (D-21): no limit card when the user did not ask, even if a menu says so', async () => {
@@ -222,6 +286,22 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     );
     expect(h.get_budget).not.toHaveBeenCalled();
     expect(events.at(-1)).toEqual({ type: 'stopped', reason: 'refusal' });
+  });
+
+  it('stores a refused turn without its unanswered tool calls', async () => {
+    const { messages } = await run(
+      [{ blocks: [{ text: '그건 못 해용.' }, tool('get_budget', {})], stop: 'refusal' }],
+      '예산',
+    );
+    const last = messages.at(-1);
+    expect(last?.role).toBe('assistant');
+    const blocks = typeof last?.content === 'string' ? [] : (last?.content ?? []);
+    expect(blocks.map((b) => b.type)).toEqual(['text']);
+  });
+
+  it('stores nothing for a refused turn that was only tool calls', async () => {
+    const { messages } = await run([{ blocks: [tool('get_budget', {})], stop: 'refusal' }], '예산');
+    expect(messages).toEqual([{ role: 'user', content: '예산' }]);
   });
 
   it('never runs a tool cut off at max_tokens', async () => {

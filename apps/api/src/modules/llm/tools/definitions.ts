@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS } from '@sikyeoyong/shared';
+import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS, okrwToAokrw } from '@sikyeoyong/shared';
 import { z } from 'zod';
 
 /**
@@ -8,7 +8,10 @@ import { z } from 'zod';
  * place_order only makes a quote and a confirm card, propose_limit_change only a card.
  * Adding a tool needs a decisions.md entry and a security review first.
  */
-export type ToolKind = 'read' | 'write' | 'card';
+export type ToolKind = 'read' | 'order' | 'approval' | 'card';
+
+/** Upper bound for the recommendation price filter, in whole OKRW (a search filter, not a payment). */
+export const MAX_PRICE_FILTER_OKRW = 1_000_000;
 
 const idString = z.string().min(1).max(64);
 
@@ -19,9 +22,14 @@ export const TOOL_INPUTS = {
   recommend_merchants: z
     .object({
       craving: z.string().max(50).optional(),
-      maxPriceOkrw: z.number().int().min(0).optional(),
+      maxPriceOkrw: z.number().int().min(0).max(MAX_PRICE_FILTER_OKRW).optional(),
     })
-    .strict(),
+    .strict()
+    // Handlers see only aokrw bigint (CLAUDE.md rule 4); the whole-won number stops here.
+    .transform(({ craving, maxPriceOkrw }) => ({
+      ...(craving === undefined ? {} : { craving }),
+      ...(maxPriceOkrw === undefined ? {} : { maxPriceAokrw: okrwToAokrw(BigInt(maxPriceOkrw)) }),
+    })),
   get_menu: z.object({ merchantId: idString }).strict(),
   place_order: z
     .object({
@@ -65,7 +73,8 @@ export const TOOL_INPUTS = {
 } as const;
 
 export type ToolName = keyof typeof TOOL_INPUTS;
-export type ToolInput<N extends ToolName> = z.infer<(typeof TOOL_INPUTS)[N]>;
+/** What a handler receives: the parsed (and transformed) input. */
+export type ToolInput<N extends ToolName> = z.output<(typeof TOOL_INPUTS)[N]>;
 
 export const TOOL_KIND: { readonly [N in ToolName]: ToolKind } = {
   get_budget: 'read',
@@ -73,8 +82,8 @@ export const TOOL_KIND: { readonly [N in ToolName]: ToolKind } = {
   get_context: 'read',
   recommend_merchants: 'read',
   get_menu: 'read',
-  place_order: 'write',
-  request_owner_approval: 'write',
+  place_order: 'order',
+  request_owner_approval: 'approval',
   propose_limit_change: 'card',
 };
 
@@ -82,15 +91,19 @@ export function isToolName(name: string): name is ToolName {
   return Object.prototype.hasOwnProperty.call(TOOL_INPUTS, name);
 }
 
+/*
+ * Strict tool schemas accept only what the API's strict mode supports, so they
+ * must be fixed points of the SDK's transformJSONSchema (definitions.spec.ts).
+ * Ranges and lengths live in TOOL_INPUTS (zod), which the runtime checks on every call.
+ */
 const items = {
   type: 'array',
   minItems: 1,
-  maxItems: 10,
   items: {
     type: 'object',
     properties: {
       menuId: { type: 'string' },
-      qty: { type: 'integer', minimum: 1, maximum: 20 },
+      qty: { type: 'integer' },
     },
     required: ['menuId', 'qty'],
     additionalProperties: false,
@@ -112,7 +125,7 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
     strict: true,
     input_schema: {
       type: 'object',
-      properties: { days: { type: 'integer', minimum: 1, maximum: 60 } },
+      properties: { days: { type: 'integer', description: '1~60일' } },
       required: ['days'],
       additionalProperties: false,
     },
@@ -130,8 +143,8 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object',
       properties: {
-        craving: { type: 'string', maxLength: 50, description: '사용자가 말한 먹고 싶은 것' },
-        maxPriceOkrw: { type: 'integer', minimum: 0 },
+        craving: { type: 'string', description: '사용자가 말한 먹고 싶은 것' },
+        maxPriceOkrw: { type: 'integer', description: '원 단위 가격 상한 (검색 조건)' },
       },
       additionalProperties: false,
     },
@@ -157,7 +170,7 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
       properties: {
         merchantId: { type: 'string' },
         items,
-        note: { type: 'string', maxLength: 100 },
+        note: { type: 'string' },
       },
       required: ['merchantId', 'items'],
       additionalProperties: false,
@@ -170,13 +183,10 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object',
       properties: {
-        reason: {
-          type: 'string',
-          enum: ['OVER_LEVEL_LIMIT', 'NEW_MERCHANT', 'OVER_PERSONAL_BUDGET'],
-        },
+        reason: { enum: ['OVER_LEVEL_LIMIT', 'NEW_MERCHANT', 'OVER_PERSONAL_BUDGET'] },
         merchantId: { type: 'string' },
         items: { ...items, minItems: 0 },
-        message: { type: 'string', maxLength: 200 },
+        message: { type: 'string' },
       },
       required: ['reason'],
       additionalProperties: false,
@@ -190,9 +200,9 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object',
       properties: {
-        field: { type: 'string', enum: ['perOrder', 'monthlyBudget'] },
-        targetLevel: { type: 'integer', enum: [1, 2, 3] },
-        budgetOption: { type: 'string', enum: ['small', 'medium', 'large'] },
+        field: { enum: ['perOrder', 'monthlyBudget'] },
+        targetLevel: { enum: [1, 2, 3] },
+        budgetOption: { enum: ['small', 'medium', 'large'] },
       },
       required: ['field'],
       additionalProperties: false,
