@@ -84,6 +84,11 @@ def is_test(p):
     return bool(re.search(r"(\.test\.|\.spec\.|\.stories\.|/test/|/__tests__/|\.t\.sol$|^scripts/verify_test)", p))
 
 
+def is_fixture(p):
+    """Deliberate rule violations used by lint and gate tests (scripts/fixtures/). Dash and secret checks still apply."""
+    return p.startswith("scripts/fixtures/")
+
+
 def allowed(lines, idx, rule):
     """idx is 0-based. True if this or previous line has `verify-allow: <rule> <reason>`."""
     pat = re.compile(r"verify-allow:\s*" + re.escape(rule) + r"\s+\S")
@@ -274,6 +279,8 @@ for p in tracked:
 
 # ---------------------------------------------------------------- R2 chain config
 for p in tracked:
+    if is_fixture(p):
+        continue
     if not (p.endswith(CONFIG_SCAN_EXT) or os.path.basename(p) == ".env.example") or "/node_modules/" in p:
         continue
     if p.endswith(("pnpm-lock.yaml", "package.json")) or os.path.basename(p).startswith("tsconfig"):
@@ -291,6 +298,8 @@ for p in tracked:
 
 # ---------------------------------------------------------------- R4 money
 for p in tracked:
+    if is_fixture(p):
+        continue
     if not p.endswith(TS_EXT) or "/node_modules/" in p:
         continue
     for i, line, lines in code_lines(p):
@@ -309,6 +318,8 @@ for p in tracked:
 
 # ---------------------------------------------------------------- S1 typescript hygiene
 for p in tracked:
+    if is_fixture(p):
+        continue
     if not p.endswith(TS_EXT) or "/node_modules/" in p or p.endswith(".d.ts"):
         continue
     for i, line, lines in code_lines(p):

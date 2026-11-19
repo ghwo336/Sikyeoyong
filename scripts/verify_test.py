@@ -112,6 +112,9 @@ CASES = [
          edit={"docs/wiki/README.md": WIKI_ROOT.replace("  - a.md\n", "  - a.md\n  - 한글.md\n")},
          hit=["R8 wiki-map"]),
     dict(name="wiki orphan", files={"docs/wiki/c.md": WIKI_LEAF}, hit=["R8 wiki-tree"]),
+    dict(name="fixtures skip code rules", files={"scripts/fixtures/eslint/x.ts": "export const a: any = 1;\nconst amountAokrw: number = 1;\n"},
+         miss=["S1 no-any", "R4 money-number"]),
+    dict(name="fixtures still dash-checked", files={"scripts/fixtures/x.ts": f"// {DASH}\n"}, hit=["R1 dash"]),
     # ---- normal code that must pass
     dict(name="normal code passes", files={
         "apps/api/src/modules/llm/runtime.ts": "const toolCallLimit: number = 8;\nfunction history(limit: number) { return limit; }\n"
