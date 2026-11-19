@@ -1,0 +1,19 @@
+import type Anthropic from '@anthropic-ai/sdk';
+
+/** One model turn: what the runtime sends (agent-runtime.md "LlmProvider"). */
+export interface LlmTurnRequest {
+  readonly system: string;
+  readonly tools: Anthropic.Tool[];
+  readonly messages: Anthropic.MessageParam[];
+}
+
+/**
+ * Wraps the Claude API so the runtime and the tests do not depend on the SDK
+ * client. `onText` gets text as it streams; the promise resolves with the whole
+ * assistant message (stop reason, tool calls).
+ */
+export interface LlmProvider {
+  turn(request: LlmTurnRequest, onText: (text: string) => void): Promise<Anthropic.Message>;
+}
+
+export const LLM_PROVIDER = Symbol('LLM_PROVIDER');
