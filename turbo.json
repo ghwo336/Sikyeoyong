@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "storybook-static/**"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "storybook-static/**", "!.next/dev/**"],
       "env": ["NEXT_PUBLIC_*", "NODE_ENV"]
     },
     "typecheck": {
@@ -19,7 +19,8 @@
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["API_DEV_ORIGIN"]
     },
     "storybook": {
       "cache": false,
