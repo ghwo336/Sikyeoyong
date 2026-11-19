@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors/index.js';
-import { floatCapAokrw, getPolicy, isPolicyProfile, nagStage } from './policy.js';
+import { floatCapAokrw, getPolicy, hasLimitIntent, isPolicyProfile, nagStage } from './policy.js';
 
 // verify-allow: R4 independent oracle for expected values, not production code
 const OKRW = 10n ** 18n;
@@ -99,4 +99,41 @@ describe('nagStage (tech-spec 3.7: 70, 90, 100 percent)', () => {
     const big = 10n ** 30n;
     expect(nagStage(p, (big * 7n) / 10n, big)).toBe('warn70');
   });
+});
+
+describe('monthly budget options (D-21, Budget.dc.html)', () => {
+  it('offers 200,000, 300,000 and 500,000 won under fixed keys, default included', () => {
+    for (const profile of ['default', 'demo'] as const) {
+      const p = getPolicy(profile);
+      expect(p.monthlyBudgetOptions.map((o) => o.id)).toEqual(['small', 'medium', 'large']);
+      expect(p.monthlyBudgetOptions.map((o) => o.amountAokrw)).toEqual([
+        200_000n * OKRW,
+        300_000n * OKRW,
+        500_000n * OKRW,
+      ]);
+      expect(
+        p.monthlyBudgetOptions.some((o) => o.amountAokrw === p.defaultMonthlyBudgetAokrw),
+      ).toBe(true);
+    }
+  });
+});
+
+describe('hasLimitIntent (D-21 injection gate)', () => {
+  it.each([
+    '한 번에 5만 원까지 올려 줘',
+    '회식 때 보쌈도 시킬 수 있게 한도 좀 늘려',
+    '예산 줄여 줘',
+    '레벨 내려',
+    '50,000원으로 해 줘',
+    '3만원까지',
+  ])('sees a limit wish in %s', (text) => {
+    expect(hasLimitIntent(text)).toBe(true);
+  });
+
+  it.each(['점심 시켜 줘. 따뜻한 걸로', '돼지국밥으로', '더 싼 거 없어?', ''])(
+    'sees none in %s',
+    (text) => {
+      expect(hasLimitIntent(text)).toBe(false);
+    },
+  );
 });

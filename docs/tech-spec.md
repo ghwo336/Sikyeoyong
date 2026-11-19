@@ -267,7 +267,7 @@ apps/api/src/
   level: 1 | 2 | 3,
   perOrderLimit: string,
   frozen: boolean,
-  budgetOptions: { id: 'small' | 'medium' | 'large'; amount: string }[]  // policy.ts monthlyBudgetOptions (예정, 금액 미정), D-21
+  budgetOptions: { id: 'small' | 'medium' | 'large'; amount: string }[]  // policy.ts monthlyBudgetOptions (20만, 30만, 50만 원), D-21
 }
 ```
 

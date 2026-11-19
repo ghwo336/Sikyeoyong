@@ -39,6 +39,52 @@ export interface PolicyConfig {
   readonly nagThresholdsBps: readonly [number, number, number];
   /** Approval requests expire after this (tech-spec 1.4 flow 3). */
   readonly approvalTtlMs: number;
+  /**
+   * Monthly budget choices (Budget.dc.html, D-21). The LLM picks only a key;
+   * the server turns it into an amount.
+   */
+  readonly monthlyBudgetOptions: readonly MonthlyBudgetOption[];
+}
+
+export type MonthlyBudgetOptionId = 'small' | 'medium' | 'large';
+
+export interface MonthlyBudgetOption {
+  readonly id: MonthlyBudgetOptionId;
+  readonly amountAokrw: bigint;
+}
+
+export const MONTHLY_BUDGET_OPTION_IDS: readonly MonthlyBudgetOptionId[] = [
+  'small',
+  'medium',
+  'large',
+];
+
+/**
+ * Words in the user's own message that open the limit-change card (D-21).
+ * This is a gate against injected text in tool results, not language
+ * understanding: a miss means no card, and the dragon points to the button path.
+ */
+export const LIMIT_INTENT_KEYWORDS: readonly string[] = [
+  '한도',
+  '예산',
+  '올려',
+  '올리',
+  '내려',
+  '내리',
+  '늘려',
+  '늘리',
+  '줄여',
+  '줄이',
+  '레벨',
+  '만 원',
+  '만원',
+];
+
+/** True when the user's own text mentions limits (D-21). Digits followed by 원 count too. */
+export function hasLimitIntent(userText: string): boolean {
+  const text = userText.normalize('NFC');
+  if (LIMIT_INTENT_KEYWORDS.some((k) => text.includes(k))) return true;
+  return /[0-9][0-9,]*\s*원/.test(text);
 }
 
 export const POLICY_PROFILES: readonly PolicyProfile[] = ['default', 'demo'];
@@ -66,6 +112,11 @@ export function getPolicy(profile: PolicyProfile): PolicyConfig {
     defaultMonthlyBudgetAokrw: okrwToAokrw(300_000n),
     nagThresholdsBps: [7_000, 9_000, 10_000],
     approvalTtlMs: 10 * 60 * 1000,
+    monthlyBudgetOptions: [
+      { id: 'small', amountAokrw: okrwToAokrw(200_000n) },
+      { id: 'medium', amountAokrw: okrwToAokrw(300_000n) },
+      { id: 'large', amountAokrw: okrwToAokrw(500_000n) },
+    ],
   };
 }
 
