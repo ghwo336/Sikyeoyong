@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Every var(--x) a component stylesheet uses must be defined by tokens.css or base.css.
+// Every var(--x) a component stylesheet uses must be defined by tokens.css, base.css or the same stylesheet.
 // A misspelled token silently falls back to the browser default, so this guards it.
 const src = resolve(__dirname, '..');
 const defined = new Set(
@@ -29,7 +29,10 @@ describe('component stylesheets use only defined tokens', () => {
   });
 
   it.each(files.map((f) => [f.slice(src.length + 1), f]))('%s', (_name, file) => {
-    const used = [...readFileSync(file, 'utf8').matchAll(/var\(--([a-z0-9-]+)/g)].map((m) => m[1]);
-    expect(used.filter((v) => !defined.has(v))).toEqual([]);
+    const text = readFileSync(file, 'utf8');
+    // Component-local custom properties declared in the same stylesheet count as defined.
+    const local = new Set([...text.matchAll(/--([a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+    const used = [...text.matchAll(/var\(--([a-z0-9-]+)/g)].map((m) => m[1]);
+    expect(used.filter((v) => !defined.has(v) && !local.has(v))).toEqual([]);
   });
 });

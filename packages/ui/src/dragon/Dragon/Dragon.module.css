@@ -1,0 +1,134 @@
+/* Species color: body uses color.dragon.*, accents color.dragonAccent.* (tokens.json, D-20). */
+.dragon {
+  --dragon-body: var(--color-dragon-green);
+  --dragon-accent: var(--color-dragon-accent-green);
+  --dragon-cheek: var(--color-cheek);
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.dragon[data-species='water'] {
+  --dragon-body: var(--color-dragon-sky);
+  --dragon-accent: var(--color-dragon-accent-sky);
+}
+
+.dragon[data-species='flower'] {
+  --dragon-body: var(--color-dragon-pink);
+  --dragon-accent: var(--color-dragon-accent-pink);
+  --dragon-cheek: var(--color-cheek-flower);
+}
+
+.dragon[data-species='star'] {
+  --dragon-body: var(--color-dragon-violet);
+  --dragon-accent: var(--color-dragon-accent-violet);
+}
+
+.body,
+.accent,
+.white,
+.yolk,
+.shell,
+.bowl,
+.sweat {
+  stroke: var(--color-ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.body {
+  fill: var(--dragon-body);
+}
+
+.bodyFlat {
+  fill: var(--dragon-body);
+}
+
+.accent {
+  fill: var(--dragon-accent);
+  stroke-width: 1.6;
+}
+
+.white {
+  fill: var(--color-surface);
+  stroke-width: 1.2;
+}
+
+.yolk {
+  fill: var(--color-yolk);
+  stroke-width: 1.5;
+}
+
+.yolkFlat {
+  fill: var(--color-yolk);
+}
+
+.shell {
+  fill: var(--color-egg-shell);
+}
+
+.bowl {
+  fill: var(--color-track);
+  stroke-width: 1.2;
+}
+
+.sweat {
+  fill: var(--color-sweat);
+  stroke-width: 1.2;
+}
+
+.ink {
+  fill: var(--color-ink);
+}
+
+.inkFill {
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.line,
+.vein,
+.wave,
+.steam,
+.zz,
+.zzSmall {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line {
+  stroke: var(--color-ink);
+  stroke-width: 1.6;
+}
+
+.vein {
+  stroke: var(--color-ink);
+  stroke-width: 0.9;
+}
+
+.wave {
+  stroke: var(--dragon-body);
+  stroke-width: 2.4;
+}
+
+.steam {
+  stroke: var(--color-steam);
+  stroke-width: 1.6;
+}
+
+.zz {
+  stroke: var(--color-ink-secondary);
+  stroke-width: 1.4;
+}
+
+.zzSmall {
+  stroke: var(--color-ink-muted);
+  stroke-width: 1.2;
+}
+
+.cheek {
+  fill: var(--dragon-cheek);
+}
