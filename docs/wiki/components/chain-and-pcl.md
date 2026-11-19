@@ -53,7 +53,7 @@ children: []
 | 컨트랙트 `MerchantNotActive(id)` | `CHAIN_MERCHANT_INACTIVE` | 주문할 수 없는 가게 |
 | 잔액 부족, MAWS `INSUFFICIENT_BALANCE` | `CHAIN_INSUFFICIENT_FUNDS` | 용돈(float) 부족 |
 | MAWS `POLICY_REJECTED` | `MAWS_POLICY_REJECTED` | 용이 규칙에 걸렸어요 |
-| 그 밖 | `INTERNAL` | 원본은 `error.detail.chain`에 |
+| 그 밖 | `INTERNAL` | 잠시 후 다시 시도. 원본 revert는 `AppError.detail.chain`에 담아 서버 로그에만 (응답에는 없음) |
 
 정확한 revert 이름은 테스트넷에서 확인 후 이 표와 tech-spec 3.6을 함께 고친다.
 

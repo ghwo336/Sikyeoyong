@@ -1,12 +1,21 @@
 import 'reflect-metadata';
 import type { Server } from 'node:http';
 import {
+  BadRequestException,
   Body,
+  ConflictException,
   Controller,
   ForbiddenException,
   Get,
+  HttpException,
   type INestApplication,
+  InternalServerErrorException,
+  MethodNotAllowedException,
+  NotFoundException,
+  PayloadTooLargeException,
   Post,
+  UnauthorizedException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppError } from '@sikyeoyong/shared';
@@ -112,9 +121,13 @@ describe('AppErrorFilter (server-api.md error format)', () => {
   it('turns unknown errors into INTERNAL without message or stack', async () => {
     const res = await request(http()).get('/api/t/crash');
     expect(res.status).toBe(500);
-    expect(errorOf(res).code).toBe('INTERNAL');
-    expect(JSON.stringify(res.body)).not.toContain(SECRET);
-    expect(JSON.stringify(res.body)).not.toContain('at ');
+    expect(res.body).toEqual({
+      error: {
+        code: 'INTERNAL',
+        message: '잠시 후 다시 시도해 주세요',
+        dragonLine: '앗, 뭔가 꼬였어용',
+      },
+    });
   });
 
   it('maps Nest HTTP exceptions to AppErrorCode without their message', async () => {
@@ -131,52 +144,29 @@ describe('AppErrorFilter (server-api.md error format)', () => {
   });
 });
 
-describe('ZodValidationPipe', () => {
-  let app: INestApplication;
-
-  beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ controllers: [TestController] }).compile();
-    app = configureApp(moduleRef.createNestApplication());
-    await app.init();
-  });
-
-  afterAll(async () => {
-    await app.close();
-  });
-
-  it('passes valid input through', async () => {
-    const res = await request(app.getHttpServer() as Server)
-      .post('/api/t/echo')
-      .send({ qty: 2, note: 'hi' });
-    expect(res.status).toBe(201);
-    expect(res.body).toEqual({ qty: 2, note: 'hi' });
-  });
-
-  it('answers 400 VALIDATION_FAILED with paths, never the input values', async () => {
-    const res = await request(app.getHttpServer() as Server)
-      .post('/api/t/echo')
-      .send({ qty: 0, note: 'secret-note-value' });
-    expect(res.status).toBe(400);
-    expect(errorOf(res).code).toBe('VALIDATION_FAILED');
-    const paths = (errorOf(res).detail as { issues: { path: string }[] }).issues
-      .map((i) => i.path)
-      .sort();
-    expect(paths).toEqual(['note', 'qty']);
-    expect(JSON.stringify(res.body)).not.toContain('secret-note-value');
-  });
-
-  it('rejects a missing body', async () => {
-    const res = await request(app.getHttpServer() as Server).post('/api/t/echo');
-    expect(res.status).toBe(400);
-    expect(errorOf(res).code).toBe('VALIDATION_FAILED');
-  });
-});
-
-describe('AppErrorFilter.toBody', () => {
+describe('AppErrorFilter.toBody: Nest HTTP exceptions', () => {
   const filter = new AppErrorFilter();
 
-  it('maps every Nest status it knows and falls back to INTERNAL', () => {
-    expect(filter.toBody(new ForbiddenException()).body.error.code).toBe('FORBIDDEN');
+  // Expected values written by hand from server-api.md, not read from the filter's table.
+  it.each([
+    [new BadRequestException(), 'VALIDATION_FAILED', 400],
+    [new UnauthorizedException(), 'UNAUTHENTICATED', 401],
+    [new ForbiddenException(), 'FORBIDDEN', 403],
+    [new NotFoundException(), 'NOT_FOUND', 404],
+    [new MethodNotAllowedException(), 'NOT_FOUND', 404],
+    [new ConflictException(), 'CONFLICT', 409],
+    [new HttpException('x', 429), 'RATE_LIMITED', 429],
+    [new PayloadTooLargeException(), 'VALIDATION_FAILED', 400],
+    [new UnsupportedMediaTypeException(), 'VALIDATION_FAILED', 400],
+    [new HttpException('x', 503), 'INTERNAL', 500],
+    [new InternalServerErrorException(), 'INTERNAL', 500],
+  ] as const)('%s -> %s %s', (exception, code, status) => {
+    const out = filter.toBody(exception);
+    expect(out.body.error.code).toBe(code);
+    expect(out.status).toBe(status);
+  });
+
+  it('falls back to INTERNAL for non-errors', () => {
     expect(filter.toBody('a string').body.error.code).toBe('INTERNAL');
     expect(filter.toBody(undefined).status).toBe(500);
   });

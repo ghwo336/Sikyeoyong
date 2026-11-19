@@ -68,7 +68,11 @@ export class AppErrorFilter implements ExceptionFilter {
       code = exception.code;
       detail = asDetail(exception.detail);
     } else if (exception instanceof HttpException) {
-      code = STATUS_TO_CODE[exception.getStatus()] ?? 'INTERNAL';
+      const status = exception.getStatus();
+      // Other client errors (413 body too large, 415, 406) are the client's fault, not a 500.
+      code =
+        STATUS_TO_CODE[status] ??
+        (status >= 400 && status < 500 ? 'VALIDATION_FAILED' : 'INTERNAL');
     }
     const spec = APP_ERRORS[code];
     let dragonLine: string | undefined;
