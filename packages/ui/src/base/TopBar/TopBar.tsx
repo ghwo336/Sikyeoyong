@@ -8,18 +8,20 @@ export interface TopBarProps {
   readonly title?: string;
   /** Going back is the parent's routing; no callback means no back button. */
   readonly onBack?: () => void;
+  /** Name of the back button. Default "뒤로"; Done and Tracking say "대화로 돌아가기". */
+  readonly backLabel?: string;
   /** Fills the rest of the bar, e.g. the sign-up StepProgress (Verify, Name, Budget). */
   readonly trailing?: ReactNode;
 }
 
 /** Draws the back button and title at the top of a screen (TopBar.md). */
-export function TopBar({ title, onBack, trailing }: TopBarProps) {
+export function TopBar({ title, onBack, backLabel = '뒤로', trailing }: TopBarProps) {
   // null and false mean nothing to show, like undefined.
   const hasTrailing = trailing !== undefined && trailing !== null && trailing !== false;
   return (
     <div className={styles.bar}>
       {onBack ? (
-        <button type="button" className={styles.back} aria-label="뒤로" onClick={onBack}>
+        <button type="button" className={styles.back} aria-label={backLabel} onClick={onBack}>
           <svg
             width="22"
             height="22"

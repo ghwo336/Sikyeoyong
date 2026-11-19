@@ -15,7 +15,7 @@ children: []
 라우팅 (onBack 콜백)
 
 ## props
-`title?: string` (화면 제목, h1), `onBack?: () => void` (없으면 뒤로 버튼도 없다), `trailing?: ReactNode` (나머지 폭을 채운다. 가입 단계 막대)
+`title?: string` (화면 제목, h1), `onBack?: () => void` (없으면 뒤로 버튼도 없다), `backLabel?: string` (기본 "뒤로", Done과 Tracking은 "대화로 돌아가기"), `trailing?: ReactNode` (나머지 폭을 채운다. 가입 단계 막대)
 
 ## 하네스 상태
 `TopBar.stories.tsx`에 아래를 전부 만든다.
@@ -23,12 +23,13 @@ children: []
 - 제목 (`WithTitle`, Receipt 시안)
 - 단계 표시 포함 (`WithSteps`, Name 시안)
 - 단계 표시, 뒤로 없음 (`StepsNoBack`, Budget 시안)
+- 대화로 돌아가기 (`BackToChat`, Done 시안)
 
 ## 쓰는 화면
-Verify, Name, Budget, Receipt, IdCard, Frozen
+Verify, Name, Budget, Done, Receipt, IdCard, Frozen
 
 ## 테스트 기준
-- 뒤로 버튼 aria-label "뒤로", 클릭과 Enter로 onBack 한 번
+- 뒤로 버튼 aria-label "뒤로" (backLabel로 바꿀 수 있다), 클릭과 Enter로 onBack 한 번
 - onBack이 없으면 버튼이 없다. trailing만 있으면 34px 빈 칸으로 줄을 맞춘다 (Budget)
 - 제목은 h1
 - 시안 값 (막대 48, 버튼 44를 왼쪽으로 10 당김, 화살표 22 선 2, 제목 17/600, trailing 앞 간격 8)

@@ -40,3 +40,8 @@ export const WithSteps: Story = {
 export const StepsNoBack: Story = {
   args: { trailing: <StepProgress steps={SIGNUP} current={3} /> },
 };
+
+/** Done.dc.html: 대화로 돌아가기와 제목 */
+export const BackToChat: Story = {
+  args: { onBack: back, backLabel: '대화로 돌아가기', title: '주문 현황' },
+};

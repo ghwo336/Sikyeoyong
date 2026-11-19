@@ -23,6 +23,12 @@ describe('TopBar (TopBar.md 테스트 기준)', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it('names the back button as given (Done, Tracking)', () => {
+    render(<TopBar onBack={vi.fn()} backLabel="대화로 돌아가기" title="주문 현황" />);
+    expect(screen.getByRole('button', { name: '대화로 돌아가기' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '뒤로' })).toBeNull();
+  });
+
   it('goes back with the keyboard too', async () => {
     const onBack = vi.fn();
     render(<TopBar onBack={onBack} />);
