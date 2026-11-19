@@ -77,6 +77,7 @@ packages/ui/src/<영역>/<이름>/
 ```
 apps/api/src/
 ├── main.ts, app.module.ts
+├── config/                   환경 변수 zod 검증(env.ts), 전역 ConfigModule(APP_CONFIG 토큰). 다른 곳은 process.env를 읽지 않는다
 ├── common/                   가드(세션, 역할), 파이프(zod), 필터(AppErrorCode, 드래곤 대사), 인터셉터(로깅, 감사)
 ├── db/                       Drizzle 스키마, 마이그레이션, DbModule
 └── modules/<모듈>/
