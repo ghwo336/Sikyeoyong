@@ -18,6 +18,14 @@ const tokens = JSON.parse(
   dragonSpecies: Record<string, { name: string; line: string }>;
 };
 
+// Pattern marks the Egg draws per species (Dragons.dc.html, D-20).
+const PATTERN = {
+  forest: 'egg-leaves',
+  water: 'egg-waves',
+  flower: 'egg-petals',
+  star: 'egg-stars',
+} as const;
+
 describe('EggPicker (EggPicker.md 테스트 기준)', () => {
   it('is a radiogroup named 알 with four eggs in D-20 order', () => {
     render(<EggPicker value="forest" onChange={vi.fn()} />);
@@ -60,6 +68,12 @@ describe('EggPicker (EggPicker.md 테스트 기준)', () => {
     const { container } = render(<EggPicker value={species} onChange={vi.fn()} />);
     const big = container.querySelector('svg');
     expect(big).toHaveAttribute('width', String(tokens.size.eggHero));
+    // The large egg carries the picked species' pattern, and no other.
+    for (const [s, part] of Object.entries(PATTERN)) {
+      const found = big?.querySelector(`[data-part="${part}"]`);
+      if (s === species) expect(found, part).not.toBeNull();
+      else expect(found, part).toBeNull();
+    }
     expect(screen.getByText(SPECIES_INFO[species].name)).toBeInTheDocument();
     expect(screen.getByText(`"${SPECIES_INFO[species].line}"`)).toBeInTheDocument();
   });
@@ -88,6 +102,10 @@ describe('EggPicker (EggPicker.md 테스트 기준)', () => {
     expect(rule('.options')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     expect(rule('.picker')).toMatch(/gap:\s*var\(--size-limits-gap\)/);
     expect(rule('.name')).toMatch(/font-size:\s*var\(--type-egg-name-size\)/);
+    expect(rule('.name')).toMatch(/font-weight:\s*var\(--type-egg-name-weight\)/);
+    expect(rule('.line')).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    expect(rule('.caption')).toMatch(/gap:\s*2px/);
+    expect(rule('.caption')).toMatch(/min-height:\s*var\(--size-egg-caption\)/);
     expect(rule('.line')).toMatch(/font-family:\s*var\(--font-dragon\)/);
     expect(rule('.line')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.option:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);

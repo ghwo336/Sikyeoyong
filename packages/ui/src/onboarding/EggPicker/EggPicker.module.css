@@ -11,9 +11,9 @@
   flex-direction: column;
   align-items: center;
   /* Name.dc.html: 2px between name and line (no 2 on the 4px scale), and a fixed 48px
-     block so the choices below do not jump when the line length changes. */
+     block (size.eggCaption) so the choices below do not jump when the line changes. */
   gap: 2px;
-  min-height: var(--size-top-bar);
+  min-height: var(--size-egg-caption);
 }
 
 .name {
