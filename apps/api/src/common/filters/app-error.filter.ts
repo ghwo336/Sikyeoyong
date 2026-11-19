@@ -27,6 +27,8 @@ export interface ErrorBody {
 interface AppErrorDetail {
   readonly dragonParams?: Readonly<Record<string, string>>;
   readonly public?: unknown;
+  /** Raw chain revert (chain-and-pcl.md). Logged on the server, never sent to the client. */
+  readonly chain?: unknown;
 }
 
 const STATUS_TO_CODE: Readonly<Record<number, AppErrorCode>> = {
@@ -55,6 +57,12 @@ export class AppErrorFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const res = host.switchToHttp().getResponse<Response>();
     const { body, status } = this.toBody(exception);
+    if (exception instanceof AppError) {
+      const chain = asDetail(exception.detail).chain;
+      if (chain !== undefined) {
+        this.logger.warn(`${body.error.code} chain=${JSON.stringify(chain)}`);
+      }
+    }
     if (status >= 500) {
       this.logger.error(body.error.code, exception instanceof Error ? exception.stack : undefined);
     }

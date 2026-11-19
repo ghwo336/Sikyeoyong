@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import {
   BadRequestException,
-  Body,
   ConflictException,
   Controller,
   ForbiddenException,
@@ -13,17 +12,15 @@ import {
   MethodNotAllowedException,
   NotFoundException,
   PayloadTooLargeException,
-  Post,
   UnauthorizedException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppError } from '@sikyeoyong/shared';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { z } from 'zod';
+import { Logger } from '@nestjs/common';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { configureApp } from '../../app.setup.js';
-import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
 import { AppErrorFilter, type ErrorBody } from './app-error.filter.js';
 
 function errorOf(res: { body: unknown }): ErrorBody['error'] {
@@ -31,7 +28,6 @@ function errorOf(res: { body: unknown }): ErrorBody['error'] {
 }
 
 const SECRET = 'sk-internal-should-never-leak';
-const Echo = z.object({ qty: z.number().int().min(1), note: z.string().max(5) });
 
 @Controller('t')
 class TestController {
@@ -63,11 +59,6 @@ class TestController {
   forbidden(): never {
     throw new ForbiddenException(SECRET);
   }
-
-  @Post('echo')
-  echo(@Body(new ZodValidationPipe(Echo)) body: z.infer<typeof Echo>): z.infer<typeof Echo> {
-    return body;
-  }
 }
 
 describe('AppErrorFilter (server-api.md error format)', () => {
@@ -97,6 +88,16 @@ describe('AppErrorFilter (server-api.md error format)', () => {
       },
     });
     expect(JSON.stringify(res.body)).not.toContain('raw revert data');
+  });
+
+  it('logs the raw chain revert on the server but never sends it', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const res = await request(http()).get('/api/t/limit');
+    expect(JSON.stringify(res.body)).not.toContain('raw revert data');
+    const logged = warn.mock.calls.map((c) => String(c[0])).join('\n');
+    expect(logged).toContain('CHAIN_AGENT_LIMIT');
+    expect(logged).toContain('raw revert data');
+    warn.mockRestore();
   });
 
   it('drops the dragon line instead of leaking a raw placeholder', async () => {
