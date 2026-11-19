@@ -1,0 +1,42 @@
+/* Verify, Name, Budget: 4px cells. Done, Tracking, Arrived: 6px cells with names below. */
+.progress {
+  display: flex;
+  flex-direction: column;
+  /* Done.dc.html bar-to-names gap; the 4px space scale has no 10, so it stays literal. */
+  gap: 10px;
+}
+
+.cells {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.cell {
+  border-radius: calc(var(--step-height) / 2);
+  height: var(--step-height);
+  background: var(--color-line);
+}
+
+.cell[data-done] {
+  background: var(--color-leaf);
+}
+
+.sm {
+  --step-height: var(--size-step-sm);
+}
+
+.md {
+  --step-height: var(--size-step-md);
+}
+
+.labels {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+}
+
+.labels [data-current] {
+  color: var(--color-ink);
+  font-weight: var(--type-label-weight);
+}
