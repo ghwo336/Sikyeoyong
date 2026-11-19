@@ -234,6 +234,32 @@ const cases = [
     "import { BudgetModule } from '../budget/budget.module';\nexport const a = BudgetModule;",
     null,
   ],
+  // NodeNext ESM imports carry .js; the service/module exception must still apply.
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { S } from '../budget/budget.service.js';\nexport const a = S;",
+    null,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.module.ts',
+    "import { BudgetModule } from '../budget/budget.module.js';\nexport const a = BudgetModule;",
+    null,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { R } from '../budget/budget.repository.js';\nexport const a = R;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { S } from '../budget/budget.service.jsx';\nexport const a = S;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/llm/llm.service.ts',
+    "import { P } from '../payment/payment.service.js';\nexport const a = P;",
+    IMPORTS,
+  ],
   [
     'apps/api/src/modules/orders/orders.service.ts',
     "import { R } from './orders.repository';\nexport const a = R;",

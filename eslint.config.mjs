@@ -52,7 +52,7 @@ function apiModulePatterns(own) {
   return API_MODULES.filter((m) => m !== own).map((other) => {
     const forbidden = API_FORBIDDEN_PAIRS[own]?.includes(other);
     const name = escapeRe(other);
-    const rest = forbidden ? '(/.*)?' : `(/(?!${name}\\.(service|module)$).*)?`;
+    const rest = forbidden ? '(/.*)?' : `(/(?!${name}\\.(service|module)(\\.js)?$).*)?`;
     return {
       regex: `^\\.{1,2}/(.*/)?${name}${rest}$`,
       message: forbidden
