@@ -185,3 +185,9 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 이유: 새 견적은 새 orderRef라 체인의 `OrderExists` 보호를 받지 못해 타임아웃 뒤 이중 결제가 날 수 있다. CLAUDE.md 9(같은 orderRef로만 재시도)를 결제 상태 규칙으로 구체화했다. 에러 코드 커밋 검증 3라운드 지적에서 나왔다.
 - 영향: payment.md "confirm 상태 규칙"(원본), server-api.md, tech-spec 1.4 흐름 1과 흐름 3, 3.2 confirm과 approve 행, 3.6 `SERVER_PRICE_CHANGED`, 4 `approvals.order_id`와 `orders`, `wallet_txs`의 제출 표시 칸, 8.3 `SUBMITTING_ALERT_MS`, open-questions Q-24, Q-25.
 
+## D-20 용이는 알마다 종이 다르다 (2026-11-19, 호재)
+- 알 네 가지를 색이 아니라 종으로 둔다: 숲용(`forest`, 연두, 잎 점 알, 잎 볏), 물용(`water`, 하늘, 물결 알, 지느러미 귀와 이마 물방울), 꽃용(`flower`, 분홍, 꽃잎 점 알, 꽃잎 귀와 꽃 볏), 별용(`star`, 보라, 별과 달 알, 별 뿔과 윙크).
+- 그림 기준은 캔버스의 "용이 도감"과 사본 `design/screens/Dragons.dc.html`. 기본 얼굴은 같고 머리 장식과 알 무늬가 다르다. 다른 화면 시안의 용이는 숲용이다.
+- 코드: `DragonColor` 대신 `DragonSpecies`. `Dragon`, `Egg`, `EggPicker`가 `species`를 받는다. `agents.dragon_species` 칸, `POST /api/agents` 본문에 `dragonSpecies`. 종은 화면 꾸밈일 뿐 결제, 한도, 체인에 영향이 없다 (온체인 메타데이터에도 넣지 않는다).
+- 이유: 호재 님 결정. 알을 고르는 순간을 더 귀엽고 내 것 같게. 광고 영상도 종별 용이를 쓴다.
+- 영향: design/README, design/tokens.json(`dragonSpecies`), user-flow, 위키 ui/dragon(Dragon, Egg, _index), ui/onboarding(EggPicker, _index), tech-spec 데이터 모델과 API.

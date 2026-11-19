@@ -222,7 +222,7 @@ apps/api/src/
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/me` | user | | `{ user, agent?, budget }` |
 | PATCH | `/me` | user | `{ nickname?, address?, monthlyBudgetOkrw? }` | `{ user }` |
-| POST | `/agents` | user | `{ dragonName }` | `{ agent: { id, status: 'PENDING' } }` |
+| POST | `/agents` | user | `{ dragonName, dragonSpecies }` | `{ agent: { id, status: 'PENDING' } }` |
 | GET | `/agents/me` | user | | `{ agent: AgentView }` (레벨, 한도, 상태, 8004 agentId, 지갑, 체인 상태) |
 | POST | `/agents/me/level` | user | `{ level: 1 \| 2 \| 3, approvalId? }` | `{ agent, txHash }` |
 | POST | `/agents/me/freeze` | user | | `{ agent, txHashes }` |
@@ -490,7 +490,7 @@ score(merchant, menu) =
 | `users` | id, nickname, address_text, address_dong, monthly_budget, role(`user`/`operator`/`merchant`), created_at | |
 | `oauth_accounts` | id, user_id → users, provider(`kakao`/`google`/`apple`), provider_user_id, email?, created_at | 유니크(provider, provider_user_id) |
 | `sessions` | id(토큰 해시), user_id, platform(`web`/`native`), expires_at, revoked_at | 인덱스(user_id) |
-| `agents` | id, user_id(1:1), dragon_name, status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, level, created_at | 유니크(user_id), 유니크(wallet_address) |
+| `agents` | id, user_id(1:1), dragon_name, dragon_species(`forest`/`water`/`flower`/`star`, D-20), status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, level, created_at | 유니크(user_id), 유니크(wallet_address) |
 | `agent_keys` | agent_id → agents, ciphertext, iv, key_version | 경로 B 전용 |
 | `agent_limit_history` | id, agent_id, level, transfer_limit, tx_hash, approval_id?, created_at | |
 | `wallet_txs` | id, agent_id, kind(`fund`/`drain`/`set_limit`/`freeze`/`pay`/`refund`), request_id(충전은 orderRef와 attempt에서 만듦), order_id?, attempt?, submit_started_at?, nonce?, maws_request_id?, tx_hash?, status, error_code?, created_at | 인덱스(agent_id, created_at), 유니크(request_id) |

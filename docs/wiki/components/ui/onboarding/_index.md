@@ -19,6 +19,6 @@ children:
 | --- | --- |
 | [SocialLogin](SocialLogin.md) | 카카오, 구글 시작 버튼과 약관 한 줄을 그린다. |
 | [KakaoVerify](KakaoVerify.md) | 카카오톡 본인 인증 버튼과 한 줄 안내를 그린다. |
-| [EggPicker](EggPicker.md) | 알 색 네 가지 중 하나를 고르게 하고 고른 색으로 알을 그린다. |
+| [EggPicker](EggPicker.md) | 알 네 가지(숲, 물, 꽃, 별) 중 하나를 고르게 하고 고른 알을 그린다. |
 | [HatchProgress](HatchProgress.md) | 부화 세 단계(용돈 주머니, 신분증, 한도 새기기)의 진행을 그린다. |
 | [BudgetPicker](BudgetPicker.md) | 이번 달 예산 선택 칩 세 개를 그린다. |

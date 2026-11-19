@@ -92,3 +92,9 @@ children: []
 - 누가: Claude (구현 중)
 - 영향: decisions.md D-03, server-api.md
 
+### 2026-11-19 D-20 추가: 알마다 다른 용
+- 이전: 알 색 네 가지(`DragonColor`), 모양은 같음
+- 이후: 종 네 가지(`DragonSpecies`: forest, water, flower, star), 알 무늬와 머리 장식이 다름. 기준 `design/screens/Dragons.dc.html`
+- 이유: 호재 님 결정
+- 누가: 호재 님
+- 영향: design/README, tokens.json, user-flow, ui/dragon, ui/onboarding, tech-spec(agents.dragon_species, POST /agents)

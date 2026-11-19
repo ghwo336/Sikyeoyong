@@ -83,3 +83,8 @@ children: []
   - api: ORDERS_CONTRACT를 deployments 해석으로(체인 모듈), dragonParams는 formatOkrw와 KST 변환 한곳에서, Node 22.12 부팅 스모크, tech-spec 3.1 모듈 트리(Hono 시절) 정리.
   - 결제 문서: approvals payload_json에 승인 금액, wallet_txs request_id 규칙과 칸 이름, CHAIN_AGENT_LIMIT_UNSET 조건을 tech-spec 3.6과 chain-and-pcl.md에서 payment.md로 연결.
 - 다음 할 일: 웹에 ui 토큰과 글꼴 연결, base 컴포넌트(Button, Amount 등) 하네스와 함께, Drizzle DB 모듈과 마이그레이션, 목 가게 시드, 컨트랙트.
+
+## 2026-11-19 용이 도감 반영 (D-20)
+- 한 일: 캔버스 "용이 도감"을 `design/screens/Dragons.dc.html`로 복사. `Dragon`, `Egg`, `EggPicker` 문서를 색에서 종(`DragonSpecies`)으로 바꿈. tokens.json에 `dragonSpecies`, tech-spec에 `agents.dragon_species`와 `POST /agents`의 `dragonSpecies`.
+- 새로 안 마루 사실: 없음.
+- 다음 할 일: dragon 영역 컴포넌트를 만들 때 도감 기준으로 종 4가지 하네스. agents 스키마 마이그레이션에 `dragon_species` 포함.
