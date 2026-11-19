@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nameIs } from './steps';
+import { BORN_LINE, nameIs } from './steps';
 
 describe('nameIs', () => {
   it('follows the last syllable of the dragon name', () => {
@@ -14,5 +14,11 @@ describe('nameIs', () => {
     expect(nameIs('힣')).toBe('힣이에용'); // 0xd7a3, last syllable, has a final
     expect(nameIs('\u{d7a4}')).toBe('\u{d7a4}예용'); // just past the block
     expect(nameIs('\u{abff}')).toBe('\u{abff}예용'); // just before the block
+  });
+});
+
+describe('BORN_LINE', () => {
+  it('reads like Name.dc.html with the level 1 per-order limit from policy', () => {
+    expect(BORN_LINE).toBe('레벨 1로 태어나요. 한 번에 10,000원까지.');
   });
 });

@@ -1,10 +1,10 @@
 'use client';
 
-import { SocialLogin } from '@sikyeoyong/ui';
+import { Egg, Hero, ScreenTitle, SocialLogin } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useLogin } from '../hooks/useSignup';
 
-/** Start.dc.html: Kakao or Google, then the identity check. */
+/** Start.dc.html: the egg and title in the middle, then Kakao or Google, then the identity check. */
 export function StartContainer() {
   const router = useRouter();
   const login = useLogin();
@@ -16,16 +16,26 @@ export function StartContainer() {
     });
   };
   return (
-    <SocialLogin
-      onKakao={() => {
-        start('kakao');
-      }}
-      onGoogle={() => {
-        start('google');
-      }}
-      loading={login.isPending ? login.variables : undefined}
-      termsHref="/terms"
-      privacyHref="/privacy"
-    />
+    <>
+      {/* No dragon is picked yet: the design draws the forest egg. */}
+      <Hero gap="lg" art={<Egg state="closed" species="forest" size={168} />}>
+        <ScreenTitle
+          variant="display"
+          title={'배달은\n용이한테 시켜용'}
+          description={'주인님이 정한 한도 안에서만 결제하는\n배달 비서예요. 카드 번호는 몰라요.'}
+        />
+      </Hero>
+      <SocialLogin
+        onKakao={() => {
+          start('kakao');
+        }}
+        onGoogle={() => {
+          start('google');
+        }}
+        loading={login.isPending ? login.variables : undefined}
+        termsHref="/terms"
+        privacyHref="/privacy"
+      />
+    </>
   );
 }

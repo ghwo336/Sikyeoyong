@@ -1,10 +1,10 @@
 'use client';
 
 import type { DragonSpecies } from '@sikyeoyong/shared';
-import { Button, EggPicker, StepProgress, TextField } from '@sikyeoyong/ui';
+import { Button, EggPicker, ScreenTitle, StepProgress, TextField, TopBar } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { SIGNUP_STEPS } from '../steps';
+import { BORN_LINE, SIGNUP_STEPS } from '../steps';
 import { useCreateAgent } from '../hooks/useSignup';
 
 /** Name.dc.html: pick an egg, name it, wake it. */
@@ -17,13 +17,20 @@ export function NameContainer() {
   const empty = name.trim() === '';
   return (
     <>
-      <StepProgress steps={SIGNUP_STEPS} current={2} />
+      <TopBar
+        onBack={() => {
+          router.back();
+        }}
+        trailing={<StepProgress steps={SIGNUP_STEPS} current={2} />}
+      />
+      <ScreenTitle variant="title" title={'알을 하나 골라\n이름을 지어 주세요'} />
       <EggPicker value={species} onChange={setSpecies} />
       <TextField
         label="이름"
         value={name}
         onChange={setName}
         maxLength={8}
+        hint={BORN_LINE}
         // user-flow 3: an empty name explains instead of disabling the button.
         error={tried && empty ? '이름을 지어 주세요' : undefined}
       />

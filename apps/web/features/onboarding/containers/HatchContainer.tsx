@@ -1,6 +1,6 @@
 'use client';
 
-import { DragonLine, Egg, HatchProgress } from '@sikyeoyong/ui';
+import { Egg, HatchProgress, Hero, ScreenTitle } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useMe } from '../../me/hooks/useMe';
@@ -20,13 +20,13 @@ export function HatchContainer() {
   if (!me || !setup) return null;
   return (
     <>
-      <Egg state="wobble" species={me.dragonSpecies} size={176} />
-      <DragonLine
-        text="알이 흔들려용..."
-        layout="center"
-        species={me.dragonSpecies}
-        avatar={false}
-      />
+      <Hero gap="md" art={<Egg state="wobble" species={me.dragonSpecies} size={176} />}>
+        <ScreenTitle
+          variant="dragon"
+          title="알이 흔들려용..."
+          description="1~3분 걸려요. 다 되면 알려 드릴게요."
+        />
+      </Hero>
       <HatchProgress
         steps={setup.steps.map((s) => ({ label: HATCH_LABEL[s.key], status: s.status }))}
         onRetry={() => {

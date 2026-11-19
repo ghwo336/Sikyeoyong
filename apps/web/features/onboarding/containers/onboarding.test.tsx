@@ -8,7 +8,8 @@ import { BUDGET, ME, SIGNUP } from '../../../lib/mock/fixtures';
 
 const push = vi.fn();
 const replace = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace }) }));
+const back = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace, back }) }));
 
 // Reads come from the fixtures; every write is a spy.
 const createAgent = vi.fn();
@@ -44,6 +45,7 @@ beforeEach(() => {
   for (const f of [
     push,
     replace,
+    back,
     createAgent,
     verifyIdentity,
     setMonthlyBudget,
@@ -54,13 +56,26 @@ beforeEach(() => {
 });
 
 describe('NameContainer', () => {
+  it('draws the Name design: back, step 2 of 3, title, and the level 1 line under the field', async () => {
+    wrap(<NameContainer />);
+    expect(screen.getByRole('progressbar', { name: '3단계 중 2단계' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      '알을 하나 골라이름을 지어 주세요',
+    );
+    expect(screen.getByRole('textbox', { name: '이름' })).toHaveAccessibleDescription(
+      '레벨 1로 태어나요. 한 번에 10,000원까지.',
+    );
+    await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
   it.each(['', '   '])('an empty name (%j) explains and does not hatch', async (typed) => {
     wrap(<NameContainer />);
     const field = screen.getByRole('textbox', { name: '이름' });
     await userEvent.clear(field);
     if (typed !== '') await userEvent.type(field, typed);
     await userEvent.click(screen.getByRole('button', { name: '알 깨우기' }));
-    expect(screen.getByText('이름을 지어 주세요')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('이름을 지어 주세요');
     expect(createAgent).not.toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled();
   });
@@ -101,19 +116,36 @@ describe('BudgetSetupContainer', () => {
       }),
     );
     wrap(<BudgetSetupContainer />);
-    const take = await screen.findByRole('button', { name: /받기/ });
+    const take = await screen.findByRole('button', { name: '받기' });
     await userEvent.click(take);
     await userEvent.click(take);
+    expect(take).toHaveAttribute('aria-busy', 'true');
     finish();
-    await waitFor(() => {
-      expect(take).not.toHaveAttribute('aria-busy');
-    });
-    await userEvent.click(take);
+    // After it arrived the button is gone, so it cannot be asked for again.
+    expect(await screen.findByText('받았어요')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '받기' })).toBeNull();
     expect(claimTrialAllowance).toHaveBeenCalledTimes(1);
+  });
+
+  it('greets with the 96px dragon and shows the trial allowance amount', async () => {
+    const { container } = wrap(<BudgetSetupContainer />);
+    expect(await screen.findByText('100,000원')).toBeInTheDocument();
+    expect(container.querySelector('svg[width="96"]')).not.toBeNull();
   });
 });
 
 describe('VerifyContainer', () => {
+  it('draws the Verify design: back, step 1 of 3 and the title', async () => {
+    wrap(<VerifyContainer />);
+    expect(screen.getByRole('progressbar', { name: '3단계 중 1단계' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      '주인님이 누군지한 번만 확인할게요',
+    );
+    expect(await screen.findByText('실명 확인된 주인만 비서를 둘 수 있어요.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
   it('goes on to naming only when verified', async () => {
     verifyIdentity.mockResolvedValue({ verified: false });
     wrap(<VerifyContainer />);
