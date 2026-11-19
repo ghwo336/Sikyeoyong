@@ -10,6 +10,7 @@ children: []
 - `strict: true`, `noUncheckedIndexedAccess: true`. `any` 금지 (불가피하면 `unknown` 후 좁히기).
 - 외부 입력(HTTP, LLM 도구 입력, 체인 이벤트, 시드 파일)은 zod로 파싱한 뒤에만 쓴다.
 - 금액을 `Number()`, `parseInt`, 단항 `+`로 바꾸는 것은 ESLint가 다 막지 못한다. 금액 이름에 대한 이 검사는 커밋 게이트(`scripts/verify.py` R4)가 맡는다.
+- `formatOkrw` 표시 규칙 (2026-11-19 정함, 컴포넌트 사이 계약): "9,000원" 형식 하나. 원 아래는 0 쪽으로 버린다(잔액을 부풀려 보이지 않게). 음수는 앞에 ASCII 하이픈("-9,000원")이고, 버린 결과가 0이면 "0원"("-0원"은 없다). 입력은 uint256 범위로 가정하고 벗어나면 `INTERNAL` 에러. 고정폭 숫자는 UI(`Amount`) 몫. 음수가 화면에 나오는 경우와 "20만 원" 같은 짧은 표기는 열린 질문 Q-22, Q-23.
 - 금액: `bigint` aokrw. 변수 이름 끝에 단위를 붙인다 (`amountAokrw`, `limitAokrw`). 표시용 문자열은 `formatOkrw()` 하나로.
 - 시간: 내부는 UTC. 변수 이름에 단위 (`expiresAtMs`, `resetAtSec`).
 - 에러: 도메인 에러는 `packages/shared`의 `AppErrorCode`를 가진 클래스 (tech-spec "3.6"). 문자열 throw 금지.

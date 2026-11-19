@@ -141,7 +141,7 @@ type ChatEvent =
   | { type: 'done'; messageId: string };
 ```
 
-- 금액은 전부 **문자열(aokrw 정수)** 로 주고받고, 표시용 변환은 `packages/shared/src/money.ts`의 `formatOkrw()` 하나만 쓴다.
+- 금액은 전부 **문자열(aokrw 정수)** 로 주고받고, 표시용 변환은 `packages/shared/src/money/`(패키지 루트에서 재수출)의 `formatOkrw()` 하나만 쓴다. 표시 규칙은 `conventions/code-style.md` 금액 항목.
 
 ### 2.5 영수증 "마루 규칙 N개 통과"
 - 서버가 주문 확정 시 `receipt.rules[]`를 만든다. 각 항목: `{ id, label, layer: 'chain' | 'server', status: 'passed' }`.

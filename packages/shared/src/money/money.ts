@@ -58,8 +58,12 @@ const GROUPING = /\B(?=(\d{3})+(?!\d))/g;
 /**
  * The one display format: "9,000원". Fractions of a won are cut off toward
  * zero (screens never show sub-won amounts). Negative values get a leading "-".
+ * Rules: docs/wiki/conventions/code-style.md (money).
  */
 export function formatOkrw(aokrw: bigint): string {
+  if (aokrw > MAX_AOKRW || aokrw < -MAX_AOKRW) {
+    throw new AppError('INTERNAL', { reason: 'aokrw out of display range' });
+  }
   const negative = aokrw < 0n;
   const won = (negative ? -aokrw : aokrw) / AOKRW_PER_OKRW;
   const digits = won.toString().replace(GROUPING, ',');

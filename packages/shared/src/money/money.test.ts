@@ -51,13 +51,24 @@ describe('parseAokrw', () => {
     'Infinity',
     (UINT256_MAX + 1n).toString(),
     '9'.repeat(200),
+    '9'.repeat(1_000_000),
+    // Unicode digits must never pass the ASCII-only check (and must not reach BigInt).
+    '０',
+    '１２',
+    '1０',
+    '1٢',
+    '٠',
+    '𝟏',
+    '१२',
+    '1\n',
+    '\n1',
+    '1\0',
+    '\u200b1',
+    '-0',
   ])('rejects %j with VALIDATION_FAILED', (input) => {
-    expect(() => parseAokrw(input)).toThrow(AppError);
-    try {
-      parseAokrw(input);
-    } catch (e) {
-      expect((e as AppError).code).toBe('VALIDATION_FAILED');
-    }
+    expect(() => parseAokrw(input)).toThrow(
+      expect.objectContaining({ name: 'AppError', code: 'VALIDATION_FAILED' }),
+    );
   });
 });
 
@@ -121,6 +132,12 @@ describe('formatOkrw', () => {
     expect(formatOkrw(-(ONE_OKRW - 1n))).toBe('0원');
   });
 
+  it('refuses values outside the uint256 range instead of formatting them', () => {
+    expect(() => formatOkrw(UINT256_MAX + 1n)).toThrow(AppError);
+    expect(() => formatOkrw(-UINT256_MAX - 1n)).toThrow(AppError);
+    expect(formatOkrw(-UINT256_MAX).startsWith('-')).toBe(true);
+  });
+
   it('formats the largest amount exactly', () => {
     const won = (UINT256_MAX / ONE_OKRW).toString();
     expect(formatOkrw(UINT256_MAX).replace(/[,원]/g, '')).toBe(won);
@@ -131,7 +148,7 @@ describe('zAokrwString', () => {
   it('accepts what parseAokrw accepts and rejects the rest', () => {
     expect(zAokrwString.safeParse('45000000000000000000000').success).toBe(true);
     expect(zAokrwString.safeParse(UINT256_MAX.toString()).success).toBe(true);
-    for (const bad of ['', '-1', '01', '1.5', (UINT256_MAX + 1n).toString()]) {
+    for (const bad of ['', '-1', '01', '1.5', '１２', '1٢', (UINT256_MAX + 1n).toString()]) {
       expect(zAokrwString.safeParse(bad).success, bad).toBe(false);
     }
     expect(zAokrwString.safeParse(45000).success).toBe(false);
