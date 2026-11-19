@@ -83,7 +83,7 @@ describe('SocialLogin (SocialLogin.md 테스트 기준)', () => {
     );
   });
 
-  // Start.dc.html 30-33.
+  // Start.dc.html 29-33.
   it('matches the design values', () => {
     expect(rule('.login')).toMatch(/gap:\s*var\(--size-social-gap\)/);
     expect(rule('.terms')).toMatch(/margin:\s*var\(--size-terms-top\) 0 0/);
