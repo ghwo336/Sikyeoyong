@@ -53,6 +53,9 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     const input = screen.getByLabelText('이름');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAccessibleDescription('이름을 지어 주세요');
+    expect(input).toHaveAttribute('data-error');
+    // Shown after the button press, so it is announced (user-flow.md step 3).
+    expect(screen.getByRole('alert')).toHaveTextContent('이름을 지어 주세요');
   });
 
   it.each([undefined, ''])('has no aria-invalid and no message when error is %j', (error) => {
@@ -62,6 +65,7 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     const input = screen.getByLabelText('이름');
     expect(input).not.toHaveAttribute('aria-invalid');
     expect(input).not.toHaveAttribute('aria-describedby');
+    expect(input).not.toHaveAttribute('data-error');
     expect(container.querySelector('p')).toBeNull();
   });
 

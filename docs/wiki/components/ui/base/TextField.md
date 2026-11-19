@@ -28,11 +28,11 @@ Name
 
 ## 테스트 기준
 - 라벨과 입력 연결(htmlFor), 칸마다 다른 id (`useId`)
-- error가 있으면 aria-invalid, 안내 문구를 aria-describedby로 읽는다. 없거나 빈 문자열이면 둘 다 없다
+- error가 있으면 aria-invalid와 오류 테두리(`data-error`), 안내 문구를 aria-describedby로 잇고 `role="alert"`로 바로 읽힌다. 없거나 빈 문자열이면 셋 다 없다
 - 입력한 값을 그대로 부모에 넘긴다
 - Name 시안 값 (라벨 13/600 `ink-secondary`, 칸 52, 여백 16, 1px `line-strong`, 반경 14, 흰 바탕, 글자 17/600, 간격 6)
 
 ## 메모
 - 라벨과 입력 글자는 `type.label`(13/600), `type.input`(17/600) 토큰을 쓴다.
 - 시안에 오류 모양이 없어 Blocked의 주의 색을 빌렸다: 테두리 `color.over`, 안내 13px `color.overInk`. 확정은 open-questions Q-27.
-- placeholder는 `ink-muted`, 보통 굵기.
+- placeholder는 `ink-muted`, 보통 굵기. 흰 바탕 대비가 3.2:1이라 placeholder를 쓰는 화면이 생기면 색을 다시 정한다 (Name 시안에는 없다).

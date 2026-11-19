@@ -19,16 +19,7 @@ type Story = StoryObj<typeof meta>;
 
 function Controlled({ initial, error }: { initial: string; error?: string }) {
   const [value, setValue] = useState(initial);
-  return (
-    <TextField
-      label="이름"
-      value={value}
-      onChange={setValue}
-      placeholder="이름을 지어 주세요"
-      maxLength={8}
-      error={error}
-    />
-  );
+  return <TextField label="이름" value={value} onChange={setValue} maxLength={8} error={error} />;
 }
 
 const noop = () => undefined;
