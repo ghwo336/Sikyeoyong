@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import chipStyles from '../../base/Chip/Chip.module.css';
+import { DragonLine } from '../../dragon/DragonLine';
 import { QuickReplies } from './QuickReplies';
 
 const css = readFileSync(resolve(__dirname, 'QuickReplies.module.css'), 'utf8');
@@ -29,6 +31,10 @@ describe('QuickReplies (QuickReplies.md 테스트 기준)', () => {
     for (const b of buttons) {
       expect(group).toContainElement(b);
       expect(b).not.toHaveAttribute('aria-checked');
+      // Main.dc.html: the 36px pill (Chip sm), never the 52px choice tiles
+      expect(b).toHaveClass(chipStyles.sm ?? 'sm');
+      expect(b).not.toHaveClass(chipStyles.lg ?? 'lg');
+      expect(b).not.toHaveClass(chipStyles.tile ?? 'tile');
     }
   });
 
@@ -44,5 +50,14 @@ describe('QuickReplies (QuickReplies.md 테스트 기준)', () => {
     expect(css).toMatch(
       /padding-left:\s*calc\(var\(--size-dragon-chat\) \+ var\(--size-dragon-chat-gap\)\)/,
     );
+  });
+
+  // The indent only lines up if the chat dragon really is size.dragonChat wide.
+  it('indents by the same width the chat dragon is drawn at', () => {
+    const tokens = JSON.parse(
+      readFileSync(resolve(__dirname, '../../../../../design/tokens.json'), 'utf8'),
+    ) as { size: { dragonChat: number } };
+    const { container } = render(<DragonLine text="x" layout="chat" species="forest" />);
+    expect(container.querySelector('svg')).toHaveAttribute('width', String(tokens.size.dragonChat));
   });
 });
