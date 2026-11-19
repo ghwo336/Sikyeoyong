@@ -1,0 +1,50 @@
+/* Name, Verify, Receipt, IdCard, Frozen: 48px bar; 44px back button pulled 10px left. */
+.bar {
+  display: flex;
+  align-items: center;
+  height: var(--size-top-bar);
+}
+
+.back {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-touch-min);
+  height: var(--size-touch-min);
+  /* Optical: the chevron lines up with the 20px screen edge. */
+  margin-left: -10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: var(--size-back-icon);
+  height: var(--size-back-icon);
+}
+
+.spacer {
+  flex-shrink: 0;
+  width: calc(var(--size-touch-min) - 10px);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-bar-title-size);
+  font-weight: var(--type-bar-title-weight);
+  color: var(--color-ink);
+}
+
+.trailing {
+  flex-grow: 1;
+  min-width: 0;
+  margin-left: var(--space-2);
+}
