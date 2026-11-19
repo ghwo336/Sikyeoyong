@@ -15,19 +15,25 @@ children: []
 메시지 종류별 그림 (자식 컴포넌트가 그림)
 
 ## props
-`children`, `autoScroll?: boolean`
+`children: ReactNode`, `autoScroll?: boolean` (기본 true), `stamp?: string` (맨 위 시각 "오늘 오후 12:28"), `streaming?: boolean` (용이가 답을 쓰는 중, aria-busy)
 
 ## 하네스 상태
 `ChatThread.stories.tsx`에 아래를 전부 만든다.
-- 짧은 대화
-- 긴 대화 스크롤
-- 스트리밍 중
+- 짧은 대화 (`Short`, Main 시안)
+- 긴 대화 스크롤 (`Long`)
+- 스트리밍 중 (`StreamingAnswer`, 답이 한 글자씩 늘어남)
 
 ## 쓰는 화면
 Main, LimitChat
 
 ## 테스트 기준
-- 새 메시지에 자동 스크롤, 사용자가 위로 올렸으면 멈춤
+- 새 메시지에 자동 스크롤, 사용자가 위로 올렸으면 멈춤, 맨 아래 24px 안으로 돌아오면 다시 따라감 (`isNearBottom`)
+- 스트리밍으로 마지막 메시지가 길어져도 따라감
+- autoScroll이 꺼지면 스크롤하지 않음
+- role log, aria-live polite, 스트리밍 중에만 aria-busy
+- Main 시안 값 (간격 16, 여백 20 20 12, 시각 12px `ink-secondary` 가운데)
 
 ## 메모
-없음
+- 스크롤은 렌더마다 확인한다 (useLayoutEffect). 그래서 글자가 늘어나는 스트리밍도 따라간다.
+- LimitChat 시안은 위 여백이 16이다 (Main은 20). 20으로 통일했다 (추론).
+- `type.stamp`(12/400) 토큰을 쓴다.

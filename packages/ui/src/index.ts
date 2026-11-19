@@ -11,6 +11,7 @@ export * from './base/Switch';
 export * from './base/TextField';
 export * from './base/TopBar';
 export * from './chat/ChatInput';
+export * from './chat/ChatThread';
 export * from './chat/QuickReplies';
 export * from './chat/UserBubble';
 export * from './dragon/Dragon';

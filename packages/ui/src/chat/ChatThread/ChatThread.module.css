@@ -1,0 +1,19 @@
+/* Main.dc.html: messages 16 apart, 20 20 12 inside, scrolling within the screen. */
+.thread {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--space-4);
+  min-height: 0;
+  padding: var(--space-5) var(--space-5) var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.stamp {
+  align-self: center;
+  margin: 0;
+  font-size: var(--type-stamp-size);
+  font-weight: var(--type-stamp-weight);
+  color: var(--color-ink-secondary);
+}
