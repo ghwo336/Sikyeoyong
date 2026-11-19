@@ -45,6 +45,9 @@ describe('StepProgress (StepProgress.md 테스트 기준)', () => {
     const spans = Array.from(labels?.children ?? []);
     expect(spans.map((s) => s.textContent)).toEqual(ORDER);
     expect(spans.map((s) => s.hasAttribute('data-current'))).toEqual([false, false, true, false]);
+    expect((labels as HTMLElement).style.gridTemplateColumns).toMatch(
+      /^repeat\(4, minmax\(0(px)?, 1fr\)\)$/,
+    );
   });
 
   it('has no names without showLabels', () => {
@@ -68,11 +71,24 @@ describe('StepProgress (StepProgress.md 테스트 기준)', () => {
       screen.getByRole('progressbar', { name: `3단계 중 ${String(expected)}단계` }),
     ).toBeTruthy();
     expect(done().filter(Boolean)).toHaveLength(expected);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', String(expected));
   });
 
   it('keeps cells for repeated names', () => {
     render(<StepProgress steps={['확인', '확인']} current={1} />);
     expect(cells()).toHaveLength(2);
+  });
+
+  it('defaults to the 4px sign-up size', () => {
+    const { container } = render(<StepProgress steps={SIGNUP} current={1} />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain(styles.sm);
+    expect(root.className).not.toContain(styles.md);
+  });
+
+  it('draws nothing for no steps', () => {
+    const { container } = render(<StepProgress steps={[]} current={1} />);
+    expect(container.firstChild).toBeNull();
   });
 
   it.each(['sm', 'md'] as const)('puts only the %s size class on the root', (size) => {
@@ -91,7 +107,7 @@ describe('StepProgress (StepProgress.md 테스트 기준)', () => {
     expect(rule('.cell')).toMatch(/background:\s*var\(--color-line\)/);
     expect(rule('.cell[data-done]')).toMatch(/background:\s*var\(--color-leaf\)/);
     expect(rule('.cells')).toMatch(/gap:\s*var\(--space-1\)/);
-    expect(rule('.progress')).toMatch(/gap:\s*10px/);
+    expect(rule('.progress')).toMatch(/gap:\s*var\(--size-step-label-gap\)/);
     expect(rule('.labels')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.labels')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.labels [data-current]')).toMatch(/color:\s*var\(--color-ink\)/);

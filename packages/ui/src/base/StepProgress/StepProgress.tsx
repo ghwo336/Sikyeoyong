@@ -28,6 +28,7 @@ export function StepProgress({
   size = 'sm',
 }: StepProgressProps) {
   const total = steps.length;
+  if (total === 0) return null;
   const at = clampStep(current, total);
   const name = steps[at - 1];
   const label = `${String(total)}단계 중 ${String(at)}단계`;

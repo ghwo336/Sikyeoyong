@@ -2,8 +2,8 @@
 .progress {
   display: flex;
   flex-direction: column;
-  /* Done.dc.html bar-to-names gap; the 4px space scale has no 10, so it stays literal. */
-  gap: 10px;
+  /* Done.dc.html bar-to-names gap. */
+  gap: var(--size-step-label-gap);
 }
 
 .cells {
