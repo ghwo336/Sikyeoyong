@@ -12,6 +12,7 @@ children: []
 
 ## 커밋 메시지
 - 형식: `<종류>(<범위>): <요약>`. 예: `feat(payment): 경로 B ManagedEoaProvider 추가`.
+- 종류: `feat`, `fix`, `contract`, `docs`, `infra`, `chore`, `test`(테스트만), `refactor`(동작 변화 없음). 범위는 영문, 숫자, `/._-`, 컴포넌트 이름은 PascalCase 그대로 (`feat(ui/Button): ...`).
 - 요약은 한국어 가능, 50자 안팎. em dash, en dash 금지.
 - 결정 변경을 포함하면 본문에 `D-xx` 번호를 쓴다.
 - AI 세션이 만든 커밋은 세션 규칙에 따른 attribution 줄을 붙인다.

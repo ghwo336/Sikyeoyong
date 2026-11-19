@@ -18,7 +18,8 @@
     "check:dash": "python3 -I scripts/check-dash.py",
     "check:wiki": "python3 -I scripts/check-wiki.py docs/wiki",
     "wiki:gc": "python3 -I scripts/wiki-gc.py",
-    "verify": "python3 -I scripts/verify.py"
+    "verify": "python3 -I scripts/verify.py",
+    "verify:test": "python3 -I scripts/verify_test.py"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
