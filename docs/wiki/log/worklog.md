@@ -119,3 +119,22 @@ children: []
   - 카카오, 구글 로그인 버튼의 브랜드 가이드 일치 (미확인).
   - IdCard 초상 용이 얼굴이 시안과 조금 다름, FrozenPanel 제목 heading 여부는 화면 조립 때.
 - 다음 할 일: apps/web 화면 조립(시안 17장을 ui 컴포넌트로), apps/api 모듈(orders, agents, budget, approvals, users), 컨트랙트, 가게 체인 등록 시드.
+
+### 2026-11-19 LLM 런타임과 핵심 DB 스키마 (Claude, Claude Code)
+- 한 일:
+  - D-21(한도 변경 카드 `propose_limit_change`, Q-29 (a)), D-22(데모 LLM은 Opus 5.5 하나, effort만 설정) 기록.
+  - shared: 한도 의도 키워드 `hasLimitIntent`, 월 예산 선택지. 게이트 LLM 도구 허용 목록 8개.
+  - apps/api/src/modules/llm:
+    - 도구 정의 8개(strict, SDK 변환기 고정점 테스트)와 대화 루프 `AgentRuntime`. 안전장치는 메시지당 도구 8회, 주문 1회, 승인 요청 1회, 카드 1회, 카드 의도 게이트, `<data>` 감싸기, 세션 사용자 고정, 거절과 max_tokens 처리다.
+    - LLM 하네스 1층(ScriptedProvider), Claude 어댑터, Nest LlmModule.
+  - DB 마이그레이션 0001: users, oauth_accounts, sessions, agents, agent_limit_history, orders(D-19 칸), order_events, approvals, allowed_merchants, chat_messages, nag_events. 금액과 상태 CHECK 19개 모두 테스트.
+- 막힌 것: 없음. 호재 님께 물은 것: "vooy나 피클"이 무엇인지(답 대기). 열린 질문 Q-22, Q-23, Q-26, Q-27, Q-28.
+- 새로 안 마루 사실: 없음.
+- 후속 (검증 MINOR):
+  - 거절(refusal) 때 서버 대체 문구는 아직 없음 (지금은 멈춤만).
+  - tech-spec 3.3 JSON과 TOOL_DEFINITIONS가 같은지 지키는 테스트 없음.
+  - drizzle 스키마와 마이그레이션 어긋남을 잡는 게이트 없음 (`drizzle-kit generate`가 변경 없음인지).
+  - order_events는 source='chain'이면 tx_hash, log_index NOT NULL CHECK와 소문자 정규화 (chain 모듈 때).
+  - APPROVAL_REASONS, NAG_LEVELS를 shared 상수 하나로. 예산 초과 승인 금액 칸(approvals.amount)을 둘지.
+  - enum 칸마다 정상 값 전부가 통과하는지 보는 테스트, 이름 없는 CHECK 개수 확인.
+- 다음 할 일: 도구 핸들러 모듈(budget, recommend, merchants/menus, orders 견적, approvals, agents level, 한도 카드), POST /api/chat/messages SSE, 결제·체인 모듈, 컨트랙트, apps/web 화면 조립.
