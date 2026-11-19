@@ -30,12 +30,20 @@ button:focus-visible,input:focus-visible{outline:2px solid #2E7D4F;outline-offse
 
 <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">알을 하나 골라<br>이름을 지어 주세요</h1>
 
-<div style="display: flex; flex-direction: column; align-items: center; gap: 18px">
-<svg width="132" height="132" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><circle cx="24" cy="32" r="3" fill="{{picked}}"></circle><circle cx="40" cy="43" r="3.6" fill="{{picked}}"></circle><circle cx="28" cy="49" r="2" fill="{{picked}}"></circle><circle cx="41" cy="25" r="2" fill="{{picked}}"></circle><circle cx="33" cy="17" r="1.6" fill="{{picked}}"></circle></svg>
-<div style="display: flex; gap: 14px" role="radiogroup" aria-label="알 색">
-<sc-for list="{{colors}}" as="c" hint-placeholder-count="4">
-<button role="radio" aria-checked="{{c.checked}}" aria-label="{{c.label}}" onClick="{{c.pick}}" style="{{c.ring}}"><span style="display: block; width: 32px; height: 32px; border-radius: 16px; background: {{c.hex}}; border: 1.5px solid #1E2320"></span></button>
-</sc-for>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 14px">
+<svg width="132" height="132" viewBox="0 0 64 64" aria-hidden="true" style="display: {{show_forest}}"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M22 31 C19 28 20 24 24 24 C25 27 24 30 22 31 Z" fill="#8FD694"></path><path d="M40 44 C37 41 38 37 42 37 C43 40 42 43 40 44 Z" fill="#8FD694"></path><path d="M29 52 C27 50 28 47 30 47 C31 49 30 51 29 52 Z" fill="#8FD694"></path><path d="M38 21 C36 19 37 16 39 16 C40 18 39 20 38 21 Z" fill="#8FD694"></path></svg>
+<svg width="132" height="132" viewBox="0 0 64 64" aria-hidden="true" style="display: {{show_water}}"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M14.5 30 Q19 26.5 23.5 30 T32.5 30 T41.5 30 T50 29" fill="none" stroke="#9AD3F0" stroke-width="2.6" stroke-linecap="round"></path><path d="M13 42 Q18 38.5 23 42 T33 42 T43 42 T51.5 41" fill="none" stroke="#9AD3F0" stroke-width="2.6" stroke-linecap="round"></path></svg>
+<svg width="132" height="132" viewBox="0 0 64 64" aria-hidden="true" style="display: {{show_flower}}"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><g fill="#F7B7C8"><circle cx="23" cy="29" r="2"></circle><circle cx="26.4" cy="29" r="2"></circle><circle cx="24.7" cy="26.4" r="2"></circle><circle cx="24.7" cy="31.6" r="2"></circle><circle cx="39" cy="43" r="2"></circle><circle cx="42.4" cy="43" r="2"></circle><circle cx="40.7" cy="40.4" r="2"></circle><circle cx="40.7" cy="45.6" r="2"></circle><circle cx="29" cy="51" r="1.4"></circle><circle cx="39" cy="21" r="1.4"></circle></g><circle cx="24.7" cy="29" r="1" fill="#FFD15C"></circle><circle cx="40.7" cy="43" r="1" fill="#FFD15C"></circle></svg>
+<svg width="132" height="132" viewBox="0 0 64 64" aria-hidden="true" style="display: {{show_star}}"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M24 25 L25.2 28 L28.4 28.2 L25.9 30.2 L26.7 33.3 L24 31.5 L21.3 33.3 L22.1 30.2 L19.6 28.2 L22.8 28 Z" fill="#C9B8F2"></path><path d="M40 39 L41.2 42 L44.4 42.2 L41.9 44.2 L42.7 47.3 L40 45.5 L37.3 47.3 L38.1 44.2 L35.6 42.2 L38.8 42 Z" fill="#C9B8F2"></path><circle cx="30" cy="51" r="1.4" fill="#C9B8F2"></circle><circle cx="38" cy="20" r="1.4" fill="#C9B8F2"></circle><path d="M46 30 A4 4 0 1 1 42 26 A3 3 0 1 0 46 30 Z" fill="#C9B8F2"></path></svg>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 48px">
+<div style="font-size: 17px; font-weight: 700">{{name}}</div>
+<div style="font-family: 'Gowun Dodum', Pretendard, sans-serif; font-size: 16px; letter-spacing: 0; color: #5D6660">"{{line}}"</div>
+</div>
+<div style="display: flex; gap: 10px" role="radiogroup" aria-label="알">
+<button role="radio" aria-checked="{{on_forest}}" aria-label="숲용 알" onClick="{{pick_forest}}" style="{{ring_forest}}"><svg width="40" height="40" viewBox="4 2 56 60" aria-hidden="true"><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M22 31 C19 28 20 24 24 24 C25 27 24 30 22 31 Z" fill="#8FD694"></path><path d="M40 44 C37 41 38 37 42 37 C43 40 42 43 40 44 Z" fill="#8FD694"></path><path d="M29 52 C27 50 28 47 30 47 C31 49 30 51 29 52 Z" fill="#8FD694"></path><path d="M38 21 C36 19 37 16 39 16 C40 18 39 20 38 21 Z" fill="#8FD694"></path></svg></button>
+<button role="radio" aria-checked="{{on_water}}" aria-label="물용 알" onClick="{{pick_water}}" style="{{ring_water}}"><svg width="40" height="40" viewBox="4 2 56 60" aria-hidden="true"><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M14.5 30 Q19 26.5 23.5 30 T32.5 30 T41.5 30 T50 29" fill="none" stroke="#9AD3F0" stroke-width="2.6" stroke-linecap="round"></path><path d="M13 42 Q18 38.5 23 42 T33 42 T43 42 T51.5 41" fill="none" stroke="#9AD3F0" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
+<button role="radio" aria-checked="{{on_flower}}" aria-label="꽃용 알" onClick="{{pick_flower}}" style="{{ring_flower}}"><svg width="40" height="40" viewBox="4 2 56 60" aria-hidden="true"><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><g fill="#F7B7C8"><circle cx="23" cy="29" r="2"></circle><circle cx="26.4" cy="29" r="2"></circle><circle cx="24.7" cy="26.4" r="2"></circle><circle cx="24.7" cy="31.6" r="2"></circle><circle cx="39" cy="43" r="2"></circle><circle cx="42.4" cy="43" r="2"></circle><circle cx="40.7" cy="40.4" r="2"></circle><circle cx="40.7" cy="45.6" r="2"></circle><circle cx="29" cy="51" r="1.4"></circle><circle cx="39" cy="21" r="1.4"></circle></g><circle cx="24.7" cy="29" r="1" fill="#FFD15C"></circle><circle cx="40.7" cy="43" r="1" fill="#FFD15C"></circle></svg></button>
+<button role="radio" aria-checked="{{on_star}}" aria-label="별용 알" onClick="{{pick_star}}" style="{{ring_star}}"><svg width="40" height="40" viewBox="4 2 56 60" aria-hidden="true"><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M24 25 L25.2 28 L28.4 28.2 L25.9 30.2 L26.7 33.3 L24 31.5 L21.3 33.3 L22.1 30.2 L19.6 28.2 L22.8 28 Z" fill="#C9B8F2"></path><path d="M40 39 L41.2 42 L44.4 42.2 L41.9 44.2 L42.7 47.3 L40 45.5 L37.3 47.3 L38.1 44.2 L35.6 42.2 L38.8 42 Z" fill="#C9B8F2"></path><circle cx="30" cy="51" r="1.4" fill="#C9B8F2"></circle><circle cx="38" cy="20" r="1.4" fill="#C9B8F2"></circle><path d="M46 30 A4 4 0 1 1 42 26 A3 3 0 1 0 46 30 Z" fill="#C9B8F2"></path></svg></button>
 </div>
 </div>
 
@@ -52,25 +60,25 @@ button:focus-visible,input:focus-visible{outline:2px solid #2E7D4F;outline-offse
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
-constructor(p) { super(p); this.state = { picked: '#8FD694' }; }
+constructor(p) { super(p); this.state = { picked: 'forest' }; }
 renderVals() {
 const list = [
-{ hex: '#8FD694', label: '연두' },
-{ hex: '#9AD3F0', label: '하늘' },
-{ hex: '#F7B7C8', label: '분홍' },
-{ hex: '#C9B8F2', label: '보라' }
+{ k: 'forest', name: '숲용', line: '천천히 먹어용' },
+{ k: 'water', name: '물용', line: '국물이 최고예용' },
+{ k: 'flower', name: '꽃용', line: '오늘도 수고했어용' },
+{ k: 'star', name: '별용', line: '야식은 반만 먹어용' }
 ];
 const picked = this.state.picked;
-return {
-picked: picked,
-colors: list.map((c) => ({
-hex: c.hex,
-label: c.label + ' 알',
-checked: c.hex === picked ? 'true' : 'false',
-ring: 'width: 48px; height: 48px; border-radius: 24px; background: transparent; display: flex; align-items: center; justify-content: center; border: 2px solid ' + (c.hex === picked ? '#2E7D4F' : 'transparent'),
-pick: () => this.setState({ picked: c.hex })
-}))
-};
+const cur = list.find((x) => x.k === picked);
+const out = { name: cur.name, line: cur.line };
+list.forEach((x) => {
+const on = x.k === picked;
+out['show_' + x.k] = on ? 'block' : 'none';
+out['on_' + x.k] = on ? 'true' : 'false';
+out['ring_' + x.k] = 'width: 60px; height: 60px; border-radius: 30px; background: ' + (on ? '#FFFFFF' : 'transparent') + '; display: flex; align-items: center; justify-content: center; border: 2px solid ' + (on ? '#2E7D4F' : 'transparent');
+out['pick_' + x.k] = () => this.setState({ picked: x.k });
+});
+return out;
 }
 }
 </script>
