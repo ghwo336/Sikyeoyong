@@ -77,7 +77,9 @@ export function OrderConfirmSheet({
   const limitsId = useId();
   const amount = formatOkrw(total);
   return (
-    <Sheet open={open} onClose={onCancel} label="주문 확인">
+    // Focus starts on the sheet, never on the pay button: an Enter left over from the
+    // chat must not pay before the user has read the order (CLAUDE.md rule 3).
+    <Sheet open={open} onClose={onCancel} label="주문 확인" initialFocus="panel">
       <DragonLine text={line} layout="sheet" species={species} />
 
       <section className={styles.order} aria-label="주문 내용">

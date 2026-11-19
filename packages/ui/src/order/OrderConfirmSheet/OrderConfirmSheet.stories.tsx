@@ -63,8 +63,11 @@ function Paying() {
   );
 }
 
-/** 결제 중: 누르면 버튼이 돌고 다시 눌리지 않는다 */
-export const Confirming: Story = { render: () => <Paying /> };
+/** 결제 중: 버튼이 돌고 눌리지 않는다 */
+export const Confirming: Story = { args: { confirming: true } };
+
+/** 결제 중 (눌러 보기): 누르면 결제 중으로 바뀐다 */
+export const ConfirmingLive: Story = { render: () => <Paying /> };
 
 /** 가격 변경 다시 확인 (D-19 SERVER_PRICE_CHANGED) */
 export const PriceChanged: Story = {

@@ -16,6 +16,12 @@ export interface SheetProps {
   readonly children: ReactNode;
   /** content: as tall as the content (scrolls past the top gap). full: always full height. */
   readonly snap?: SheetSnap;
+  /**
+   * Where focus goes on open. first: the first control (default). panel: the sheet
+   * itself, for sheets whose first control does something that cannot be undone
+   * (OrderConfirmSheet: an Enter must never pay before the user has read it).
+   */
+  readonly initialFocus?: 'first' | 'panel';
 }
 
 // tokens.json motion.sheet: "spring damping 22, 300ms".
@@ -33,7 +39,14 @@ export function shouldClose(info: Pick<PanInfo, 'offset' | 'velocity'>): boolean
 }
 
 /** Draws the bottom sheet frame and handle; the content is children (Sheet.md). */
-export function Sheet({ open, onClose, label, children, snap = 'content' }: SheetProps) {
+export function Sheet({
+  open,
+  onClose,
+  label,
+  children,
+  snap = 'content',
+  initialFocus = 'first',
+}: SheetProps) {
   const reduceMotion = useShouldReduceMotion();
   const panel = useRef<HTMLDivElement>(null);
 
@@ -42,12 +55,12 @@ export function Sheet({ open, onClose, label, children, snap = 'content' }: Shee
     if (!open) return undefined;
     const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const node = panel.current;
-    const first = node?.querySelector<HTMLElement>(FOCUSABLE);
+    const first = initialFocus === 'first' ? node?.querySelector<HTMLElement>(FOCUSABLE) : null;
     (first ?? node)?.focus();
     return () => {
       before?.focus();
     };
-  }, [open]);
+  }, [open, initialFocus]);
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') {

@@ -39,6 +39,16 @@ describe('OrderConfirmSheet (OrderConfirmSheet.md 테스트 기준)', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it('opens with focus on the sheet, so a stray Enter does not pay', async () => {
+    const onConfirm = vi.fn();
+    render(<OrderConfirmSheet {...base} onConfirm={onConfirm} />);
+    expect(orderButton()).not.toHaveFocus();
+    expect(screen.getByRole('dialog', { name: '주문 확인' })).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.keyboard(' ');
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('locks the button while confirming', async () => {
     const onConfirm = vi.fn();
     render(<OrderConfirmSheet {...base} onConfirm={onConfirm} confirming />);
@@ -85,8 +95,9 @@ describe('OrderConfirmSheet (OrderConfirmSheet.md 테스트 기준)', () => {
     render(
       <OrderConfirmSheet
         {...base}
-        items={[{ name: '회식', quantity: 1, price: won(123_456_789_012_345_678n) }]}
-        total={won(123_456_789_012_345_678n) + 1n}
+        items={[{ name: '회식', quantity: 1, price: won(123_456_789_012_345_000n) }]}
+        // The server total differs from the line by whole won: it must win, unchanged.
+        total={won(123_456_789_012_345_678n)}
       />,
     );
     expect(orderButton()).toHaveAccessibleName('123,456,789,012,345,678원 시키기');

@@ -114,6 +114,22 @@ describe('Sheet (Sheet.md 테스트 기준)', () => {
     expect(opener).toHaveFocus();
   });
 
+  it('can put first focus on the panel instead of the first control', async () => {
+    const pressed = vi.fn();
+    render(
+      <Sheet open label="주문 확인" onClose={vi.fn()} initialFocus="panel">
+        <button type="button" onClick={pressed}>
+          시키기
+        </button>
+      </Sheet>,
+    );
+    expect(screen.getByRole('dialog')).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    expect(pressed).not.toHaveBeenCalled();
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: '시키기' })).toHaveFocus();
+  });
+
   it('keeps focus on the panel when nothing inside can take it', async () => {
     render(
       <Sheet open label="안내" onClose={vi.fn()}>

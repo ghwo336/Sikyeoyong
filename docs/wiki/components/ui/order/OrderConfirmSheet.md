@@ -21,21 +21,22 @@ children: []
 `OrderConfirmSheet.stories.tsx`에 아래를 전부 만든다.
 - 기본 (`Default`, Confirm 시안)
 - 한도 거의 참 (`NearLimit`)
-- 결제 중 (`Confirming`)
+- 결제 중 (`Confirming`, 바로 보임. `ConfirmingLive`는 눌러서 바뀜)
 - 가격 변경 다시 확인 (`PriceChanged`)
 
 ## 쓰는 화면
 Confirm
 
 ## 테스트 기준
+- 열렸을 때 포커스는 시키기 버튼이 아니라 시트에 있고, Enter나 Space 한 번으로 onConfirm이 불리지 않는다 (절대 규칙 3)
 - onConfirm 한 번만 (다시 그리기 전에 두 번 눌러도 한 번)
 - confirming 중 버튼 잠금 (aria-busy)
 - 결제가 실패해 confirming이 풀리면 다시 누를 수 있다 (같은 주문으로 재시도, D-19)
-- 금액은 formatOkrw로 버튼과 결제할 금액에 서버 값 그대로. Number를 넘는 금액으로 확인
+- 금액은 formatOkrw로 버튼과 결제할 금액에 서버 값 그대로. Number를 넘는 금액, 줄 합과 원 단위로 다른 합계로 확인
 - 한도 막대 두 개는 Meter `kind="limit"`, 이름 "한 번에", "30일 동안 (주문 후)", tone은 부모가 준 그대로
 - "다시 고를래", Esc로 onCancel
 - 가격이 바뀌었으면 알림 문구 (role alert)
-- Confirm 시안 값 (주문 간격 10, 줄 16px, 결제할 금액 24/700, 한도 간격 14, 버튼 사이 4)
+- Confirm 시안 값 (주문 간격 10, 품목 사이도 10, 줄 16px, 결제할 금액 24/700, 한도 간격 14, 버튼 사이 4)
 
 ## 메모
 - 틀은 base `Sheet`, 위 말은 `DragonLine` sheet 배치, 막대는 `Meter` limit, 버튼은 `Button` primary와 text다.
