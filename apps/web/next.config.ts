@@ -11,10 +11,12 @@ const rootEnv = existsSync(ROOT_ENV) ? parseEnv(readFileSync(ROOT_ENV, 'utf8')) 
 
 // In production Caddy sends /api to the API server on the same domain (D-03).
 // In development Next forwards /api to the local API so cookies stay same-origin.
+// An empty value (`API_DEV_ORIGIN=` in .env.example) means "not set", as in apps/api.
+const set = (v: string | undefined): string | undefined => (v?.trim() ? v.trim() : undefined);
 const API_DEV_ORIGIN =
-  process.env.API_DEV_ORIGIN ??
-  rootEnv.API_DEV_ORIGIN ??
-  `http://localhost:${rootEnv.PORT ?? '8787'}`;
+  set(process.env.API_DEV_ORIGIN) ??
+  set(rootEnv.API_DEV_ORIGIN) ??
+  `http://localhost:${set(rootEnv.PORT) ?? '8787'}`;
 
 const config: NextConfig = {
   reactStrictMode: true,
