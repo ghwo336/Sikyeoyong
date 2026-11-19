@@ -12,6 +12,7 @@ const NAMES: readonly IconName[] = [
   'arrow-up',
   'face-id',
   'kakao',
+  'more',
 ];
 
 describe('Icon (Icon.md 테스트 기준)', () => {
@@ -50,6 +51,15 @@ describe('Icon (Icon.md 테스트 기준)', () => {
     expect(svg).toHaveAttribute('stroke-width', '1.8');
     expect(svg).toHaveAttribute('stroke-linecap', 'round');
     expect(svg).not.toHaveAttribute('stroke-linejoin');
+  });
+
+  it('draws more as three dots on a 1.8 line without round joins (Main.dc.html)', () => {
+    const { container } = render(<Icon name="more" />);
+    const svg = container.querySelector('svg');
+    expect(svg).toHaveAttribute('stroke-width', '1.8');
+    expect(svg).toHaveAttribute('stroke-linecap', 'round');
+    expect(svg).not.toHaveAttribute('stroke-linejoin');
+    expect(svg?.querySelectorAll('path')).toHaveLength(3);
   });
 
   it('fills the kakao mark instead of stroking it', () => {

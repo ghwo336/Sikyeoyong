@@ -11,6 +11,7 @@ export * from './base/DetailRows';
 export * from './base/ErrorLine';
 export * from './base/Hero';
 export * from './base/Icon';
+export * from './base/IconButton';
 export * from './base/ListRow';
 export * from './base/Meter';
 export * from './base/ScreenTitle';

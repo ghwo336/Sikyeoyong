@@ -19,6 +19,7 @@ const NAMES: readonly IconName[] = [
   'arrow-up',
   'face-id',
   'kakao',
+  'more',
 ];
 
 /** 전부 (24px, 글자색) */
