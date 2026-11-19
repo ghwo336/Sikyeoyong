@@ -1,9 +1,11 @@
 // A fake API server in the browser, so screens can be walked end to end before apps/api has
 // these routes. Only lib/api imports this file; hooks see the ApiClient interface only.
 // It never pays: confirmOrder just flips the mock order to preparing (CLAUDE.md rule 3).
-import { AppError, parseAokrw } from '@sikyeoyong/shared';
+import { AppError, type BudgetView, getPolicy, nagStage, parseAokrw } from '@sikyeoyong/shared';
 import type {
+  AgentSetupView,
   ApiClient,
+  MeView,
   ChatEvent,
   CreateOrderBody,
   CreateOrderResult,
@@ -11,9 +13,24 @@ import type {
   OrderView,
   RecommendationCard,
 } from '../api/types';
-import { BUDGET, chatHistory, DESTINATION, ME, MENU_EXTRA, RECOMMENDATIONS } from './fixtures';
+import {
+  BUDGET,
+  chatHistory,
+  DESTINATION,
+  ME,
+  MENU_EXTRA,
+  RECOMMENDATIONS,
+  SIGNUP,
+} from './fixtures';
 
 const LATENCY_MS = 250;
+/** How long each hatch step takes in the mock (the real one is 1 to 3 minutes). */
+const HATCH_STEP_MS = 1_500;
+
+// The fake server's memory. Sign-up changes the dragon and the budget Main then shows.
+let me: MeView = ME;
+let budget: BudgetView = BUDGET;
+let hatchStartedAt: number | undefined;
 
 function later<T>(value: T): Promise<T> {
   return new Promise((resolve) => {
@@ -42,9 +59,9 @@ function quoteFor(rec: RecommendationCard): OrderQuote {
     request: extra?.request,
     amount: rec.price,
     dragonLine: extra?.confirmLine ?? `${rec.menu} 시킬게용.\n이대로 괜찮아용?`,
-    perOrderLimit: BUDGET.perOrderLimit,
-    periodUsedAfter: (parseAokrw(BUDGET.chainUsed) + amount).toString(),
-    periodCap: BUDGET.chainCap,
+    perOrderLimit: budget.perOrderLimit,
+    periodUsedAfter: (parseAokrw(budget.chainUsed) + amount).toString(),
+    periodCap: budget.chainCap,
   };
 }
 
@@ -62,6 +79,22 @@ function preparingOrder(rec: RecommendationCard, now: number): OrderView {
     remainingMin: rec.etaMin,
     dragonLine: extra?.cookingLine ?? '만드는 중이에용.\n출발하면 알려 줄게용.',
     dragonMood: 'cooking',
+  };
+}
+
+/** Steps finish one after another, HATCH_STEP_MS apart (Hatch.dc.html). */
+function agentSetup(now: number): AgentSetupView {
+  const keys = ['wallet', 'identity', 'limit'] as const;
+  if (hatchStartedAt === undefined) {
+    return { status: 'PENDING', steps: keys.map((key) => ({ key, status: 'waiting' })) };
+  }
+  const done = Math.floor((now - hatchStartedAt) / HATCH_STEP_MS);
+  return {
+    status: done >= keys.length ? 'ACTIVE' : 'PENDING',
+    steps: keys.map((key, i) => ({
+      key,
+      status: i < done ? 'done' : i === done ? 'doing' : 'waiting',
+    })),
   };
 }
 
@@ -98,8 +131,8 @@ function reply(text: string): ChatEvent[] {
 }
 
 export const mockApi: ApiClient = {
-  getMe: () => later(ME),
-  getBudget: () => later(BUDGET),
+  getMe: () => later(me),
+  getBudget: () => later(budget),
   getChatHistory: () => later(chatHistory(Date.now())),
   sendChatMessage: ({ text, clientMessageId }) =>
     later([...reply(text), { type: 'done', messageId: `reply-${clientMessageId}` }]),
@@ -121,4 +154,24 @@ export const mockApi: ApiClient = {
     if (!saved) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
     return later({ order: saved });
   },
+  getSignupConfig: () => later(SIGNUP),
+  login: () => later(undefined),
+  verifyIdentity: () => later({ verified: true }),
+  createAgent: ({ dragonName, dragonSpecies }) => {
+    me = { ...me, dragonName, dragonSpecies };
+    hatchStartedAt = Date.now();
+    return later({ agent: { id: 'agent-1', status: 'PENDING' as const } });
+  },
+  getAgentSetup: () => later(agentSetup(Date.now())),
+  retryAgentSetup: () => {
+    hatchStartedAt = Date.now();
+    return later(undefined);
+  },
+  setMonthlyBudget: (amount) => {
+    const spent = parseAokrw(budget.personalSpent);
+    const nagLevel = nagStage(getPolicy('default'), spent, parseAokrw(amount));
+    budget = { ...budget, personalBudget: amount, nagLevel };
+    return later(undefined);
+  },
+  claimTrialAllowance: () => later(undefined),
 };

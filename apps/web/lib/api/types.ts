@@ -118,6 +118,25 @@ export interface CreateOrderResult {
   readonly quote?: OrderQuote;
 }
 
+/** Sign-up settings the screens need. verifyMode is a server setting (D-16). */
+export interface SignupConfig {
+  readonly verifyMode: 'kakao' | 'mock';
+  /** aokrw the trial allowance gives (Budget.dc.html "체험용 용돈"). */
+  readonly trialAllowance: AokrwString;
+}
+
+export type AgentSetupStepKey = 'wallet' | 'identity' | 'limit';
+export type AgentSetupStepStatus = 'done' | 'doing' | 'waiting' | 'failed';
+
+/** GET /agents/me while hatching: the three setup steps in order (user-flow 4). */
+export interface AgentSetupView {
+  readonly status: 'PENDING' | 'ACTIVE' | 'FAILED';
+  readonly steps: readonly {
+    readonly key: AgentSetupStepKey;
+    readonly status: AgentSetupStepStatus;
+  }[];
+}
+
 /** Everything the screens call. lib/api picks the implementation (mock now, HTTP later). */
 export interface ApiClient {
   getMe(): Promise<MeView>;
@@ -132,4 +151,22 @@ export interface ApiClient {
   /** POST /orders/:id/confirm. The only call that pays (CLAUDE.md rule 3). */
   confirmOrder(orderId: string): Promise<{ readonly order: OrderView }>;
   getOrder(orderId: string): Promise<{ readonly order: OrderView }>;
+
+  getSignupConfig(): Promise<SignupConfig>;
+  /** Starts OAuth. The real one redirects to the provider; the API sets the session cookie. */
+  login(provider: 'kakao' | 'google'): Promise<void>;
+  /** Kakao identity check (or the trial check in mock mode). Only the result is kept. */
+  verifyIdentity(): Promise<{ readonly verified: boolean }>;
+  /** POST /agents. */
+  createAgent(body: {
+    readonly dragonName: string;
+    readonly dragonSpecies: DragonSpecies;
+  }): Promise<{ readonly agent: { readonly id: string; readonly status: 'PENDING' } }>;
+  getAgentSetup(): Promise<AgentSetupView>;
+  /** "다시 깨우기" after a failed setup. */
+  retryAgentSetup(): Promise<void>;
+  /** PATCH /me monthlyBudgetOkrw (aokrw string). */
+  setMonthlyBudget(amount: AokrwString): Promise<void>;
+  /** Trial allowance into the owner's pocket (user-flow 5). Not a payment. */
+  claimTrialAllowance(): Promise<void>;
 }

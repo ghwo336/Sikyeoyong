@@ -46,6 +46,7 @@ children: []
 - 화면 틀(390 기준, 가운데 정렬, 최대 480, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
 - 최대 폭 480은 토큰이 없어 날값이다 (후속: tokens.json `size`에 최대 폭을 올린다).
 - 여백이 있는 화면(Done, Tracking: 8 20 24, 사이 16)은 `.screen.padded`. 주문 현황 layout(`app/orders/[id]/layout.tsx`)이 쓴다.
+- 가입 화면(Verify, Name, Budget: 8 20 32, 사이 22)은 `.screen.onboarding`. 마지막 블록(큰 버튼)은 맨 아래로 붙는다. `app/(onboarding)/layout.tsx`가 쓴다. 22는 간격 토큰이 없어 날값이다.
 
 ## 조립 현황 (목 데이터)
 | 화면 | 경로 | 컨테이너 | 상태 |
@@ -53,6 +54,7 @@ children: []
 | Main | `app/(main)/page.tsx` | `features/budget/containers/BudgetMeterContainer`, `features/chat/containers/ChatContainer` | 대화 기록, 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
 | Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). confirm이 실패하면 `useConfirmOrder`가 대화로 되돌린다 (`router.replace('/')`). 용이가 이유를 말하는 것은 shared `ChatEvent`의 `order_failed`가 생긴 뒤 |
 | Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 상태를 4단계로 바꾸는 규칙은 `features/orders/status.ts`(`orderStep`). 결제 전(`quoted`, `pending_approval`)과 멈춘 주문(`failed`, `cancelled`, `refunded`)은 단계로 그리지 않고 위 줄만 보인다 (실패를 접수처럼 보이지 않게). 그 상태들의 화면, 배달 중(Tracking), 도착(Arrived), 상태 다시 받기는 아직 |
+| Start, Verify, Name, Hatch, Budget | `app/(onboarding)/<start, verify, name, hatch, budget>/page.tsx` | `features/onboarding/containers/*` | 목으로 끝까지 이어진다: 로그인, 본인 인증, 알 고르기와 이름(빈 이름은 버튼을 끄지 않고 안내), 부화(1초마다 다시 받기, 다 되면 /budget), 예산 고르기와 체험용 용돈, 시작하기(/). 로그인 취소, 인증 실패 다시 시도는 목에서 일어나지 않는다. 약관, 개인정보 링크(/terms, /privacy)는 페이지가 없다 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
 - Main 위 줄: 용이 44, 이름 18/700, "레벨 1, 한 번에 10,000원까지" 13px, 설정 버튼(…). 맡을 컴포넌트가 없다. 지금은 빠져 있다.
@@ -60,6 +62,11 @@ children: []
 - Main 추천 카드 들여쓰기: 시안은 추천 카드가 드래곤 말 아래 같은 칸(32 + 10 들여쓰기)에 있다. DragonLine에 자식 자리가 없고 RecommendationList는 들여쓰지 않아 지금은 화면 폭 그대로다.
 - 입력칸 아래 띠: ChatInput.md는 "화면이 그린다"(여백 10 16 24)지만 웹은 스타일을 두지 않으므로 지금은 입력칸이 화면 끝에 붙는다. ui에 대화 화면 아래 띠(또는 ChatInput 안 여백)가 필요하다.
 - 시안끼리 다른 문구: 요청이 Confirm은 "깍두기 많이", Done은 "깍두기 많이, 문 앞에 두고 가 주세요"다. 목은 둘 다 "깍두기 많이"로 둔다. 어느 쪽이 맞는지 캔버스에서 정한다.
+- 가입 화면 제목 묶음: Start("배달은 용이한테 시켜용" 30/700과 설명 15px), Verify, Name(26/700 제목과 15px 설명)을 그릴 컴포넌트가 없다. 지금은 빠져 있다.
+- Name 아래 한 줄 "레벨 1로 태어나요. 한 번에 10,000원까지." (14px): 컴포넌트가 없다.
+- Verify, Name 위 단계 막대: 시안은 48 높이 줄 안에 막대만 있다. TopBar는 trailing만 있으면 34 빈 칸을 두므로(Budget용) StepProgress를 줄 없이 그렸다. 높이 48 줄이 빠져 있다.
+- Hatch: 알(176)이 가운데가 아니라 왼쪽에 붙는다(Egg가 스스로 가운데 정렬하지 않음). 시안 글씨는 고운돋움 22에 설명 14px("1~3분 걸려요. 다 되면 알려 드릴게요.")인데 DragonLine center는 19이고 설명 줄을 그릴 곳이 없다. 단계 카드는 맨 아래에 붙는다 (시안은 알 묶음이 가운데).
+- Budget: 용이 말은 시안이 20px인데 DragonLine inline은 17이다. 체험용 용돈 줄은 시안이 이름 아래 금액(13px), 위 1px 선이고 ListRow는 금액을 오른쪽에 둔다. 받기 버튼은 받은 뒤 모양이 없어 그대로 남는다.
 - ChatEvent에 빠른 답장이 없다: 시안에 칩이 있어 임시 타입에 `quick_replies` 이벤트를 넣었다. shared `ChatEvent`에 추가가 필요하다.
 
 ## 하지 말 것 (MUST NOT)

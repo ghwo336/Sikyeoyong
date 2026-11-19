@@ -47,3 +47,14 @@ body {
   padding: var(--space-2) var(--space-5) var(--space-6);
   overflow-y: auto;
 }
+
+/* Sign-up screens: 8 20 32 inside, 22 apart; the last block (the main button) sits at the bottom. */
+.screen.onboarding {
+  gap: 22px;
+  padding: var(--space-2) var(--space-5) var(--space-8);
+  overflow-y: auto;
+}
+
+.screen.onboarding > :last-child {
+  margin-top: auto;
+}

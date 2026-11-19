@@ -8,7 +8,7 @@ import {
   okrwToAokrw,
   zBudgetView,
 } from '@sikyeoyong/shared';
-import type { ChatHistory, MeView, RecommendationCard } from '../api/types';
+import type { ChatHistory, MeView, RecommendationCard, SignupConfig } from '../api/types';
 
 export const won = (n: bigint): string => aokrwToString(okrwToAokrw(n));
 
@@ -38,6 +38,9 @@ export const BUDGET: BudgetView = zBudgetView.parse({
     amount: aokrwToString(o.amountAokrw),
   })),
 });
+
+/** Budget.dc.html: 100,000원 trial allowance. Kakao check until Mock KYC is switched on (D-16). */
+export const SIGNUP: SignupConfig = { verifyMode: 'kakao', trialAllowance: won(100_000n) };
 
 /** Main.dc.html recommendation card. */
 export const RECOMMENDATIONS: readonly RecommendationCard[] = [
