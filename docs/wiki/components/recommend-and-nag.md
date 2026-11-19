@@ -18,6 +18,7 @@ children: []
 ## 의존과 인터페이스 경계
 - 누적 금액 출처: **체인에서 확정된 주문**. 개인 예산 사용액은 인덱서가 `OrderPlaced`/`Refunded` 이벤트로 확정한 `orders`(KST 달력 월, 상태 paid 이상) 합이다. 30일 상한 사용량은 `contractPeriodicVolume(proxy, agent, placeOrderSelector, "atokrw")` (확인된 조회 함수). 인덱서가 확정하지 않은 주문을 합산하지 않는다. DB와 체인이 다르면 체인이 맞다.
 - 예산 기준: 개인 월 예산(서버 설정, 기본 300,000 OKRW)과 30일 상한(체인, 500,000 OKRW).
+- 코드: `modules/budget/budget.service.ts`의 `BudgetService.getView(userId)`가 `BudgetView`(shared `zBudgetView`)를 만든다. 사용자 예산은 `UsersService`, 레벨·동결·지갑은 `AgentsService`, 이번 달 사용액은 `OrdersService.spentInMonthAokrw`, 30일 사용량은 `ChainReader`로만 받는다 (다른 모듈 저장소를 직접 읽지 않는다). 체인 읽기가 실패하면 숫자를 지어내지 않고 오류를 그대로 낸다.
 - 추천 입력: 날씨, 시간대, 대략 위치(1단계는 고정 지역 또는 사용자 입력), 최근 주문, 선호 메모리, 남은 예산, 레벨 한도.
 
 ## 잔소리 규칙

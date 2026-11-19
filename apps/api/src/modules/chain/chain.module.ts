@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
-import { CHAIN_READER } from './chain-reader.js';
+import { CHAIN_READER } from './chain.service.js';
 import { createChainReader } from './chain-reader.factory.js';
 
 @Module({

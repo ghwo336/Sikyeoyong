@@ -1,6 +1,6 @@
 import { AppError } from '@sikyeoyong/shared';
 import type { AppConfig } from '../../config/env.js';
-import type { ChainReader } from './chain-reader.js';
+import type { ChainReader } from './chain.service.js';
 
 /**
  * Until SikyeoyongOrders is deployed there is nothing on chain to read.
