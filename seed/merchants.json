@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "merchants": [
+    {
+      "key": "gukbap-01",
+      "name": "마루국밥 본점",
+      "category": "한식",
+      "tags": ["국물", "따뜻한", "가성비"],
+      "verified": true,
+      "openHours": { "mon-sun": "10:00-22:00" },
+      "menus": [
+        { "key": "dwaeji", "name": "돼지국밥", "price": 9000, "tags": ["국물"] },
+        { "key": "sundae", "name": "순대국밥", "price": 9500, "tags": ["국물"] },
+        { "key": "suyuk", "name": "수육 한 접시", "price": 15000, "tags": ["고기"] }
+      ]
+    },
+    {
+      "key": "chicken-01",
+      "name": "바삭치킨",
+      "category": "치킨",
+      "tags": ["바삭", "야식"],
+      "verified": true,
+      "openHours": { "mon-sun": "15:00-02:00" },
+      "menus": [
+        { "key": "fried", "name": "후라이드", "price": 20000, "tags": ["튀김"] },
+        { "key": "half", "name": "반반", "price": 22000, "tags": ["튀김", "양념"] }
+      ]
+    },
+    {
+      "key": "bunsik-01",
+      "name": "대청분식",
+      "category": "분식",
+      "tags": ["가성비", "간단"],
+      "verified": true,
+      "openHours": { "mon-sat": "09:00-21:00" },
+      "menus": [
+        { "key": "tteokbokki", "name": "떡볶이", "price": 5000, "tags": ["매운"] },
+        { "key": "gimbap", "name": "김밥", "price": 3500, "tags": ["간단"] },
+        { "key": "ramyeon", "name": "라면", "price": 4500, "tags": ["국물"] }
+      ]
+    },
+    {
+      "key": "jjajang-01",
+      "name": "용용반점",
+      "category": "중식",
+      "tags": ["면", "든든한"],
+      "verified": true,
+      "openHours": { "mon-sun": "11:00-21:30" },
+      "menus": [
+        { "key": "jjajangmyeon", "name": "짜장면", "price": 7000, "tags": ["면"] },
+        { "key": "jjamppong", "name": "짬뽕", "price": 8500, "tags": ["면", "매운"] },
+        { "key": "tangsuyuk", "name": "탕수육", "price": 18000, "tags": ["튀김"] }
+      ]
+    },
+    {
+      "key": "pizza-01",
+      "name": "화덕피자랩",
+      "category": "양식",
+      "tags": ["나눠먹기"],
+      "verified": true,
+      "openHours": { "mon-sun": "11:30-22:00" },
+      "menus": [
+        { "key": "margherita", "name": "마르게리타", "price": 18000, "tags": ["치즈"] },
+        { "key": "pepperoni", "name": "페퍼로니", "price": 20000, "tags": ["치즈"] }
+      ]
+    },
+    {
+      "key": "salad-01",
+      "name": "초록접시",
+      "category": "샐러드",
+      "tags": ["가벼운", "건강"],
+      "verified": true,
+      "openHours": { "mon-fri": "08:00-20:00" },
+      "menus": [
+        { "key": "chicken-salad", "name": "닭가슴살 샐러드", "price": 9900, "tags": ["가벼운"] },
+        { "key": "grain-bowl", "name": "곡물 볼", "price": 8900, "tags": ["가벼운"] }
+      ]
+    },
+    {
+      "key": "bossam-01",
+      "name": "한상보쌈",
+      "category": "한식",
+      "tags": ["고기", "회식"],
+      "verified": true,
+      "openHours": { "mon-sun": "11:00-23:00" },
+      "menus": [
+        { "key": "bossam-set", "name": "보쌈 정식", "price": 12000, "tags": ["고기"] },
+        { "key": "bossam-large", "name": "보쌈 대(大)", "price": 45000, "tags": ["고기", "회식"] }
+      ]
+    },
+    {
+      "key": "fake-01",
+      "name": "초특가 아무거나",
+      "category": "기타",
+      "tags": [],
+      "verified": false,
+      "openHours": { "mon-sun": "00:00-24:00" },
+      "menus": [{ "key": "anything", "name": "무엇이든", "price": 1000, "tags": [] }]
+    }
+  ]
+}

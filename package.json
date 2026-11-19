@@ -21,7 +21,8 @@
     "verify": "python3 -I scripts/verify.py",
     "verify:test": "python3 -I scripts/verify_test.py",
     "format:check": "prettier --check .",
-    "db:migrate": "pnpm --filter @sikyeoyong/api build && pnpm --filter @sikyeoyong/api db:migrate"
+    "db:migrate": "pnpm --filter @sikyeoyong/api build && pnpm --filter @sikyeoyong/api db:migrate",
+    "db:seed": "pnpm --filter @sikyeoyong/api build && pnpm --filter @sikyeoyong/api db:seed"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
