@@ -1,0 +1,26 @@
+/* Main.dc.html: a full-height column; only the messages scroll. */
+.layout {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* Main.dc.html, LimitChat.dc.html: 16 20 12 around the top row. */
+.header {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-5) var(--space-3);
+}
+
+/* Main.dc.html: the budget card sits 20 from each side. */
+.top {
+  flex-shrink: 0;
+  padding: 0 var(--space-5);
+}
+
+/* Main.dc.html: 10 16 24 around the input, on the screen ground. */
+.footer {
+  flex-shrink: 0;
+  padding: var(--size-input-band-top) var(--space-4) var(--space-6);
+  background: var(--color-ground);
+}

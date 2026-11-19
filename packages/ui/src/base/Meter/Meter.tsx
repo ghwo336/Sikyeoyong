@@ -23,6 +23,8 @@ export interface MeterProps {
    * Default budget.
    */
   readonly kind?: MeterKind;
+  /** Main: inside a white card with a 1px line (radius 16, 12 14 inside). Default false. */
+  readonly framed?: boolean;
 }
 
 /**
@@ -37,13 +39,24 @@ export function fillBasisPoints(value: bigint, max: bigint): number {
 }
 
 /** Draws the current value against a limit as a bar (Meter.md). */
-export function Meter({ value, max, label, tone, size = 'sm', kind = 'budget' }: MeterProps) {
+export function Meter({
+  value,
+  max,
+  label,
+  tone,
+  size = 'sm',
+  kind = 'budget',
+  framed = false,
+}: MeterProps) {
   const bps = fillBasisPoints(value, max);
   const percent = bps / 100; // display only, never money
   const valueText = formatOkrw(value);
   const maxText = formatOkrw(max);
   return (
-    <div className={`${styles.meter} ${styles[size]} ${styles[kind]}`}>
+    <div
+      className={`${styles.meter} ${styles[size]} ${styles[kind]}`}
+      data-framed={framed || undefined}
+    >
       <div className={styles.row} aria-hidden="true">
         <span className={styles.label}>{label}</span>
         <AmountRatio value={value} max={max} size="meter" valueUnit={false} />

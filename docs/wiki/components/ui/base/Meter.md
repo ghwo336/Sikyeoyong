@@ -15,7 +15,7 @@ children: []
 넘었는지 판단해서 문구 바꾸기 (부모가 `tone`을 넘김)
 
 ## props
-`value: bigint` (aokrw), `max: bigint` (aokrw), `label: string`, `tone: 'normal' | 'warn' | 'over'`, `size?: 'sm' | 'md'` (기본 `sm`: Main 13px, 간격 8. `md`: Arrived 14px, 간격 12), `kind?: 'budget' | 'limit'` (기본 `budget`: 이번 달 예산, 노른자. `limit`: 용이 한도, 잎색, 진한 바탕, 간격 6)
+`value: bigint` (aokrw), `max: bigint` (aokrw), `label: string`, `tone: 'normal' | 'warn' | 'over'`, `size?: 'sm' | 'md'` (기본 `sm`: Main 13px, 간격 8. `md`: Arrived 14px, 간격 12), `kind?: 'budget' | 'limit'` (기본 `budget`: 이번 달 예산, 노른자. `limit`: 용이 한도, 잎색, 진한 바탕, 간격 6), `framed?: boolean` (기본 false. Main 흰 카드 안에 그린다)
 
 ## 하네스 상태
 `Meter.stories.tsx`에 아래를 전부 만든다.
@@ -25,6 +25,7 @@ children: []
 - 0 (`Zero`)
 - Arrived 크기 (`ArrivedSize`)
 - Confirm 한도 막대 (`ConfirmLimit`)
+- Main 흰 카드 (`Framed`)
 
 ## 쓰는 화면
 Main, Arrived (예산), Confirm (한도)
@@ -36,6 +37,7 @@ Main, Arrived (예산), Confirm (한도)
 - role meter, 라벨 이름, aria-valuetext는 "210,000원 / 300,000원"
 - Main, Arrived, Confirm 시안 값 (막대 8, 반경 4. budget은 `track` 바탕에 노른자, limit은 `line` 바탕에 잎색과 간격 6. warn 노른자, over 호박색은 둘 다 같음)
 - kind 클래스는 하나만, 기본은 budget
+- framed일 때만 `data-framed`, 카드 값은 Main 시안 (흰 바탕, 1px `line`, 반경 16 `radius.budgetCard`, 안쪽 12 14 `size.budgetCardPadX`)
 
 ## 메모
 - 숫자 줄("값 / 한도원")은 base `AmountRatio` meter(값 뒤 원 없음)다.
@@ -44,3 +46,4 @@ Main, Arrived (예산), Confirm (한도)
 - `limit`은 `sm`과만 쓴다 (Confirm). `.meter.limit`의 간격 6이 size 간격보다 우선한다.
 - tone을 고르는 기준은 부모가 `nagStage`(packages/shared policy)로 정한다. 막대는 받은 tone만 칠한다.
 - 퍼센트는 표시용 숫자로만 바꾼다. 돈 계산이 아니다.
+- 카드(`framed`)는 2026-11-19에 Main 시안 "이번 달 배달비" 카드를 그리려고 늘렸다. 화면 양옆 20은 카드가 아니라 `ChatLayout` top 띠가 준다.
