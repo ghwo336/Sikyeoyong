@@ -85,6 +85,8 @@
   --type-blocked-amount-letter-spacing: -0.03em;
   --type-change-to-size: 22px;
   --type-change-to-weight: 700;
+  --type-egg-name-size: 17px;
+  --type-egg-name-weight: 700;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -147,6 +149,9 @@
   --size-badge-pad-x: 8px;
   --size-badge-pad-y: 2px;
   --size-summary-gap: 10px;
+  --size-egg-hero: 132px;
+  --size-egg-option: 60px;
+  --size-egg-option-icon: 40px;
   --size-face-id-icon: 20px;
   --size-arrow-icon: 16px;
   --size-raise-button: 64px;

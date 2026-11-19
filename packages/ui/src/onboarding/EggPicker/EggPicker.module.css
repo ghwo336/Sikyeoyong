@@ -1,0 +1,58 @@
+/* Name.dc.html 33-47: the picked egg large, its name and line, then four round choices. */
+.picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-limits-gap);
+}
+
+.caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Name.dc.html: 2px between name and line (no 2 on the 4px scale), and a fixed 48px
+     block so the choices below do not jump when the line length changes. */
+  gap: 2px;
+  min-height: var(--size-top-bar);
+}
+
+.name {
+  font-size: var(--type-egg-name-size);
+  font-weight: var(--type-egg-name-weight);
+}
+
+.line {
+  font-family: var(--font-dragon);
+  font-size: var(--type-row-size);
+  letter-spacing: var(--type-dragon-letter-spacing);
+  color: var(--color-ink-secondary);
+}
+
+.options {
+  display: flex;
+  gap: var(--size-summary-gap);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--size-egg-option);
+  height: var(--size-egg-option);
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: calc(var(--size-egg-option) / 2);
+  background: transparent;
+  cursor: pointer;
+}
+
+.option[data-selected] {
+  border-color: var(--color-leaf);
+  background: var(--color-surface);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}

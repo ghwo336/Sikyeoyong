@@ -15,17 +15,20 @@ children: []
 저장
 
 ## props
-`value: DragonSpecies`, `onChange`
+`value: DragonSpecies`, `onChange: (value: DragonSpecies) => void`
 
 ## 하네스 상태
 `EggPicker.stories.tsx`에 아래를 전부 만든다.
-- 종 4가지 각각 선택됨
+- 종 4가지 각각 선택됨 (`Forest`, `Water`, `Flower`, `Star`)
 
 ## 쓰는 화면
 Name
 
 ## 테스트 기준
-- role=radiogroup
+- role=radiogroup (이름 "알"), 숲, 물, 꽃, 별 순서, 각 이름 "숲용 알" 등
+- 고른 알만 aria-checked, 클릭으로 onChange 한 번
+- 고른 알을 크게(132) 그리고 아래에 이름과 첫 말 (tokens.json dragonSpecies와 같은 글자)
+- Name 시안 값 (선택 칸 60 원, 2px 잎색 테두리와 흰 바탕, 작은 알 40, 칸 사이 10, 묶음 간격 14, 이름 17/700, 말 16px 고운돋움 `ink-secondary`)
 - 화살표 키 이동 (`base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`를 쓴다)
 
 ## 메모
