@@ -41,6 +41,19 @@ const STATUS_TO_CODE: Readonly<Record<number, AppErrorCode>> = {
   [HttpStatus.TOO_MANY_REQUESTS]: 'RATE_LIMITED',
 };
 
+/** Never throws: decoded revert args are bigint, and detail may be circular. */
+export function safeStringify(value: unknown): string {
+  try {
+    // JSON.stringify returns undefined for undefined input; its lib type says string.
+    const out: unknown = JSON.stringify(value, (_key, v: unknown) =>
+      typeof v === 'bigint' ? v.toString() : v,
+    );
+    return typeof out === 'string' ? out : String(value);
+  } catch {
+    return '[unserializable]';
+  }
+}
+
 function asDetail(detail: unknown): AppErrorDetail {
   return detail !== null && typeof detail === 'object' ? detail : {};
 }
@@ -60,7 +73,7 @@ export class AppErrorFilter implements ExceptionFilter {
     if (exception instanceof AppError) {
       const chain = asDetail(exception.detail).chain;
       if (chain !== undefined) {
-        this.logger.warn(`${body.error.code} chain=${JSON.stringify(chain)}`);
+        this.logger.warn(`${body.error.code} chain=${safeStringify(chain)}`);
       }
     }
     if (status >= 500) {

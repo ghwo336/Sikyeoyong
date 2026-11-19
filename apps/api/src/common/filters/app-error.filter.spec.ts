@@ -21,7 +21,7 @@ import request from 'supertest';
 import { Logger } from '@nestjs/common';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { configureApp } from '../../app.setup.js';
-import { AppErrorFilter, type ErrorBody } from './app-error.filter.js';
+import { AppErrorFilter, type ErrorBody, safeStringify } from './app-error.filter.js';
 
 function errorOf(res: { body: unknown }): ErrorBody['error'] {
   return (res.body as ErrorBody).error;
@@ -37,6 +37,16 @@ class TestController {
       dragonParams: { max: '10,000원' },
       public: { maxAokrw: '10000000000000000000000' },
       chain: 'raw revert data',
+    });
+  }
+
+  @Get('limit-bigint')
+  limitBigint(): never {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    throw new AppError('CHAIN_AGENT_LIMIT', {
+      dragonParams: { max: '10,000원' },
+      chain: { name: 'ExceededAgentTransferLimit', args: [10n ** 22n, 45n], circular },
     });
   }
 
@@ -88,6 +98,14 @@ describe('AppErrorFilter (server-api.md error format)', () => {
       },
     });
     expect(JSON.stringify(res.body)).not.toContain('raw revert data');
+  });
+
+  it('still answers when the chain detail has bigint and circular values', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const res = await request(http()).get('/api/t/limit-bigint');
+    expect(res.status).toBe(422);
+    expect((res.body as ErrorBody).error.code).toBe('CHAIN_AGENT_LIMIT');
+    warn.mockRestore();
   });
 
   it('logs the raw chain revert on the server but never sends it', async () => {
@@ -170,5 +188,21 @@ describe('AppErrorFilter.toBody: Nest HTTP exceptions', () => {
   it('falls back to INTERNAL for non-errors', () => {
     expect(filter.toBody('a string').body.error.code).toBe('INTERNAL');
     expect(filter.toBody(undefined).status).toBe(500);
+  });
+});
+
+describe('safeStringify', () => {
+  it('turns bigint into decimal strings', () => {
+    expect(safeStringify({ a: 10n ** 24n })).toBe('{"a":"1000000000000000000000000"}');
+  });
+
+  it('never throws on circular values', () => {
+    const c: Record<string, unknown> = {};
+    c.self = c;
+    expect(safeStringify(c)).toBe('[unserializable]');
+  });
+
+  it('handles undefined', () => {
+    expect(safeStringify(undefined)).toBe('undefined');
   });
 });
