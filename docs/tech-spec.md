@@ -137,10 +137,12 @@ type ChatEvent =
   | { type: 'order_receipt'; order: OrderReceipt }
   | { type: 'order_failed'; code: AppErrorCode; dragonLine: string; detail?: unknown }
   | { type: 'approval_request'; approval: ApprovalCard }
+  | { type: 'limit_change_card'; card: LimitChangeCardView } // 한도 변경 카드, 버튼으로만 바꿈 (D-21)
   | { type: 'nag'; level: 'warn70' | 'warn90' | 'over100'; message: string; spent: string; budget: string }
   | { type: 'done'; messageId: string };
 ```
 
+- `LimitChangeCardView` (D-21, ui `LimitChangeCard` props와 이름을 맞춤): `{ cardId: string; field: 'perOrder' | 'monthlyBudget'; from: string; to: string; levelFrom?: 1 | 2 | 3; levelTo?: 1 | 2 | 3; needsReauth: boolean; rows: { label: string; value: string }[] }`. `from`, `to`는 aokrw 문자열.
 - 금액은 전부 **문자열(aokrw 정수)** 로 주고받고, 표시용 변환은 `packages/shared/src/money/`(패키지 루트에서 재수출)의 `formatOkrw()` 하나만 쓴다. 표시 규칙은 `conventions/code-style.md` 금액 항목.
 
 ### 2.5 영수증 "마루 규칙 N개 통과"
@@ -264,7 +266,8 @@ apps/api/src/
   chainResetAt: number | null,       // unix
   level: 1 | 2 | 3,
   perOrderLimit: string,
-  frozen: boolean
+  frozen: boolean,
+  budgetOptions: { id: 'small' | 'medium' | 'large'; amount: string }[]  // policy.ts monthlyBudgetOptions, D-21
 }
 ```
 
@@ -339,19 +342,19 @@ apps/api/src/
     "input_schema": { "type": "object", "properties": {
       "field": { "type": "string", "enum": ["perOrder", "monthlyBudget"] },
       "targetLevel": { "type": "integer", "enum": [1, 2, 3], "description": "field가 perOrder일 때" },
-      "budgetOption": { "type": "string", "description": "field가 monthlyBudget일 때, get_budget이 준 선택지 ID 하나" }
+      "budgetOption": { "type": "string", "enum": ["small", "medium", "large"], "description": "field가 monthlyBudget일 때, get_budget의 budgetOptions에서 고른 id" }
     }, "required": ["field"], "additionalProperties": false }
   }
 ]
 ```
 
-- `propose_limit_change` (D-21): 금액을 받지 않는다. 서버가 레벨표와 예산 선택지에서 전과 후 금액을 붙여 `limit_change_card` 이벤트로 보낸다. 서버는 그 턴의 사용자 메시지에 한도나 예산 의도가 없거나, 두 단계 이상 올리거나, 최고 레벨을 넘거나, 지금 값과 같으면 카드를 버린다. 메시지당 1회. 확정은 카드 버튼 → 올리기는 `POST /agents/me/level`(재인증), 내리기는 바로.
+- `propose_limit_change` (D-21): 금액을 받지 않는다. 서버가 레벨표와 예산 선택지에서 전과 후 금액을 붙여 `limit_change_card` 이벤트로 보낸다. 서버는 그 턴의 사용자 원문에 `policy.ts` 한도 의도 키워드가 없거나, 최고 레벨을 넘거나 선택지에 없는 값이거나, 지금 값과 같으면 카드를 버린다. 한 번에 여러 단계 올리기는 막지 않는다 (LimitChat 시안). 메시지당 1회. 확정은 카드 버튼 → 레벨은 `POST /agents/me/level`(올리기는 재인증, 내리기는 바로), 월 예산은 `PATCH /me { monthlyBudgetOkrw }`(바로).
 
 - 금액 인자는 받지 않는다. 서버가 `menus.price * qty`로 계산한다 (LLM이 금액을 조작할 수 없게).
 - `merchantId`는 서버 DB의 내부 ID(문자열 UUID). 주소가 아니다.
 
 **도구에 절대 넣지 않는 것 (D-06 1겹)**
-임의 주소 송금(`transfer.send` 직접 노출), 에이전트 생성·충전·회수, 레벨·정책 변경, 동결 해제, 가게 등록, 외부 URL 가져오기, 셸·파일 접근, MAWS MCP 도구 전체. MAWS MCP 클라이언트는 `payment` 모듈 안에서만 import 한다(린트 규칙 `no-restricted-imports`로 강제).
+임의 주소 송금(`transfer.send` 직접 노출), 에이전트 생성·충전·회수, 레벨·정책 변경(`propose_limit_change`는 카드만 띄우고 바꾸지 않는다, D-21), 동결 해제, 가게 등록, 외부 URL 가져오기, 셸·파일 접근, MAWS MCP 도구 전체. MAWS MCP 클라이언트는 `payment` 모듈 안에서만 import 한다(린트 규칙 `no-restricted-imports`로 강제).
 
 ### 3.4 PaymentProvider
 
@@ -959,7 +962,7 @@ BIZNO_HMAC_KEY=
 - 판매자 입력 필드 길이 제한(이름 40자, 설명 200자), 지시문 패턴 필터(관리자 검토 대상 표시).
 - 쓰기 도구는 `place_order` 하나, 그것도 금액·주소를 받지 않으므로 인젝션 피해 상한 = 정상 주문 1건(레벨 한도 이내).
 - 한 메시지당 쓰기 1회 제한, 같은 가게 연속 주문 60초 쿨다운.
-- `propose_limit_change`(D-21)는 금액 없이 레벨이나 예산 선택지만 받고, 그 턴의 사용자 메시지에 한도 의도가 없으면 서버가 카드를 버린다. 도구 결과(메뉴 설명 등)만 보고 나온 제안은 인젝션으로 본다. 확정은 버튼과 재인증.
+- `propose_limit_change`(D-21)는 금액 없이 레벨이나 예산 선택지만 받고, 그 턴의 사용자 원문에 한도 의도 키워드(`policy.ts`)가 없으면 서버가 카드를 버린다. 도구 결과(메뉴 설명 등)만 보고 나온 제안은 인젝션으로 본다. 확정은 버튼과 재인증.
 - 도구가 다루는 "누구의 것"(사용자, 에이전트, 주문)은 LLM 입력이 아니라 로그인 세션에서 정한다. LLM이 준 ID는 그 사용자 것인지 서버가 확인한다.
 - 사용자별 메시지 수 제한(분당, 하루)으로 LLM 비용 공격을 막는다. 값은 설정.
 - 모델 답과 도구 결과는 글자로만 그린다. HTML로 넣지 않는다 (XSS).
