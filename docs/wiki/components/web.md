@@ -36,7 +36,7 @@ children: []
 
 ## API 경계와 목 데이터 (2026-11-19)
 - 훅은 `lib/api`의 `api`(`ApiClient` 인터페이스)만 부른다. 지금 구현은 `lib/mock/client.ts`(브라우저 안 가짜 서버)이고, 실제 API로 갈아 끼울 때는 `lib/api/index.ts` 한 줄만 바꾼다. 목은 `lib/mock/` 한 곳에만 둔다 (`fixtures.ts`는 시안 문구와 금액, `client.ts`는 동작).
-- `lib/api/types.ts`는 임시 타입이다 (파일 맨 위 "TODO: packages/shared/src/api로 교체"). shared에 스키마가 생기면 하나씩 지우고 shared에서 import한다. `BudgetView`는 이미 shared(`zBudgetView`)를 쓴다.
+- API 모양은 `packages/shared/src/api`의 zod 스키마가 원본이다. `lib/api/types.ts`는 그 타입을 화면이 쓰던 이름으로 다시 내보내고 `ApiClient`만 정의한다. 목 응답은 `lib/mock/schema.test.ts`가 shared 스키마로 검사한다 (목이 서버와 다른 말을 하면 테스트가 깨진다). 서버 용 표정 목록(`DRAGON_MOODS`)과 ui `DragonMood`는 컴파일 시점에 같은지 확인한다.
 - 목 `confirmOrder`는 결제하지 않는다. 주문을 바로 `submitting`으로 두고 잠시 뒤 조리 중으로 바꿀 뿐이다. 목 `getOrder`는 confirm된 주문만 안다 (새로고침하면 서버 재시작처럼 잊는다).
 - 목 `sendChatMessage`는 SSE 대신 이벤트 배열을 한 번에 준다. 실제 스트림으로 바꿀 때 훅이 이벤트를 대화 항목으로 묶는 부분은 그대로 쓴다.
 - 서버 상태는 TanStack Query(`lib/query-provider.tsx`, 루트 layout에서 한 번). mutation은 자동 재시도하지 않는다 (절대 규칙 9).
@@ -68,7 +68,7 @@ children: []
 - Verify, Name 위 단계 막대: 시안은 48 높이 줄 안에 막대만 있다. TopBar는 trailing만 있으면 34 빈 칸을 두므로(Budget용) StepProgress를 줄 없이 그렸다. 높이 48 줄이 빠져 있다.
 - Hatch: 알(176)이 가운데가 아니라 왼쪽에 붙는다(Egg가 스스로 가운데 정렬하지 않음). 시안 글씨는 고운돋움 22에 설명 14px("1~3분 걸려요. 다 되면 알려 드릴게요.")인데 DragonLine center는 19이고 설명 줄을 그릴 곳이 없다. 단계 카드는 맨 아래에 붙는다 (시안은 알 묶음이 가운데).
 - Budget: 용이 말은 시안이 20px인데 DragonLine inline은 17이다. 체험용 용돈 줄은 시안이 이름 아래 금액(13px), 위 1px 선이고 ListRow는 금액을 오른쪽에 둔다. 받기 버튼은 받은 뒤 모양이 없어 그대로 남는다.
-- ChatEvent에 빠른 답장이 없다: 시안에 칩이 있어 임시 타입에 `quick_replies` 이벤트를 넣었다. shared `ChatEvent`에 추가가 필요하다.
+- 빠른 답장 `quick_replies` 이벤트는 shared `zChatEvent`와 tech-spec 2.4에 들어갔다 (해결).
 
 ## 남은 일 (가입)
 - 체험용 용돈 API 라우트가 tech-spec에 없다. 웹은 한 번만 부르지만, 두 번 와도 한 번만 주도록 서버가 멱등하게 받아야 한다.

@@ -125,7 +125,7 @@ function reply(text: string): ChatEvent[] {
     events.push({ type: 'recommendations', items: [cheapest] });
   } else {
     events.push({ type: 'token', text: '알겠어용. 다시 골라 봤어용.' });
-    events.push({ type: 'recommendations', items: RECOMMENDATIONS });
+    events.push({ type: 'recommendations', items: [...RECOMMENDATIONS] });
   }
   return events;
 }

@@ -1,141 +1,47 @@
-// TODO: packages/shared/src/api로 교체
-// Temporary web-side shapes for the API (tech-spec 2.4, 3.x). packages/shared/src/api has only
-// zBudgetView so far. When shared gets these schemas, delete each one here and import it instead.
-// Amounts are aokrw integer strings, as on the wire (CLAUDE.md rule 4).
-import type { AgentLevel, BudgetView, DragonSpecies } from '@sikyeoyong/shared';
+// API shapes come from packages/shared/src/api (zod schemas the server also uses). This file
+// only re-exports them under the names screens already use, and defines the ApiClient the
+// screens call. Amounts are aokrw integer strings, as on the wire (CLAUDE.md rule 4).
+import type {
+  AGENT_SETUP_STEP_KEYS,
+  AgentSetupView,
+  BudgetView,
+  ChatEvent,
+  ChatHistory,
+  CreateOrderBody,
+  CreateOrderResult,
+  DragonMoodKey,
+  DragonSpecies,
+  MeView,
+  OrderView,
+  QuickReply,
+  SignupConfig,
+} from '@sikyeoyong/shared';
 import type { DragonMood } from '@sikyeoyong/ui';
 
+export type {
+  AgentSetupView,
+  ChatEvent,
+  ChatHistory,
+  ChatHistoryMessage,
+  CreateOrderBody,
+  CreateOrderResult,
+  MeView,
+  OrderItemLine,
+  OrderQuote,
+  OrderStatus,
+  OrderView,
+  RecommendationCard,
+  SignupConfig,
+} from '@sikyeoyong/shared';
+
 export type AokrwString = string;
+export type QuickReplyItem = QuickReply;
+export type AgentSetupStepKey = (typeof AGENT_SETUP_STEP_KEYS)[number];
+export type AgentSetupStepStatus = AgentSetupView['steps'][number]['status'];
 
-/** GET /me (tech-spec 3.x). Only the fields screens read so far. */
-export interface MeView {
-  readonly dragonName: string;
-  readonly dragonSpecies: DragonSpecies;
-  readonly level: AgentLevel;
-  /** aokrw, the per-order limit of this level. */
-  readonly perOrderLimit: AokrwString;
-}
-
-/** One recommended menu (ChatEvent recommendations, RecommendationCard). */
-export interface RecommendationCard {
-  readonly id: string;
-  readonly merchantId: string;
-  readonly menuId: string;
-  readonly store: string;
-  readonly etaMin: number;
-  readonly menu: string;
-  readonly price: AokrwString;
-  readonly needsApproval: boolean;
-}
-
-export interface OrderItemLine {
-  readonly name: string;
-  readonly quantity: number;
-  /** aokrw for the whole line. */
-  readonly price: AokrwString;
-}
-
-/** The confirm card (ChatEvent order_confirm). Limits are the server's numbers after this order. */
-export interface OrderQuote {
-  readonly orderId: string;
-  readonly store: string;
-  readonly destination: string;
-  readonly etaMin: number;
-  readonly items: readonly OrderItemLine[];
-  readonly request?: string;
-  readonly amount: AokrwString;
-  readonly dragonLine: string;
-  readonly perOrderLimit: AokrwString;
-  readonly periodUsedAfter: AokrwString;
-  readonly periodCap: AokrwString;
-}
-
-/** orders.status (tech-spec 5). */
-export type OrderStatus =
-  | 'quoted'
-  | 'pending_approval'
-  | 'submitting'
-  | 'paid'
-  | 'preparing'
-  | 'delivering'
-  | 'delivered'
-  | 'failed'
-  | 'cancelled'
-  | 'refunded';
-
-/** GET /orders/:id (only the fields the status screens read so far). */
-export interface OrderView {
-  readonly id: string;
-  readonly status: OrderStatus;
-  readonly store: string;
-  readonly destination: string;
-  readonly items: readonly OrderItemLine[];
-  readonly request?: string;
-  readonly amount: AokrwString;
-  /** unix ms, from the server. */
-  readonly etaAt: number;
-  readonly remainingMin: number;
-  readonly dragonLine: string;
-  readonly dragonMood: DragonMood;
-}
-
-export interface QuickReplyItem {
-  readonly id: string;
-  readonly label: string;
-}
-
-/**
- * Subset of ChatEvent (tech-spec 2.4). `quick_replies` is not in the spec yet: Main.dc.html shows
- * reply chips, so the server needs to send them (recorded in web.md).
- */
-export type ChatEvent =
-  | { readonly type: 'token'; readonly text: string }
-  | { readonly type: 'recommendations'; readonly items: readonly RecommendationCard[] }
-  | { readonly type: 'quick_replies'; readonly items: readonly QuickReplyItem[] }
-  | { readonly type: 'order_confirm'; readonly quote: OrderQuote }
-  | { readonly type: 'done'; readonly messageId: string };
-
-/** GET /chat/history item. The dragon's message is kept as the events it was made of. */
-export type ChatHistoryMessage =
-  | { readonly id: string; readonly role: 'user'; readonly text: string }
-  | { readonly id: string; readonly role: 'dragon'; readonly events: readonly ChatEvent[] };
-
-export interface ChatHistory {
-  /** unix ms of the first message today. */
-  readonly startedAt: number;
-  readonly messages: readonly ChatHistoryMessage[];
-}
-
-export interface CreateOrderBody {
-  readonly merchantId: string;
-  readonly items: readonly { readonly menuId: string; readonly qty: number }[];
-  readonly clientOrderId: string;
-}
-
-/** POST /orders: quoted (with a quote) or pending_approval (no quote, approval card later). */
-export interface CreateOrderResult {
-  readonly order: { readonly id: string; readonly status: OrderStatus };
-  readonly quote?: OrderQuote;
-}
-
-/** Sign-up settings the screens need. verifyMode is a server setting (D-16). */
-export interface SignupConfig {
-  readonly verifyMode: 'kakao' | 'mock';
-  /** aokrw the trial allowance gives (Budget.dc.html "체험용 용돈"). */
-  readonly trialAllowance: AokrwString;
-}
-
-export type AgentSetupStepKey = 'wallet' | 'identity' | 'limit';
-export type AgentSetupStepStatus = 'done' | 'doing' | 'waiting' | 'failed';
-
-/** GET /agents/me while hatching: the three setup steps in order (user-flow 4). */
-export interface AgentSetupView {
-  readonly status: 'PENDING' | 'ACTIVE' | 'FAILED';
-  readonly steps: readonly {
-    readonly key: AgentSetupStepKey;
-    readonly status: AgentSetupStepStatus;
-  }[];
-}
+// The server's mood list and the ui Dragon's must be the same set (compile-time check both ways).
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+export const MOODS_MATCH: Same<DragonMoodKey, DragonMood> = true;
 
 /** Everything the screens call. lib/api picks the implementation (mock now, HTTP later). */
 export interface ApiClient {

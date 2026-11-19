@@ -117,7 +117,7 @@ export function chatHistory(now: number): ChatHistory {
             type: 'token',
             text: '비 오니까 국물 어때용? 이번 달은 벌써 21만 원 썼으니까 조금 아껴서 골라 봤어용.',
           },
-          { type: 'recommendations', items: RECOMMENDATIONS },
+          { type: 'recommendations', items: [...RECOMMENDATIONS] },
           {
             type: 'quick_replies',
             items: [
