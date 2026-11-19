@@ -191,3 +191,11 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 코드: `DragonColor` 대신 `DragonSpecies`. `Dragon`, `Egg`, `EggPicker`가 `species`를 받는다. `agents.dragon_species` 칸, `POST /api/agents` 본문에 `dragonSpecies`. 종은 화면 꾸밈일 뿐 결제, 한도, 체인에 영향이 없다 (온체인 메타데이터에도 넣지 않는다).
 - 이유: 호재 님 결정. 알을 고르는 순간을 더 귀엽고 내 것 같게. 광고 영상도 종별 용이를 쓴다.
 - 영향: design/README, design/tokens.json(`dragonSpecies`), user-flow, 위키 ui/dragon(Dragon, Egg, _index), ui/onboarding(EggPicker, _index), tech-spec 데이터 모델과 API.
+
+## D-21 대화로 한도 바꾸기: LLM은 변경 카드만 제안한다 (2026-11-19, 호재)
+- LimitChat에서 사용자가 말로 한도를 바꾸자고 하면, Claude가 새 도구 `propose_limit_change`로 **변경 카드만** 띄운다. 이 도구는 한도, 레벨, 예산을 바꾸지 않는다. 바꾸는 일은 사용자가 카드 버튼을 누른 뒤 서버가 한다 (올리기는 재인증 뒤, 내리기는 바로). open-questions Q-29의 (a).
+- 도구 입력은 금액이 아니라 정해진 값만: `field`(`perOrder` | `monthlyBudget`)와 `perOrder`면 `targetLevel`(1, 2, 3), `monthlyBudget`이면 서버가 정한 예산 선택지 하나. 금액과 "전과 후"는 서버가 레벨표와 현재 값으로 붙인다. LLM이 정책값을 만들지 않는다는 기존 규칙을 지킨다.
+- 서버가 카드를 버리는 경우: (1) 그 턴에 사용자가 직접 쓴 메시지에 한도나 예산 이야기가 없을 때 (가게, 메뉴, 날씨 같은 도구 결과만 보고 나온 제안은 인젝션으로 본다), (2) 레벨을 한 번에 두 단계 이상 올리거나 최고 레벨을 넘을 때, (3) 지금 값과 같을 때. 이 도구도 쓰기 도구처럼 메시지당 1회다.
+- 서버 보안 규칙을 같이 적는다: 도구는 "누구의 것"을 LLM 입력이 아니라 로그인 세션에서 정한다. 사용자별 메시지 수 제한으로 LLM 비용 공격을 막는다. 모델 답은 글자로만 그린다 (HTML로 넣지 않는다).
+- 이유: 말을 이해해서 카드를 띄울 수 있는 것은 LLM뿐이고(서버 규칙 해석은 다르게 말하면 못 알아듣는다), 카드는 보여 주기만 해서 잘못 떠도 사용자가 그만두기를 누르면 끝이다. 호재 님 결정.
+- 영향: CLAUDE.md 절대 규칙 3(도구 목록), tech-spec 3.3(도구 정의)과 9.2, agent-runtime.md, security.md, LimitChangeCard.md, open-questions Q-29.

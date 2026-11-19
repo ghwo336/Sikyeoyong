@@ -17,7 +17,7 @@
 ## 2. 절대 규칙
 1. **em dash(U+2014)와 en dash(U+2013)를 쓰지 않는다.** 코드 주석, 커밋 메시지, 문서, UI 문구 모두. 마침표, 쉼표, 콜론, 괄호로 끊는다.
 2. **체인 설정을 하드코딩하지 않는다.** 체인 ID, RPC, 컨트랙트 주소, 프리컴파일 주소는 `packages/shared/src/config`에만 둔다 (배포 주소는 `config/deployments/<chainId>.<profile>.json`). 테스트넷 체인 ID(450815)는 바뀔 예정이다.
-3. **LLM에게 돈을 옮기는 도구를 주지 않는다.** 임의 주소 송금, 에이전트 생성·충전(즉시 충전 포함), 정책 변경 도구는 금지. LLM 도구는 읽기 도구와 `place_order`(견적과 확인 카드만), `request_owner_approval`뿐이다. 결제는 사용자가 확인 카드 버튼을 눌렀을 때(`POST /api/orders/:id/confirm`)만 일어난다.
+3. **LLM에게 돈을 옮기는 도구를 주지 않는다.** 임의 주소 송금, 에이전트 생성·충전(즉시 충전 포함), 정책 변경 도구는 금지. LLM 도구는 읽기 도구와 `place_order`(견적과 확인 카드만), `request_owner_approval`, `propose_limit_change`(한도 변경 카드만, 바꾸지 않음, D-21)뿐이다. 결제는 사용자가 확인 카드 버튼을 눌렀을 때(`POST /api/orders/:id/confirm`)만 일어난다.
 4. **금액은 aokrw 단위 `bigint`(DB는 문자열 또는 정수 문자열)로만 다룬다.** `number`, 소수, 부동소수점 금지. 표시할 때만 OKRW로 바꾼다.
 5. **비밀을 커밋하지 않는다.** `.env`, `WAAS_AUTH_TOKEN`, 에이전트 키, OAuth 시크릿, Anthropic 키. 예시는 `.env.example`에 빈 값으로만.
 6. **사실과 추론을 구분한다.** 마루 동작을 문서에 쓸 때 (확인), (추론), (미확인)을 붙인다. 모르면 미확인으로 쓰고 open-questions에 올린다.

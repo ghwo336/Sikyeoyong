@@ -272,7 +272,7 @@ apps/api/src/
 
 **루프**
 1. 사용자 메시지 저장 → 최근 대화 20턴 + 요약 + 시스템 프롬프트로 `LlmProvider.stream()` 호출.
-2. 도구 호출이 오면 서버가 화이트리스트 핸들러 실행 → 결과를 다시 모델에 전달. 한 메시지당 도구 호출 최대 8회, 쓰기 도구(`place_order`) 최대 1회.
+2. 도구 호출이 오면 서버가 화이트리스트 핸들러 실행 → 결과를 다시 모델에 전달. 한 메시지당 도구 호출 최대 8회, 쓰기 도구(`place_order`)와 카드 도구(`propose_limit_change`)는 각각 최대 1회.
 3. 텍스트 토큰은 `token` 이벤트로, 도구 결과 중 UI용은 전용 이벤트(`recommendations`, `order_receipt` 등)로 스트리밍.
 
 **시스템 프롬프트 요지** (`llm/prompts/system.ko.md`)
@@ -332,9 +332,20 @@ apps/api/src/
       "items": { "type": "array", "items": { "type": "object", "properties": { "menuId": { "type": "string" }, "qty": { "type": "integer" } }, "required": ["menuId", "qty"] } },
       "message": { "type": "string", "maxLength": 200 }
     }, "required": ["reason"], "additionalProperties": false }
+  },
+  {
+    "name": "propose_limit_change",
+    "description": "사용자가 한도나 예산을 바꾸자고 말했을 때 변경 카드를 띄운다. 아무것도 바꾸지 않는다. 바꾸는 일은 사용자가 카드 버튼을 누른 뒤 서버가 한다.",
+    "input_schema": { "type": "object", "properties": {
+      "field": { "type": "string", "enum": ["perOrder", "monthlyBudget"] },
+      "targetLevel": { "type": "integer", "enum": [1, 2, 3], "description": "field가 perOrder일 때" },
+      "budgetOption": { "type": "string", "description": "field가 monthlyBudget일 때, get_budget이 준 선택지 ID 하나" }
+    }, "required": ["field"], "additionalProperties": false }
   }
 ]
 ```
+
+- `propose_limit_change` (D-21): 금액을 받지 않는다. 서버가 레벨표와 예산 선택지에서 전과 후 금액을 붙여 `limit_change_card` 이벤트로 보낸다. 서버는 그 턴의 사용자 메시지에 한도나 예산 의도가 없거나, 두 단계 이상 올리거나, 최고 레벨을 넘거나, 지금 값과 같으면 카드를 버린다. 메시지당 1회. 확정은 카드 버튼 → 올리기는 `POST /agents/me/level`(재인증), 내리기는 바로.
 
 - 금액 인자는 받지 않는다. 서버가 `menus.price * qty`로 계산한다 (LLM이 금액을 조작할 수 없게).
 - `merchantId`는 서버 DB의 내부 ID(문자열 UUID). 주소가 아니다.
@@ -948,6 +959,10 @@ BIZNO_HMAC_KEY=
 - 판매자 입력 필드 길이 제한(이름 40자, 설명 200자), 지시문 패턴 필터(관리자 검토 대상 표시).
 - 쓰기 도구는 `place_order` 하나, 그것도 금액·주소를 받지 않으므로 인젝션 피해 상한 = 정상 주문 1건(레벨 한도 이내).
 - 한 메시지당 쓰기 1회 제한, 같은 가게 연속 주문 60초 쿨다운.
+- `propose_limit_change`(D-21)는 금액 없이 레벨이나 예산 선택지만 받고, 그 턴의 사용자 메시지에 한도 의도가 없으면 서버가 카드를 버린다. 도구 결과(메뉴 설명 등)만 보고 나온 제안은 인젝션으로 본다. 확정은 버튼과 재인증.
+- 도구가 다루는 "누구의 것"(사용자, 에이전트, 주문)은 LLM 입력이 아니라 로그인 세션에서 정한다. LLM이 준 ID는 그 사용자 것인지 서버가 확인한다.
+- 사용자별 메시지 수 제한(분당, 하루)으로 LLM 비용 공격을 막는다. 값은 설정.
+- 모델 답과 도구 결과는 글자로만 그린다. HTML로 넣지 않는다 (XSS).
 
 ### 9.3 키 유출 비교 화면 (데모 장면 7) 구현 방침
 - 왼쪽: "일반 지갑 + 앱 한도" 시뮬레이션. 테스트넷 일반 EOA에 앱 수준 한도만 있는 상황에서, 유출된 키로 큰 금액 직접 송금 → 성공.
