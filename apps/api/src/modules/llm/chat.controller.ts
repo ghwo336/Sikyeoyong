@@ -18,13 +18,15 @@ export class ChatController {
     @Body(new ZodValidationPipe(zSendChatMessageBody)) body: SendChatMessageBody,
     @Res() res: Response,
   ): Promise<void> {
+    // Checks and records first: a bad resend is still a plain HTTP error (409).
+    const stream = this.chat.begin(user.userId, body);
     res.status(200);
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
     try {
-      await this.chat.send(user.userId, body, (event) => {
+      await stream((event) => {
         res.write(`data: ${JSON.stringify(event)}\n\n`);
       });
     } finally {

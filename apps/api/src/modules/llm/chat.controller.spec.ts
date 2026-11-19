@@ -11,7 +11,7 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { agents, users } from '../../db/schema/index.js';
+import { agents, chatMessages, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
 import { REFUSAL_LINE } from './chat.service.js';
 import { ScriptedProvider, type ScriptedTurn } from './harness/scripted-provider.js';
@@ -66,7 +66,7 @@ async function setup(
       .set('Cookie', `sid=${token}`)
       .set('X-Requested-With', 'fetch')
       .send(body as object);
-  return { app, post, token };
+  return { app, post, token, h };
 }
 
 function events(text: string): ChatEvent[] {
@@ -165,5 +165,92 @@ describe('POST /api/chat/messages (SSE)', () => {
     expect((await post({ text: '   ', clientMessageId: 'c5' })).status).toBe(400);
     expect((await post({ text: 'a', clientMessageId: 'c6', userId: 'u2' })).status).toBe(400);
     expect(provider.requests).toHaveLength(0);
+  });
+
+  describe('clientMessageId and history', () => {
+    it('answers a resend of a finished turn from storage, without calling the model again', async () => {
+      const provider = scripted([{ blocks: [{ text: '국밥 어때용?' }] }]);
+      const { post } = await setup(provider);
+      const first = await post({ text: '점심 뭐 먹지', clientMessageId: 'same' });
+      const again = await post({ text: '점심 뭐 먹지', clientMessageId: 'same' });
+      expect(again.status).toBe(200);
+      expect(events(again.text)).toEqual(events(first.text));
+      expect(provider.requests).toHaveLength(1);
+    });
+
+    it('refuses the same id with different words (409 CONFLICT)', async () => {
+      const provider = scripted([{ blocks: [{ text: '네' }] }]);
+      const { post } = await setup(provider);
+      await post({ text: '점심', clientMessageId: 'id-1' });
+      const res = await post({ text: '저녁', clientMessageId: 'id-1' });
+      expect(res.status).toBe(409);
+      expect(provider.requests).toHaveLength(1);
+    });
+
+    it('refuses a resend while the first is still unanswered', async () => {
+      const provider = scripted([]);
+      const { post, h } = await setup(provider);
+      h.db
+        .insert(chatMessages)
+        .values({
+          id: 'm-run',
+          userId: 'u1',
+          role: 'user',
+          contentJson: '{"text":"점심"}',
+          clientMessageId: 'id-run',
+          createdAt: 1,
+        })
+        .run();
+      expect((await post({ text: '점심', clientMessageId: 'id-run' })).status).toBe(409);
+      expect(provider.requests).toHaveLength(0);
+    });
+
+    it('keeps nothing from a failed turn, so the same message can be sent again', async () => {
+      const { post, h } = await setup(null); // no model configured: every turn fails
+      await post({ text: '점심', clientMessageId: 'retry' });
+      expect(h.db.select().from(chatMessages).all()).toHaveLength(0);
+      const again = await post({ text: '점심', clientMessageId: 'retry' });
+      expect(again.status).toBe(200);
+    });
+
+    it('gives the model earlier words only, never earlier tool results', async () => {
+      const provider = scripted([
+        { blocks: [{ tool: 'get_budget', input: {} }] },
+        { blocks: [{ text: '이번 달 여유 있어용.' }] },
+        { blocks: [{ text: '국밥 좋아용.' }] },
+      ]);
+      const { post } = await setup(provider);
+      await post({ text: '예산 알려 줘', clientMessageId: 'h1' });
+      await post({ text: '그럼 국밥?', clientMessageId: 'h2' });
+      const sentToModel = provider.requests.at(-1)?.messages ?? [];
+      expect(sentToModel).toEqual([
+        { role: 'user', content: '예산 알려 줘' },
+        { role: 'assistant', content: '이번 달 여유 있어용.' },
+        { role: 'user', content: '그럼 국밥?' },
+      ]);
+      expect(JSON.stringify(sentToModel)).not.toContain('<data>');
+    });
+
+    it('keeps each user history apart', async () => {
+      const provider = scripted([
+        { blocks: [{ text: 'u1에게' }] },
+        { blocks: [{ text: 'u2에게' }] },
+      ]);
+      const { post, h } = await setup(provider);
+      await post({ text: 'u1 말', clientMessageId: 'a' });
+      h.db
+        .insert(chatMessages)
+        .values({
+          id: 'other',
+          userId: 'u2',
+          role: 'user',
+          contentJson: '{"text":"남의 말"}',
+          clientMessageId: 'b',
+          createdAt: 2,
+        })
+        .run();
+      await post({ text: '두 번째', clientMessageId: 'c' });
+      expect(JSON.stringify(provider.requests.at(-1)?.messages)).not.toContain('남의 말');
+    });
   });
 });

@@ -470,7 +470,7 @@ score(merchant, menu) =
 | `order_events` | id, order_id, type, payload_json, source(`server`/`chain`), tx_hash?, log_index?, created_at | 유니크(tx_hash, log_index) |
 | `approvals` | id, user_id, agent_id, order_id(→ orders, 승인 대상 주문), reason, payload_json, status(`pending`/`approved`/`rejected`/`expired`), expires_at, decided_at | 인덱스(user_id, status), 유니크(order_id) where status=pending |
 | `allowed_merchants` | user_id, merchant_id, approved_at | PK(user_id, merchant_id) |
-| `chat_messages` | id, user_id, role, content_json, created_at | 인덱스(user_id, created_at) |
+| `chat_messages` | id, user_id, role, content_json(사용자 `{text}`, 용 `{events: ChatEvent[]}`), client_message_id(사용자 줄), reply_to_id(용 줄), created_at | 인덱스(user_id, created_at), 유니크(user_id, client_message_id), 유니크(reply_to_id). 마이그레이션 0002 |
 | `nag_events` | id, user_id, month_kst, level, spent, budget, created_at | 유니크(user_id, month_kst, level) |
 | `chain_cursor` | name(PK), last_block, updated_at | |
 | `policy_snapshots` | id, contract, policies_json, admin, fetched_at | 영수증 규칙 계산용 |

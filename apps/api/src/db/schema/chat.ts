@@ -14,10 +14,16 @@ export const chatMessages = sqliteTable(
       .references(() => users.id),
     role: text('role', { enum: CHAT_ROLES }).notNull(),
     contentJson: text('content_json').notNull(),
+    /** User rows: the client's id for this message, so a resend is answered once (server-api.md). */
+    clientMessageId: text('client_message_id'),
+    /** Assistant rows: the user row this turn answers. */
+    replyToId: text('reply_to_id'),
     createdAt: integer('created_at').notNull(),
   },
   (t) => [
     index('chat_messages_user_created_idx').on(t.userId, t.createdAt),
+    uniqueIndex('chat_messages_client_id_uq').on(t.userId, t.clientMessageId),
+    uniqueIndex('chat_messages_reply_to_uq').on(t.replyToId),
     enumCheck('chat_messages_role_check', t.role, CHAT_ROLES),
   ],
 );

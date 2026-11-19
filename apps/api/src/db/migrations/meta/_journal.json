@@ -15,6 +15,13 @@
       "when": 1795074791947,
       "tag": "0001_core_domain",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795088553587,
+      "tag": "0002_chat_idempotency",
+      "breakpoints": true
     }
   ]
 }

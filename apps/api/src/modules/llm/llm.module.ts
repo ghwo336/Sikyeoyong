@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { BudgetModule } from '../budget/budget.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { ChatController } from './chat.controller.js';
+import { ChatRepository } from './chat.repository.js';
 import { ChatService } from './chat.service.js';
 import { LlmToolHandlers } from './tools/handlers.js';
 import type { AppConfig } from '../../config/env.js';
@@ -16,6 +17,7 @@ import { LLM_PROVIDER } from './llm-provider.js';
   controllers: [ChatController],
   providers: [
     LlmToolHandlers,
+    ChatRepository,
     ChatService,
     {
       provide: LLM_PROVIDER,
