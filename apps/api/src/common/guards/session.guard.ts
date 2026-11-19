@@ -13,23 +13,38 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 type SessionRequest = Request & { sessionUser?: SessionUser };
 
-/** sid cookie (web) or Bearer token (native), tech-spec 2.3. */
-export function tokenFrom(req: Request): string | null {
+interface Credential {
+  readonly token: string;
+  /** Bearer requests come from the native app and carry no ambient cookie. */
+  readonly viaCookie: boolean;
+}
+
+/**
+ * sid cookie (web) or Bearer token (native), tech-spec 2.3. The auth scheme is
+ * case-insensitive (RFC 7235). A request with more than one sid cookie gets no
+ * credential at all, so a cookie planted from elsewhere cannot win the race.
+ */
+export function credentialFrom(req: Request): Credential | null {
   const auth = req.headers.authorization;
-  if (typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice('Bearer '.length);
+  if (typeof auth === 'string') {
+    const m = /^bearer (.*)$/i.exec(auth);
+    if (m) return { token: m[1] ?? '', viaCookie: false };
+  }
   const cookie = req.headers.cookie;
   if (typeof cookie !== 'string') return null;
+  const values: string[] = [];
   for (const part of cookie.split(';')) {
     const [name, ...rest] = part.trim().split('=');
-    if (name === SESSION_COOKIE) return rest.join('=');
+    if (name === SESSION_COOKIE) values.push(rest.join('='));
   }
-  return null;
+  return values.length === 1 && values[0] !== undefined
+    ? { token: values[0], viaCookie: true }
+    : null;
 }
 
 /**
  * Requires a live session and, for writes from the web, the X-Requested-With
- * header (CSRF, tech-spec 9.4). Bearer requests come from the native app and
- * carry no ambient cookie, so they skip the header check.
+ * header (CSRF, tech-spec 9.4). Bearer requests skip the header check.
  */
 @Injectable()
 export class SessionGuard implements CanActivate {
@@ -37,12 +52,11 @@ export class SessionGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<SessionRequest>();
-    const token = tokenFrom(req);
-    const user = token === null ? null : this.auth.resolve(token);
-    if (user === null) throw new AppError('UNAUTHENTICATED');
-    const viaCookie = !(req.headers.authorization ?? '').startsWith('Bearer ');
+    const cred = credentialFrom(req);
+    const user = cred === null ? null : this.auth.resolve(cred.token);
+    if (cred === null || user === null) throw new AppError('UNAUTHENTICATED');
     if (
-      viaCookie &&
+      cred.viaCookie &&
       !SAFE_METHODS.has(req.method) &&
       req.headers['x-requested-with'] === undefined
     ) {

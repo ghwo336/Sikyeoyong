@@ -86,6 +86,16 @@ describe('SessionGuard over HTTP', () => {
     }
   });
 
+  it('accepts the Bearer scheme in any case (RFC 7235)', async () => {
+    const res = await http().post('/api/probe').set('Authorization', `bearer ${token}`);
+    expect(res.status).toBe(201);
+  });
+
+  it('refuses a request with two sid cookies (cookie planting)', async () => {
+    const res = await http().get('/api/probe').set('Cookie', `sid=${token}; sid=${token}`);
+    expect(res.status).toBe(401);
+  });
+
   it('refuses a cookie write without X-Requested-With (CSRF)', async () => {
     const bare = await http().post('/api/probe').set('Cookie', `sid=${token}`);
     expect(bare.status).toBe(403);
