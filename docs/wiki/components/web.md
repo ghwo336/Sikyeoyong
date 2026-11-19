@@ -52,16 +52,14 @@ children: []
 ## 조립 현황 (목 데이터)
 | 화면 | 경로 | 컨테이너 | 상태 |
 | --- | --- | --- | --- |
-| Main | `app/(main)/page.tsx` | `features/budget/containers/BudgetMeterContainer`, `features/chat/containers/ChatContainer` | 대화 기록, 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
+| Main | `app/(main)/page.tsx` | `features/chat/containers/ChatContainer`(ui `ChatLayout`), `features/me/containers/DragonHeaderContainer`(ui `ChatHeader`), `features/budget/containers/BudgetMeterContainer`(Meter `framed`) | 위 줄(용이, 레벨 한 줄, 설정은 `/dragon`으로 가지만 페이지는 아직 없다), 예산 카드, 대화 기록, 용이 말 아래 추천 카드(`threadRows`가 말 바로 뒤 추천을 그 말의 DragonLine children으로 묶는다), 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
 | Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). confirm이 실패하면 `useConfirmOrder`가 대화로 되돌린다 (`router.replace('/')`). 용이가 이유를 말하는 것은 shared `ChatEvent`의 `order_failed`가 생긴 뒤 |
 | Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 상태를 4단계로 바꾸는 규칙은 `features/orders/status.ts`(`orderStep`). 결제 전(`quoted`, `pending_approval`)과 멈춘 주문(`failed`, `cancelled`, `refunded`)은 단계로 그리지 않고 위 줄만 보인다 (실패를 접수처럼 보이지 않게). 그 상태들의 화면, 배달 중(Tracking), 도착(Arrived), 상태 다시 받기는 아직 |
 | Start, Verify, Name, Hatch, Budget | `app/(onboarding)/<start, verify, name, hatch, budget>/page.tsx` | `features/onboarding/containers/*` | 목으로 끝까지 이어진다: 로그인, 본인 인증, 알 고르기와 이름(빈 이름은 버튼을 끄지 않고 안내), 부화(1초마다 다시 받기, 다 되면 /budget), 예산 고르기와 체험용 용돈, 시작하기(/). 로그인 취소, 인증 실패 다시 시도는 목에서 일어나지 않는다. 약관, 개인정보 링크(/terms, /privacy)는 페이지가 없다 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
-- Main 위 줄: 용이 44, 이름 18/700, "레벨 1, 한 번에 10,000원까지" 13px, 설정 버튼(…). 맡을 컴포넌트가 없다. 지금은 빠져 있다.
-- Main 예산 카드: Meter를 감싸는 흰 카드(1px `line`, 반경 16, 여백 12 14, 바깥 0 20). Meter만 있어 막대가 화면 끝에 붙는다.
-- Main 추천 카드 들여쓰기: 시안은 추천 카드가 드래곤 말 아래 같은 칸(32 + 10 들여쓰기)에 있다. DragonLine에 자식 자리가 없고 RecommendationList는 들여쓰지 않아 지금은 화면 폭 그대로다.
-- 입력칸 아래 띠: ChatInput.md는 "화면이 그린다"(여백 10 16 24)지만 웹은 스타일을 두지 않으므로 지금은 입력칸이 화면 끝에 붙는다. ui에 대화 화면 아래 띠(또는 ChatInput 안 여백)가 필요하다.
+- (2026-11-19 해결) Main 위 줄, 예산 카드, 추천 카드 들여쓰기, 입력칸 아래 띠: ui `ChatHeader`, Meter `framed`, DragonLine `children`, `ChatLayout`으로 채웠다.
+- Main 추천 줄 높이: 시안 줄은 64인데 지금은 약 76이다. 시안은 줄간격을 두지 않았고(브라우저 기본) 웹 body는 1.6이라 가게 이름과 메뉴 두 줄이 높아진다. RecommendationList 글자 줄간격을 시안에 맞출지 ui에서 정한다.
 - 시안끼리 다른 문구: 요청이 Confirm은 "깍두기 많이", Done은 "깍두기 많이, 문 앞에 두고 가 주세요"다. 목은 둘 다 "깍두기 많이"로 둔다. 어느 쪽이 맞는지 캔버스에서 정한다.
 - 가입 화면 제목 묶음: Start("배달은 용이한테 시켜용" 30/700과 설명 15px), Verify, Name(26/700 제목과 15px 설명)을 그릴 컴포넌트가 없다. 지금은 빠져 있다.
 - Name 아래 한 줄 "레벨 1로 태어나요. 한 번에 10,000원까지." (14px): 컴포넌트가 없다.

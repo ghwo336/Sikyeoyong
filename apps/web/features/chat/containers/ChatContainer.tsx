@@ -3,32 +3,42 @@
 import { parseAokrw } from '@sikyeoyong/shared';
 import {
   ChatInput,
+  ChatLayout,
   ChatThread,
   DragonLine,
   QuickReplies,
   RecommendationList,
   UserBubble,
 } from '@sikyeoyong/ui';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { minutes } from '../../../lib/format';
 import { useMe } from '../../me/hooks/useMe';
 import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
-import type { ChatEntry } from '../hooks/entries';
+import { type ChatEntry, threadRows } from '../hooks/entries';
 import { useChat } from '../hooks/useChat';
+
+type RecommendationsEntry = Extract<ChatEntry, { kind: 'recommendations' }>;
+
+export interface ChatContainerProps {
+  /** Top row of the chat (Main: the dragon header). */
+  readonly header?: ReactNode;
+  /** Under the top row (Main: the month's budget card). */
+  readonly top?: ReactNode;
+}
 
 /**
  * Main conversation: thread, recommendations, reply chips and the input (Main.dc.html).
  * A picked recommendation or a quote from the dragon opens the confirm sheet over the chat.
  */
-export function ChatContainer() {
+export function ChatContainer({ header, top }: ChatContainerProps) {
   const chat = useChat();
   const me = useMe().data;
   const createOrder = useCreateOrder();
   const [draft, setDraft] = useState('');
   const entries = chat.thread?.entries ?? [];
 
-  function pick(entry: Extract<ChatEntry, { kind: 'recommendations' }>, id: string) {
+  function pick(entry: RecommendationsEntry, id: string) {
     const rec = entry.items.find((r) => r.id === id);
     if (!rec || createOrder.isPending) return;
     createOrder.mutate(rec, {
@@ -39,71 +49,85 @@ export function ChatContainer() {
     });
   }
 
+  function recommendations(e: RecommendationsEntry) {
+    return (
+      <RecommendationList
+        key={e.id}
+        items={e.items.map((r) => ({
+          id: r.id,
+          store: r.store,
+          eta: minutes(r.etaMin),
+          menu: r.menu,
+          price: parseAokrw(r.price),
+          needsApproval: r.needsApproval,
+        }))}
+        onPick={(id) => {
+          pick(e, id);
+        }}
+      />
+    );
+  }
+
   if (!me) return null;
   return (
     <>
-      <ChatThread stamp={chat.thread?.stamp} streaming={chat.sending}>
-        {entries.map((e, i) => {
-          switch (e.kind) {
-            case 'user':
-              return (
-                <UserBubble
-                  key={e.id}
-                  text={e.text}
-                  status={e.status}
-                  onRetry={() => {
-                    chat.retry(e.id);
-                  }}
-                />
-              );
-            case 'dragon':
-              return (
-                <DragonLine key={e.id} text={e.text} layout="chat" species={me.dragonSpecies} />
-              );
-            case 'recommendations':
-              return (
-                <RecommendationList
-                  key={e.id}
-                  items={e.items.map((r) => ({
-                    id: r.id,
-                    store: r.store,
-                    eta: minutes(r.etaMin),
-                    menu: r.menu,
-                    price: parseAokrw(r.price),
-                    needsApproval: r.needsApproval,
-                  }))}
-                  onPick={(id) => {
-                    pick(e, id);
-                  }}
-                />
-              );
-            case 'quick_replies': {
-              // Chips belong to the latest turn only.
-              if (i !== entries.length - 1) return null;
-              return (
-                <QuickReplies
-                  key={e.id}
-                  items={e.items}
-                  onPick={(id) => {
-                    const label = e.items.find((q) => q.id === id)?.label;
-                    if (label !== undefined) chat.send(label);
-                  }}
-                />
-              );
+      <ChatLayout
+        header={header}
+        top={top}
+        footer={
+          <ChatInput
+            value={draft}
+            onChange={setDraft}
+            onSend={(text) => {
+              chat.send(text);
+              setDraft('');
+            }}
+            placeholder="오늘 저녁도 부탁해"
+            sending={chat.sending}
+          />
+        }
+      >
+        <ChatThread stamp={chat.thread?.stamp} streaming={chat.sending}>
+          {threadRows(entries).map(({ entry: e, cards, last }) => {
+            switch (e.kind) {
+              case 'user':
+                return (
+                  <UserBubble
+                    key={e.id}
+                    text={e.text}
+                    status={e.status}
+                    onRetry={() => {
+                      chat.retry(e.id);
+                    }}
+                  />
+                );
+              case 'dragon':
+                // Main.dc.html: the card the dragon hands over sits under its words.
+                return (
+                  <DragonLine key={e.id} text={e.text} layout="chat" species={me.dragonSpecies}>
+                    {cards ? recommendations(cards) : undefined}
+                  </DragonLine>
+                );
+              case 'recommendations':
+                return recommendations(e);
+              case 'quick_replies': {
+                // Chips belong to the latest turn only.
+                if (!last) return null;
+                return (
+                  <QuickReplies
+                    key={e.id}
+                    items={e.items}
+                    onPick={(id) => {
+                      const label = e.items.find((q) => q.id === id)?.label;
+                      if (label !== undefined) chat.send(label);
+                    }}
+                  />
+                );
+              }
             }
-          }
-        })}
-      </ChatThread>
-      <ChatInput
-        value={draft}
-        onChange={setDraft}
-        onSend={(text) => {
-          chat.send(text);
-          setDraft('');
-        }}
-        placeholder="오늘 저녁도 부탁해"
-        sending={chat.sending}
-      />
+          })}
+        </ChatThread>
+      </ChatLayout>
       <OrderConfirmContainer
         quote={chat.quote}
         open={chat.quoteOpen}

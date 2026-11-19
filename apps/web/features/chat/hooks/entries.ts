@@ -84,3 +84,32 @@ export function historyEntries(messages: readonly ChatHistoryMessage[]): ChatEnt
       : dragonTurn(m.id, m.events).entries,
   );
 }
+
+type RecommendationsEntry = Extract<ChatEntry, { kind: 'recommendations' }>;
+
+export interface ThreadRow {
+  readonly entry: ChatEntry;
+  /** Recommendations the dragon handed over with this line, drawn under its words (Main). */
+  readonly cards?: RecommendationsEntry;
+  /** The newest row; reply chips belong to it only. */
+  readonly last: boolean;
+}
+
+/**
+ * Rows the thread draws: a recommendations card right after a dragon line rides with that line
+ * (Main.dc.html puts it under the words, not at the screen edge). Any other card stands alone.
+ */
+export function threadRows(entries: readonly ChatEntry[]): ThreadRow[] {
+  const rows: ThreadRow[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i] as ChatEntry;
+    const next = entries[i + 1];
+    if (entry.kind === 'dragon' && next?.kind === 'recommendations') {
+      rows.push({ entry, cards: next, last: i + 1 === entries.length - 1 });
+      i++;
+      continue;
+    }
+    rows.push({ entry, last: i === entries.length - 1 });
+  }
+  return rows;
+}
