@@ -13,4 +13,11 @@ export class UsersService {
     if (stored === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
     return parseAokrw(stored);
   }
+
+  /** The neighborhood of the default address (get_context), null when not set. */
+  getAddressDong(userId: string): string | null {
+    const dong = this.repo.findAddressDong(userId);
+    if (dong === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
+    return dong;
+  }
 }

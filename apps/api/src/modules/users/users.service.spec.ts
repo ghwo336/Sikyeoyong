@@ -37,4 +37,12 @@ describe('UsersService', () => {
       expect.objectContaining({ code: 'NOT_FOUND' }),
     );
   });
+
+  it('reads the address neighborhood, null when unset', () => {
+    const s = service();
+    expect(s.getAddressDong('u1')).toBeNull();
+    expect(() => s.getAddressDong('nobody')).toThrow(
+      expect.objectContaining({ code: 'NOT_FOUND' }),
+    );
+  });
 });

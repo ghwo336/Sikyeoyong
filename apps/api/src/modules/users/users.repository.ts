@@ -16,4 +16,14 @@ export class UsersRepository {
       .where(eq(users.id, userId))
       .get()?.monthlyBudgetAokrw;
   }
+
+  /** undefined: no such user; null: the user has not set an address yet. */
+  findAddressDong(userId: string): string | null | undefined {
+    const row = this.handle.db
+      .select({ addressDong: users.addressDong })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+    return row === undefined ? undefined : row.addressDong;
+  }
 }

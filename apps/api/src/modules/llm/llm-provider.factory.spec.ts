@@ -4,6 +4,8 @@ import { Test } from '@nestjs/testing';
 import { AppError } from '@sikyeoyong/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../config/config.module.js';
+import { openDb } from '../../db/client.js';
+import { DB } from '../../db/db.module.js';
 import { loadConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { createLlmProvider, defaultMessagesClient } from './llm-provider.factory.js';
@@ -85,15 +87,18 @@ describe('createLlmProvider (D-22)', () => {
   // The path production runs: Nest injects APP_CONFIG and calls the factory with no seam.
   it('binds LLM_PROVIDER in the Nest module with the configured key, model and effort', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [LlmModule] })
-      .useMocker((token) =>
-        token === APP_CONFIG
-          ? loadConfig({
-              LLM_MODEL: 'test-model-nest',
-              ANTHROPIC_API_KEY: 'test-key-nest',
-              LLM_EFFORT: 'low',
-            })
-          : undefined,
-      )
+      .useMocker((token) => {
+        if (token === APP_CONFIG) {
+          return loadConfig({
+            LLM_MODEL: 'test-model-nest',
+            ANTHROPIC_API_KEY: 'test-key-nest',
+            LLM_EFFORT: 'low',
+          });
+        }
+        // The module also builds tool handlers on the DB; this test only reads the provider.
+        if (token === DB) return openDb(':memory:');
+        return undefined;
+      })
       .compile();
     const p = moduleRef.get<AnthropicProvider>(LLM_PROVIDER);
     expect(p).toBeInstanceOf(AnthropicProvider);
