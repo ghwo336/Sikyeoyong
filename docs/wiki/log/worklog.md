@@ -178,7 +178,7 @@ children: []
   - Name 안내 줄의 한도는 shared 정책 레벨 1 한 번에 한도(프로필과 무관)로 만든다 (`BORN_LINE`).
   - 체험용 용돈 받은 뒤 모양("받았어요")은 시안에 없어 디자인 선택으로 적었다.
   - 부화 GET이 실패해도 계속 묻는다 (web.md "부화 다시 받기").
-  - Verify, Name 뒤로는 `router.back()`.
+  - Verify, Name 뒤로는 이전 단계로 `router.replace` (처음에는 `router.back()`, 검증 뒤 고침. web.md "가입 뒤로").
 - 막힌 것: 없음.
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: Start 알(금 간 알과 뿔) Egg 상태, 추천 줄 높이(시안 64, 지금 약 76), `/dragon` 페이지, LimitChat 조립 때 ChatThread 여백(16 20 12).

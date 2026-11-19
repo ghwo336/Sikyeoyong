@@ -8,8 +8,7 @@ import { BUDGET, ME, SIGNUP } from '../../../lib/mock/fixtures';
 
 const push = vi.fn();
 const replace = vi.fn();
-const back = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace, back }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace }) }));
 
 // Reads come from the fixtures; every write is a spy.
 const createAgent = vi.fn();
@@ -52,7 +51,6 @@ beforeEach(() => {
   for (const f of [
     push,
     replace,
-    back,
     createAgent,
     verifyIdentity,
     setMonthlyBudget,
@@ -75,7 +73,7 @@ describe('NameContainer', () => {
       '레벨 1로 태어나요. 한 번에 10,000원까지.',
     );
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
-    expect(back).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledExactlyOnceWith('/verify');
   });
 
   it.each(['', '   '])('an empty name (%j) explains and does not hatch', async (typed) => {
@@ -152,7 +150,7 @@ describe('VerifyContainer', () => {
     );
     expect(await screen.findByText('실명 확인된 주인만 비서를 둘 수 있어요.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
-    expect(back).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledExactlyOnceWith('/start');
   });
 
   it('goes on to naming only when verified', async () => {

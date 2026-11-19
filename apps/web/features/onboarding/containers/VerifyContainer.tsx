@@ -14,7 +14,8 @@ export function VerifyContainer() {
     <>
       <TopBar
         onBack={() => {
-          router.back();
+          // The step before, not history: a reload or a direct link has none (web.md).
+          router.replace('/start');
         }}
         trailing={<StepProgress steps={SIGNUP_STEPS} current={1} />}
       />

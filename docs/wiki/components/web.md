@@ -51,6 +51,11 @@ children: []
   - Hatch `.screen.onboarding.hatch`: 여백 56 24 32(`size.hatchTop`), 사이 28. 알과 말 묶음(ui `Hero`)이 남은 높이 가운데
 - 대화 화면(Main)은 `.screen` 하나에 ui `ChatLayout`이 띠(위 줄 16 20 12, 예산 0 20, 입력칸 10 16 24)를 그린다.
 
+## 가입 뒤로 (Verify, Name)
+- 뒤로 버튼은 브라우저 기록(`router.back()`)이 아니라 이전 단계로 `router.replace`한다: Verify는 /start, Name은 /verify (2026-11-19 판단).
+- 이유: 새로고침은 기록이 남지만, 직접 링크나 새 탭으로 들어오면 앞 기록이 없거나 다른 사이트라 `router.back()`이 아무것도 안 하거나 앱을 떠난다. 가입은 한 줄로 이어지는 단계라 "뒤로"는 언제나 앞 단계다. push 대신 replace라 브라우저 뒤로로 같은 단계를 오가며 기록이 쌓이지 않는다.
+- 남는 것: replace 뒤 브라우저 뒤로는 그 단계에 들어오기 전 기록으로 간다. 로그인 전 사용자를 어디로 보낼지(로그인했으면 /start를 건너뛸지)는 실제 세션이 붙을 때 정한다.
+
 ## 부화 다시 받기 (Hatch)
 - 규칙은 순수 함수 `features/onboarding/hatch.ts`의 `hatchPollInterval` 하나다. `useAgentSetup`은 이 값을 TanStack Query `refetchInterval`로 넘기기만 한다.
 - PENDING이거나 아직 모르면(첫 응답 전) 1초마다 다시 묻는다. ACTIVE면 멈추고 /budget으로 넘어간다. FAILED면 멈추고 "다시 깨우기"만 다시 시작한다.
@@ -62,7 +67,7 @@ children: []
 | Main | `app/(main)/page.tsx` | `features/chat/containers/ChatContainer`(ui `ChatLayout`), `features/me/containers/DragonHeaderContainer`(ui `ChatHeader`), `features/budget/containers/BudgetMeterContainer`(Meter `framed`) | 위 줄(용이, 레벨 한 줄, 설정은 `/dragon`으로 가지만 페이지는 아직 없다), 예산 카드, 대화 기록, 용이 말 아래 추천 카드(`threadRows`가 말 바로 뒤 추천을 그 말의 DragonLine children으로 묶는다), 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
 | Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). confirm이 실패하면 `useConfirmOrder`가 대화로 되돌린다 (`router.replace('/')`). 용이가 이유를 말하는 것은 shared `ChatEvent`의 `order_failed`가 생긴 뒤 |
 | Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 상태를 4단계로 바꾸는 규칙은 `features/orders/status.ts`(`orderStep`). 결제 전(`quoted`, `pending_approval`)과 멈춘 주문(`failed`, `cancelled`, `refunded`)은 단계로 그리지 않고 위 줄만 보인다 (실패를 접수처럼 보이지 않게). 그 상태들의 화면, 배달 중(Tracking), 도착(Arrived), 상태 다시 받기는 아직 |
-| Start, Verify, Name, Hatch, Budget | `app/(onboarding)/<start, verify, name, hatch, budget>/page.tsx` | `features/onboarding/containers/*` | 시안대로 조립했다 (Start `Hero`와 `ScreenTitle`, Verify와 Name `TopBar` 뒤로와 단계 막대, Name 안내 줄 `BORN_LINE`은 정책의 레벨 1 한 번에 한도, Hatch `Hero`, Budget DragonLine greeting과 `TrialAllowance`). 뒤로는 `router.back()`. 목으로 끝까지 이어진다: 로그인, 본인 인증, 알 고르기와 이름(빈 이름은 버튼을 끄지 않고 안내), 부화(1초마다 다시 받기, 다 되면 /budget), 예산 고르기와 체험용 용돈, 시작하기(/). 로그인 취소, 인증 실패 다시 시도는 목에서 일어나지 않는다. 약관, 개인정보 링크(/terms, /privacy)는 페이지가 없다 |
+| Start, Verify, Name, Hatch, Budget | `app/(onboarding)/<start, verify, name, hatch, budget>/page.tsx` | `features/onboarding/containers/*` | 시안대로 조립했다 (Start `Hero`와 `ScreenTitle`, Verify와 Name `TopBar` 뒤로와 단계 막대, Name 안내 줄 `BORN_LINE`은 정책의 레벨 1 한 번에 한도, Hatch `Hero`, Budget DragonLine greeting과 `TrialAllowance`). 뒤로는 이전 단계로 `router.replace` (Verify는 /start, Name은 /verify, 아래 "가입 뒤로"). 목으로 끝까지 이어진다: 로그인, 본인 인증, 알 고르기와 이름(빈 이름은 버튼을 끄지 않고 안내), 부화(1초마다 다시 받기, 다 되면 /budget), 예산 고르기와 체험용 용돈, 시작하기(/). 로그인 취소, 인증 실패 다시 시도는 목에서 일어나지 않는다. 약관, 개인정보 링크(/terms, /privacy)는 페이지가 없다 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
 - (2026-11-19 해결) Main 위 줄, 예산 카드, 추천 카드 들여쓰기, 입력칸 아래 띠: ui `ChatHeader`, Meter `framed`, DragonLine `children`, `ChatLayout`으로 채웠다.
