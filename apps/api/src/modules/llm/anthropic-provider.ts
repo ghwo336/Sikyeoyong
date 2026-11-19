@@ -1,7 +1,9 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import type { AppConfig } from '../../config/env.js';
 import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
 
-export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+/** One definition with config (LLM_EFFORT). */
+export type Effort = AppConfig['llm']['effort'];
 
 export interface AnthropicProviderOptions {
   /** From LLM_MODEL (config only, never hardcoded). Demo: claude-opus-5-5 (D-22). */
