@@ -52,7 +52,10 @@ export const Filled: Story = {
 };
 
 /** 보내는 중 */
-export const Sending: Story = { args: base, render: () => <Live initial="" sending /> };
+export const Sending: Story = {
+  args: base,
+  render: () => <Live initial="하나 더 시켜 줘" sending />,
+};
 
 /** 멈춤 상태라 비활성 안내 */
 export const Stopped: Story = {

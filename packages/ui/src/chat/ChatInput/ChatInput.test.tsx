@@ -56,6 +56,22 @@ describe('ChatInput (ChatInput.md 테스트 기준)', () => {
     expect(onSend).toHaveBeenCalledExactlyOnceWith('점심 시켜 줘');
   });
 
+  it('never lets the form submit itself (no page reload), whatever the state', () => {
+    const onSend = vi.fn();
+    const { container, rerender } = render(
+      <ChatInput value="국밥" onChange={vi.fn()} onSend={onSend} placeholder="" />,
+    );
+    const form = () => container.querySelector('form') as HTMLFormElement;
+    // false = default prevented
+    expect(fireEvent.submit(form())).toBe(false);
+    expect(onSend).toHaveBeenCalledExactlyOnceWith('국밥');
+    rerender(<ChatInput value="" onChange={vi.fn()} onSend={onSend} placeholder="" />);
+    expect(fireEvent.submit(form())).toBe(false);
+    rerender(<ChatInput value="국밥" onChange={vi.fn()} onSend={onSend} placeholder="" sending />);
+    expect(fireEvent.submit(form())).toBe(false);
+    expect(onSend).toHaveBeenCalledTimes(1);
+  });
+
   it('sends with the button too', async () => {
     const onSend = vi.fn();
     render(<Live onSend={onSend} />);
