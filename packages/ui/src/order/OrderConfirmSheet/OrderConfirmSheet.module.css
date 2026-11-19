@@ -1,0 +1,85 @@
+/* Confirm.dc.html 31-60: order block, limits block, then the two buttons. */
+.order {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-summary-gap);
+}
+
+.route {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--type-row-size);
+}
+
+.request {
+  margin: 0;
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
+
+.divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--color-track);
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.totalLabel {
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+}
+
+.totalAmount {
+  font-size: var(--type-pay-size);
+  font-weight: var(--type-pay-weight);
+  letter-spacing: var(--type-pay-letter-spacing);
+}
+
+.limits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-limits-gap);
+}
+
+.limitsTitle {
+  margin: 0;
+  font-size: var(--type-small-size);
+  font-weight: var(--type-label-weight);
+}
+
+.changed {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  color: var(--color-over-ink);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

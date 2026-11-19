@@ -67,6 +67,9 @@
   --type-meta-weight: 400;
   --type-badge-size: 11px;
   --type-badge-weight: 600;
+  --type-pay-size: 24px;
+  --type-pay-weight: 700;
+  --type-pay-letter-spacing: -0.02em;
   --type-total-size: 17px;
   --type-total-weight: 700;
   --type-small-size: 14px;
@@ -130,6 +133,7 @@
   --size-badge-pad-x: 8px;
   --size-badge-pad-y: 2px;
   --size-summary-gap: 10px;
+  --size-limits-gap: 14px;
   --size-meter: 8px;
   --size-meter-limit-gap: 6px;
   --size-step-sm: 4px;

@@ -27,7 +27,7 @@ children: []
 - 아바타 없음
 
 ## 쓰는 화면
-Main, Done, Tracking, Blocked, Cap
+Main, Done, Tracking, Confirm, Blocked, Cap
 
 ## 테스트 기준
 - 두 줄 넘으면 말줄임 없이 그대로 (문구 쪽 문제로 본다)
