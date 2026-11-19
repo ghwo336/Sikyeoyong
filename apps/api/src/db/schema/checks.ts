@@ -20,8 +20,24 @@ export function aokrwCheck(name: string, column: SQLiteColumn) {
  * so only plain identifiers are accepted.
  */
 export function enumCheck(name: string, column: SQLiteColumn, values: readonly string[]) {
+  assertSafeName(name);
+  if (values.length === 0) throw new Error(`enumCheck: ${name} has no values`);
   for (const v of values) {
     if (!/^[A-Za-z0-9_]+$/.test(v)) throw new Error(`enumCheck: unsafe value ${v}`);
   }
   return check(name, sql`${column} in (${sql.raw(values.map((v) => `'${v}'`).join(', '))})`);
+}
+
+/** CHECK that an integer column is one of the given values (agent levels). */
+export function intEnumCheck(name: string, column: SQLiteColumn, values: readonly number[]) {
+  assertSafeName(name);
+  if (values.length === 0) throw new Error(`intEnumCheck: ${name} has no values`);
+  for (const v of values) {
+    if (!Number.isSafeInteger(v)) throw new Error(`intEnumCheck: unsafe value ${String(v)}`);
+  }
+  return check(name, sql`${column} in (${sql.raw(values.join(', '))})`);
+}
+
+function assertSafeName(name: string): void {
+  if (!/^[a-z][a-z0-9_]*$/.test(name)) throw new Error(`check: unsafe constraint name ${name}`);
 }
