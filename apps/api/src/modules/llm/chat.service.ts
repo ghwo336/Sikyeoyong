@@ -10,6 +10,7 @@ import {
 } from '@sikyeoyong/shared';
 import { z } from 'zod';
 import { uuidv7 } from '../../common/ids.js';
+import { RateLimiter } from '../../common/rate-limit/rate-limiter.js';
 import { ChatRepository } from './chat.repository.js';
 import { LLM_PROVIDER, type LlmProvider } from './llm-provider.js';
 import { AgentRuntime, type RuntimeEvent } from './runtime.js';
@@ -26,6 +27,9 @@ function dragonLineFor(code: AppErrorCode): string {
     return renderDragonLine('INTERNAL');
   }
 }
+
+/** tech-spec 9.5: 20 chat messages a minute per user. Replays of finished turns do not count. */
+export const CHAT_RATE = { limit: 20, windowMs: 60_000 } as const;
 
 /** Earlier turns the model sees (tech-spec 3.3 says 20). Only words, never old tool results. */
 export const HISTORY_TURNS = 20;
@@ -74,6 +78,7 @@ export class ChatService {
     @Inject(LLM_PROVIDER) private readonly provider: LlmProvider,
     private readonly handlers: LlmToolHandlers,
     private readonly repo: ChatRepository,
+    private readonly limiter: RateLimiter,
   ) {}
 
   /** Checks and records the message before any byte is sent, so errors can still be HTTP errors. */
@@ -92,6 +97,9 @@ export class ChatService {
         events.forEach(emit);
         return Promise.resolve();
       };
+    }
+    if (!this.limiter.allow(`chat:${userId}`, CHAT_RATE, nowMs)) {
+      throw new AppError('RATE_LIMITED', { reason: 'chat rate' });
     }
     const history = this.history(userId);
     const userRowId = uuidv7(nowMs);

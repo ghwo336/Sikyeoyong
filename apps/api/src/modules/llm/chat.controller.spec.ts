@@ -206,6 +206,21 @@ describe('POST /api/chat/messages (SSE)', () => {
     expect(provider.requests).toHaveLength(0);
   });
 
+  it('limits a user to 20 messages a minute (429), without calling the model', async () => {
+    const provider = scripted(Array.from({ length: 20 }, () => ({ blocks: [{ text: '네' }] })));
+    const { post } = await setup(provider);
+    for (let i = 0; i < 20; i += 1) {
+      expect(
+        (await post({ text: `${String(i)}번`, clientMessageId: `r${String(i)}` })).status,
+      ).toBe(200);
+    }
+    const over = await post({ text: '21번', clientMessageId: 'r20' });
+    expect(over.status).toBe(429);
+    expect(provider.requests).toHaveLength(20);
+    // A replay of a finished turn costs nothing, so it still answers.
+    expect((await post({ text: '0번', clientMessageId: 'r0' })).status).toBe(200);
+  });
+
   describe('clientMessageId and history', () => {
     it('answers a resend of a finished turn from storage, without calling the model again', async () => {
       const provider = scripted([{ blocks: [{ text: '국밥 어때용?' }] }]);
