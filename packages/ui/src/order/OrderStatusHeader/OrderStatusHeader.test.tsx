@@ -12,6 +12,10 @@ const rule = (selector: string) =>
 const ETA = Date.UTC(2026, 11, 9, 3, 55);
 
 describe('OrderStatusHeader (OrderStatusHeader.md 테스트 기준)', () => {
+  it('runs in a non-Seoul time zone (vitest.config env TZ)', () => {
+    expect(new Date(ETA).getHours()).not.toBe(12);
+  });
+
   it("shows KST 'N시 M분' whatever the device time zone", () => {
     // The test runner's TZ is not Seoul in CI; the result must not depend on it.
     expect(formatKstClock(ETA)).toBe('12시 55분');
