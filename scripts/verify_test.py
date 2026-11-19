@@ -183,6 +183,28 @@ CASES = [
          + "## 메모\n- 없음\n"), hit=["D18 ui-style"], ok=True),
     dict(name="D18 ui-style css and styleless memo disagree", files=ui_component(
          THREE_STORIES, doc=UI_DOC + STYLELESS_MEMO), hit=["D18 ui-style"], ok=True),
+    dict(name="D18 ui-style negated mark does not count", files=ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + "## 메모\n- 자기 스타일 없음이 아니다. 나중에 만든다\n"),
+         hit=["D18 ui-style"], ok=True),
+    dict(name="D18 ui-style mark before a parenthesis counts", files=ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + "## 메모\n- Chip을 넘기기만 한다. 자기 스타일 없음 (ChoiceGroup이 그린다)\n"),
+         miss=["D18 ui-style"], ok=True),
+    dict(name="D18 ui-style styleless body with inline style", files={**ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + STYLELESS_MEMO),
+         "packages/ui/src/base/Btn/Btn.tsx": "export const Btn = () => <div style={{ padding: 8, margin: 4 }} />;\n"},
+         hit=["D18 ui-style@Btn.tsx"]),
+    dict(name="D18 ui-style styleless body with own class", files={**ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + STYLELESS_MEMO),
+         "packages/ui/src/base/Btn/Btn.tsx": "export const Btn = () => <div className=\"box\" />;\n"},
+         hit=["D18 ui-style@Btn.tsx"]),
+    dict(name="D18 ui-style styleless body importing a css module", files={**ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + STYLELESS_MEMO),
+         "packages/ui/src/base/Btn/Btn.tsx": "import s from './other.module.css';\nexport const Btn = () => s;\n"},
+         hit=["D18 ui-style@Btn.tsx"]),
+    dict(name="D18 ui-style styleless body passing className through ok", files={**ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + STYLELESS_MEMO),
+         "packages/ui/src/base/Btn/Btn.tsx": "export const Btn = (p: { c: string }) => <Chip className={p.c} />;\n"},
+         miss=["D18 ui-style"], ok=True),
     dict(name="D18 ui-style css without memo ok", files=ui_component(THREE_STORIES), miss=["D18 ui-style"], ok=True),
     dict(name="D18 ui imports tanstack", files={"packages/ui/src/base/y.ts": "import { useQuery } from '@tanstack/react-query';\n"},
          hit=["D18 ui-pure"]),
