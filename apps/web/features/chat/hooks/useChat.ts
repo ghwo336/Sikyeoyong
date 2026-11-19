@@ -32,7 +32,13 @@ export function useChat() {
     },
     staleTime: Infinity,
   });
+  // The last quote stays after closing so the sheet can slide down with its content.
   const [quote, setQuote] = useState<OrderQuote | undefined>(undefined);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const showQuote = (q: OrderQuote) => {
+    setQuote(q);
+    setQuoteOpen(true);
+  };
 
   const update = (fn: (entries: readonly ChatEntry[]) => readonly ChatEntry[]) => {
     qc.setQueryData<ChatThreadData>(THREAD_KEY, (old) =>
@@ -50,7 +56,7 @@ export function useChat() {
       setStatus(id, 'sent');
       const turn = dragonTurn(`reply-${id}`, events);
       update((es) => [...es, ...turn.entries]);
-      if (turn.quote) setQuote(turn.quote);
+      if (turn.quote) showQuote(turn.quote);
     },
     onError: (_err, { id }) => {
       setStatus(id, 'failed');
@@ -61,22 +67,23 @@ export function useChat() {
     thread: thread.data,
     loading: thread.isPending,
     sending: send.isPending,
-    send(text: string) {
+    send: (text: string) => {
       const id = crypto.randomUUID();
       update((es) => [...es, { kind: 'user', id, text, status: 'sending' }]);
       send.mutate({ id, text });
     },
     /** Sends a failed message again with the same id (the server can tell it is a repeat). */
-    retry(id: string) {
+    retry: (id: string) => {
       const entry = thread.data?.entries.find((e) => e.kind === 'user' && e.id === id);
       if (entry?.kind !== 'user') return;
       update((es) => es.map((e) => (e.id === id ? { ...entry, status: 'sending' } : e)));
       send.mutate({ id, text: entry.text });
     },
     quote,
-    showQuote: setQuote,
-    closeQuote() {
-      setQuote(undefined);
+    quoteOpen,
+    showQuote,
+    closeQuote: () => {
+      setQuoteOpen(false);
     },
   };
 }

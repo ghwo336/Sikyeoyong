@@ -50,6 +50,7 @@ children: []
 | 화면 | 경로 | 컨테이너 | 상태 |
 | --- | --- | --- | --- |
 | Main | `app/(main)/page.tsx` | `features/budget/containers/BudgetMeterContainer`, `features/chat/containers/ChatContainer` | 대화 기록, 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
+| Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). 실패 때 대화로 되돌리고 용이가 이유를 말하는 것은 아직 (`useConfirmOrder` TODO) |
 | Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 주문 상태를 4단계 중 하나로 바꿔 보인다. 배달 중(Tracking), 도착(Arrived)은 아직. 새로고침하면 목이 픽스처로 주문을 다시 만든다 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)

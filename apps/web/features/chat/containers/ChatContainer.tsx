@@ -12,13 +12,14 @@ import {
 import { useState } from 'react';
 import { minutes } from '../../../lib/format';
 import { useMe } from '../../me/hooks/useMe';
+import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
 import type { ChatEntry } from '../hooks/entries';
 import { useChat } from '../hooks/useChat';
 
 /**
  * Main conversation: thread, recommendations, reply chips and the input (Main.dc.html).
- * A picked recommendation asks for a quote; the confirm sheet (OrderConfirmContainer) shows it.
+ * A picked recommendation or a quote from the dragon opens the confirm sheet over the chat.
  */
 export function ChatContainer() {
   const chat = useChat();
@@ -102,6 +103,12 @@ export function ChatContainer() {
         }}
         placeholder="오늘 저녁도 부탁해"
         sending={chat.sending}
+      />
+      <OrderConfirmContainer
+        quote={chat.quote}
+        open={chat.quoteOpen}
+        species={me.dragonSpecies}
+        onClose={chat.closeQuote}
       />
     </>
   );
