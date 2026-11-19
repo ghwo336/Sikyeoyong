@@ -4,7 +4,7 @@
 
 - `screens/*.dc.html`: 화면 17장의 마크업. 캔버스 전용 형식이라 브라우저로 바로 열면 글꼴과 일부 동작이 빠진다. **보는 용도는 캔버스 링크, 읽는 용도는 이 파일.** 색, 간격, 글자 크기, 문구를 여기서 그대로 가져온다.
 - `user-flow.md`: 화면 순서, 각 화면에서 사용자가 하는 일, 뒤에서 일어나는 일(서버, 체인).
-- `tokens.json`: 색, 글꼴, 크기, 간격, 모서리. `pnpm --filter @sikyeoyong/ui tokens`가 이 값으로 `packages/ui/src/tokens/tokens.css`를 만든다.
+- `tokens.json`: 색, 글꼴, 크기, 간격, 모서리. `pnpm --filter @sikyeoyong/ui tokens`가 색, 글자, 간격, 반경, 크기로 `packages/ui/src/tokens/tokens.css`를 만들고, 글로만 적힌 글꼴 목록과 움직임은 `packages/ui/src/tokens/base.css`에 손으로 둔다 (`docs/wiki/conventions/architecture.md` 토큰 절).
 
 시안과 코드가 다르면 시안이 맞다. 시안을 바꾸고 싶으면 캔버스를 고친 뒤 이 폴더 사본을 갱신한다.
 

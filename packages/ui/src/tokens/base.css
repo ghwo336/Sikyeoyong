@@ -1,7 +1,7 @@
 /*
  * Hand-maintained tokens that design/tokens.json describes in prose only.
  * Sources: tokens.json font.* and motion.*, design-and-motion.md.
- * base.test.ts checks the numbers against the tokens.json strings.
+ * tokens.test.ts ("base.css" describe) checks the numbers against the tokens.json strings.
  */
 :root {
   /* font.ui "Pretendard Variable", font.dragonVoice "Gowun Dodum", font.code "ui-monospace" */

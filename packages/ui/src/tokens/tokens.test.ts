@@ -99,6 +99,7 @@ describe('base.css (hand-maintained)', () => {
   it('puts the design fonts first', () => {
     expect(vars.get('font-ui')?.startsWith("'Pretendard Variable'")).toBe(true);
     expect(vars.get('font-dragon')?.startsWith("'Gowun Dodum'")).toBe(true);
+    expect(vars.get('font-code')?.startsWith('ui-monospace')).toBe(true);
   });
 
   it('does not redefine generated variables', () => {
