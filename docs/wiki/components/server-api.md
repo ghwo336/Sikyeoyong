@@ -40,7 +40,7 @@ children: []
 - **바꿔 끼우는 구현은 프로바이더 토큰으로 주입**: `PaymentProvider`(A, B, C), `LlmProvider`, `MerchantSource`. 설정값으로 고른다.
 - **주기 작업**: `indexer`(3초 간격 getLogs), `delivery`(배달 단계 타이머)는 `@nestjs/schedule`. SQLite라 프로세스 하나.
 - **감사 로그**: 돈, 정책, 동결, 레벨 변경은 누가 언제 무엇을 했는지 기록.
-- 대화 응답은 SSE(`@Sse`).
+- 대화 응답은 SSE. 본문이 있는 POST라 `@Sse`(GET 전용) 대신 `@Post` + `@Res`로 직접 쓴다 (`data: <ChatEvent JSON>` 한 줄씩, 끝나면 항상 `res.end()`).
 
 ## 하지 말 것 (MUST NOT)
 - 컨트롤러에서 체인, MAWS, DB를 직접 부르지 않는다.

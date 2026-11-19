@@ -23,9 +23,13 @@ export class ChatController {
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
-    await this.chat.send(user.userId, body, (event) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    });
-    res.end();
+    try {
+      await this.chat.send(user.userId, body, (event) => {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      });
+    } finally {
+      // Headers are sent, so the error filter cannot answer any more; always close the stream.
+      res.end();
+    }
   }
 }

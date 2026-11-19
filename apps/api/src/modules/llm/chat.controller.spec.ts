@@ -26,24 +26,31 @@ afterEach(async () => {
   }
 });
 
-async function setup(provider: LlmProvider | null, env: Record<string, string> = {}) {
+async function setup(
+  provider: LlmProvider | null,
+  env: Record<string, string> = {},
+  who: 'u1' | 'u2' = 'u1',
+) {
   const h = openDb(':memory:');
   runMigrations(h.db);
-  h.db
-    .insert(users)
-    .values({ id: 'u1', nickname: 'u1', monthlyBudgetAokrw: '1', createdAt: 1 })
-    .run();
-  h.db
-    .insert(agents)
-    .values({
-      id: 'a1',
-      userId: 'u1',
-      dragonName: '용이',
-      dragonSpecies: 'forest',
-      paymentPath: 'B',
-      createdAt: 1,
-    })
-    .run();
+  // Two users with different budgets: the model must only ever see the session user's.
+  for (const [id, budget] of [
+    ['u1', '100000000000000000000000'],
+    ['u2', '500000000000000000000000'],
+  ] as const) {
+    h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: budget, createdAt: 1 }).run();
+    h.db
+      .insert(agents)
+      .values({
+        id: `a-${id}`,
+        userId: id,
+        dragonName: '용이',
+        dragonSpecies: 'forest',
+        paymentPath: 'B',
+        createdAt: 1,
+      })
+      .run();
+  }
   let builder = Test.createTestingModule({ imports: [LlmModule] }).useMocker((t) =>
     t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined,
   );
@@ -52,14 +59,14 @@ async function setup(provider: LlmProvider | null, env: Record<string, string> =
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
   open.push({ app, h });
-  const token = moduleRef.get(AuthService).issue('u1', 'web');
+  const token = moduleRef.get(AuthService).issue(who, 'web');
   const post = (body: unknown) =>
     request(app.getHttpServer() as Server)
       .post('/api/chat/messages')
       .set('Cookie', `sid=${token}`)
       .set('X-Requested-With', 'fetch')
       .send(body as object);
-  return { app, post };
+  return { app, post, token };
 }
 
 function events(text: string): ChatEvent[] {
@@ -98,6 +105,19 @@ describe('POST /api/chat/messages (SSE)', () => {
     ).toBe('예산 볼게용.아직 여유 있어용.');
   });
 
+  it('runs the tools as the session user, not anyone else', async () => {
+    const provider = scripted([
+      { blocks: [{ tool: 'get_budget', input: {} }] },
+      { blocks: [{ text: '끝' }] },
+    ]);
+    const { post } = await setup(provider, {}, 'u2');
+    await post({ text: '예산', clientMessageId: 'c-u2' });
+    const result = provider.resultsAfter(1)[0];
+    const content = typeof result?.content === 'string' ? result.content : '';
+    expect(content).toContain('500,000원');
+    expect(content).not.toContain('100,000원');
+  });
+
   it('never streams tool results (budget numbers stay server-side data for the model)', async () => {
     const { post } = await setup(
       scripted([{ blocks: [{ tool: 'get_budget', input: {} }] }, { blocks: [{ text: '끝' }] }]),
@@ -129,11 +149,19 @@ describe('POST /api/chat/messages (SSE)', () => {
 
   it('checks the session, the CSRF header and the body before any model call', async () => {
     const provider = scripted([]);
-    const { app, post } = await setup(provider);
+    const { app, post, token } = await setup(provider);
     const http = request(app.getHttpServer() as Server);
     expect(
       (await http.post('/api/chat/messages').send({ text: 'a', clientMessageId: 'c' })).status,
     ).toBe(401);
+    expect(
+      (
+        await http
+          .post('/api/chat/messages')
+          .set('Cookie', `sid=${token}`)
+          .send({ text: 'a', clientMessageId: 'c' })
+      ).status,
+    ).toBe(403);
     expect((await post({ text: '   ', clientMessageId: 'c5' })).status).toBe(400);
     expect((await post({ text: 'a', clientMessageId: 'c6', userId: 'u2' })).status).toBe(400);
     expect(provider.requests).toHaveLength(0);

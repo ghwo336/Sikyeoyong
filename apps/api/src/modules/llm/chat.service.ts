@@ -69,7 +69,8 @@ export class ChatService {
     } catch (err) {
       // The stream has started, so errors become the dragon's words, never a stack or a key.
       const code = err instanceof AppError ? err.code : 'INTERNAL';
-      this.logger.error(`chat turn failed: ${code}`);
+      // Server log only: the cause and stack help operations and never reach the screen.
+      this.logger.error(`chat turn failed: ${code}`, err instanceof Error ? err.stack : undefined);
       send({ type: 'token', text: dragonLineFor(code) });
     }
     if (turn.refused) send({ type: 'token', text: REFUSAL_LINE });

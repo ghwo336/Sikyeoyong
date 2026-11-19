@@ -23,6 +23,7 @@ children: []
 - 대화 루프와 안전장치는 `llm/runtime.ts`의 `AgentRuntime`. 도구 핸들러는 `ToolHandlers`로 받고(각 모듈이 구현), 사용자는 늘 `SessionContext`(로그인 세션)에서 온다.
 - 모델 호출은 `llm/llm-provider.ts`의 `LlmProvider` 인터페이스 뒤에 둔다. 실제 구현은 `llm/anthropic-provider.ts`(`LLM_MODEL`, `LLM_EFFORT`, 시스템 프롬프트와 대화 캐시, 강제 tool_choice 없음, D-22). 테스트는 `llm/harness/scripted-provider.ts`(녹화나 손으로 쓴 모델 턴을 재생, 네트워크와 비용 없음)로 돈다. 이것이 LLM 하네스 1층이다.
 - 대화 엔드포인트는 `llm/chat.controller.ts`(`POST /api/chat/messages`, SSE 줄 `data: <ChatEvent JSON>`)와 `llm/chat.service.ts`. 세션, CSRF 헤더, 본문 검증이 모델 호출보다 먼저다. 나가는 이벤트는 모두 `zChatEvent.parse`를 거친다. 도구 결과(`<data>`)는 화면으로 흘리지 않는다 (카드 이벤트는 각 모듈이 생길 때 `tool_output`에서 바꿔 보낸다). 모델이 거절하면 `REFUSAL_LINE`, 도중 오류면 그 코드의 드래곤 대사를 말하고 끝에 `done`을 보낸다. 아직 없는 것: 대화 기록 저장과 이전 대화 넘기기, `clientMessageId` 멱등, 사용자별 메시지 수 제한.
+- MUST: 도구 결과에 금액이나 시각을 넣을 때는 서버가 표시 글자로 바꿔서 준다. aokrw 정수나 unix 시각을 모델에게 주지 않는다 (모델이 단위를 바꾸면 그게 곧 금액을 만들어 내는 일이다).
 - 도구 핸들러는 `llm/tools/handlers.ts`의 `LlmToolHandlers.build()`가 만든다. 사용자는 세션 컨텍스트에서만 받는다. 지금 붙은 것은 `get_budget`(BudgetService)과 `get_context`(KST 날짜와 24시간 시각, 기본 주소 동네, `WEATHER_PROVIDER=static`이면 "비")뿐이다. 나머지 도구는 모듈이 생길 때까지 `INTERNAL` 오류 결과를 모델에 돌려준다 (용이가 지어내지 않고 아직 못 한다고 말하게). 날씨 공급자가 static이 아니면 지어내지 않고 오류다.
 - Nest 바인딩은 `llm/llm.module.ts`가 `LLM_PROVIDER`를 `llm/llm-provider.factory.ts`로 만든다. `LLM_MODEL`과 `ANTHROPIC_API_KEY`가 있으면 Claude 어댑터를 쓴다. 없으면(개발, 테스트) 서버는 뜨고, 대화 턴만 `INTERNAL`(빠진 변수 이름만, 값은 없음)로 실패한다. production은 env.ts가 둘 다 요구한다.
 - 결제는 `PaymentProvider`, 추천은 `recommend`, 예산은 `budget`, 승인은 `approvals` 모듈. 모듈끼리는 각 모듈의 `service.ts`로만 부른다.
@@ -30,7 +31,7 @@ children: []
 ## 도구 화이트리스트 (D-06)
 | 도구 | 종류 | 설명 |
 | --- | --- | --- |
-| `get_budget` | 읽기 | 이번 달 개인 예산·사용액, 체인 30일 상한·리셋 시각, 레벨, 건당 한도 |
+| `get_budget` | 읽기 | 이번 달 개인 예산·사용액, 30일 상한·사용량·리셋 시각, 레벨, 건당 한도, 예산 선택지. 모델에게는 금액을 `formatOkrw` 표기("300,000원"), 리셋 시각을 KST 글자로 바꿔 준다 (`budgetForModel`). 모델이 단위를 바꾸거나 금액을 계산하지 않게 |
 | `get_order_history` | 읽기 | 최근 주문 기록 (`days` 1~60) |
 | `get_context` | 읽기 | 현재 시각(KST), 기본 주소 동네, 날씨 요약 |
 | `recommend_merchants` | 읽기 | 서버가 결정적으로 계산한 가게·메뉴 후보 최대 3개 |

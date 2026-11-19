@@ -11,7 +11,7 @@ import { agents, users } from '../../../db/schema/index.js';
 import { ScriptedProvider } from '../harness/scripted-provider.js';
 import { LlmModule } from '../llm.module.js';
 import { AgentRuntime } from '../runtime.js';
-import { LlmToolHandlers, STATIC_WEATHER } from './handlers.js';
+import { budgetForModel, LlmToolHandlers, STATIC_WEATHER } from './handlers.js';
 
 const NOW = Date.parse('2026-12-10T03:28:00.000Z'); // 12:28 KST
 const s = (won: bigint) => okrwToAokrw(won).toString();
@@ -57,11 +57,43 @@ const results = (provider: ScriptedProvider, turn: number) =>
   }));
 
 describe('LlmToolHandlers (agent-runtime.md)', () => {
-  it('get_budget reads the session user BudgetView', async () => {
+  it('get_budget gives the model display amounts, never raw aokrw', async () => {
     const handlers = await setup();
-    const view = zBudgetView.parse(await handlers.get_budget({ userId: 'u2' }, {}));
-    expect(view.personalBudget).toBe(s(200_000n));
-    expect(view.monthKst).toBe('2026-12');
+    const out = await handlers.get_budget({ userId: 'u2' }, {});
+    expect(out).toMatchObject({
+      month: '2026-12',
+      personalBudget: '200,000원',
+      personalSpent: '0원',
+      thirtyDayCap: '500,000원',
+      thirtyDayUsed: '0원',
+      thirtyDayResetsAt: null,
+      level: 1,
+      perOrderLimit: '10,000원',
+      budgetOptions: [
+        { id: 'small', amount: '200,000원' },
+        { id: 'medium', amount: '300,000원' },
+        { id: 'large', amount: '500,000원' },
+      ],
+    });
+    expect(JSON.stringify(out)).not.toMatch(/\d{19}/);
+  });
+
+  it('shows the 30-day reset time in KST, not unix seconds', () => {
+    const view = zBudgetView.parse({
+      monthKst: '2026-12',
+      personalBudget: '0',
+      personalSpent: '0',
+      nagLevel: 'none',
+      chainCap: '0',
+      chainUsed: '0',
+      chainResetAtSec: 1_767_225_600,
+      level: 1,
+      perOrderLimit: '0',
+      frozen: false,
+      budgetOptions: [],
+    });
+    // 1767225600 = 2026-01-01T00:00:00Z = 2026-01-01 09:00 KST
+    expect(budgetForModel(view).thirtyDayResetsAt).toBe('2026. 1. 1. 9시 0분');
   });
 
   it('get_context gives KST time, the user neighborhood and the static weather', async () => {
@@ -105,7 +137,8 @@ describe('LlmToolHandlers (agent-runtime.md)', () => {
     const [budget, context] = results(provider, 1);
     expect(budget?.isError).toBe(false);
     expect(budget?.content.startsWith('<data>')).toBe(true);
-    expect(budget?.content).toContain(s(300_000n));
+    expect(budget?.content).toContain('300,000원');
+    expect(budget?.content).not.toContain(s(300_000n));
     expect(context?.content).toContain('역삼동');
     const [order] = results(provider, 2);
     expect(order?.isError).toBe(true);
