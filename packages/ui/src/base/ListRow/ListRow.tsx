@@ -45,7 +45,9 @@ export function ListRow({ label, value, tone = 'default', trailing, onPress }: L
   let end: ReactNode;
   if (trailing === 'chevron') end = <Chevron />;
   else if (typeof trailing === 'function') end = trailing(labelId);
-  else if (trailing === undefined || trailing === null) end = <span className={styles.gap} />;
+  // Nothing to draw (undefined, null, false, '') still keeps the 16px so values line up.
+  else if (trailing === undefined || trailing === null || trailing === false || trailing === '')
+    end = <span className={styles.gap} />;
   else end = trailing;
 
   const content = (

@@ -65,6 +65,11 @@ describe('ListRow (ListRow.md 테스트 기준)', () => {
     expect(container.querySelector('svg')).toBeNull();
   });
 
+  it.each([null, false, ''])('keeps the gap for trailing %j too', (trailing) => {
+    const { container } = render(<ListRow label="30일 한도" value="1" trailing={trailing} />);
+    expect(container.firstElementChild?.lastElementChild).toHaveClass(styles.gap ?? 'gap');
+  });
+
   it('names a switch with the row label through the label id', async () => {
     function Row() {
       const [on, setOn] = useState(false);
