@@ -31,7 +31,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/only-throw-error': 'error',
-      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBigInt: true }],
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': ['error', { allow: ['warn', 'error'] }],
       // Money must never be a JS number (CLAUDE.md rule 4).
