@@ -9,6 +9,7 @@
     "dev": "turbo run dev --filter=@sikyeoyong/api --filter=@sikyeoyong/web",
     "dev:api": "turbo run dev --filter=@sikyeoyong/api",
     "dev:web": "turbo run dev --filter=@sikyeoyong/web",
+    "ui:harness": "pnpm --filter @sikyeoyong/ui storybook",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint && node scripts/eslint-boundaries.test.mjs && prettier --check .",

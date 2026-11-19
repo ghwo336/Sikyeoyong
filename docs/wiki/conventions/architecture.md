@@ -64,6 +64,8 @@ packages/ui/src/<영역>/<이름>/
 ```
 영역: `base`, `dragon`, `chat`, `order`, `limits`, `onboarding`, `wallet`. 목록과 문서는 `docs/wiki/components/ui/`.
 
+토큰: `design/tokens.json`이 원본이고 `pnpm --filter @sikyeoyong/ui tokens`가 `packages/ui/src/tokens/tokens.css`(CSS 변수 `--color-leaf`, `--space-4`, `--radius-sheet` 등)를 만든다. 생성 파일은 손으로 고치지 않는다 (테스트가 원본과 다르면 실패). 앱은 `@sikyeoyong/ui/tokens.css`를 한 번 import한다. ui 패키지는 소스를 그대로 내보낸다 (웹은 `transpilePackages`, 하네스는 Vite).
+
 ### 규칙 (MUST)
 - **단일 책임:** 컴포넌트 이름을 "~하는 것" 한 문장으로 설명할 수 없으면 쪼갠다. 예: `OrderConfirmSheet`는 확인 시트를 그린다. 결제는 하지 않는다(`onConfirm`만 부른다).
 - **하네스 필수:** 위키 문서에 적힌 상태(기본, 로딩, 실패, 빈 상태, 막힘 등)를 스토리로 전부 만든다. 하네스 없이는 합치지 않는다.

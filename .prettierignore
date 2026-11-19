@@ -16,3 +16,4 @@ contracts/broadcast
 packages/shared/src/abi
 *.md
 .claude
+packages/ui/src/tokens/tokens.css
