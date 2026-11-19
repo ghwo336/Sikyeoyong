@@ -23,7 +23,16 @@ export const Center: Story = {
   args: {
     layout: 'center',
     mood: 'worried',
-    text: '앗, 보쌈 대(大)는\n제 한도보다 비싸용.',
+    text: '앗, 보쌈 대(大)는\n제가 한 번에 쓸 수 있는 돈보다 커용.',
+  },
+};
+
+/** 대화 (Main): 작은 용이 옆에 위쪽 정렬 */
+export const Chat: Story = {
+  args: {
+    layout: 'chat',
+    mood: 'default',
+    text: '비 오니까 국물 어때용? 이번 달은 벌써 21만 원 썼으니까 조금 아껴서 골라 봤어용.',
   },
 };
 

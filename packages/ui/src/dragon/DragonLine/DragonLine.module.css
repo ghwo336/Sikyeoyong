@@ -3,6 +3,13 @@
   min-width: 0;
 }
 
+/* Main.dc.html: row, 10px gap, top aligned, text 2px down, line height 1.6. */
+.chat {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--size-dragon-chat-gap);
+}
+
 /* Done.dc.html: row, 12px gap, centered vertically. */
 .inline {
   flex-direction: row;
@@ -27,6 +34,12 @@
   overflow-wrap: anywhere;
 }
 
+.chat .text {
+  margin-top: 2px;
+  font-size: var(--type-dragon-size);
+  line-height: var(--type-body-line-height);
+}
+
 .inline .text {
   font-size: var(--type-dragon-size);
   line-height: var(--type-dragon-line-height);
@@ -35,4 +48,5 @@
 .center .text {
   font-size: var(--type-dragon-large-size);
   line-height: var(--type-dragon-large-line-height);
+  letter-spacing: var(--type-dragon-large-letter-spacing);
 }
