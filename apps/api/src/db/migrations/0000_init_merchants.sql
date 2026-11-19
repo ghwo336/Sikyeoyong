@@ -22,7 +22,7 @@ CREATE TABLE `merchants` (
 	`verified` integer DEFAULT false NOT NULL,
 	`active` integer DEFAULT true NOT NULL,
 	`business_no_hash` text,
-	`metadata_uri` text,
+	`metadata_uri` text NOT NULL,
 	`open_hours_json` text DEFAULT '{}' NOT NULL,
 	`source` text NOT NULL,
 	`created_at` integer NOT NULL,

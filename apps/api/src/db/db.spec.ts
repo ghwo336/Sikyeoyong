@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { okrwToAokrw, aokrwToString } from '@sikyeoyong/shared';
+import { AppError, aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { databasePath, type DbHandle, openDb } from './client.js';
@@ -22,6 +22,7 @@ afterEach(() => {
 
 const merchant = (id: string, payout: string) => ({
   id,
+  metadataUri: `https://example.test/api/merchants/${id}/meta.json`,
   name: '가게',
   category: 'korean',
   payoutAddress: payout,
@@ -36,10 +37,23 @@ describe('databasePath', () => {
     expect(databasePath('file:./data/x.db')).toBe(resolve('./data/x.db'));
   });
 
-  it('rejects other schemes without echoing the url', () => {
-    expect(() => databasePath('postgres://user:secret@host/db')).toThrow(/scheme of postgres/);
-    expect(() => databasePath('postgres://user:secret@host/db')).not.toThrow(/secret/);
-  });
+  it.each(['postgres://user:secret@host/db', 'secret-token-without-colon'])(
+    'rejects %j with the variable name only',
+    (url) => {
+      let caught: unknown;
+      try {
+        databasePath(url);
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(AppError);
+      expect((caught as AppError).detail).toEqual({
+        reason: 'DATABASE_URL must be file: or :memory:',
+        variables: ['DATABASE_URL'],
+      });
+      expect(JSON.stringify((caught as AppError).detail)).not.toContain('secret');
+    },
+  );
 });
 
 describe('migrations (data.md: apply to an empty DB from scratch)', () => {
@@ -60,6 +74,7 @@ describe('migrations (data.md: apply to an empty DB from scratch)', () => {
       const h = fresh(`file:${join(dir, 'nested', 't.db')}`);
       expect(h.sqlite.pragma('foreign_keys', { simple: true })).toBe(1);
       expect(h.sqlite.pragma('journal_mode', { simple: true })).toBe('wal');
+      expect(h.sqlite.pragma('busy_timeout', { simple: true })).toBe(5000);
       h.close();
       handles.pop();
     } finally {
@@ -77,6 +92,24 @@ describe('merchants and menus constraints', () => {
     const row = db.select().from(menus).where(eq(menus.id, 'x')).get();
     expect(row?.priceAokrw).toBe(big);
     expect(BigInt(row?.priceAokrw ?? '0')).toBeGreaterThan(10n ** 24n);
+  });
+
+  it.each(['0', '1', '9'.repeat(78)])('accepts price %j', (price) => {
+    const { db } = fresh();
+    db.insert(merchants).values(merchant('m1', '0xa')).run();
+    db.insert(menus).values({ id: 'x', merchantId: 'm1', name: 'n', priceAokrw: price }).run();
+    expect(db.select().from(menus).get()?.priceAokrw).toBe(price);
+  });
+
+  it('requires a metadata uri (tech-spec 4)', () => {
+    const { sqlite } = fresh();
+    expect(() =>
+      sqlite
+        .prepare(
+          "insert into merchants (id, name, category, payout_address, source, created_at) values ('m9','n','c','0xz','seed',1)",
+        )
+        .run(),
+    ).toThrow(/NOT NULL/);
   });
 
   it.each(['', '01', '1.5', '-1', '1e3', ' 1', '9'.repeat(79)])('rejects price %j', (price) => {
@@ -101,7 +134,7 @@ describe('merchants and menus constraints', () => {
     expect(() =>
       sqlite
         .prepare(
-          "insert into merchants (id, name, category, payout_address, source, created_at) values ('m3','n','c','0xb','other',1)",
+          "insert into merchants (id, name, category, payout_address, metadata_uri, source, created_at) values ('m3','n','c','0xb','u','other',1)",
         )
         .run(),
     ).toThrow(/CHECK/);

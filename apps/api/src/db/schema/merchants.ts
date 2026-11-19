@@ -15,7 +15,8 @@ export const merchants = sqliteTable(
     verified: integer('verified', { mode: 'boolean' }).notNull().default(false),
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
     businessNoHash: text('business_no_hash'),
-    metadataUri: text('metadata_uri'),
+    // https://<domain>/api/merchants/<id>/meta.json (tech-spec 7.1), known at seed time.
+    metadataUri: text('metadata_uri').notNull(),
     openHoursJson: text('open_hours_json').notNull().default('{}'),
     source: text('source', { enum: ['seed', 'console'] }).notNull(),
     createdAt: integer('created_at').notNull(),

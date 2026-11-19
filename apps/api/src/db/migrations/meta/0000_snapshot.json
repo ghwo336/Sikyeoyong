@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5442261e-aaea-4dfc-a884-27c0c81f3fd2",
+  "id": "2abbe5cc-e837-4e28-aa6b-0e80b1ab1417",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "menus": {
@@ -167,7 +167,7 @@
           "name": "metadata_uri",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "open_hours_json": {
