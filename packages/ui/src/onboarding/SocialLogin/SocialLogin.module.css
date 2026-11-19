@@ -1,0 +1,51 @@
+/* Start.dc.html 30-33: two 56px buttons, 8 apart, then the terms line. */
+.login {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kakaoMark {
+  width: var(--size-face-id-icon);
+  height: var(--size-face-id-icon);
+  fill: var(--color-kakao-ink);
+}
+
+.googleMark {
+  width: var(--size-details-icon);
+  height: var(--size-details-icon);
+}
+
+.gBlue {
+  fill: var(--color-google-blue);
+}
+
+.gGreen {
+  fill: var(--color-google-green);
+}
+
+.gYellow {
+  fill: var(--color-google-yellow);
+}
+
+.gRed {
+  fill: var(--color-google-red);
+}
+
+.terms {
+  margin: var(--space-1) 0 0;
+  font-size: var(--type-fine-size);
+  line-height: var(--type-fine-line-height);
+  color: var(--color-ink-secondary);
+  text-align: center;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}

@@ -39,6 +39,10 @@
   --color-map-park: #DCEBD6;
   --color-kakao: #FEE500;
   --color-kakao-ink: #191919;
+  --color-google-blue: #4285F4;
+  --color-google-green: #34A853;
+  --color-google-yellow: #FBBC05;
+  --color-google-red: #EA4335;
   --type-display-size: 30px;
   --type-display-weight: 700;
   --type-display-letter-spacing: -0.03em;
@@ -87,6 +91,9 @@
   --type-change-to-weight: 700;
   --type-egg-name-size: 17px;
   --type-egg-name-weight: 700;
+  --type-fine-size: 12px;
+  --type-fine-weight: 400;
+  --type-fine-line-height: 1.6;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
