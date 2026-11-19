@@ -19,9 +19,13 @@ describe('TrialAllowance (TrialAllowance.md 테스트 기준)', () => {
     expect(screen.getByText('100,000원')).toBeInTheDocument();
   });
 
-  it('keeps precision past what a Number can hold', () => {
-    render(<TrialAllowance amount={9_007_199_254_740_993n} status="idle" onClaim={vi.fn()} />);
-    expect(screen.getByText(/원$/)).toBeInTheDocument();
+  // 2^53 + 1 won, and a larger odd amount whose aokrw value a Number rounds by several won.
+  it.each([
+    [9_007_199_254_740_993n, '9,007,199,254,740,993원'],
+    [123_456_789_012_345_679n, '123,456,789,012,345,679원'],
+  ])('keeps %s won exact past what a Number can hold', (okrw, text) => {
+    render(<TrialAllowance amount={okrwToAokrw(okrw)} status="idle" onClaim={vi.fn()} />);
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it('asks once per press while idle', async () => {
