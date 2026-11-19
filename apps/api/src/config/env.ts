@@ -12,6 +12,10 @@ import { z } from 'zod';
  * Environment variables (tech-spec 8.3). Parsed once at boot; a bad value stops
  * the server. Secrets are optional in development and required in production.
  */
+/** Claude effort levels (D-22). One list for the env schema and AppConfig. */
+export const LLM_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type LlmEffort = (typeof LLM_EFFORTS)[number];
+
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 const int = (min: number, max = Number.MAX_SAFE_INTEGER) =>
   z
@@ -38,7 +42,7 @@ const schema = z.object({
   GOOGLE_CLIENT_SECRET: optionalText,
   ANTHROPIC_API_KEY: optionalText,
   LLM_MODEL: optionalText,
-  LLM_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
+  LLM_EFFORT: z.enum(LLM_EFFORTS).default('medium'),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
   MAROO_RPC_URL: optionalText,
   CHAIN_ID: int(1).optional(),
@@ -75,7 +79,7 @@ export interface AppConfig {
   readonly llm: {
     readonly model: string | undefined;
     /** Claude effort for the chat agent (Opus 5.5 default medium). */
-    readonly effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+    readonly effort: LlmEffort;
     readonly weatherProvider: 'static' | 'openmeteo';
   };
   /** Secrets stay here and are never logged (security.md). */

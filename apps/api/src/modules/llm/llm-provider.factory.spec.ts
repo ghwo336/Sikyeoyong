@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { AppError } from '@sikyeoyong/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
-import { AnthropicProvider } from './anthropic-provider.js';
+import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { createLlmProvider } from './llm-provider.factory.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
@@ -17,6 +17,34 @@ describe('createLlmProvider (D-22)', () => {
       loadConfig({ LLM_MODEL: 'test-model', ANTHROPIC_API_KEY: 'test-key' }),
     );
     expect(p).toBeInstanceOf(AnthropicProvider);
+  });
+
+  // D-22: model, effort and key come from config, never from code.
+  it('passes ANTHROPIC_API_KEY, LLM_MODEL and LLM_EFFORT through to the API call', async () => {
+    const stream = vi.fn((_params: unknown) => ({
+      on: () => undefined,
+      finalMessage: () => Promise.resolve({ content: [], stop_reason: 'end_turn' }),
+    }));
+    const makeClient = vi.fn(
+      (_apiKey: string) => ({ messages: { stream } }) as unknown as MessagesClient,
+    );
+    const p = createLlmProvider(
+      loadConfig({ LLM_MODEL: 'test-model-x', ANTHROPIC_API_KEY: 'test-key-y', LLM_EFFORT: 'low' }),
+      makeClient,
+    );
+    await p.turn(request, () => undefined);
+    expect(makeClient).toHaveBeenCalledExactlyOnceWith('test-key-y');
+    expect(stream.mock.calls[0]?.[0]).toMatchObject({
+      model: 'test-model-x',
+      output_config: { effort: 'low' },
+    });
+  });
+
+  it('never builds a client without both values', () => {
+    const makeClient = vi.fn((_apiKey: string) => ({}) as MessagesClient);
+    createLlmProvider(loadConfig({ ANTHROPIC_API_KEY: 'k' }), makeClient);
+    createLlmProvider(loadConfig({ LLM_MODEL: 'm' }), makeClient);
+    expect(makeClient).not.toHaveBeenCalled();
   });
 
   it.each([
