@@ -88,3 +88,19 @@ children: []
 - 한 일: 캔버스 "용이 도감"을 `design/screens/Dragons.dc.html`로 복사. `Dragon`, `Egg`, `EggPicker` 문서를 색에서 종(`DragonSpecies`)으로 바꿈. tokens.json에 `dragonSpecies`, tech-spec에 `agents.dragon_species`와 `POST /agents`의 `dragonSpecies`.
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: dragon 영역 컴포넌트를 만들 때 도감 기준으로 종 4가지 하네스. agents 스키마 마이그레이션에 `dragon_species` 포함.
+
+### 2026-11-19 base, dragon 컴포넌트 (Claude, Claude Code)
+- 한 일:
+  - packages/ui base 10개를 하네스, 테스트, 위키와 함께 만들고 커밋마다 검증 루프를 돌림: Button, Amount, Chip, Switch, TextField, Meter, StepProgress, TopBar, ListRow, Sheet. 모두 검증 PASS (Sheet는 1라운드 진행 중).
+  - dragon 영역: Dragon(종 4가지, 표정, 숨는 얼굴), Egg(종별 무늬, 흔들림), DragonLine(대화, 한 줄, 가운데 배치, 말줄임 없음). D-20 도감 기준.
+  - 공용: 누름 스프링 `base/press.ts`(tokens.json motion.press와 맞는지 테스트), 동작 줄이기 `base/reduced-motion.ts`.
+  - tokens.json에 시안 값을 토큰으로 올림 (type.label/input/small/barTitle, size.chip/meter/step/topBar/listRow/sheet 등, color.scrim).
+- 막힌 것: 없음. 새 열린 질문 Q-27(입력칸 오류 모양), Q-28(예산 막대 평소 색). 호재 님 답을 기다리는 것: Q-22, Q-23, Q-26, Q-27, Q-28.
+- 새로 안 마루 사실: 없음.
+- 후속 (검증 MINOR):
+  - Switch 꺼짐 트랙, Meter 노른자 채움, TextField placeholder의 대비가 기준보다 낮음 (시안 값). 디자인 판단 필요.
+  - Storybook 하네스가 Gowun Dodum 글꼴을 불러오지 않아 드래곤 말 줄바꿈이 시안과 다르게 보임.
+  - Receipt 카드의 "결제 수단, 한 번에 쓸 수 있는 돈, 30일 한도" 줄을 맡을 order 영역 컴포넌트를 정하고 ListRow.md 메모를 고침.
+  - ListRow의 onPress와 Switch trailing 조합을 타입으로 막을지.
+  - Arrived 맛 평가를 고르기(radio)로 쓸지 버튼으로 쓸지 화면 조립 때 결정.
+- 다음 할 일: ui 나머지 영역(chat, order, limits, onboarding, wallet), 그다음 API 모듈(orders, agents, budget), 컨트랙트, 가게 체인 등록 시드.
