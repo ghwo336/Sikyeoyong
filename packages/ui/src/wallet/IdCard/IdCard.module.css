@@ -61,31 +61,3 @@
 .owner {
   font-size: var(--type-body-size);
 }
-
-.facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--size-limits-gap) var(--space-3);
-  margin: 0;
-  font-size: var(--type-caption-size);
-}
-
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.fact dt {
-  color: var(--color-card-ink);
-}
-
-.fact dd {
-  margin: 0;
-  font-size: var(--type-row-size);
-  font-weight: var(--type-row-weight);
-}
-
-.num {
-  font-variant-numeric: tabular-nums;
-}

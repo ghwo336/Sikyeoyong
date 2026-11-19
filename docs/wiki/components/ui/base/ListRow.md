@@ -35,6 +35,7 @@ Wallet
 - Wallet 시안 값 (줄 56, 간격 8, 15px, 값 `ink-secondary`, 강조 잎색 600, 화살표 16 `ink-muted`)
 
 ## 메모
+- 카드 안 읽기 전용 이름과 값 묶음은 ListRow가 아니라 `DetailRows`다. 합치지 않는 이유는 DetailRows 문서에 있다.
 - 화살표는 base `Icon` `chevron-right`이고 크기와 색(16, `ink-muted`)은 이 컴포넌트 CSS가 정한다.
 - Receipt의 줄은 카드 안의 촘촘한 양끝 정렬(14px, 높이 없음)이라 ListRow가 아니라 `OrderSummary`의 `details`가 그린다.
 - onPress와 Switch trailing을 같이 쓰지 않는다 (버튼 안에 버튼이 된다). Wallet 시안도 스위치 줄은 div다.

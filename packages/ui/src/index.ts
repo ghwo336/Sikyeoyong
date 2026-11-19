@@ -3,6 +3,7 @@
 export * from './base/Amount';
 export * from './base/Button';
 export * from './base/Chip';
+export * from './base/DetailRows';
 export * from './base/Icon';
 export * from './base/ListRow';
 export * from './base/Meter';

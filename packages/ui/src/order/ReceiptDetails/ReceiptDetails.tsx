@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import styles from './ReceiptDetails.module.css';
+import { DetailRows } from '../../base/DetailRows';
 import { Icon } from '../../base/Icon';
 
 export interface ReceiptDetailsProps {
@@ -58,16 +59,21 @@ export function ReceiptDetails({
       </button>
       {open ? (
         <div id={panelId} className={styles.panel}>
-          <div className={styles.row}>
-            <span className={styles.label}>결제 기록 번호</span>
-            <span className={styles.code} title={txHash}>
-              {shortHash(txHash)}
-            </span>
-          </div>
-          <div className={styles.row}>
-            <span className={styles.label}>용이 신분증 번호</span>
-            <span className={styles.num}>{agentId}</span>
-          </div>
+          <DetailRows
+            size="caption"
+            gap="normal"
+            rows={[
+              {
+                label: '결제 기록 번호',
+                value: (
+                  <span className={styles.code} title={txHash}>
+                    {shortHash(txHash)}
+                  </span>
+                ),
+              },
+              { label: '용이 신분증 번호', value: agentId },
+            ]}
+          />
           {rules.length > 0 ? (
             <div className={styles.rules}>
               <span className={styles.label}>통과한 마루 규칙 {String(rules.length)}개</span>

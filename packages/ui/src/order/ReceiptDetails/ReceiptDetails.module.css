@@ -54,22 +54,12 @@
   font-size: var(--type-caption-size);
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
 .label {
   color: var(--color-ink-secondary);
 }
 
 .code {
   font-family: var(--font-code);
-}
-
-.num {
-  font-variant-numeric: tabular-nums;
 }
 
 .rules {

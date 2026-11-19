@@ -34,6 +34,7 @@ IdCard
 - IdCard 시안 값 (1.5px ink 테두리 반경 22, 여백 20, 간격 18, 초상 76 반경 18 `eggShell`, 이름 24/700, 사실 13px 라벨 `cardInk`와 16/600 값, 칸 간격 14 12)
 
 ## 메모
+- 네 가지 사실은 base `DetailRows` stacked(두 칸, 이름 `card-ink`, 값 16/600)다.
 - 태어난 날 글자는 `packages/shared`의 `formatKstDate`(time/kst)이다. 이 컴포넌트는 예전 import를 위해 다시 내보내기만 한다.
 - 아래 "가게는 주문을 받을 때 이 신분증을 봐요"와 "신분증 공유하기"는 IdCard 화면이 그린다.
 - 1.5px 테두리는 용이 그림 선 굵기와 같아 리터럴로 둔다.

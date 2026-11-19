@@ -36,6 +36,7 @@ Receipt
 - Receipt 시안 값 (카드 `line` 반경 20, 토글 52 15/600, 화살표 18, 펼침 13px, 규칙 12px 고정폭 줄간격 1.7 `inkCode`)
 
 ## 메모
+- 결제 기록 번호와 신분증 번호 줄은 base `DetailRows` inline caption normal이다. 해시는 값 노드로 넘겨 고정폭 글꼴과 title을 이 컴포넌트가 붙인다.
 - 펼침 화살표는 base `Icon` `chevron-down`에 `data-open`을 넘겨 이 컴포넌트 CSS가 돌린다.
 블록체인 말은 이 컴포넌트 안에서만 쓴다 (design-and-motion).
 - 화살표는 펼치면 180도 돈다. 동작 줄이기면 돌지 않고 바로 바뀐다.

@@ -20,6 +20,16 @@ const buttonRule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
   '';
 
+// Label and value pairs are base DetailRows; their values live in DetailRows.module.css.
+const rowsCss = readFileSync(
+  resolve(__dirname, '../../base/DetailRows/DetailRows.module.css'),
+  'utf8',
+);
+const rowsRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    rowsCss,
+  )?.[2] ?? '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base: LimitChangeCardProps = {
   field: 'perOrder',
@@ -162,7 +172,14 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(rule('.title')).toMatch(/color:\s*var\(--color-leaf\)/);
     expect(rule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
     expect(rule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
-    expect(rule('.row')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    const { unmount } = render(<LimitChangeCard {...base} />);
+    const dl = screen.getByText('30일 한도').closest('dl');
+    expect([...(dl?.classList ?? [])]).toEqual(
+      expect.arrayContaining(['inline', 'small', 'loose']),
+    );
+    expect(rowsRule('.small')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    expect(rowsRule('.loose')).toMatch(/gap:\s*var\(--size-limits-gap\)/);
+    unmount();
     // Confirm: Button primary choice (52, radius 16, 16/700). Cancel: Button text md (44, 15/400).
     render(<LimitChangeCard {...base} />);
     const confirm = screen.getByRole('button', { name: /바꾸기$/ });

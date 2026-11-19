@@ -1,0 +1,70 @@
+/* Label and value pairs inside cards: Done.dc.html, Receipt.dc.html 37-48, LimitChat.dc.html 36-50
+   (inline) and IdCard.dc.html 25-38 (stacked). */
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.caption {
+  font-size: var(--type-caption-size);
+}
+
+.small {
+  font-size: var(--type-small-size);
+}
+
+.tight {
+  gap: var(--space-2);
+}
+
+.normal {
+  gap: var(--size-summary-gap);
+}
+
+.loose {
+  gap: var(--size-limits-gap);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--color-ink-secondary);
+}
+
+.value {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.rows[data-tone='secondary'] .value {
+  color: var(--color-ink-secondary);
+}
+
+/* IdCard.dc.html: two columns, 14 between rows and 12 between columns. */
+.stacked {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-3);
+}
+
+.stacked .row {
+  flex-direction: column;
+  justify-content: flex-start;
+  /* IdCard.dc.html: 2px between label and value lines (no 2 on the 4px scale). */
+  gap: 2px;
+}
+
+.stacked .label {
+  color: var(--color-card-ink);
+}
+
+.stacked .value {
+  font-size: var(--type-row-size);
+  font-weight: var(--type-row-weight);
+}

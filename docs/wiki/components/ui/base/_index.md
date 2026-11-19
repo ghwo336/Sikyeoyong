@@ -14,6 +14,7 @@ children:
   - TopBar.md
   - useSubmitLock.md
   - Icon.md
+  - DetailRows.md
 ---
 
 # 기초 (base)
@@ -34,5 +35,6 @@ children:
 | [Sheet](Sheet.md) | 아래에서 올라오는 시트 틀과 손잡이를 그린다. |
 | [ListRow](ListRow.md) | 설정 화면의 한 줄(이름, 값, 화살표 또는 스위치)을 그린다. |
 | [TopBar](TopBar.md) | 화면 위 뒤로 가기와 제목을 그린다. |
+| [DetailRows](DetailRows.md) | 카드 안 읽기 전용 이름과 값 쌍을 설명 목록으로 그린다 (영수증, 신분증, 한도 바꾸기). |
 | [Icon](Icon.md) | 한 가지 색 아이콘 하나를 이름으로 그린다 (뒤로, 화살표, Face ID, 카카오). |
 | [useSubmitLock](useSubmitLock.md) | 제출 콜백을 감싸 두 번 눌러도 한 번만 부르는 훅 (결제, 한도 바꾸기). |

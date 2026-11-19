@@ -1,4 +1,5 @@
 import { formatOkrw } from '@sikyeoyong/shared';
+import { DetailRows } from '../../base/DetailRows';
 import { type OrderLine, OrderLines } from '../OrderLines';
 import styles from './OrderSummary.module.css';
 
@@ -40,14 +41,7 @@ export function OrderSummary({ store, when, items, request, total, details }: Or
         <span className={`${styles.totalAmount} ${styles.num}`}>{formatOkrw(total)}</span>
       </div>
       {details && details.length > 0 ? (
-        <dl className={styles.details}>
-          {details.map((d) => (
-            <div key={d.label} className={styles.detail}>
-              <dt>{d.label}</dt>
-              <dd className={styles.num}>{d.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <DetailRows rows={details} size="small" gap="tight" tone="secondary" />
       ) : null}
     </section>
   );

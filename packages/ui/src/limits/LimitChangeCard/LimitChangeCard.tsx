@@ -2,6 +2,7 @@
 
 import { formatOkrw, levelWithRo } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
+import { DetailRows } from '../../base/DetailRows';
 import { useSubmitLock } from '../../base/useSubmitLock';
 import styles from './LimitChangeCard.module.css';
 import { Icon } from '../../base/Icon';
@@ -55,6 +56,12 @@ export function LimitChangeCard({
   const confirm = useSubmitLock(confirming, onConfirm);
 
   const showLevel = levelFrom !== undefined && levelTo !== undefined && levelFrom !== levelTo;
+  const detailRows = [
+    ...(showLevel
+      ? [{ label: '레벨', value: `${String(levelFrom)}에서 ${levelWithRo(levelTo)}` }]
+      : []),
+    ...(rows ?? []),
+  ];
   return (
     <section className={styles.card} aria-label="한도 바꾸기">
       <p className={styles.title}>한도 바꾸기</p>
@@ -68,20 +75,7 @@ export function LimitChangeCard({
           <span className={styles.srOnly}>으로</span>
         </span>
       </div>
-      {showLevel ? (
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>레벨</span>
-          <span>
-            {String(levelFrom)}에서 {levelWithRo(levelTo)}
-          </span>
-        </div>
-      ) : null}
-      {rows?.map((r, i) => (
-        <div key={`${String(i)}-${r.label}`} className={styles.row}>
-          <span className={styles.rowLabel}>{r.label}</span>
-          <span className={styles.num}>{r.value}</span>
-        </div>
-      ))}
+      {detailRows.length > 0 ? <DetailRows rows={detailRows} size="small" gap="loose" /> : null}
       {status === 'failed' ? (
         <p className={styles.failed} role="alert">
           못 바꿨어요. 다시 해 볼까요?

@@ -16,6 +16,16 @@ const linesRule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(linesCss)?.[2] ??
   '';
 
+// Label and value pairs are base DetailRows; their values live in DetailRows.module.css.
+const rowsCss = readFileSync(
+  resolve(__dirname, '../../base/DetailRows/DetailRows.module.css'),
+  'utf8',
+);
+const rowsRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    rowsCss,
+  )?.[2] ?? '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const STORE = '마루국밥 본점에서 회사(역삼동)로';
 
@@ -135,7 +145,24 @@ describe('OrderSummary (OrderSummary.md 테스트 기준)', () => {
     expect(rule('.totalLabel')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
     expect(rule('.totalAmount')).toMatch(/font-size:\s*var\(--type-total-size\)/);
     expect(rule('.totalAmount')).toMatch(/font-weight:\s*var\(--type-total-weight\)/);
-    expect(rule('.details')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    const { container } = render(
+      <OrderSummary
+        store={STORE}
+        items={[]}
+        total={0n}
+        details={[{ label: '결제 수단', value: '용이 용돈' }]}
+      />,
+    );
+    const dl = container.querySelector('dl');
+    expect([...(dl?.classList ?? [])]).toEqual(
+      expect.arrayContaining(['inline', 'small', 'tight']),
+    );
+    expect(dl).toHaveAttribute('data-tone', 'secondary');
+    expect(rowsRule('.small')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    expect(rowsRule('.tight')).toMatch(/gap:\s*var\(--space-2\)/);
+    expect(rowsRule(".rows[data-tone='secondary'] .value")).toMatch(
+      /color:\s*var\(--color-ink-secondary\)/,
+    );
     expect(rule('.num')).toMatch(/tabular-nums/);
   });
 });
