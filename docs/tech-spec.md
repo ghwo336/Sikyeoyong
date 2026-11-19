@@ -254,7 +254,7 @@ apps/api/src/
 | POST | `/demo/key-leak` | user + DEMO_MODE | `{ side: 'plain' \| 'maroo' }` | 시뮬레이션 결과 |
 | POST | `/demo/time-skip` | operator + DEMO_MODE | `{ seconds }` | 배달 타이머만 앞당김 (체인 시간은 못 바꿈) |
 
-`BudgetView`:
+`BudgetView` (zod 원본은 `packages/shared/src/api/budget.ts`의 `zBudgetView`, 남는 칸은 거절):
 ```ts
 {
   monthKst: '2026-12',               // 개인 예산은 달력 월(KST) 기준. 서버 계산이라 가능
@@ -263,7 +263,7 @@ apps/api/src/
   nagLevel: 'none' | 'warn70' | 'warn90' | 'over100',
   chainCap: string,                  // 30일 상한
   chainUsed: string,                 // contractPeriodicVolume 읽은 값
-  chainResetAt: number | null,       // unix
+  chainResetAtSec: number | null,    // unix 초 (체인 resetAt, 단위를 이름에 표시). 창 안 첫 주문 전에는 null
   level: 1 | 2 | 3,
   perOrderLimit: string,
   frozen: boolean,
