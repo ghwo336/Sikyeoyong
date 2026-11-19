@@ -52,7 +52,24 @@ describe('HatchProgress (HatchProgress.md 테스트 기준)', () => {
     expect(icons.map((i) => i.getAttribute('data-status'))).toEqual(['done', 'doing', 'failed']);
     expect(icons[0]?.querySelector('path')).toHaveAttribute('d', 'M7.5 12.5l3 3 6-6.5');
     expect(icons[1]?.querySelector('path')).toHaveAttribute('d', 'M12 2.5 A9.5 9.5 0 0 1 21.5 12');
+    // failed: an amber ring with an exclamation mark
+    expect(icons[2]?.querySelector('circle')).toHaveClass('failRing');
+    expect(icons[2]?.querySelector('path')).toHaveAttribute('d', 'M12 7v6M12 16.5v.5');
     for (const i of icons) expect(i).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('draws waiting as one grey ring and nothing else', () => {
+    const { container } = render(<HatchProgress steps={steps('waiting', 'waiting', 'waiting')} />);
+    const icon = container.querySelector('svg');
+    expect(icon?.querySelectorAll('circle')).toHaveLength(1);
+    expect(icon?.querySelector('circle')).toHaveClass('waitRing');
+    expect(icon?.querySelector('path')).toBeNull();
+  });
+
+  it('tells screen readers the step failed, even next to the retry button', () => {
+    render(<HatchProgress steps={steps('done', 'failed', 'waiting')} onRetry={vi.fn()} />);
+    const failed = screen.getAllByRole('listitem')[1] as HTMLElement;
+    expect(failed).toHaveTextContent('용이 신분증 만들기안 됐어요다시 깨우기');
   });
 
   it('spins the arc, but not under reduced motion', () => {
@@ -75,6 +92,8 @@ describe('HatchProgress (HatchProgress.md 테스트 기준)', () => {
     expect(rule('.state')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.doneDot')).toMatch(/fill:\s*var\(--color-leaf\)/);
     expect(rule('.waitRing')).toMatch(/stroke:\s*var\(--color-line-strong\)/);
+    expect(rule('.failRing')).toMatch(/stroke:\s*var\(--color-over\)/);
+    expect(rule(".step[data-status='failed'] .state")).toMatch(/color:\s*var\(--color-over-ink\)/);
     expect(rule('.icon')).toMatch(/width:\s*var\(--size-status-icon\)/);
     expect(rule('.retry')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
   });

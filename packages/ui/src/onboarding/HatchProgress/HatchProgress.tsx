@@ -57,9 +57,13 @@ export function HatchProgress({ steps, onRetry }: HatchProgressProps) {
           <span className={styles.label}>{step.label}</span>
           {step.status === 'failed' ? (
             onRetry ? (
-              <button type="button" className={styles.retry} onClick={onRetry}>
-                다시 깨우기
-              </button>
+              <>
+                {/* The icon is hidden from screen readers, so say it failed in words. */}
+                <span className={styles.srOnly}>안 됐어요</span>
+                <button type="button" className={styles.retry} onClick={onRetry}>
+                  다시 깨우기
+                </button>
+              </>
             ) : (
               <span className={styles.state}>안 됐어요</span>
             )
