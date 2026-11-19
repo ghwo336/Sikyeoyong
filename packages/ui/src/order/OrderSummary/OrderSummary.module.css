@@ -1,0 +1,86 @@
+/* Done.dc.html, Receipt.dc.html: white card with the order, a thin line, then the amount paid. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-summary-gap);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--type-body-size);
+}
+
+.request {
+  margin: 0;
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
+
+.divider {
+  height: 1px;
+  margin: 2px 0;
+  background: var(--color-track);
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.totalLabel {
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+}
+
+.totalAmount {
+  font-size: var(--type-total-size);
+  font-weight: var(--type-total-weight);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.detail dd {
+  margin: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

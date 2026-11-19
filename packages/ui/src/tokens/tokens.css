@@ -67,6 +67,8 @@
   --type-meta-weight: 400;
   --type-badge-size: 11px;
   --type-badge-weight: 600;
+  --type-total-size: 17px;
+  --type-total-weight: 700;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -123,6 +125,7 @@
   --size-pick-meta-gap: 3px;
   --size-badge-pad-x: 8px;
   --size-badge-pad-y: 2px;
+  --size-summary-gap: 10px;
   --size-meter: 8px;
   --size-step-sm: 4px;
   --size-step-md: 6px;
