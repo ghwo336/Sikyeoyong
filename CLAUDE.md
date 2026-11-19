@@ -75,7 +75,8 @@
 | `pnpm ui:harness` | Storybook으로 UI 컴포넌트 하네스 실행 |
 | `pnpm build` | 전체 빌드 |
 | `pnpm test` | 단위·통합 테스트 |
-| `pnpm lint` / `pnpm typecheck` | 린트, 타입 검사 |
+| `pnpm lint` / `pnpm typecheck` | 린트(패키지 ESLint, 경계 회귀 테스트, prettier 검사), 타입 검사 |
+| `pnpm format` / `pnpm format:check` | prettier로 코드 정리 / 검사 (마크다운 문서는 대상 아님) |
 | `pnpm db:migrate` / `pnpm db:seed` | 마이그레이션, 목 가게 시드 |
 | `pnpm contracts:build` / `pnpm contracts:test` | `forge build` / `forge test` |
 | `pnpm contracts:deploy:testnet` | PCL 프록시로 테스트넷 배포 |

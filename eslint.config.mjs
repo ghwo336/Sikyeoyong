@@ -3,38 +3,81 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import reactHooks from 'eslint-plugin-react-hooks';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 import { builtinModules } from 'node:module';
 
-const restrict = (patterns) => ['error', { patterns }];
+const restrict = (patterns, paths = []) => ['error', { patterns, paths }];
 const NODE_BUILTINS = builtinModules.filter((m) => !m.startsWith('_'));
 const UI_AREAS = ['base', 'dragon', 'chat', 'order', 'limits', 'onboarding', 'wallet'];
-const MONEY_GLOBALS = [{ name: 'parseFloat', message: '금액은 bigint aokrw. parseFloat 금지' }];
-const API_MODULE_PATTERNS = [
-  {
-    group: [
-      '../*/*.repository',
-      '../*/*.repository.*',
-      '../*/repository',
-      '../*/repository/**',
-      '../*/*.schema',
-    ],
-    message: '다른 모듈의 저장소와 테이블은 직접 쓰지 않는다. 내보낸 service만 (architecture.md)',
-  },
+// Nest modules (architecture.md "API"). A module may reach another module only
+// through its exported service or its Nest module class.
+const API_MODULES = [
+  'auth',
+  'users',
+  'agents',
+  'payment',
+  'orders',
+  'merchants',
+  'recommend',
+  'budget',
+  'approvals',
+  'llm',
+  'chain',
+  'indexer',
+  'delivery',
+  'admin',
+  'demo',
+  'merchant-api',
 ];
+// Pairs that may not talk at all, not even through a service (code-style.md, D-06):
+// payment never sees the LLM, and the LLM never reaches payment directly.
+const API_FORBIDDEN_PAIRS = { payment: ['llm'], llm: ['payment'] };
+const MONEY_GLOBALS = [{ name: 'parseFloat', message: '금액은 bigint aokrw. parseFloat 금지' }];
 const API_DB_PATTERN = {
   group: ['**/db', '**/db/**', 'drizzle-orm', 'drizzle-orm/*', 'better-sqlite3'],
   message: '서비스와 컨트롤러는 DB를 직접 쓰지 않는다. 저장소만 (architecture.md)',
-};
-const PAYMENT_NO_LLM = {
-  group: ['../llm', '../llm/**'],
-  message: 'payment는 llm을 import하지 않는다 (code-style.md)',
 };
 const MAWS_PATTERN = {
   group: ['@modelcontextprotocol/*', '**/maws*', '**/payment/**/maws*'],
   message: 'MAWS MCP 클라이언트는 payment 모듈 안에서만 (D-06)',
 };
+
+const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Relative imports only, at any depth. gitignore-style globs cannot re-include a file under an
+// excluded folder, so these are regexes.
+function apiModulePatterns(own) {
+  return API_MODULES.filter((m) => m !== own).map((other) => {
+    const forbidden = API_FORBIDDEN_PAIRS[own]?.includes(other);
+    const name = escapeRe(other);
+    const rest = forbidden ? '(/.*)?' : `(/(?!${name}\\.(service|module)$).*)?`;
+    return {
+      regex: `^\\.{1,2}/(.*/)?${name}${rest}$`,
+      message: forbidden
+        ? `${own} 모듈은 ${other} 모듈을 import하지 않는다 (code-style.md, D-06)`
+        : `다른 모듈(${other})은 ${other}.service와 ${other}.module로만 (architecture.md)`,
+    };
+  });
+}
+
+function apiBlocks(own) {
+  const base = own ? `apps/api/src/modules/${own}/**` : 'apps/api/src/**';
+  const ignores = own ? [] : ['apps/api/src/modules/**'];
+  const patterns = [
+    ...(own ? apiModulePatterns(own) : []),
+    ...(own === 'payment' ? [] : [MAWS_PATTERN]),
+  ];
+  return [
+    { files: [`${base}/*.ts`], ignores, rules: { 'no-restricted-imports': restrict(patterns) } },
+    {
+      files: [`${base}/*.{service,controller}.ts`],
+      ignores,
+      rules: { 'no-restricted-imports': restrict([...patterns, API_DB_PATTERN]) },
+    },
+  ];
+}
 
 export default tseslint.config(
   {
@@ -73,6 +116,10 @@ export default tseslint.config(
   {
     files: ['**/*.{js,mjs,cjs}'],
     ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      globals: globals.node,
+    },
   },
   {
     files: ['**/*.tsx'],
@@ -83,34 +130,47 @@ export default tseslint.config(
   {
     files: ['packages/shared/src/**/*.ts'],
     rules: {
-      'no-restricted-imports': restrict([
+      'no-restricted-imports': restrict(
+        [
+          {
+            group: [
+              'node:*',
+              'react',
+              'react-*',
+              'next',
+              'next/*',
+              '@nestjs/*',
+              'better-sqlite3',
+              'drizzle-orm',
+              'drizzle-orm/*',
+              '@anthropic-ai/*',
+              'ethers',
+            ],
+            message: 'packages/shared는 런타임 의존 없이 순수하게 (architecture.md)',
+          },
+          {
+            group: ['viem', 'viem/*'],
+            allowTypeImports: true,
+            message: 'shared에는 viem 타입만. 클라이언트는 apps/api',
+          },
+          {
+            group: ['**/apps/**', '@sikyeoyong/ui', '@sikyeoyong/api', '@sikyeoyong/web'],
+            message: 'shared는 아무것도 import하지 않는다',
+          },
+        ],
+        NODE_BUILTINS.map((name) => ({
+          name,
+          message: 'shared에서 node 내장 모듈 금지 (architecture.md)',
+        })),
+      ),
+      'no-restricted-syntax': [
+        'error',
+        { selector: 'ImportExpression', message: 'shared에서 동적 import 금지' },
         {
-          group: [
-            ...NODE_BUILTINS,
-            'node:*',
-            'react',
-            'react-*',
-            'next',
-            'next/*',
-            '@nestjs/*',
-            'better-sqlite3',
-            'drizzle-orm',
-            'drizzle-orm/*',
-            '@anthropic-ai/*',
-            'ethers',
-          ],
-          message: 'packages/shared는 런타임 의존 없이 순수하게 (architecture.md)',
+          selector: "MemberExpression[object.name='globalThis']",
+          message: 'shared에서 globalThis 접근 금지',
         },
-        {
-          group: ['viem', 'viem/*'],
-          allowTypeImports: true,
-          message: 'shared에는 viem 타입만. 클라이언트는 apps/api',
-        },
-        {
-          group: ['**/apps/**', '@sikyeoyong/ui', '@sikyeoyong/api', '@sikyeoyong/web'],
-          message: 'shared는 아무것도 import하지 않는다',
-        },
-      ]),
+      ],
       'no-restricted-properties': [
         'error',
         { object: 'process', property: 'env', message: 'shared에서 환경변수 금지' },
@@ -148,8 +208,8 @@ export default tseslint.config(
           ? []
           : [
               {
-                group: UI_AREAS.filter((a) => !['base', 'dragon', area].includes(a)).map(
-                  (a) => `**/${a}/**`,
+                group: UI_AREAS.filter((a) => !['base', 'dragon', area].includes(a)).flatMap(
+                  (a) => [`**/${a}`, `**/${a}/**`],
                 ),
                 message: '영역 사이 import는 base와 dragon만 (architecture.md)',
               },
@@ -185,28 +245,9 @@ export default tseslint.config(
       ]),
     },
   },
-  // api: modules talk through exported services only; MAWS only inside payment; only
-  // repositories (and module wiring) touch the DB layer (D-06, D-18, architecture.md).
-  ...[
-    {
-      files: ['apps/api/src/**/*.ts'],
-      ignores: ['apps/api/src/modules/payment/**'],
-      extra: [MAWS_PATTERN],
-    },
-    { files: ['apps/api/src/modules/payment/**/*.ts'], extra: [PAYMENT_NO_LLM] },
-  ].flatMap(({ files, ignores = [], extra }) => [
-    {
-      files,
-      ignores,
-      rules: { 'no-restricted-imports': restrict([...API_MODULE_PATTERNS, ...extra]) },
-    },
-    {
-      files: files.map((f) => f.replace('**/*.ts', '**/*.{service,controller}.ts')),
-      ignores,
-      rules: {
-        'no-restricted-imports': restrict([...API_MODULE_PATTERNS, ...extra, API_DB_PATTERN]),
-      },
-    },
-  ]),
+  // api: modules talk through exported services only, at any folder depth; MAWS only inside
+  // payment; only repositories (and module wiring) touch the DB layer (D-06, D-18, architecture.md).
+  ...apiBlocks(null),
+  ...API_MODULES.flatMap((m) => apiBlocks(m)),
   prettier,
 );

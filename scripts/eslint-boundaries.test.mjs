@@ -124,10 +124,128 @@ const cases = [
     IMPORTS,
   ],
   ['apps/api/src/a.ts', 'export const a: any = 1;', '@typescript-eslint/no-explicit-any'],
+  // shared: relative imports named like node builtins are fine, builtins are not
+  [
+    'packages/shared/src/index.ts',
+    "export * from './events';\nexport * from './constants';\nexport * from './util/money';\nexport * from './config/policy';\nexport * from './domain/order';",
+    null,
+  ],
+  [
+    'packages/shared/src/a.ts',
+    "import { readFile } from 'fs/promises';\nexport const a = readFile;",
+    IMPORTS,
+  ],
+  ['packages/shared/src/a.ts', "import crypto from 'crypto';\nexport const a = crypto;", IMPORTS],
+  ['packages/shared/src/a.ts', 'export const a = process.argv;', 'no-restricted-globals'],
+  ['packages/shared/src/a.ts', "import { B } from '@sikyeoyong/ui';\nexport const a = B;", IMPORTS],
+  ['packages/shared/src/a.ts', "export const a = import('node:fs');", 'no-restricted-syntax'],
+  ['packages/shared/src/a.ts', "export const a = globalThis.fetch('/x');", 'no-restricted-syntax'],
+  // ui: area index import
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from '../../limits';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { C } from '../../chat/index';\nexport const a = C;",
+    IMPORTS,
+  ],
+  ['packages/ui/src/order/X/X.tsx', "import { Y } from '../Y/Y';\nexport const a = Y;", null],
+  // api: any folder depth
+  [
+    'apps/api/src/modules/llm/tools/place-order.tool.ts',
+    "import { R } from '../../orders/orders.repository';\nexport const a = R;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/llm/tools/place-order.tool.ts',
+    "import { S } from '../../orders/orders.service';\nexport const a = S;",
+    null,
+  ],
+  [
+    'apps/api/src/modules/orders/dto/x.ts',
+    "import { R } from '../../budget/budget.repository';\nexport const a = R;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { R } from '../../modules/budget/budget.repository';\nexport const a = R;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { B } from '../budget';\nexport const a = B;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { B } from '../budget/internal/calc';\nexport const a = B;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.module.ts',
+    "import { BudgetModule } from '../budget/budget.module';\nexport const a = BudgetModule;",
+    null,
+  ],
+  [
+    'apps/api/src/modules/orders/orders.service.ts',
+    "import { R } from './orders.repository';\nexport const a = R;",
+    null,
+  ],
+  [
+    'apps/api/src/modules/orders/sub/x.ts',
+    "import { R } from '../orders.repository';\nexport const a = R;",
+    null,
+  ],
+  [
+    'apps/api/src/modules/payment/providers/maws.provider.ts',
+    "import { L } from '../../llm/llm.service';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/llm/llm.service.ts',
+    "import { P } from '../payment/payment.service';\nexport const a = P;",
+    IMPORTS,
+  ],
+  [
+    'apps/api/src/modules/llm/llm.service.ts',
+    "import { z } from 'zod';\nimport { C } from '@nestjs/common';\nexport const a = [z, C];",
+    null,
+  ],
+  [
+    'apps/api/src/common/filters/app-error.filter.ts',
+    "import { C } from '@modelcontextprotocol/sdk/client';\nexport const a = C;",
+    IMPORTS,
+  ],
   ['apps/api/src/a.ts', "console.log('x');", 'no-console'],
 ];
 
 let failures = 0;
+
+// 1) The real config, type-aware rules on: a broken rule option or parser setup must fail here.
+try {
+  const real = new ESLint({ cwd: new URL('..', import.meta.url).pathname });
+  const [result] = await real.lintFiles(['scripts/fixtures/eslint/real-config.ts']);
+  const fired = new Set(result.messages.map((m) => m.ruleId));
+  const fatal = result.messages.filter((m) => m.fatal);
+  for (const rule of [
+    '@typescript-eslint/no-floating-promises',
+    '@typescript-eslint/no-explicit-any',
+  ]) {
+    if (fatal.length > 0 || !fired.has(rule)) {
+      failures += 1;
+      console.error(
+        `FAIL real config: ${rule} did not fire. fatal: ${fatal.map((m) => m.message).join('; ')}`,
+      );
+    }
+  }
+} catch (error) {
+  failures += 1;
+  console.error(`FAIL real config could not run: ${String(error)}`);
+}
+
+// 2) Boundaries on virtual files (parser without type info, so paths need no tsconfig).
 for (const [path, code, rule] of cases) {
   const [result] = await eslint.lintText(code, { filePath: path });
   const fired = new Set(result.messages.map((m) => m.ruleId));
@@ -148,5 +266,5 @@ for (const [path, code, rule] of cases) {
     for (const m of fatal) console.error(`  fatal: ${m.message}`);
   }
 }
-console.warn(`eslint boundaries: ${cases.length - failures}/${cases.length} ok`);
+console.warn(`eslint boundaries: ${cases.length + 2 - failures}/${cases.length + 2} ok`);
 process.exit(failures ? 1 : 0);
