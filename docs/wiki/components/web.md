@@ -37,27 +37,29 @@ children: []
 ## API 경계와 목 데이터 (2026-11-19)
 - 훅은 `lib/api`의 `api`(`ApiClient` 인터페이스)만 부른다. 지금 구현은 `lib/mock/client.ts`(브라우저 안 가짜 서버)이고, 실제 API로 갈아 끼울 때는 `lib/api/index.ts` 한 줄만 바꾼다. 목은 `lib/mock/` 한 곳에만 둔다 (`fixtures.ts`는 시안 문구와 금액, `client.ts`는 동작).
 - `lib/api/types.ts`는 임시 타입이다 (파일 맨 위 "TODO: packages/shared/src/api로 교체"). shared에 스키마가 생기면 하나씩 지우고 shared에서 import한다. `BudgetView`는 이미 shared(`zBudgetView`)를 쓴다.
-- 목 `confirmOrder`는 결제하지 않는다. 주문을 조리 중으로 바꿀 뿐이다.
+- 목 `confirmOrder`는 결제하지 않는다. 주문을 바로 `submitting`으로 두고 잠시 뒤 조리 중으로 바꿀 뿐이다. 목 `getOrder`는 confirm된 주문만 안다 (새로고침하면 서버 재시작처럼 잊는다).
 - 목 `sendChatMessage`는 SSE 대신 이벤트 배열을 한 번에 준다. 실제 스트림으로 바꿀 때 훅이 이벤트를 대화 항목으로 묶는 부분은 그대로 쓴다.
 - 서버 상태는 TanStack Query(`lib/query-provider.tsx`, 루트 layout에서 한 번). mutation은 자동 재시도하지 않는다 (절대 규칙 9).
 - 화면 문자열 도우미(`lib/format.ts`): "25분", "가게에서 어디로, 25분쯤", "오늘 오후 12:28"(기기 시간대와 상관없이 KST).
 
 ## 화면 틀
 - 화면 틀(390 기준, 가운데 정렬, 최대 480, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
+- 최대 폭 480은 토큰이 없어 날값이다 (후속: tokens.json `size`에 최대 폭을 올린다).
 - 여백이 있는 화면(Done, Tracking: 8 20 24, 사이 16)은 `.screen.padded`. 주문 현황 layout(`app/orders/[id]/layout.tsx`)이 쓴다.
 
 ## 조립 현황 (목 데이터)
 | 화면 | 경로 | 컨테이너 | 상태 |
 | --- | --- | --- | --- |
 | Main | `app/(main)/page.tsx` | `features/budget/containers/BudgetMeterContainer`, `features/chat/containers/ChatContainer` | 대화 기록, 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
-| Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). 실패 때 대화로 되돌리고 용이가 이유를 말하는 것은 아직 (`useConfirmOrder` TODO) |
-| Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 주문 상태를 4단계 중 하나로 바꿔 보인다. 배달 중(Tracking), 도착(Arrived)은 아직. 새로고침하면 목이 픽스처로 주문을 다시 만든다 |
+| Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). confirm이 실패하면 `useConfirmOrder`가 대화로 되돌린다 (`router.replace('/')`). 용이가 이유를 말하는 것은 shared `ChatEvent`의 `order_failed`가 생긴 뒤 |
+| Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 상태를 4단계로 바꾸는 규칙은 `features/orders/status.ts`(`orderStep`). 결제 전(`quoted`, `pending_approval`)과 멈춘 주문(`failed`, `cancelled`, `refunded`)은 단계로 그리지 않고 위 줄만 보인다 (실패를 접수처럼 보이지 않게). 그 상태들의 화면, 배달 중(Tracking), 도착(Arrived), 상태 다시 받기는 아직 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
 - Main 위 줄: 용이 44, 이름 18/700, "레벨 1, 한 번에 10,000원까지" 13px, 설정 버튼(…). 맡을 컴포넌트가 없다. 지금은 빠져 있다.
 - Main 예산 카드: Meter를 감싸는 흰 카드(1px `line`, 반경 16, 여백 12 14, 바깥 0 20). Meter만 있어 막대가 화면 끝에 붙는다.
 - Main 추천 카드 들여쓰기: 시안은 추천 카드가 드래곤 말 아래 같은 칸(32 + 10 들여쓰기)에 있다. DragonLine에 자식 자리가 없고 RecommendationList는 들여쓰지 않아 지금은 화면 폭 그대로다.
 - 입력칸 아래 띠: ChatInput.md는 "화면이 그린다"(여백 10 16 24)지만 웹은 스타일을 두지 않으므로 지금은 입력칸이 화면 끝에 붙는다. ui에 대화 화면 아래 띠(또는 ChatInput 안 여백)가 필요하다.
+- 시안끼리 다른 문구: 요청이 Confirm은 "깍두기 많이", Done은 "깍두기 많이, 문 앞에 두고 가 주세요"다. 목은 둘 다 "깍두기 많이"로 둔다. 어느 쪽이 맞는지 캔버스에서 정한다.
 - ChatEvent에 빠른 답장이 없다: 시안에 칩이 있어 임시 타입에 `quick_replies` 이벤트를 넣었다. shared `ChatEvent`에 추가가 필요하다.
 
 ## 하지 말 것 (MUST NOT)
@@ -73,6 +75,7 @@ children: []
 
 ## 테스트 기준
 - 페이지 테스트는 하지 않는다 (조립만 하니까). 대신 컨테이너가 훅 결과를 props로 바르게 바꾸는지 테스트한다.
+- `pnpm --filter @sikyeoyong/web test`(vitest, jsdom, 서울이 아닌 시간대). 테스트는 `features/**`, `lib/**`의 `*.test.ts(x)`. 결제 버튼은 한 번 누르면 confirm 한 번, 실패하면 대화로 되돌리고 다시 부르지 않음, 추천 고르기와 빠른 답장과 허락 필요 가게는 confirm을 부르지 않음을 지킨다.
 - E2E(Playwright): 데모 장면을 브라우저에서 재현 (`conventions/testing.md`).
 - 360px 너비에서 레이아웃이 깨지지 않는다.
 

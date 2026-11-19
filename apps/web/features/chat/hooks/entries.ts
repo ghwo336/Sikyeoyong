@@ -52,11 +52,19 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
         break;
       case 'recommendations':
         flushText();
-        entries.push({ kind: 'recommendations', id: `${messageId}-r`, items: e.items });
+        entries.push({
+          kind: 'recommendations',
+          id: `${messageId}-r${String(entries.length)}`,
+          items: e.items,
+        });
         break;
       case 'quick_replies':
         flushText();
-        entries.push({ kind: 'quick_replies', id: `${messageId}-q`, items: e.items });
+        entries.push({
+          kind: 'quick_replies',
+          id: `${messageId}-q${String(entries.length)}`,
+          items: e.items,
+        });
         break;
       case 'order_confirm':
         quote = e.quote;

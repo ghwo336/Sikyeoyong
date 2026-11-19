@@ -107,16 +107,18 @@ export const mockApi: ApiClient = {
   confirmOrder: (orderId) => {
     const rec = RECOMMENDATIONS.find((r) => orderIdOf(r.menuId) === orderId);
     if (!rec) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
+    // Like the server: submitting at once (no payment here), accepted by the store after a beat.
     const order = preparingOrder(rec, Date.now());
-    orders.set(orderId, order);
-    return later({ order });
+    orders.set(orderId, { ...order, status: 'submitting' });
+    return later(null).then(() => {
+      orders.set(orderId, order);
+      return { order };
+    });
   },
   getOrder: (orderId) => {
+    // Only a confirmed order exists. A reload loses the mock's memory, like a server restart.
     const saved = orders.get(orderId);
-    if (saved) return later({ order: saved });
-    // A reload loses memory: rebuild a preparing order from the fixtures.
-    const rec = RECOMMENDATIONS.find((r) => orderIdOf(r.menuId) === orderId);
-    if (!rec) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
-    return later({ order: preparingOrder(rec, Date.now()) });
+    if (!saved) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
+    return later({ order: saved });
   },
 };

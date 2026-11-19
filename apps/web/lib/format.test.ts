@@ -1,0 +1,26 @@
+import { describe, expect, it } from 'vitest';
+import { chatStamp, minutes, routeLine } from './format';
+
+// Written by hand: 2026-11-19 03:28 UTC is 12:28 KST on the 19th.
+const NOON_KST = Date.UTC(2026, 10, 19, 3, 28);
+
+describe('format', () => {
+  it('chatStamp says 오늘 for the same KST day, whatever the machine zone is', () => {
+    expect(chatStamp(NOON_KST, NOON_KST + 60_000)).toBe('오늘 오후 12:28');
+  });
+
+  it('chatStamp splits days at KST midnight, not UTC midnight', () => {
+    const beforeMidnightKst = Date.UTC(2026, 10, 19, 14, 59); // 23:59 KST on the 19th
+    const afterMidnightKst = Date.UTC(2026, 10, 19, 15, 1); // 00:01 KST on the 20th
+    expect(chatStamp(beforeMidnightKst, beforeMidnightKst)).toBe('오늘 오후 11:59');
+    expect(chatStamp(beforeMidnightKst, afterMidnightKst)).toBe('오후 11:59');
+  });
+
+  it('minutes and routeLine match the design words', () => {
+    expect(minutes(25)).toBe('25분');
+    expect(routeLine('마루국밥 본점', '회사(역삼동)')).toBe('마루국밥 본점에서 회사(역삼동)로');
+    expect(routeLine('마루국밥 본점', '회사(역삼동)', 25)).toBe(
+      '마루국밥 본점에서 회사(역삼동)로, 25분쯤',
+    );
+  });
+});
