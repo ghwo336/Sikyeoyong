@@ -1,0 +1,39 @@
+# deps and build
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+.turbo/
+coverage/
+storybook-static/
+*.tsbuildinfo
+
+# contracts
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+
+# env and secrets (D-03, CLAUDE.md rule 5)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# data
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# os, editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# local claude state
+.claude/settings.local.json

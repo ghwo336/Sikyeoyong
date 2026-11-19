@@ -1,0 +1,34 @@
+---
+node: leaf
+parent: _index.md
+children: []
+---
+
+# Amount
+
+`packages/ui/src/base/Amount/`
+
+## 책임
+금액 숫자를 그리고, 값이 바뀌면 자리별로 굴러가며 바뀐다.
+
+## 책임 아님
+금액 계산
+
+## props
+`value: bigint`, `size: 'display' | 'title' | 'row'`, `animate?: boolean`
+
+## 하네스 상태
+`Amount.stories.tsx`에 아래를 전부 만든다.
+- 정적
+- 값 변경 애니메이션
+- 동작 줄이기 설정
+
+## 쓰는 화면
+Confirm, Wallet, Blocked
+
+## 테스트 기준
+- formatOkrw 결과와 같은 글자
+- reduced motion이면 애니메이션 없음
+
+## 메모
+없음

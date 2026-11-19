@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시켜용 알 이름 짓기</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; gap: 22px; padding: 8px 20px 32px; overflow: hidden">
+
+<div style="display: flex; align-items: center; gap: 8px; height: 48px">
+<button aria-label="뒤로" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+<div style="flex-grow: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px" aria-label="3단계 중 2단계">
+<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+<div style="height: 4px; border-radius: 2px; background: #E3E8E2"></div>
+</div>
+</div>
+
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">알을 하나 골라<br>이름을 지어 주세요</h1>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 18px">
+<svg width="132" height="132" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><path d="M32 6 C44 6 52 24 52 39 C52 52 43 60 32 60 C21 60 12 52 12 39 C12 24 20 6 32 6 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><circle cx="24" cy="32" r="3" fill="{{picked}}"></circle><circle cx="40" cy="43" r="3.6" fill="{{picked}}"></circle><circle cx="28" cy="49" r="2" fill="{{picked}}"></circle><circle cx="41" cy="25" r="2" fill="{{picked}}"></circle><circle cx="33" cy="17" r="1.6" fill="{{picked}}"></circle></svg>
+<div style="display: flex; gap: 14px" role="radiogroup" aria-label="알 색">
+<sc-for list="{{colors}}" as="c" hint-placeholder-count="4">
+<button role="radio" aria-checked="{{c.checked}}" aria-label="{{c.label}}" onClick="{{c.pick}}" style="{{c.ring}}"><span style="display: block; width: 32px; height: 32px; border-radius: 16px; background: {{c.hex}}; border: 1.5px solid #1E2320"></span></button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="dn" style="font-size: 13px; font-weight: 600; color: #5D6660">이름</label>
+<input id="dn" value="용이" maxlength="8" style="height: 52px; box-sizing: border-box; padding: 0 16px; border: 1px solid #D5DDD3; border-radius: 14px; background: #FFFFFF; font: inherit; font-size: 17px; font-weight: 600; color: #1E2320">
+</div>
+
+<p class="num" style="margin: -12px 0 0; font-size: 14px; color: #5D6660">레벨 1로 태어나요. 한 번에 10,000원까지.</p>
+
+<div style="flex-grow: 1"></div>
+<button style="height: 56px; border: 0; border-radius: 18px; background: #2E7D4F; color: #FFFFFF; font-size: 17px; font-weight: 700">알 깨우기</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { picked: '#8FD694' }; }
+renderVals() {
+const list = [
+{ hex: '#8FD694', label: '연두' },
+{ hex: '#9AD3F0', label: '하늘' },
+{ hex: '#F7B7C8', label: '분홍' },
+{ hex: '#C9B8F2', label: '보라' }
+];
+const picked = this.state.picked;
+return {
+picked: picked,
+colors: list.map((c) => ({
+hex: c.hex,
+label: c.label + ' 알',
+checked: c.hex === picked ? 'true' : 'false',
+ring: 'width: 48px; height: 48px; border-radius: 24px; background: transparent; display: flex; align-items: center; justify-content: center; border: 2px solid ' + (c.hex === picked ? '#2E7D4F' : 'transparent'),
+pick: () => this.setState({ picked: c.hex })
+}))
+};
+}
+}
+</script>
+</body>
+</html>

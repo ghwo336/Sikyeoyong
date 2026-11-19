@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시켜용 예산 정하기</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; gap: 22px; padding: 8px 20px 32px; overflow: hidden">
+
+<div style="display: flex; align-items: center; gap: 8px; height: 48px">
+<div style="width: 34px"></div>
+<div style="flex-grow: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px" aria-label="3단계 중 3단계">
+<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+</div>
+</div>
+
+<div style="display: flex; gap: 14px; align-items: center">
+<svg width="96" height="96" viewBox="0 0 64 64" aria-hidden="true" style="flex-shrink: 0"><path d="M10 26 C4 22 4 14 8 12 C10 18 14 20 18 22 Z" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M54 26 C60 22 60 14 56 12 C54 18 50 20 46 22 Z" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M22 18 L25 8 L29 16 Z" fill="#FFD15C" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M35 16 L39 8 L42 18 Z" fill="#FFD15C" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="32" cy="30" r="16" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8"></circle><circle cx="26" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="38" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="26.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><circle cx="38.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><ellipse cx="21.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><ellipse cx="42.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><path d="M29.5 33.5 Q32 37 34.5 33.5" fill="none" stroke="#1E2320" stroke-width="1.6" stroke-linecap="round"></path><path d="M8 38 L14 33 L20 38 L26 33 L32 38 L38 33 L44 38 L50 33 L56 38 C56 52 46 60 32 60 C18 60 8 52 8 38 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+<p style="margin: 0; font-family: 'Gowun Dodum', Pretendard, sans-serif; font-size: 20px; line-height: 1.5; letter-spacing: 0">안녕하세용!<br>용이예용. 이번 달엔 얼마까지 시킬까용?</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 15px; font-weight: 600">이번 달 배달 예산</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px" role="radiogroup" aria-label="이번 달 배달 예산">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="3">
+<button role="radio" aria-checked="{{c.checked}}" onClick="{{c.pick}}" class="num" style="{{c.style}}">{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #E3E8E2; padding-top: 18px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 15px; font-weight: 600">체험용 용돈</span>
+<span class="num" style="font-size: 13px; color: #5D6660">100,000원</span>
+</div>
+<button style="height: 44px; padding: 0 18px; border: 1px solid #2E7D4F; border-radius: 22px; background: #FFFFFF; color: #2E7D4F; font-size: 15px; font-weight: 600">받기</button>
+</div>
+
+<div style="flex-grow: 1"></div>
+<button style="height: 56px; border: 0; border-radius: 18px; background: #2E7D4F; color: #FFFFFF; font-size: 17px; font-weight: 700">용이랑 시작하기</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dragon":{"editor":"color","default":"#8FD694","options":["#8FD694","#9AD3F0","#F7B7C8","#C9B8F2"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { budget: 300000 }; }
+renderVals() {
+const opts = [200000, 300000, 500000];
+const b = this.state.budget;
+return {
+dragon: this.props.dragon ?? '#8FD694',
+chips: opts.map((v) => ({
+label: (v / 10000) + '만 원',
+checked: v === b ? 'true' : 'false',
+style: 'height: 52px; border-radius: 14px; font-size: 16px; font-weight: 600; ' + (v === b ? 'border: 2px solid #2E7D4F; background: #E4F4E6; color: #1F5C3A' : 'border: 1px solid #D5DDD3; background: #FFFFFF; color: #1E2320'),
+pick: () => this.setState({ budget: v })
+}))
+};
+}
+}
+</script>
+</body>
+</html>

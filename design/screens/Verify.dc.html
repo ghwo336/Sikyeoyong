@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시켜용 본인 인증</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; gap: 24px; padding: 8px 20px 32px; overflow: hidden">
+
+<div style="display: flex; align-items: center; gap: 8px; height: 48px">
+<button aria-label="뒤로" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+<div style="flex-grow: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px" aria-label="3단계 중 1단계">
+<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+<div style="height: 4px; border-radius: 2px; background: #E3E8E2"></div>
+<div style="height: 4px; border-radius: 2px; background: #E3E8E2"></div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">주인님이 누군지<br>한 번만 확인할게요</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5D6660">실명 확인된 주인만 비서를 둘 수 있어요.</p>
+</div>
+
+<div style="flex-grow: 1"></div>
+<button style="height: 56px; border: 0; border-radius: 16px; background: #FEE500; color: #191919; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z" fill="#191919"></path></svg>카카오톡으로 본인 인증</button>
+<p style="margin: -12px 0 0; text-align: center; font-size: 12px; color: #5D6660">구글로 가입했어도 카카오톡으로 인증해요</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

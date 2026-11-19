@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시켜용 용이 용돈</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; padding: 8px 20px 24px; overflow: hidden">
+
+<div style="display: flex; align-items: center; height: 48px">
+<div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">용이 용돈</div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 16px 0 20px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 14px; color: #5D6660">주인님 용돈</span>
+<span class="num" style="font-size: 34px; font-weight: 700; letter-spacing: -0.03em">81,000원</span>
+<span class="num" style="font-size: 13px; color: #5D6660">용이 주머니에 20,000원</span>
+</div>
+<button style="height: 44px; padding: 0 18px; border: 0; border-radius: 22px; background: #2E7D4F; color: #FFFFFF; font-size: 15px; font-weight: 600">채우기</button>
+</div>
+
+<div style="height: 1px; background: #E3E8E2"></div>
+
+<div style="display: flex; flex-direction: column">
+<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">한 번에 쓸 수 있는 돈</span><span class="num" style="font-size: 15px; color: #5D6660">10,000원</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<div style="min-height: 56px; display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; font-size: 15px">30일 한도</span><span class="num" style="font-size: 15px; color: #5D6660">219,000 / 500,000원</span><span style="width: 16px"></span></div>
+<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">이번 달 예산</span><span class="num" style="font-size: 15px; color: #5D6660">300,000원</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<div style="min-height: 56px; display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; font-size: 15px">이번 달 아낀 돈</span><span class="num" style="font-size: 15px; font-weight: 600; color: #2E7D4F">32,000원</span><span style="width: 16px"></span></div>
+</div>
+
+<div style="height: 1px; background: #E3E8E2"></div>
+
+<div style="display: flex; flex-direction: column">
+<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">용이 신분증</span><span style="font-size: 15px; color: #5D6660">레벨 1</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<div style="min-height: 56px; display: flex; align-items: center; gap: 8px">
+<span id="stop" style="flex-grow: 1; font-size: 15px">용이 멈추기</span>
+<button role="switch" aria-checked="{{stopOn}}" aria-labelledby="stop" onClick="{{toggleStop}}" style="{{stopTrack}}"><span style="{{stopKnob}}"></span></button>
+</div>
+<div style="min-height: 56px; display: flex; align-items: center; gap: 8px">
+<span id="dev" style="flex-grow: 1; font-size: 15px">자세히 보기</span>
+<button role="switch" aria-checked="{{devOn}}" aria-labelledby="dev" onClick="{{toggleDev}}" style="{{devTrack}}"><span style="{{devKnob}}"></span></button>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { stop: false, dev: false }; }
+renderVals() {
+const track = (on) => 'width: 52px; height: 32px; border: 0; border-radius: 16px; padding: 3px; display: flex; justify-content: ' + (on ? 'flex-end' : 'flex-start') + '; background: ' + (on ? '#2E7D4F' : '#D5DDD3');
+const knob = 'display: block; width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF';
+return {
+stopOn: this.state.stop ? 'true' : 'false',
+devOn: this.state.dev ? 'true' : 'false',
+stopTrack: track(this.state.stop),
+devTrack: track(this.state.dev),
+stopKnob: knob,
+devKnob: knob,
+toggleStop: () => this.setState({ stop: !this.state.stop }),
+toggleDev: () => this.setState({ dev: !this.state.dev })
+};
+}
+}
+</script>
+</body>
+</html>
