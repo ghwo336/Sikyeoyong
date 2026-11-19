@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { NagStage } from '../config/policy.js';
-import { NAG_STAGES, zBudgetView, type BudgetView } from './budget.js';
+import { NAG_STAGES } from '../config/policy.js';
+import { zBudgetView, type BudgetView } from './budget.js';
 
 // tech-spec 3.2 BudgetView. Amount strings are written by hand (independent of okrwToAokrw).
 const VIEW: BudgetView = {
@@ -37,12 +37,13 @@ describe('zBudgetView', () => {
     ['ms reset time as float', { chainResetAtSec: 1.5 }],
     ['unknown option', { budgetOptions: [{ id: 'huge', amount: '1' }] }],
     ['extra field', { walletAddress: '0xabc' }],
+    ['extra field in an option', { budgetOptions: [{ id: 'small', amount: '1', extra: 1 }] }],
+    ['negative reset time', { chainResetAtSec: -1 }],
   ])('rejects %s', (_name, patch) => {
     expect(zBudgetView.safeParse({ ...VIEW, ...patch }).success).toBe(false);
   });
 
-  it('keeps nag stages in step with policy NagStage', () => {
-    const all: readonly NagStage[] = NAG_STAGES;
-    expect(all).toEqual(['none', 'warn70', 'warn90', 'over100']);
+  it.each(NAG_STAGES)('accepts every policy nag stage (%s)', (nagLevel) => {
+    expect(zBudgetView.parse({ ...VIEW, nagLevel }).nagLevel).toBe(nagLevel);
   });
 });

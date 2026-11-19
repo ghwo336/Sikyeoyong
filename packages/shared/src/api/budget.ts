@@ -1,9 +1,6 @@
 import { z } from 'zod';
-import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS } from '../config/policy.js';
+import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS, NAG_STAGES } from '../config/policy.js';
 import { zAokrwString } from '../money/money.js';
-
-/** Nag stages (tech-spec 3.7), same values as policy.ts NagStage. */
-export const NAG_STAGES = ['none', 'warn70', 'warn90', 'over100'] as const;
 
 const zAgentLevel = z.union(
   AGENT_LEVELS.map((l) => z.literal(l)) as [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>],

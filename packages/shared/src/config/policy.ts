@@ -129,7 +129,9 @@ export function floatCapAokrw(policy: PolicyConfig, level: AgentLevel, multiplie
   return cap;
 }
 
-export type NagStage = 'none' | 'warn70' | 'warn90' | 'over100';
+/** Nag stages (tech-spec 3.7). One list for the type, BudgetView and the DB CHECK. */
+export const NAG_STAGES = ['none', 'warn70', 'warn90', 'over100'] as const;
+export type NagStage = (typeof NAG_STAGES)[number];
 
 /** Which nag stage the month's spend has reached (tech-spec 3.7). Pure bigint math, no floats. */
 export function nagStage(policy: PolicyConfig, spentAokrw: bigint, budgetAokrw: bigint): NagStage {

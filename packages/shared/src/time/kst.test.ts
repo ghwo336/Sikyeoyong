@@ -15,6 +15,7 @@ describe('kstMonthOf', () => {
   it('refuses non-integer times', () => {
     expect(() => kstMonthOf(1.5)).toThrow();
     expect(() => kstMonthOf(Number.NaN)).toThrow();
+    expect(() => kstMonthOf(8.64e15 + 1)).toThrow();
   });
 });
 
@@ -36,7 +37,10 @@ describe('kstMonthRange', () => {
     expect(kstMonthOf(endMs)).toBe('2027-02');
   });
 
-  it.each(['2026-13', '2026-1', '26-12', '2026-12-01', ''])('refuses %j', (bad) => {
-    expect(() => kstMonthRange(bad)).toThrow();
-  });
+  it.each(['2026-13', '2026-1', '26-12', '2026-12-01', '', '0000-01', '0099-12', '1969-12'])(
+    'refuses %j',
+    (bad) => {
+      expect(() => kstMonthRange(bad)).toThrow();
+    },
+  );
 });
