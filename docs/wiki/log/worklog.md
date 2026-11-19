@@ -165,3 +165,21 @@ children: []
 - 막힌 것: 없음.
 - 새로 안 마루 사실: 없음.
 - 후속: BudgetPicker, TasteRating은 자기 CSS가 없어져 verify REVIEW(ui-style)가 두 건 뜬다 (의도). apps/web이 ui의 KST 함수나 levelWithRo를 쓰기 시작하면 shared에서 바로 가져오게 하고 ui 다시 내보내기를 지운다.
+
+### 2026-11-19 세션, 예산 API, 용이 대화 엔드포인트, 공유 API 스키마 (Claude, Claude Code)
+- 한 일:
+  - shared/api: 대화 이벤트(`zChatEvent`), 주문, 내 정보, 가입 zod 스키마. 웹의 임시 타입을 이것으로 바꾸고, 목 응답을 스키마로 검사. tech-spec 3.2 응답 모양을 화면 기준으로 맞춤(/me, /agents/me, /signup/config, /chat/history nextCursor).
+  - auth: 세션 발급·확인·폐기(32바이트, 해시만 저장, 30일), `SessionGuard`(sid 쿠키나 Bearer, 쿠키 쓰기는 X-Requested-With, sid 둘이면 401).
+  - `GET /api/budget`, 도구 핸들러 `get_budget`(모델에게는 표시 금액만), `get_context`(KST, 동네, static 날씨).
+  - `POST /api/chat/messages` SSE: 대화 기록 저장(마이그레이션 0002), `clientMessageId` 멱등(같은 글이면 저장된 답, 다르면 409), 최근 20턴의 말만 모델에게(지난 도구 결과는 안 넘김), 깨진 기록 줄은 건너뜀, 1분 20회 제한(429), 연결이 끊기면 모델과 도구를 멈춤.
+  - 웹 화면 조립 첫 조각(메인 대화, 확인 시트, 주문 현황, 가입)과 UI 재사용 리팩터링(공통 부품 8개, useSubmitLock, Dragon 분리)을 합침. D-18 원칙 5(재사용) 추가.
+  - README 다시 씀, 용 네 마리 썸네일(docs/assets/thumbnail.png). 소개 영상은 GitHub 업로드용으로 압축만 해 둠(사용자 Desktop).
+- 막힌 것: 없음. 호재 님 답 대기: 시안끼리 다른 요청 문구(Confirm "깍두기 많이" 대 Done의 긴 문구), 열린 질문 Q-22, Q-23, Q-26, Q-27, Q-28.
+- 새로 안 마루 사실: 없음.
+- 후속 (검증 MINOR):
+  - 사용자당 하루 LLM 토큰 예산 (tech-spec 9.5).
+  - 답 없이 남은 사용자 줄의 유효 시간(프로세스가 죽은 경우), '답이 있는 턴 20개' 기준 조회.
+  - 체인 30일 사용량의 진짜 viem 읽기(배포 주소가 생기면), 판별을 NODE_ENV에서 배포 주소 유무로.
+  - order_events의 source='chain' NOT NULL CHECK와 tx_hash 소문자, ORDER_STATUSES를 api db가 shared에서 가져오기.
+  - OAuth(카카오, 구글) 로그인 라우트: 쿠키 Path=/ 하나, 이전 sid 만료.
+- 다음 할 일: UI 부족분 브랜치 재검증과 병합, `GET /chat/history`, `GET /me`, `PATCH /me`(월 예산), `GET /signup/config`, 추천과 가게·메뉴, 주문 견적(place_order), 웹 목을 실제 API로 바꾸기.
