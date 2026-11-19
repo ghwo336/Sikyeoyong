@@ -103,6 +103,21 @@ describe('ChoiceGroup (ChoiceGroup.md 테스트 기준)', () => {
     expect(screen.getByRole('radiogroup').classList).toContain('row');
   });
 
+  it('uses only classes its stylesheet defines', () => {
+    // A class with no rule (an old "choices") silently does nothing, so none may be left.
+    const defined = new Set([...css.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
+    const src = readFileSync(resolve(__dirname, 'ChoiceGroup.tsx'), 'utf8');
+    const used = [...src.matchAll(/styles\.([a-zA-Z]\w*)/g)].map((m) => m[1]);
+    expect(used.filter((c) => !defined.has(c))).toEqual([]);
+    // The group, its title and the radiogroup (the options are Chips with their own classes).
+    const { container } = render(<ChoiceGroup {...props({ title: '맛은 어땠어요?' })} />);
+    const group = container.firstElementChild as HTMLElement;
+    const own = [group, ...Array.from(group.children)];
+    for (const el of own) {
+      for (const c of el.classList) expect(defined.has(c), c).toBe(true);
+    }
+  });
+
   // Budget.dc.html, Arrived.dc.html (columns) and Name.dc.html (row).
   it('matches the design values', () => {
     expect(rule('.group')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
