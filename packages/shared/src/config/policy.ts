@@ -63,18 +63,15 @@ export const MONTHLY_BUDGET_OPTION_IDS: readonly MonthlyBudgetOptionId[] = [
  * Words in the user's own message that open the limit-change card (D-21).
  * This is a gate against injected text in tool results, not language
  * understanding: a miss means no card, and the dragon points to the button path.
+ * No bare stems like 내리 or 올리: "비 내리는 날", "올리브" are everyday orders.
  */
 export const LIMIT_INTENT_KEYWORDS: readonly string[] = [
   '한도',
   '예산',
   '올려',
-  '올리',
   '내려',
-  '내리',
   '늘려',
-  '늘리',
   '줄여',
-  '줄이',
   '레벨',
   '만 원',
   '만원',

@@ -119,6 +119,18 @@ describe('monthly budget options (D-21, Budget.dc.html)', () => {
 });
 
 describe('hasLimitIntent (D-21 injection gate)', () => {
+  it('reads decomposed (NFD) Korean the same as composed text', () => {
+    const nfd = '5만 원까지 올려 줘'.normalize('NFD');
+    expect(nfd).not.toBe('5만 원까지 올려 줘');
+    expect(hasLimitIntent(nfd)).toBe(true);
+    expect(hasLimitIntent('예산'.normalize('NFD'))).toBe(true);
+  });
+
+  it('counts digits then 원, with or without a space', () => {
+    expect(hasLimitIntent('50000원')).toBe(true);
+    expect(hasLimitIntent('50,000 원')).toBe(true);
+  });
+
   it.each([
     '한 번에 5만 원까지 올려 줘',
     '회식 때 보쌈도 시킬 수 있게 한도 좀 늘려',
@@ -130,10 +142,17 @@ describe('hasLimitIntent (D-21 injection gate)', () => {
     expect(hasLimitIntent(text)).toBe(true);
   });
 
-  it.each(['점심 시켜 줘. 따뜻한 걸로', '돼지국밥으로', '더 싼 거 없어?', ''])(
-    'sees none in %s',
-    (text) => {
-      expect(hasLimitIntent(text)).toBe(false);
-    },
-  );
+  it.each([
+    '점심 시켜 줘. 따뜻한 걸로',
+    '돼지국밥으로',
+    '더 싼 거 없어?',
+    '비 내리는 날 국물 시켜 줘',
+    '눈 내리니까 따뜻한 거',
+    '올리브 피자',
+    '치즈 듬뿍 올리고',
+    '줄이 길어?',
+    '',
+  ])('sees none in %s', (text) => {
+    expect(hasLimitIntent(text)).toBe(false);
+  });
 });
