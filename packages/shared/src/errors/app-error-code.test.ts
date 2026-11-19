@@ -82,6 +82,11 @@ const EXPECTED: Record<AppErrorCode, { httpStatus: number; message: string; drag
       message: '이번 달 예산을 넘어요',
       dragonLine: '이번 달 예산을 넘는데 그래도 시킬까용?',
     },
+    SERVER_PRICE_CHANGED: {
+      httpStatus: 422,
+      message: '가격이 바뀌었어요',
+      dragonLine: '가게 가격이 바뀌었어용. 새 금액을 다시 확인해 주세용',
+    },
     VALIDATION_FAILED: {
       httpStatus: 400,
       message: '요청 형식이 맞지 않아요',
@@ -167,6 +172,7 @@ describe('AppErrorCode table', () => {
         'SERVER_NEW_MERCHANT',
         'SERVER_FROZEN',
         'SERVER_BUDGET_OVER',
+        'SERVER_PRICE_CHANGED',
         'VALIDATION_FAILED',
         'UNAUTHENTICATED',
         'FORBIDDEN',
@@ -200,6 +206,7 @@ describe('AppErrorCode table', () => {
       'SERVER_OVER_LEVEL',
       'SERVER_NEW_MERCHANT',
       'SERVER_BUDGET_OVER',
+      'SERVER_PRICE_CHANGED',
     ] as const) {
       expect(APP_ERRORS[code].httpStatus, code).toBe(422);
     }

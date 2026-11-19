@@ -19,6 +19,7 @@ export const APP_ERROR_CODES = [
   'SERVER_NEW_MERCHANT',
   'SERVER_FROZEN',
   'SERVER_BUDGET_OVER',
+  'SERVER_PRICE_CHANGED',
   'VALIDATION_FAILED',
   'UNAUTHENTICATED',
   'FORBIDDEN',
@@ -114,6 +115,11 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
     httpStatus: 422,
     message: '이번 달 예산을 넘어요',
     dragonLine: '이번 달 예산을 넘는데 그래도 시킬까용?',
+  },
+  SERVER_PRICE_CHANGED: {
+    httpStatus: 422,
+    message: '가격이 바뀌었어요',
+    dragonLine: '가게 가격이 바뀌었어용. 새 금액을 다시 확인해 주세용',
   },
   VALIDATION_FAILED: {
     httpStatus: 400,
