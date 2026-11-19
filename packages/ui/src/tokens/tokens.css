@@ -58,6 +58,9 @@
   --type-input-weight: 600;
   --type-bar-title-size: 17px;
   --type-bar-title-weight: 600;
+  --type-bubble-size: 15px;
+  --type-bubble-weight: 400;
+  --type-bubble-line-height: 1.5;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -102,6 +105,8 @@
   --size-sheet-handle-width: 40px;
   --size-sheet-handle-height: 5px;
   --size-sheet-top: 10px;
+  --size-bubble-max: 260px;
+  --size-bubble-pad-y: 11px;
   --size-meter: 8px;
   --size-step-sm: 4px;
   --size-step-md: 6px;

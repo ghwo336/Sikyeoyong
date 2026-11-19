@@ -1,0 +1,59 @@
+/* Main.dc.html: right side, max 260, leaf bubble with white 15px text, tail at bottom right. */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-end;
+  gap: var(--space-1);
+  max-width: var(--size-bubble-max);
+}
+
+.bubble {
+  margin: 0;
+  padding: var(--size-bubble-pad-y) var(--space-4);
+  border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail)
+    var(--radius-bubble);
+  background: var(--color-leaf);
+  color: var(--color-surface);
+  font-size: var(--type-bubble-size);
+  font-weight: var(--type-bubble-weight);
+  line-height: var(--type-bubble-line-height);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Not in the design: sending is faint until the server has it (UserBubble.md memo). */
+.wrap[data-status='sending'] .bubble {
+  opacity: 0.6;
+}
+
+.failed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--type-caption-size);
+  color: var(--color-over-ink);
+}
+
+.retry {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: var(--type-label-weight);
+  color: var(--color-leaf);
+  cursor: pointer;
+}
+
+/* Small text, 44px finger target (design-and-motion.md). */
+.retry::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--size-touch-min) - 1em) / -2) calc(var(--space-2) * -1);
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}

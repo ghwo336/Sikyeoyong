@@ -15,19 +15,23 @@ children: []
 전송
 
 ## props
-`text`, `status?: 'sending' | 'sent' | 'failed'`, `onRetry?`
+`text: string`, `status?: 'sending' | 'sent' | 'failed'` (기본 `sent`), `onRetry?: () => void`
 
 ## 하네스 상태
 `UserBubble.stories.tsx`에 아래를 전부 만든다.
-- 보냄
-- 보내는 중
-- 실패와 다시 보내기
+- 보냄 (`Sent`)
+- 보내는 중 (`Sending`)
+- 실패와 다시 보내기 (`Failed`)
 
 ## 쓰는 화면
 Main, LimitChat
 
 ## 테스트 기준
-- failed일 때만 onRetry 버튼
+- failed일 때만 "다시 보내기" 버튼, 누르면 onRetry 한 번. onRetry가 없으면 "못 보냈어요"만
+- 보내는 중은 aria-busy
+- 줄바꿈을 그대로 보인다
+- Main 시안 값 (오른쪽, 최대 260, 여백 11 16, 모서리 20 20 6 20, 잎색 바탕 흰 15px, 줄간격 1.5)
 
 ## 메모
-없음
+- 시안에는 보내는 중과 실패 모양이 없다. 보내는 중은 말풍선을 흐리게(0.6), 실패는 아래에 13px 호박 글씨 "못 보냈어요"와 잎색 "다시 보내기" (추론. 화면 조립 때 시안과 다시 맞춘다).
+- `type.bubble`(15/400, 1.5), `size.bubbleMax`(260), `size.bubblePadY`(11) 토큰을 쓴다.
