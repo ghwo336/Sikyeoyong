@@ -69,6 +69,7 @@ describe('tokens.css', () => {
     expect(css).toContain('--type-row-weight: 600;');
     expect(css).toContain('--space-8: 32px;');
     expect(css).toContain('--size-touch-min: 44px;');
+    expect(css).toContain('--type-button-sub-size: 16px;');
   });
 });
 

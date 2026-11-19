@@ -44,46 +44,36 @@ describe('Amount (Amount.md 테스트 기준)', () => {
     expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
   });
 
-  // What the eye sees is decided by each column's offset: digit d shows at -d em.
-  const columns = (root: HTMLElement) =>
-    Array.from(root.querySelectorAll<HTMLElement>('.column')).map((c) => c.style.transform);
+  // What the eye sees: the cell sitting at each column's offset (translateY(-N em) shows cell N).
+  const visible = (root: HTMLElement) =>
+    Array.from(root.querySelectorAll<HTMLElement>('.column')).map((c) => {
+      const m = /translateY\((-?\d+)em\)/.exec(c.style.transform);
+      const index = m ? -Number(m[1]) : 0;
+      return c.children[index]?.textContent ?? '?';
+    });
 
   it.each([
-    [won(45_000n), ['translateY(-4em)', 'translateY(-5em)', 'none', 'none', 'none']],
-    [
-      won(1_234_567n),
-      [
-        'translateY(-1em)',
-        'translateY(-2em)',
-        'translateY(-3em)',
-        'translateY(-4em)',
-        'translateY(-5em)',
-        'translateY(-6em)',
-        'translateY(-7em)',
-      ],
-    ],
-    [won(9_080n), ['translateY(-9em)', 'none', 'translateY(-8em)', 'none']],
+    [won(45_000n), ['4', '5', '0', '0', '0']],
+    [won(1_234_567n), ['1', '2', '3', '4', '5', '6', '7']],
+    [won(9_080n), ['9', '0', '8', '0']],
   ])('shows the right digit in every window (%s)', (value, expected) => {
     const { container } = render(<Amount value={value} size="display" animate />);
-    expect(columns(container)).toEqual(expected);
+    expect(visible(container)).toEqual(expected);
   });
 
-  it('rolls each window to the new digit when the value changes', async () => {
+  it('rolls each window to the new digit and keeps the ones column node', async () => {
     const { container, rerender } = render(<Amount value={won(9_000n)} size="title" animate />);
+    const onesBefore = container.querySelectorAll('.column')[3];
     act(() => {
       rerender(<Amount value={won(10_500n)} size="title" animate />);
     });
     expect(screen.getByText('10,500원')).toBeInTheDocument();
     expect(screen.queryByText('9,000원')).toBeNull();
+    // keyed from the right: the ones column is the same DOM node after the length changes
+    expect(container.querySelectorAll('.column')[4]).toBe(onesBefore);
     await waitFor(
       () => {
-        expect(columns(container)).toEqual([
-          'translateY(-1em)',
-          'none',
-          'translateY(-5em)',
-          'none',
-          'none',
-        ]);
+        expect(visible(container)).toEqual(['1', '0', '5', '0', '0']);
       },
       { timeout: 2000 },
     );

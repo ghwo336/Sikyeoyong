@@ -20,7 +20,7 @@ describe('useShouldReduceMotion', () => {
     ).toBe(true);
   });
 
-  it('stays false under "never"', () => {
+  it('stays false under "never" when the device setting is off', () => {
     expect(
       renderHook(() => useShouldReduceMotion(), { wrapper: withConfig('never') }).result.current,
     ).toBe(false);

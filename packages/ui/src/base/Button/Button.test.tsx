@@ -72,6 +72,9 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(css).toMatch(/\.primary\.lg\s*\{[^}]*font-size:\s*var\(--type-button-size\)/);
     expect(css).toMatch(/\.lg\s*\{[^}]*font-size:\s*var\(--type-button-sub-size\)/);
     expect(css).toMatch(/\.text\.lg\s*\{[^}]*font-size:\s*var\(--type-body-size\)/);
+    expect(css).toMatch(/\.primary\.lg\s*\{[^}]*font-weight:\s*var\(--type-button-weight\)/);
+    expect(css).toMatch(/\.lg\s*\{[^}]*font-weight:\s*var\(--type-button-sub-weight\)/);
+    expect(css).toMatch(/\.text\.lg\s*\{[^}]*font-weight:\s*var\(--type-body-weight\)/);
     // md sits next to an amount (Wallet "채우기"): content width, not full width.
     expect(css).toMatch(/\.md\s*\{[^}]*width:\s*auto/);
     expect(css).not.toMatch(/\.button\s*\{[^}]*width:\s*100%/);
