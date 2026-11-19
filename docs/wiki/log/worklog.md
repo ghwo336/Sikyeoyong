@@ -165,3 +165,20 @@ children: []
 - 막힌 것: 없음.
 - 새로 안 마루 사실: 없음.
 - 후속: BudgetPicker, TasteRating은 자기 CSS가 없어져 verify REVIEW(ui-style)가 두 건 뜬다 (의도). apps/web이 ui의 KST 함수나 levelWithRo를 쓰기 시작하면 shared에서 바로 가져오게 하고 ui 다시 내보내기를 지운다.
+
+### 2026-11-19 ui 부족분으로 Main과 가입 화면을 시안에 맞춤, 검증 후속 MINOR (Claude, Claude Code)
+- 한 일:
+  - 새 부품: base `ScreenTitle`(제목 묶음 display, title, dragon), `Hero`(그림과 글 가운데 묶음), `IconButton`(44 아이콘 버튼, TopBar 뒤로가 이걸 쓴다), chat `ChatHeader`(위 줄), `ChatLayout`(대화 화면 띠), onboarding `TrialAllowance`(체험용 용돈 줄과 받은 뒤). base `lines`(줄바꿈 도우미).
+  - props를 늘린 부품 (겉 props 그대로): DragonLine `children`과 layout `greeting`, Meter `framed`, TextField `hint`, Button variant `accent`, Icon `more`.
+  - 토큰: `size.screenMax` 480, `signupGap` 22, `hatchTop` 56 등을 tokens.json에 옮겨 적었다.
+  - 웹: Main은 ChatLayout과 DragonHeaderContainer, 추천 카드는 `threadRows`로 용이 말 아래. 가입 다섯 장은 새 부품으로 조립하고 화면 틀을 라우트별 layout으로 나눴다 (Start 0 24 32, Hatch 56 24 32 사이 28, Verify 사이 24).
+  - 검증 후속: Button 동작 줄이기 테스트, ChoiceGroup 죽은 클래스, BudgetPicker 세 개 기준 메모, D-18 보충과 verify.py ui-style이 "자기 스타일 없음" 메모를 본다, KST 주석, 목 부화 중간 PENDING, `hatchPollInterval`.
+  - 390, 360 폭 Chrome headless로 Main과 가입 다섯 장을 찍어 시안과 대조했다.
+- 판단:
+  - Name 안내 줄의 한도는 shared 정책 레벨 1 한 번에 한도(프로필과 무관)로 만든다 (`BORN_LINE`).
+  - 체험용 용돈 받은 뒤 모양("받았어요")은 시안에 없어 디자인 선택으로 적었다.
+  - 부화 GET이 실패해도 계속 묻는다 (web.md "부화 다시 받기").
+  - Verify, Name 뒤로는 `router.back()`.
+- 막힌 것: 없음.
+- 새로 안 마루 사실: 없음.
+- 다음 할 일: Start 알(금 간 알과 뿔) Egg 상태, 추천 줄 높이(시안 64, 지금 약 76), `/dragon` 페이지, LimitChat 조립 때 ChatThread 여백(16 20 12).
