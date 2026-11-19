@@ -43,11 +43,13 @@ children: []
 - 화면 문자열 도우미(`lib/format.ts`): "25분", "가게에서 어디로, 25분쯤", "오늘 오후 12:28"(기기 시간대와 상관없이 KST).
 
 ## 화면 틀
-- 화면 틀(390 기준, 가운데 정렬, 최대 480, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
-- 최대 폭 480은 토큰이 없어 날값이다 (후속: tokens.json `size`에 최대 폭을 올린다).
+- 화면 틀(390 기준, 가운데 정렬, 최대 480 `size.screenMax`, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
 - 여백이 있는 화면(Done, Tracking: 8 20 24, 사이 16)은 `.screen.padded`. 주문 현황 layout(`app/orders/[id]/layout.tsx`)이 쓴다.
-- 가입 화면은 모두 `.screen.onboarding`(여백 8 20 32, 사이 22, Name과 Budget 시안 값)이다. 마지막 블록(큰 버튼)은 맨 아래로 붙는다. `app/(onboarding)/layout.tsx`가 쓴다. 22는 간격 토큰이 없어 날값이다.
-- 시안과 다른 곳: Verify는 사이 24, Start는 여백 0 24 32(제목 묶음을 가운데), Hatch는 여백 56 24 32에 사이 28이다. 한 class로 맞춰서 지금은 조금씩 다르다. 화면별 layout이나 class로 나눌지는 ui 부족분(제목 묶음, Hatch 가운데 정렬)을 채울 때 함께 정한다.
+- 가입 화면은 `.screen.onboarding`(여백 8 20 32, 사이 22 `size.signupGap`, Name과 Budget 시안 값)이고 마지막 블록(큰 버튼, 로그인 버튼, 부화 단계 카드)은 맨 아래로 붙는다. 화면마다 여백이 달라 그룹 layout 대신 가입 라우트마다 layout이 있다 (`app/(onboarding)/<화면>/layout.tsx`):
+  - Verify `.screen.onboarding.verify`: 사이 24
+  - Start `.screen.onboarding.start`: 여백 0 24 32, 사이 0. 알과 제목 묶음(ui `Hero`)이 남은 높이 가운데
+  - Hatch `.screen.onboarding.hatch`: 여백 56 24 32(`size.hatchTop`), 사이 28. 알과 말 묶음(ui `Hero`)이 남은 높이 가운데
+- 대화 화면(Main)은 `.screen` 하나에 ui `ChatLayout`이 띠(위 줄 16 20 12, 예산 0 20, 입력칸 10 16 24)를 그린다.
 
 ## 조립 현황 (목 데이터)
 | 화면 | 경로 | 컨테이너 | 상태 |

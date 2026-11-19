@@ -28,14 +28,14 @@ body {
 
 /*
  * Screen frame: the phone-width column every screen sits in (web.md: 390 wide, centered, at most
- * 480). Layouts put it on; pages and containers never add classes. Screen-specific pieces
- * (Main header, budget card, input band) belong in packages/ui (web.md "ui에 없는 것").
+ * 480 size.screenMax). Layouts put it on; pages and containers never add classes. Screen pieces
+ * (Main header, budget card, input band) are packages/ui components (ChatLayout and friends).
  */
 .screen {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 480px;
+  max-width: var(--size-screen-max);
   height: 100dvh;
   margin: 0 auto;
   overflow: hidden;
@@ -48,13 +48,31 @@ body {
   overflow-y: auto;
 }
 
-/* Sign-up screens: 8 20 32 inside, 22 apart; the last block (the main button) sits at the bottom. */
+/* Sign-up screens (Name.dc.html, Budget.dc.html): 8 20 32 inside, 22 apart; the last block
+   (the main button) sits at the bottom. Each sign-up route layout picks its variant. */
 .screen.onboarding {
-  gap: 22px;
+  gap: var(--size-signup-gap);
   padding: var(--space-2) var(--space-5) var(--space-8);
   overflow-y: auto;
 }
 
 .screen.onboarding > :last-child {
   margin-top: auto;
+}
+
+/* Verify.dc.html: 24 between blocks. */
+.screen.onboarding.verify {
+  gap: var(--space-6);
+}
+
+/* Start.dc.html: 0 24 32 inside, no gap; the egg and title (ui Hero) fill the middle. */
+.screen.onboarding.start {
+  gap: 0;
+  padding: 0 var(--space-6) var(--space-8);
+}
+
+/* Hatch.dc.html: 56 24 32 inside, 28 between; the egg and words (ui Hero) fill the middle. */
+.screen.onboarding.hatch {
+  gap: var(--space-7);
+  padding: var(--size-hatch-top) var(--space-6) var(--space-8);
 }
