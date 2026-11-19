@@ -39,6 +39,7 @@ export * from './onboarding/EggPicker';
 export * from './onboarding/HatchProgress';
 export * from './onboarding/KakaoVerify';
 export * from './onboarding/SocialLogin';
+export * from './onboarding/TrialAllowance';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';
 export * from './order/OrderLines';

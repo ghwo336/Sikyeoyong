@@ -36,4 +36,4 @@ Budget
 - 제목과 칸 묶음, 키보드 규칙은 base `ChoiceGroup` columns이고, 이 컴포넌트는 Chip lg 금액 칸을 넘기기만 한다. 따로 CSS가 없다.
 - 금액 표시는 shared `formatOkrw` 하나로만 한다 (architecture.md, code-style.md). "만 원" 표기는 open-questions Q-23이 정한다.
 - options에 같은 값이 두 번 오지 않는다고 본다 (key가 금액).
-- 체험용 용돈 줄(Budget 시안 아래)은 이 컴포넌트가 아니라 화면이 그린다.
+- 체험용 용돈 줄(Budget 시안 아래)은 이 컴포넌트가 아니라 `TrialAllowance`가 그린다.

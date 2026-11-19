@@ -7,6 +7,7 @@ children:
   - EggPicker.md
   - HatchProgress.md
   - BudgetPicker.md
+  - TrialAllowance.md
 ---
 
 # 가입 (onboarding)
@@ -22,3 +23,4 @@ children:
 | [EggPicker](EggPicker.md) | 알 네 가지(숲, 물, 꽃, 별) 중 하나를 고르게 하고 고른 알을 그린다. |
 | [HatchProgress](HatchProgress.md) | 부화 세 단계(용돈 주머니, 신분증, 한도 새기기)의 진행을 그린다. |
 | [BudgetPicker](BudgetPicker.md) | 이번 달 예산 선택 칩 세 개를 그린다. |
+| [TrialAllowance](TrialAllowance.md) | 체험용 용돈 줄(이름, 금액, 받기 또는 받은 뒤)을 그린다. |

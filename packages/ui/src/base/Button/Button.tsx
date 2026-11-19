@@ -8,9 +8,11 @@ import styles from './Button.module.css';
 
 /**
  * primary: leaf fill. secondary: pale border. outline: ink border (Frozen "돌려받기").
+ * accent: leaf border and leaf text on white (Budget "받기").
  * text: plain secondary ink. link: leaf text, no box ("다시 보내기"). kakao: Kakao yellow.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text' | 'link' | 'kakao';
+export type ButtonVariant =
+  'primary' | 'secondary' | 'outline' | 'accent' | 'text' | 'link' | 'kakao';
 /**
  * lg: 56 full width. md: 44 pill, content width. sm: 44 touch, small text, content width.
  * choice: 52 full width (Blocked, LimitChat). tall: 64 full width, room for two lines (Blocked).

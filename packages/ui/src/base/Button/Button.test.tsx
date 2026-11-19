@@ -102,6 +102,10 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(css).toMatch(/\.md\s*\{[^}]*padding:\s*0 var\(--size-pill-pad-x\)/);
     expect(css).toMatch(/\.outline\s*\{[^}]*border:\s*1px solid var\(--color-ink\)/);
     expect(css).toMatch(/\.link\s*\{[^}]*color:\s*var\(--color-leaf\)/);
+    // Budget "받기": leaf line and leaf words on white.
+    expect(css).toMatch(/\.accent\s*\{[^}]*border:\s*1px solid var\(--color-leaf\)/);
+    expect(css).toMatch(/\.accent\s*\{[^}]*color:\s*var\(--color-leaf\)/);
+    expect(css).toMatch(/\.accent\s*\{[^}]*background:\s*var\(--color-surface\)/);
   });
 
   it.each(['sm', 'choice', 'tall'] as const)('renders the %s size class', (size) => {
@@ -113,7 +117,7 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(screen.getByRole('button').classList).toContain(size);
   });
 
-  it.each(['primary', 'secondary', 'outline', 'text', 'link', 'kakao'] as const)(
+  it.each(['primary', 'secondary', 'outline', 'accent', 'text', 'link', 'kakao'] as const)(
     'renders the %s variant class',
     (variant) => {
       render(
