@@ -17,9 +17,18 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function Controlled({ initial, error }: { initial: string; error?: string }) {
+function Controlled({ initial, error, hint }: { initial: string; error?: string; hint?: string }) {
   const [value, setValue] = useState(initial);
-  return <TextField label="이름" value={value} onChange={setValue} maxLength={8} error={error} />;
+  return (
+    <TextField
+      label="이름"
+      value={value}
+      onChange={setValue}
+      maxLength={8}
+      error={error}
+      hint={hint}
+    />
+  );
 }
 
 const noop = () => undefined;
@@ -40,4 +49,22 @@ export const Filled: Story = {
 export const Invalid: Story = {
   args: { label: '이름', value: '', onChange: noop },
   render: () => <Controlled initial="" error="이름을 지어 주세요" />,
+};
+
+/** Name.dc.html: the line under the field. */
+export const WithHint: Story = {
+  args: { label: '이름', value: '용이', onChange: noop },
+  render: () => <Controlled initial="용이" hint="레벨 1로 태어나요. 한 번에 10,000원까지." />,
+};
+
+/** An empty name with the line still there: the error comes first. */
+export const InvalidWithHint: Story = {
+  args: { label: '이름', value: '', onChange: noop },
+  render: () => (
+    <Controlled
+      initial=""
+      error="이름을 지어 주세요"
+      hint="레벨 1로 태어나요. 한 번에 10,000원까지."
+    />
+  ),
 };

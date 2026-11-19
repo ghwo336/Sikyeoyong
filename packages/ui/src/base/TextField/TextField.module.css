@@ -38,3 +38,10 @@
 .input[data-error] {
   border-color: var(--color-over);
 }
+
+/* Name.dc.html: 14px secondary line 10 under the field (6 gap and 4 more). */
+.hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
