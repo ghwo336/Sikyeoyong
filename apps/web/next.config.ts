@@ -18,6 +18,8 @@ const API_DEV_ORIGIN =
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // packages/ui ships TypeScript and CSS sources (architecture.md).
+  transpilePackages: ['@sikyeoyong/ui'],
   poweredByHeader: false,
   // next dev writes an AGENTS.md (with em dashes) when run by a coding agent; keep the tree clean.
   agentRules: false,
