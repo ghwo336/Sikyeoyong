@@ -25,3 +25,36 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
+
+/*
+ * Screen frame: the phone-width column every screen sits in (web.md: 390 wide, centered, at most
+ * 480). Layouts put it on; pages and containers never add classes. Screen-specific pieces
+ * (Main header, budget card, input band) belong in packages/ui (web.md "ui에 없는 것").
+ */
+.screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* Done.dc.html, Tracking.dc.html: 8 20 24 inside, 16 between blocks. */
+.screen.padded {
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-5) var(--space-6);
+  overflow-y: auto;
+}
+
+/* Sign-up screens: 8 20 32 inside, 22 apart; the last block (the main button) sits at the bottom. */
+.screen.onboarding {
+  gap: 22px;
+  padding: var(--space-2) var(--space-5) var(--space-8);
+  overflow-y: auto;
+}
+
+.screen.onboarding > :last-child {
+  margin-top: auto;
+}
