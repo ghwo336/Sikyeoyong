@@ -33,7 +33,7 @@ Main, Budget, Done, Tracking, Confirm, Blocked, Cap
 
 ## 테스트 기준
 - 두 줄 넘으면 말줄임 없이 그대로 (문구 쪽 문제로 본다)
-- children이 있으면 용이 옆 한 칸에 말이 먼저, children이 그 아래 (간격 12, 줄 바꿈 가능하게 min-width 0). 없으면 말이 바로 용이 옆
+- children이 있으면 용이 옆 한 칸에 말이 먼저, children이 그 아래 (간격 12, 줄 바꿈 가능하게 min-width 0). 없거나 비어 있으면(undefined, null, false, 빈 문자열: `{cond && <X />}`가 남기는 값) 말이 바로 용이 옆
 - 배치별 용이 크기와 글자 (chat 32/17, inline 56/17, sheet 44/18, center 128/19, greeting 96/20)
 
 ## 메모

@@ -113,10 +113,19 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
     expect(rule('.body')).toMatch(/min-width:\s*0/);
   });
 
-  it('keeps the words right next to the dragon when nothing is handed over', () => {
-    const { container } = render(<DragonLine text="x" layout="chat" species="forest" />);
-    expect((container.firstElementChild as HTMLElement).children[1]?.tagName).toBe('P');
-  });
+  it.each([undefined, null, false, ''])(
+    'keeps the words right next to the dragon when nothing is handed over (%j)',
+    (empty) => {
+      const { container } = render(
+        <DragonLine text="x" layout="chat" species="forest">
+          {empty}
+        </DragonLine>,
+      );
+      const root = container.firstElementChild as HTMLElement;
+      expect(root.children).toHaveLength(2);
+      expect(root.children[1]?.tagName).toBe('P');
+    },
+  );
 
   it('draws the Budget greeting at 20px, 14 from a 96px dragon', () => {
     expect(rule('.greeting')).toMatch(/align-items:\s*center/);

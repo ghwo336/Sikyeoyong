@@ -28,6 +28,11 @@ export interface DragonLineProps {
 // Budget.dc.html: 96px dragon beside 20px text.
 const AVATAR_SIZE = { chat: 32, inline: 56, sheet: 44, center: 128, greeting: 96 } as const;
 
+/** Nothing to hand over: what `{cond && <X />}` leaves behind (undefined, null, false, ''). */
+function hasContent(children: ReactNode): boolean {
+  return children !== undefined && children !== null && children !== false && children !== '';
+}
+
 /** Draws one or two lines of the dragon's voice in Gowun Dodum, with a small dragon (DragonLine.md). */
 export function DragonLine({
   text,
@@ -41,7 +46,7 @@ export function DragonLine({
   return (
     <div className={`${styles.line} ${styles[layout]}`}>
       {avatar ? <Dragon mood={mood} size={AVATAR_SIZE[layout]} species={species} /> : null}
-      {children !== undefined && children !== null ? (
+      {hasContent(children) ? (
         <div className={styles.body}>
           {words}
           {children}
