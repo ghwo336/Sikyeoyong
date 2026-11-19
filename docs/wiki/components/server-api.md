@@ -31,6 +31,7 @@ children: []
   { "error": { "code": "CHAIN_AGENT_LIMIT", "message": "사람이 읽을 문장", "dragonLine": "드래곤 대사(선택)", "detail": {} } }
   ```
   `code`는 `AppErrorCode`만 (tech-spec 3.6). 체인 revert는 `chain-and-pcl.md` 매핑으로 바꾼다. 원본은 `detail.chain`.
+  HTTP 상태, `message`, `dragonLine`은 `packages/shared`의 `APP_ERRORS[code]`에서만 가져온다(필터에서 따로 정하지 않는다). 요약: 검증 400, 로그인 401, 권한 403, 없음 404, 멱등 충돌 409, 체인·서버 규칙 거절 422, 멈춤 423, 레이트 리밋 429, 서버 설정·그 밖 500, 한도 메타데이터 미설정 503. 같은 멱등 키와 같은 내용의 재요청은 에러가 아니라 처음 응답을 그대로 돌려준다.
 - **금액**: JSON에서 aokrw 정수 문자열. 숫자 타입 금지.
 - **시간**: unix ms 정수 (체인 `resetAt`은 unix 초, 필드 이름에 단위 표시).
 - **멱등성**: 주문 `clientOrderId`, 대화 `clientMessageId`, 충전과 회수도 클라이언트 요청 ID. 체인에서는 `orderRef`.

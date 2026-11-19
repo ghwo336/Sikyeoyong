@@ -72,12 +72,12 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
   },
   CHAIN_UNAUTHORIZED: {
     httpStatus: 500,
-    message: '권한 오류',
+    message: '잠시 후 다시 시도해 주세요',
     dragonLine: '제가 할 수 없는 일이에용',
   },
   CHAIN_AGENT_PAUSED: {
     httpStatus: 423,
-    message: '용이가 멈춰 있어요',
+    message: '용이가 자고 있어요',
     dragonLine: PAUSED_LINE,
   },
   CHAIN_MERCHANT_INACTIVE: {
@@ -92,8 +92,8 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
   },
   MAWS_POLICY_REJECTED: {
     httpStatus: 422,
-    message: '용돈 규칙에 걸렸어요',
-    dragonLine: '용돈 규칙에 걸렸어용',
+    message: '용이 규칙에 걸렸어요',
+    dragonLine: '용이 규칙에 걸렸어용',
   },
   SERVER_OVER_LEVEL: {
     httpStatus: 422,
@@ -107,7 +107,7 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
   },
   SERVER_FROZEN: {
     httpStatus: 423,
-    message: '용이가 멈춰 있어요',
+    message: '용이가 자고 있어요',
     dragonLine: PAUSED_LINE,
   },
   SERVER_BUDGET_OVER: {
@@ -137,8 +137,8 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
   },
   CONFLICT: {
     httpStatus: 409,
-    message: '이미 처리된 요청이에요',
-    dragonLine: '그건 벌써 했어용',
+    message: '요청이 서로 맞지 않아요',
+    dragonLine: '앗, 요청이 꼬였어용. 처음부터 다시 해 주세용',
   },
   RATE_LIMITED: {
     httpStatus: 429,

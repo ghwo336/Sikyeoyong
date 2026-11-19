@@ -5,23 +5,151 @@ import {
   AppError,
   isAppErrorCode,
   renderDragonLine,
+  type AppErrorCode,
 } from './app-error-code.js';
 
+// Copied by hand from docs/tech-spec.md 3.6. Not derived from the code on purpose:
+// if the code and the spec drift apart, this test must fail.
+const EXPECTED: Record<AppErrorCode, { httpStatus: number; message: string; dragonLine: string }> =
+  {
+    CHAIN_AGENT_LIMIT: {
+      httpStatus: 422,
+      message: '건당 한도를 넘었어요',
+      dragonLine: '한 번에 {max}까지만 쓸 수 있어용. 주인님 허락받아 올게용!',
+    },
+    CHAIN_PERIODIC_LIMIT: {
+      httpStatus: 422,
+      message: '30일 상한에 도달했어요',
+      dragonLine: '이번 30일 배달비를 다 썼어용. {resetAt}부터 다시 시킬 수 있어용',
+    },
+    CHAIN_AGENT_LIMIT_UNSET: {
+      httpStatus: 503,
+      message: '용이 설정이 덜 끝났어요',
+      dragonLine: '앗, 제 한도가 아직 안 정해졌어용. 잠깐만용',
+    },
+    CHAIN_KYC_LIMIT: {
+      httpStatus: 422,
+      message: '본인 인증이 없어 한도가 막혔어요',
+      dragonLine: '주인님 본인 인증이 필요해용',
+    },
+    CHAIN_EAS_REQUIRED: {
+      httpStatus: 422,
+      message: '인증이 없거나 만료된 가게예요',
+      dragonLine: '이 가게는 인증이 없어서 못 시켜용',
+    },
+    CHAIN_UNAUTHORIZED: {
+      httpStatus: 500,
+      message: '잠시 후 다시 시도해 주세요',
+      dragonLine: '제가 할 수 없는 일이에용',
+    },
+    CHAIN_AGENT_PAUSED: {
+      httpStatus: 423,
+      message: '용이가 자고 있어요',
+      dragonLine: '쉬고 있을게용. 깨워 주면 다시 일할게용.',
+    },
+    CHAIN_MERCHANT_INACTIVE: {
+      httpStatus: 422,
+      message: '주문할 수 없는 가게예요',
+      dragonLine: '이 가게는 등록이 안 돼 있어용',
+    },
+    CHAIN_INSUFFICIENT_FUNDS: {
+      httpStatus: 422,
+      message: '용돈이 부족해요',
+      dragonLine: '용돈이 모자라용',
+    },
+    MAWS_POLICY_REJECTED: {
+      httpStatus: 422,
+      message: '용이 규칙에 걸렸어요',
+      dragonLine: '용이 규칙에 걸렸어용',
+    },
+    SERVER_OVER_LEVEL: {
+      httpStatus: 422,
+      message: '승인이 필요해요',
+      dragonLine: '이건 제 한도보다 비싸용. 허락해 주실래용?',
+    },
+    SERVER_NEW_MERCHANT: {
+      httpStatus: 422,
+      message: '처음 보는 가게예요',
+      dragonLine: '처음 가는 가게라 주인님 확인이 필요해용',
+    },
+    SERVER_FROZEN: {
+      httpStatus: 423,
+      message: '용이가 자고 있어요',
+      dragonLine: '쉬고 있을게용. 깨워 주면 다시 일할게용.',
+    },
+    SERVER_BUDGET_OVER: {
+      httpStatus: 422,
+      message: '이번 달 예산을 넘어요',
+      dragonLine: '이번 달 예산을 넘는데 그래도 시킬까용?',
+    },
+    VALIDATION_FAILED: {
+      httpStatus: 400,
+      message: '요청 형식이 맞지 않아요',
+      dragonLine: '앗, 무슨 말인지 잘 모르겠어용',
+    },
+    UNAUTHENTICATED: {
+      httpStatus: 401,
+      message: '다시 로그인해 주세요',
+      dragonLine: '주인님, 다시 로그인해 주세용',
+    },
+    FORBIDDEN: {
+      httpStatus: 403,
+      message: '권한이 없어요',
+      dragonLine: '제가 할 수 없는 일이에용',
+    },
+    NOT_FOUND: {
+      httpStatus: 404,
+      message: '찾을 수 없어요',
+      dragonLine: '어디 있는지 못 찾겠어용',
+    },
+    CONFLICT: {
+      httpStatus: 409,
+      message: '요청이 서로 맞지 않아요',
+      dragonLine: '앗, 요청이 꼬였어용. 처음부터 다시 해 주세용',
+    },
+    RATE_LIMITED: {
+      httpStatus: 429,
+      message: '잠시 후 다시 시도해 주세요',
+      dragonLine: '숨 좀 돌리고 올게용',
+    },
+    INTERNAL: {
+      httpStatus: 500,
+      message: '잠시 후 다시 시도해 주세요',
+      dragonLine: '앗, 뭔가 꼬였어용',
+    },
+  };
+
+// design-and-motion.md "쓰지 않는 말" column, all of it.
 const BANNED_WORDS = [
   '지갑',
+  '주소',
+  '시드',
+  'OKRW',
   '토큰',
   '트랜잭션',
-  'KYC',
-  'PCL',
-  '블록체인',
-  '가스',
   '해시',
-  'OKRW',
+  '탐색기',
+  '가스',
+  'KYC',
+  'attestation',
+  '에이전트',
+  '8004',
   '정책',
+  'PCL',
   'revert',
+  '동결',
+  '블록체인',
 ];
 
 describe('AppErrorCode table', () => {
+  it.each(APP_ERROR_CODES)('%s matches tech-spec 3.6 exactly', (code) => {
+    expect(APP_ERRORS[code]).toEqual(EXPECTED[code]);
+  });
+
+  it('spec table and code list have the same codes', () => {
+    expect(Object.keys(EXPECTED).sort()).toEqual([...APP_ERROR_CODES].sort());
+  });
+
   it('has exactly the codes from tech-spec 3.6 plus the HTTP codes', () => {
     expect([...APP_ERROR_CODES].sort()).toEqual(
       [

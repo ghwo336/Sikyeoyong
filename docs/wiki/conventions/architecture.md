@@ -97,6 +97,7 @@ apps/api/src/
 - 에러는 `AppErrorCode`로만 내보낸다. 필터 하나가 HTTP 응답 형식과 드래곤 대사를 맞춘다.
 
 ## 공유 (packages/shared)
+- ESM 전용 패키지(`dist`, NodeNext)다. 소비자는 ESM으로 import하거나 Node 22.12 이상의 `require(esm)`을 쓴다. api tsconfig는 `module: nodenext`로 컴파일한다 (CommonJS `node16`은 TS1479로 깨진다).
 - zod 스키마(`api/`), 그 스키마에서 추론한 타입, 타입 있는 API 클라이언트, 체인 설정(`config/`), 정책값(`config/policy.ts`), `AppErrorCode`, `ChatEvent`, 금액·시간 유틸.
 - 웹과 API가 같은 스키마를 쓴다. 스키마를 바꾸면 양쪽 타입 검사가 함께 깨져야 정상이다.
 

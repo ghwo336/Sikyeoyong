@@ -413,31 +413,35 @@ export interface LlmProvider {
 
 PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로 디코드한다. 제출 시점과 실행 시점 거절의 모양이 같다 (확인, [pcl-policy-enforcement](https://docs.maroo.io/concepts/compliance/pcl-policy-enforcement)). `deployPclProxy` 실패 등 일부는 `Error(string)`으로 온다. 패키지 이름과 export 경로는 (미확인) 설치해서 확인.
 
-| AppErrorCode | 원인 | 사용자 메시지 | 드래곤 대사 | 다음 행동 |
-| --- | --- | --- | --- | --- |
-| `CHAIN_AGENT_LIMIT` | `ExceededAgentTransferLimit(maxLimit, value)` | 건당 한도를 넘었어요 | "한 번에 {max}원까지만 쓸 수 있어용. 주인님 허락받아 올게용!" | 승인 요청(레벨 상향) |
-| `CHAIN_PERIODIC_LIMIT` | `ExceededPeriodicVolume(maxLimit, value, resetAt)` | 30일 상한에 도달했어요 | "이번 30일 배달비를 다 썼어용. {resetAt 날짜}부터 다시 시킬 수 있어용" | 리셋 시각 안내, 주문 불가 |
-| `CHAIN_AGENT_LIMIT_UNSET` | `AgentTransferLimitMetadataInvalid(reason)` | 용이 설정이 덜 끝났어요 | "앗, 제 한도가 아직 안 정해졌어용. 잠깐만용" | 서버가 TransferLimit 자동 재기록 후 1회 재시도, 실패 시 운영자 알림 |
-| `CHAIN_KYC_LIMIT` | 전역 KYC 한도 거절 (에러 이름 (미확인), `IPcl` 디코드 결과로 매핑) | 본인 인증이 없어 한도가 막혔어요 | "주인님 본인 인증이 필요해용" | 테스트넷 KYC 링크 |
-| `CHAIN_EAS_REQUIRED` | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | 인증이 없거나 만료된 가게예요 | "이 가게는 인증이 없어서 못 시켜용" | 다른 가게 추천 |
-| `CHAIN_UNAUTHORIZED` | `Unauthorized()` | 권한 오류 | "제가 할 수 없는 일이에용" | 로그, 운영자 알림 |
-| `CHAIN_AGENT_PAUSED` | 컨트랙트 `AgentIsPaused()` | 용이가 멈춰 있어요 | "쉬고 있을게용. 깨워 주면 다시 일할게용." | 동결 해제 안내 |
-| `CHAIN_MERCHANT_INACTIVE` | 컨트랙트 `MerchantNotActive(id)` | 주문할 수 없는 가게예요 | "이 가게는 등록이 안 돼 있어용" | 다른 가게 |
-| `CHAIN_INSUFFICIENT_FUNDS` | 잔액 부족, `INSUFFICIENT_BALANCE`(MAWS) | 용돈이 부족해요 | "용돈이 모자라용" | 충전 버튼 |
-| `MAWS_POLICY_REJECTED` | MAWS `POLICY_REJECTED` | 용돈 규칙에 걸렸어요 | "용돈 규칙에 걸렸어용" | 원인별 분기 |
-| `SERVER_OVER_LEVEL` | 서버 사전 검사 | 승인이 필요해요 | "이건 제 한도보다 비싸용. 허락해 주실래용?" | 승인 카드 |
-| `SERVER_NEW_MERCHANT` | 서버 사전 검사 | 처음 보는 가게예요 | "처음 가는 가게라 주인님 확인이 필요해용" | 승인 카드 |
-| `SERVER_FROZEN` | 서버 동결 플래그 | 용이가 멈춰 있어요 | 동결 대사 (`CHAIN_AGENT_PAUSED`와 같음) | 깨우기 안내 |
-| `SERVER_BUDGET_OVER` | 개인 예산 100% 초과 | 이번 달 예산을 넘어요 | "이번 달 예산을 넘는데 그래도 시킬까용?" | 승인 카드 |
-| `VALIDATION_FAILED` | 입력 검증 실패 (zod) | 요청 형식이 맞지 않아요 | "앗, 무슨 말인지 잘 모르겠어용" | 400 |
-| `UNAUTHENTICATED` | 세션 없음, 만료 | 다시 로그인해 주세요 | "주인님, 다시 로그인해 주세용" | 401, 로그인 화면 |
-| `FORBIDDEN` | 역할 부족 | 권한이 없어요 | "제가 할 수 없는 일이에용" | 403 |
-| `NOT_FOUND` | 없는 자원 | 찾을 수 없어요 | "어디 있는지 못 찾겠어용" | 404 |
-| `CONFLICT` | 멱등 키 재사용인데 내용이 다름, 상태 충돌 | 이미 처리된 요청이에요 | "그건 벌써 했어용" | 409 |
-| `RATE_LIMITED` | 레이트 리밋 (9.5) | 잠시 후 다시 시도해 주세요 | "숨 좀 돌리고 올게용" | 429 |
-| `INTERNAL` | 그 밖 | 잠시 후 다시 시도해 주세요 | "앗, 뭔가 꼬였어용" | 로그 |
+| AppErrorCode | 원인 | HTTP | 사용자 메시지 | 드래곤 대사 | 다음 행동 |
+| --- | --- | --- | --- | --- | --- |
+| `CHAIN_AGENT_LIMIT` | `ExceededAgentTransferLimit(maxLimit, value)` | 422 | 건당 한도를 넘었어요 | "한 번에 {max}까지만 쓸 수 있어용. 주인님 허락받아 올게용!" | 승인 요청(레벨 상향) |
+| `CHAIN_PERIODIC_LIMIT` | `ExceededPeriodicVolume(maxLimit, value, resetAt)` | 422 | 30일 상한에 도달했어요 | "이번 30일 배달비를 다 썼어용. {resetAt}부터 다시 시킬 수 있어용" | 리셋 시각 안내, 주문 불가 |
+| `CHAIN_AGENT_LIMIT_UNSET` | `AgentTransferLimitMetadataInvalid(reason)` | 503 | 용이 설정이 덜 끝났어요 | "앗, 제 한도가 아직 안 정해졌어용. 잠깐만용" | 서버가 TransferLimit 자동 재기록 후 1회 재시도, 실패 시 운영자 알림 |
+| `CHAIN_KYC_LIMIT` | 전역 KYC 한도 거절 (에러 이름 (미확인), `IPcl` 디코드 결과로 매핑) | 422 | 본인 인증이 없어 한도가 막혔어요 | "주인님 본인 인증이 필요해용" | 테스트넷 KYC 링크 |
+| `CHAIN_EAS_REQUIRED` | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | 422 | 인증이 없거나 만료된 가게예요 | "이 가게는 인증이 없어서 못 시켜용" | 다른 가게 추천 |
+| `CHAIN_UNAUTHORIZED` | `Unauthorized()` (서버 설정 문제) | 500 | 잠시 후 다시 시도해 주세요 | "제가 할 수 없는 일이에용" | 로그, 운영자 알림 |
+| `CHAIN_AGENT_PAUSED` | 컨트랙트 `AgentIsPaused()` | 423 | 용이가 자고 있어요 | "쉬고 있을게용. 깨워 주면 다시 일할게용." | 깨우기 안내 |
+| `CHAIN_MERCHANT_INACTIVE` | 컨트랙트 `MerchantNotActive(id)` | 422 | 주문할 수 없는 가게예요 | "이 가게는 등록이 안 돼 있어용" | 다른 가게 |
+| `CHAIN_INSUFFICIENT_FUNDS` | 잔액 부족, `INSUFFICIENT_BALANCE`(MAWS) | 422 | 용돈이 부족해요 | "용돈이 모자라용" | 충전 버튼 |
+| `MAWS_POLICY_REJECTED` | MAWS `POLICY_REJECTED` | 422 | 용이 규칙에 걸렸어요 | "용이 규칙에 걸렸어용" | 원인별 분기 |
+| `SERVER_OVER_LEVEL` | 서버 사전 검사 | 422 | 승인이 필요해요 | "이건 제 한도보다 비싸용. 허락해 주실래용?" | 승인 카드 |
+| `SERVER_NEW_MERCHANT` | 서버 사전 검사 | 422 | 처음 보는 가게예요 | "처음 가는 가게라 주인님 확인이 필요해용" | 승인 카드 |
+| `SERVER_FROZEN` | 서버 동결 플래그 | 423 | 용이가 자고 있어요 | "쉬고 있을게용. 깨워 주면 다시 일할게용." | 깨우기 안내 |
+| `SERVER_BUDGET_OVER` | 개인 예산 100% 초과 | 422 | 이번 달 예산을 넘어요 | "이번 달 예산을 넘는데 그래도 시킬까용?" | 승인 카드 |
+| `VALIDATION_FAILED` | 입력 검증 실패 (zod) | 400 | 요청 형식이 맞지 않아요 | "앗, 무슨 말인지 잘 모르겠어용" | 입력 다시 받기 |
+| `UNAUTHENTICATED` | 세션 없음, 만료 | 401 | 다시 로그인해 주세요 | "주인님, 다시 로그인해 주세용" | 로그인 화면 |
+| `FORBIDDEN` | 역할 부족 | 403 | 권한이 없어요 | "제가 할 수 없는 일이에용" | 없음 |
+| `NOT_FOUND` | 없는 자원 | 404 | 찾을 수 없어요 | "어디 있는지 못 찾겠어용" | 없음 |
+| `CONFLICT` | 같은 멱등 키에 다른 내용, 상태 충돌 (아무것도 처리되지 않음) | 409 | 요청이 서로 맞지 않아요 | "앗, 요청이 꼬였어용. 처음부터 다시 해 주세용" | 새로 시작. 같은 키와 같은 내용은 409가 아니라 처음 응답을 그대로 돌려준다 (server-api.md) |
+| `RATE_LIMITED` | 레이트 리밋 (9.5) | 429 | 잠시 후 다시 시도해 주세요 | "숨 좀 돌리고 올게용" | 잠시 뒤 |
+| `INTERNAL` | 그 밖 | 500 | 잠시 후 다시 시도해 주세요 | "앗, 뭔가 꼬였어용" | 로그 |
 
-HTTP 상태와 문구의 원본은 `packages/shared/src/errors/app-error-code.ts`의 표 하나다 (2026-11-19 구현 중 정함). 체인과 서버 규칙 거절은 422, 멈춤(동결)은 423, 한도 메타데이터 미설정은 503, `CHAIN_UNAUTHORIZED`는 서버 설정 문제라 500. 위 표의 사용자 메시지와 대사는 D-17 화면 문구 규칙(지갑, 동결 같은 말 대신 용돈, 멈춤)에 맞춰 같은 날 고쳤다. 표의 VALIDATION_FAILED부터 RATE_LIMITED까지 6개 코드는 server-api.md의 "모든 에러는 AppErrorCode" 규칙을 지키려고 추가했다.
+- 원본은 `packages/shared/src/errors/app-error-code.ts`의 표 하나이고, 이 표와 글자 하나까지 같아야 한다 (테스트가 이 표를 따로 옮겨 적어 대조한다). 2026-11-19 구현 중 HTTP 열과 아래 6개 코드를 정했다.
+- HTTP: 체인과 서버 규칙 거절은 422, 멈춤(동결)은 423, 한도 메타데이터 미설정은 503, `CHAIN_UNAUTHORIZED`는 서버 설정 문제라 500.
+- `VALIDATION_FAILED`부터 `RATE_LIMITED`까지 6개는 server-api.md의 "모든 에러는 AppErrorCode" 규칙을 지키려고 추가했다.
+- 사용자 메시지와 대사는 D-17 화면 문구 표(design-and-motion.md)를 따른다: 정책은 "용이 규칙", 멈춤 화면 제목은 시안 Frozen의 "용이가 자고 있어요".
+- 대사의 `{max}`, `{resetAt}`에는 이미 표시용으로 바꾼 문자열을 넣는다 (`formatOkrw` 결과처럼 "원"까지 붙은 금액, KST 날짜). 빈 자리표시가 남으면 `renderDragonLine`이 에러를 낸다.
 
 `resetAt`은 unix 초. 표시는 KST로 변환(`Asia/Seoul`).
 

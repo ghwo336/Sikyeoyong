@@ -40,7 +40,7 @@ children: []
 
 토큰 이름은 `"atokrw"` (테스트넷 denom, 설정값 `OKRW_DENOM`). 실제 등록된 템플릿은 적용 전에 `IPcl.policyTemplate(templateId)`로 확인한다. 제거된 `OKRW_EAS_*` 템플릿은 쓰지 않는다 (`UnknownPolicyType`). 정책 인코딩은 tech-spec "5.6 붙일 정책"의 예시를 따르되 PolicySet, LogicalPolicy의 Solidity 타입과 enum 값은 `IPcl.sol` ABI에서 가져온다 (미확인, Q-13).
 
-## revert 매핑 (tech-spec 3.6과 같은 코드)
+## revert 매핑 (tech-spec 3.6과 같은 코드. 문구와 HTTP 상태의 원본은 `packages/shared` `APP_ERRORS`)
 | revert | AppErrorCode | 사용자에게 |
 | --- | --- | --- |
 | `ExceededAgentTransferLimit(maxLimit, value)` | `CHAIN_AGENT_LIMIT` | 건당 한도 초과, 승인 요청(레벨 상향) |
@@ -48,11 +48,11 @@ children: []
 | `AgentTransferLimitMetadataInvalid(reason)` | `CHAIN_AGENT_LIMIT_UNSET` | 설정 미완료. 서버가 TransferLimit 재기록 후 1회 재시도, 실패 시 운영자 알림 |
 | 전역 KYC 한도 거절 (에러 이름 미확인) | `CHAIN_KYC_LIMIT` | 소유자 KYC 필요 |
 | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | `CHAIN_EAS_REQUIRED` | 가게 KYB 없음 또는 만료 |
-| `Unauthorized()` | `CHAIN_UNAUTHORIZED` | 권한 오류, 운영자 알림 |
-| 컨트랙트 `AgentIsPaused()` | `CHAIN_AGENT_PAUSED` | 동결 상태 |
+| `Unauthorized()` | `CHAIN_UNAUTHORIZED` | 잠시 후 다시 시도 (서버 설정 문제), 운영자 알림 |
+| 컨트랙트 `AgentIsPaused()` | `CHAIN_AGENT_PAUSED` | 용이가 자고 있어요 |
 | 컨트랙트 `MerchantNotActive(id)` | `CHAIN_MERCHANT_INACTIVE` | 주문할 수 없는 가게 |
 | 잔액 부족, MAWS `INSUFFICIENT_BALANCE` | `CHAIN_INSUFFICIENT_FUNDS` | 용돈(float) 부족 |
-| MAWS `POLICY_REJECTED` | `MAWS_POLICY_REJECTED` | 지갑 규칙 |
+| MAWS `POLICY_REJECTED` | `MAWS_POLICY_REJECTED` | 용이 규칙에 걸렸어요 |
 | 그 밖 | `INTERNAL` | 원본은 `error.detail.chain`에 |
 
 정확한 revert 이름은 테스트넷에서 확인 후 이 표와 tech-spec 3.6을 함께 고친다.
