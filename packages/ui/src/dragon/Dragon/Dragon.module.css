@@ -59,8 +59,15 @@
   stroke-width: 1.5;
 }
 
-.yolkFlat {
-  fill: var(--color-yolk);
+.accentHorn {
+  fill: var(--dragon-accent);
+  stroke: var(--color-ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.accentFlat {
+  fill: var(--dragon-accent);
 }
 
 .shell {
