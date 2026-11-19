@@ -38,3 +38,8 @@ export const Chat: Story = {
 
 /** 아바타 없음 */
 export const NoAvatar: Story = { args: { avatar: false, text: '천천히 먹어용' } };
+
+/** Confirm.dc.html: 시트 위 44px 용이와 18px 말 */
+export const Sheet: Story = {
+  args: { layout: 'sheet', text: '돼지국밥 시킬게용.\n이대로 괜찮아용?' },
+};

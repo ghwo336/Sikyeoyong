@@ -17,6 +17,13 @@
   gap: var(--space-3);
 }
 
+/* Confirm.dc.html: like inline, with a 44px dragon and 18px text at 1.5. */
+.sheet {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 /* Cap.dc.html, Blocked.dc.html: column, centered, 16px gap. */
 .center {
   flex-direction: column;
@@ -44,6 +51,12 @@
 .inline .text {
   font-size: var(--type-dragon-size);
   line-height: var(--type-dragon-line-height);
+}
+
+.sheet .text {
+  font-size: var(--type-dragon-sheet-size);
+  line-height: var(--type-dragon-sheet-line-height);
+  letter-spacing: var(--type-dragon-sheet-letter-spacing);
 }
 
 .center .text {

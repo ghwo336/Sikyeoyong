@@ -2,7 +2,7 @@ import type { DragonSpecies } from '@sikyeoyong/shared';
 import { Dragon, type DragonMood } from '../Dragon';
 import styles from './DragonLine.module.css';
 
-export type DragonLineLayout = 'chat' | 'inline' | 'center';
+export type DragonLineLayout = 'chat' | 'inline' | 'sheet' | 'center';
 
 export interface DragonLineProps {
   /** What the dragon says. A newline starts a second line. Never truncated (DragonLine.md). */
@@ -16,8 +16,9 @@ export interface DragonLineProps {
 }
 
 // Main.dc.html: 32px dragon, text starts at its top. Done.dc.html: 56px dragon beside 17px text.
+// Confirm.dc.html: 44px dragon beside 18px text in a sheet.
 // Cap.dc.html, Blocked.dc.html: 128px dragon above 19px text.
-const AVATAR_SIZE = { chat: 32, inline: 56, center: 128 } as const;
+const AVATAR_SIZE = { chat: 32, inline: 56, sheet: 44, center: 128 } as const;
 
 /** Draws one or two lines of the dragon's voice in Gowun Dodum, with a small dragon (DragonLine.md). */
 export function DragonLine({

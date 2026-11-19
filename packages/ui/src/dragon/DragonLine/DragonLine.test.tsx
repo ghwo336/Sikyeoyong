@@ -47,6 +47,7 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
   it.each([
     ['chat', '32'],
     ['inline', '56'],
+    ['sheet', '44'],
     ['center', '128'],
   ] as const)('%s layout draws a %spx dragon of the given species and mood', (layout, size) => {
     const { container } = render(
@@ -79,6 +80,11 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
     expect(rule('.inline')).toMatch(/gap:\s*var\(--space-3\)/);
     expect(rule('.inline .text')).toMatch(/font-size:\s*var\(--type-dragon-size\)/);
     expect(rule('.inline .text')).toMatch(/line-height:\s*var\(--type-dragon-line-height\)/);
+    // Confirm: centered, 12px gap, 18px at 1.5
+    expect(rule('.sheet')).toMatch(/align-items:\s*center/);
+    expect(rule('.sheet')).toMatch(/gap:\s*var\(--space-3\)/);
+    expect(rule('.sheet .text')).toMatch(/font-size:\s*var\(--type-dragon-sheet-size\)/);
+    expect(rule('.sheet .text')).toMatch(/line-height:\s*var\(--type-dragon-sheet-line-height\)/);
     // Cap, Blocked: column, centered text, 16px gap, 19px
     expect(rule('.center')).toMatch(/flex-direction:\s*column/);
     expect(rule('.center')).toMatch(/text-align:\s*center/);
@@ -86,6 +92,17 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
     expect(rule('.center .text')).toMatch(/font-size:\s*var\(--type-dragon-large-size\)/);
     expect(rule('.center .text')).toMatch(
       /letter-spacing:\s*var\(--type-dragon-large-letter-spacing\)/,
+    );
+  });
+
+  it('draws the sheet dragon at size.dragonSheet from tokens.json', () => {
+    const tokens = JSON.parse(
+      readFileSync(resolve(__dirname, '../../../../../design/tokens.json'), 'utf8'),
+    ) as { size: { dragonSheet: number } };
+    const { container } = render(<DragonLine text="x" layout="sheet" species="forest" />);
+    expect(container.querySelector('svg')).toHaveAttribute(
+      'width',
+      String(tokens.size.dragonSheet),
     );
   });
 });
