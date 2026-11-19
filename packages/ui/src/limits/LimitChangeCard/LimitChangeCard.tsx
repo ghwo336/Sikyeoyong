@@ -4,6 +4,7 @@ import { formatOkrw, levelWithRo } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
 import { useSubmitLock } from '../../base/useSubmitLock';
 import styles from './LimitChangeCard.module.css';
+import { Icon } from '../../base/Icon';
 
 export type LimitField = 'perOrder' | 'monthlyBudget';
 export type LimitChangeStatus = 'idle' | 'confirming' | 'failed';
@@ -36,23 +37,6 @@ const FIELD_LABEL: Record<LimitField, string> = {
   monthlyBudget: '이번 달 배달 예산',
 };
 
-function FaceIdIcon() {
-  return (
-    <svg
-      className={styles.faceId}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
-      <path d="M9 10v1M15 10v1M12 10v4h-1M9.5 16.5c1.4 1 3.6 1 5 0" />
-    </svg>
-  );
-}
-
 /** Shows a limit change asked for in words, before and after, with a confirm button. */
 export function LimitChangeCard({
   field,
@@ -78,19 +62,7 @@ export function LimitChangeCard({
         <span className={styles.field}>{FIELD_LABEL[field]}</span>
         <span className={styles.amounts}>
           <s className={styles.from}>{formatOkrw(from)}</s>
-          <svg
-            className={styles.arrow}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 12h14" />
-            <path d="M13 6l6 6-6 6" />
-          </svg>
+          <Icon name="arrow-right" className={styles.arrow} />
           <span className={styles.srOnly}>에서</span>
           <b className={styles.to}>{formatOkrw(to)}</b>
           <span className={styles.srOnly}>으로</span>
@@ -120,7 +92,7 @@ export function LimitChangeCard({
           variant="primary"
           size="choice"
           loading={confirming}
-          icon={needsReauth ? <FaceIdIcon /> : undefined}
+          icon={needsReauth ? <Icon name="face-id" className={styles.faceId} /> : undefined}
           onPress={confirm}
         >
           {needsReauth ? 'Face ID로 확인하고 바꾸기' : '바꾸기'}

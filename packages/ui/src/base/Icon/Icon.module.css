@@ -1,0 +1,5 @@
+/* Icons never shrink in a row of text and buttons. Size and color are the caller's class
+   (size.rowIcon, size.backIcon, size.sendIcon and so on in tokens.json). */
+.glyph {
+  flex-shrink: 0;
+}

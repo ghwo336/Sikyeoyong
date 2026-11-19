@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import styles from './TopBar.module.css';
+import { Icon } from '../Icon';
 
 export interface TopBarProps {
   /** Screen title next to the back button (Receipt "주문 상세", IdCard "용이 신분증"). */
@@ -22,20 +23,7 @@ export function TopBar({ title, onBack, backLabel = '뒤로', trailing }: TopBar
     <div className={styles.bar}>
       {onBack ? (
         <button type="button" className={styles.back} aria-label={backLabel} onClick={onBack}>
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            className={styles.icon}
-          >
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
+          <Icon name="back" className={styles.icon} />
         </button>
       ) : hasTrailing ? (
         // Budget.dc.html keeps the bar aligned with a 34px spacer when there is no way back.

@@ -35,6 +35,7 @@ Verify, Name, Budget, Done, Receipt, IdCard, Frozen
 - 시안 값 (막대 48, 버튼 44를 왼쪽으로 10 당김, 화살표 22 선 2, 제목 17/600, trailing 앞 간격 8)
 
 ## 메모
+- 뒤로 화살표는 base `Icon` `back`이다. 크기 22는 이 컴포넌트 CSS(`size.backIcon`)가 정한다.
 - `type.barTitle`(17/600), `size.topBar`(48), `size.backIcon`(22) 토큰을 쓴다.
 - 왼쪽 10px 당김과 34px 빈 칸은 화살표를 화면 여백 20에 맞추는 시안 보정이라 리터럴로 둔다.
 - Wallet의 "용이 용돈"(20/700, 뒤로 없음)은 화면 제목이라 TopBar가 아니라 그 화면이 그린다.

@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import styles from './ReceiptDetails.module.css';
+import { Icon } from '../../base/Icon';
 
 export interface ReceiptDetailsProps {
   /** Payment record number (transaction hash), shown shortened. */
@@ -53,19 +54,7 @@ export function ReceiptDetails({
         }}
       >
         자세히 보기
-        <svg
-          className={styles.chevron}
-          data-open={open || undefined}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <Icon name="chevron-down" className={styles.chevron} data-open={open || undefined} />
       </button>
       {open ? (
         <div id={panelId} className={styles.panel}>

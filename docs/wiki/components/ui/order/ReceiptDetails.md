@@ -36,6 +36,7 @@ Receipt
 - Receipt 시안 값 (카드 `line` 반경 20, 토글 52 15/600, 화살표 18, 펼침 13px, 규칙 12px 고정폭 줄간격 1.7 `inkCode`)
 
 ## 메모
+- 펼침 화살표는 base `Icon` `chevron-down`에 `data-open`을 넘겨 이 컴포넌트 CSS가 돌린다.
 블록체인 말은 이 컴포넌트 안에서만 쓴다 (design-and-motion).
 - 화살표는 펼치면 180도 돈다. 동작 줄이기면 돌지 않고 바로 바뀐다.
 - `color.inkCode`, `type.code`, `size.detailsToggle`, `size.detailsIcon` 토큰을 쓴다.

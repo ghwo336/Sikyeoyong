@@ -33,6 +33,7 @@ Start
 - Start 시안 값 (버튼 사이 10 `size.socialGap`, 약관 위 6 `size.termsTop`, 약관 12px `ink-secondary` 가운데, 로고 20과 18)
 
 ## 메모
+- 카카오 마크는 base `Icon` `kakao`를 이 컴포넌트 CSS(`kakaoMark`, 크기와 `kakao-ink` 채움)로 그린다. 구글 G는 브랜드 네 색이라 Icon(한 가지 색)이 아니고 여기서 직접 그린다.
 - 버튼은 base `Button` kakao, secondary다. 시안 반경 16은 Button.md 결정대로 18로 통일된다.
 - 카카오 말풍선 로고 `KakaoMark`를 내보내 KakaoVerify가 같이 쓴다.
 - 구글 버튼 문구와 테두리가 구글 브랜드 가이드와 맞는지는 (미확인). 시안대로 그렸다.

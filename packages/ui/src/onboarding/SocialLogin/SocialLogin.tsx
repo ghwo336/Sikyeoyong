@@ -1,4 +1,5 @@
 import { Button } from '../../base/Button';
+import { Icon } from '../../base/Icon';
 import styles from './SocialLogin.module.css';
 
 export type SocialProvider = 'kakao' | 'google';
@@ -15,11 +16,7 @@ export interface SocialLoginProps {
 
 /** Kakao's speech-bubble mark and colors as drawn in Start.dc.html (brand guide match unconfirmed). */
 export function KakaoMark() {
-  return (
-    <svg className={styles.kakaoMark} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z" />
-    </svg>
-  );
+  return <Icon name="kakao" className={styles.kakaoMark} />;
 }
 
 /** Google's four-color G, as in Start.dc.html. */
