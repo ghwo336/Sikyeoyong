@@ -133,6 +133,15 @@ describe('ensurePayoutKeys', () => {
   it.each([
     ['truncated JSON', (k: string) => `{"a":{"privateKey":"${k}`],
     ['wrong shape', (k: string) => JSON.stringify({ a: { privateKey: k.toUpperCase() } })],
+    // An unexpected token makes JSON.parse quote the source around it (the leak case).
+    [
+      'single quotes',
+      (k: string) => JSON.stringify({ a: { privateKey: k } }).replace(':"0x', ":'0x"),
+    ],
+    [
+      'stray token inside the key',
+      (k: string) => JSON.stringify({ a: { privateKey: k } }).replace(k.slice(20, 21), '"#'),
+    ],
   ])('never puts key material in the error for a broken key file (%s)', (_name, broken) => {
     const file = join(tempDir(), 'k.json');
     ensurePayoutKeys(file, ['a']);
@@ -147,8 +156,14 @@ describe('ensurePayoutKeys', () => {
       caught = e;
     }
     expect(caught).toBeInstanceOf(AppError);
-    const text = `${String(caught)} ${JSON.stringify((caught as AppError).detail)} ${String((caught as AppError).cause)}`;
-    expect(text.toLowerCase()).not.toContain(key.slice(2, 22).toLowerCase());
+    const text =
+      `${String(caught)} ${(caught as Error).message} ${JSON.stringify((caught as AppError).detail)} ${String((caught as AppError).cause)}`.toLowerCase();
+    // No 6-character window of the key may appear anywhere in the error.
+    const hex = key.slice(2).toLowerCase();
+    const leaked = Array.from({ length: hex.length - 5 }, (_, i) => hex.slice(i, i + 6)).filter(
+      (w) => text.includes(w),
+    );
+    expect(leaked).toEqual([]);
   });
 
   it('leaves no temp file behind', () => {
@@ -198,14 +213,20 @@ describe('seedMerchants', () => {
   });
 
   it('gives ids that sort in insert order within one run', () => {
-    const { db } = freshDb();
+    const { db, sqlite } = freshDb();
     seedMerchants(db, seed, payouts(seed), 'http://x', 5_000);
-    const ids = db
-      .select({ id: merchants.id })
-      .from(merchants)
-      .all()
-      .map((r) => r.id);
-    expect([...ids].sort()).toEqual(ids);
+    // Read in physical insert order (rowid), independent of any index on id.
+    const rows = sqlite.prepare('select id, name from merchants order by rowid').all() as {
+      id: string;
+      name: string;
+    }[];
+    expect(rows.map((r) => r.name)).toEqual(seed.merchants.map((m) => m.name));
+    const ids = rows.map((r) => r.id);
+    expect(ids).toEqual([...ids].sort());
+    const menuIds = (
+      sqlite.prepare('select id from menus order by rowid').all() as { id: string }[]
+    ).map((r) => r.id);
+    expect(menuIds).toEqual([...menuIds].sort());
   });
 
   it('is idempotent: a second run skips every merchant and adds no menus', () => {

@@ -52,18 +52,19 @@ export function parseSeed(json: unknown): SeedFile {
 const KeyFile = z.record(Key, z.object({ privateKey: z.string().regex(/^0x[0-9a-f]{64}$/) }));
 
 /**
- * One testnet payout key per merchant (tech-spec 7.1 step 1), kept in seed/.keys (gitignored,
- * mode 600). Missing keys are created; existing ones are reused so addresses stay stable.
- * Returns addresses only. Keys are never printed.
- */
-/**
  * Reads the key file without ever letting key material reach an error message:
  * a JSON SyntaxError quotes the broken line, so the original error and cause are dropped.
  */
 function readKeyFile(path: string): z.infer<typeof KeyFile> {
+  let raw: string;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch {
+    throw new AppError('INTERNAL', { reason: 'payout key file cannot be read', path });
+  }
   let json: unknown;
   try {
-    json = JSON.parse(readFileSync(path, 'utf8'));
+    json = JSON.parse(raw);
   } catch {
     throw new AppError('INTERNAL', { reason: 'payout key file is not valid JSON', path });
   }
@@ -74,6 +75,11 @@ function readKeyFile(path: string): z.infer<typeof KeyFile> {
   return parsed.data;
 }
 
+/**
+ * One testnet payout key per merchant (tech-spec 7.1 step 1), kept in seed/.keys (gitignored,
+ * mode 600). Missing keys are created; existing ones are reused so addresses stay stable.
+ * Returns addresses only. Keys are never printed.
+ */
 export function ensurePayoutKeys(
   keyFilePath: string,
   merchantKeys: readonly string[],
