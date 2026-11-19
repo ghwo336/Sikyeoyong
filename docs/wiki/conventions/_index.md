@@ -9,6 +9,7 @@ children:
   - design-and-motion.md
   - architecture.md
   - wiki-gc.md
+  - dev-loop.md
 ---
 
 # 공통 관례
@@ -22,3 +23,4 @@ children:
 | [architecture.md](architecture.md) | 구조와 단일 책임. 페이지는 조립만, 컴포넌트 폴더(본체, 하네스, 테스트), Nest 모듈 규칙, 의존 방향 |
 | [wiki-gc.md](wiki-gc.md) | 위키 가비지 컬렉션. wiki-gardener 에이전트가 낡은 용어, 없는 경로, 닫힌 질문을 정리하는 규칙 |
 | [design-and-motion.md](design-and-motion.md) | 화면 기준은 `design/`. 블록체인 말 금지 표, AI 슬롭 금지, 토큰, 토스 수준 움직임과 성능 |
+| [dev-loop.md](dev-loop.md) | 커밋 하나, 검증 하나 루프. 기계 게이트(scripts/verify.py)와 commit-verifier 에이전트, 수정 커밋, 3라운드 후 사람에게 |

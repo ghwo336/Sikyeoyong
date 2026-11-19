@@ -49,7 +49,8 @@ docs/wiki/README.md                 ← ROOT (여기서 시작)
 │   ├── writing.md                  문서 문체
 │   ├── design-and-motion.md        화면 문구, 슬롭 금지, 움직임, 성능
 │   ├── architecture.md             구조와 단일 책임, 페이지 조립, 하네스, Nest 모듈
-│   └── wiki-gc.md                  위키 정리 규칙 (wiki-gardener 에이전트)
+│   ├── wiki-gc.md                  위키 정리 규칙 (wiki-gardener 에이전트)
+│   └── dev-loop.md                 커밋마다 검증 루프 (verify.py, commit-verifier)
 ├── maroo/_index.md                 마루 지식
 │   ├── facts.md                    핵심 사실 요약 (원본은 _research)
 │   └── devrel-feedback.md          마루 문서·도구 문제 기록
