@@ -44,6 +44,9 @@ describe('Meter (Meter.md 테스트 기준)', () => {
     expect(fillBasisPoints(0n, 0n)).toBe(0);
     expect(fillBasisPoints(1n, 0n)).toBe(10_000);
     expect(fillBasisPoints(-5n, BUDGET)).toBe(0);
+    expect(fillBasisPoints(-BUDGET, BUDGET)).toBe(0);
+    expect(fillBasisPoints(5n, -1n)).toBe(10_000);
+    expect(fillBasisPoints(-1n, -1n)).toBe(0);
   });
 
   it('shows the numbers with formatOkrw: value without 원, then / max with 원', () => {
