@@ -1,6 +1,6 @@
 import { AppError } from '../errors/index.js';
 
-/** Korea has no daylight saving time, so KST is always UTC+9. */
+/** Korea has had no daylight saving time since 1988, so KST is UTC+9 for every date this app sees. */
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 /** Years before 1970 never occur here, and Date.UTC maps 0000-0099 to 19xx. */
