@@ -32,9 +32,9 @@ describe('UserBubble (UserBubble.md 테스트 기준)', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows the text as typed, line breaks kept', () => {
-    render(<UserBubble text={'첫 줄\n둘째 줄'} />);
-    expect(screen.getByText(/첫 줄/).textContent).toBe('첫 줄\n둘째 줄');
+  it('shows the text as typed, line breaks and spaces kept', () => {
+    const { container } = render(<UserBubble text={'  첫 줄\n둘째 줄 '} />);
+    expect(container.querySelector('p')?.textContent).toBe('  첫 줄\n둘째 줄 ');
     expect(rule('.bubble')).toMatch(/white-space:\s*pre-wrap/);
   });
 
@@ -43,9 +43,11 @@ describe('UserBubble (UserBubble.md 테스트 기준)', () => {
     const wrap = container.firstElementChild;
     expect(wrap).toHaveAttribute('aria-busy', 'true');
     expect(wrap).toHaveAttribute('data-status', 'sending');
+    expect(screen.getByText('보내는 중')).toBeInTheDocument();
     rerender(<UserBubble text={text} />);
     expect(container.firstElementChild).not.toHaveAttribute('aria-busy');
     expect(container.firstElementChild).toHaveAttribute('data-status', 'sent');
+    expect(screen.queryByText('보내는 중')).toBeNull();
   });
 
   // Main.dc.html line 42.
@@ -61,12 +63,13 @@ describe('UserBubble (UserBubble.md 테스트 기준)', () => {
     expect(b).toMatch(/color:\s*var\(--color-surface\)/);
     expect(b).toMatch(/font-size:\s*var\(--type-bubble-size\)/);
     expect(b).toMatch(/line-height:\s*var\(--type-bubble-line-height\)/);
-    expect(rule(".wrap[data-status='sending'] .bubble")).toMatch(/opacity:\s*0\.6/);
+    expect(css).not.toMatch(/opacity/);
+    expect(b).toMatch(/word-break:\s*keep-all/);
+    expect(rule('.note')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.failed')).toMatch(/color:\s*var\(--color-over-ink\)/);
     expect(rule('.retry')).toMatch(/color:\s*var\(--color-leaf\)/);
-    expect(rule('.retry::after')).toMatch(
-      /inset:\s*calc\(\(var\(--size-touch-min\) - 1em\) \/ -2\)/,
-    );
+    expect(rule('.retry')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(css).not.toMatch(/\.retry::after/);
     expect(rule('.retry:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
   });
 });

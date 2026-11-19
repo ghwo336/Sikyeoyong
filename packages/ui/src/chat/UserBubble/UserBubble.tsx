@@ -16,6 +16,7 @@ export function UserBubble({ text, status = 'sent', onRetry }: UserBubbleProps) 
   return (
     <div className={styles.wrap} data-status={status} aria-busy={status === 'sending' || undefined}>
       <p className={styles.bubble}>{text}</p>
+      {status === 'sending' ? <span className={styles.note}>보내는 중</span> : null}
       {status === 'failed' ? (
         <div className={styles.failed}>
           <span>못 보냈어요</span>

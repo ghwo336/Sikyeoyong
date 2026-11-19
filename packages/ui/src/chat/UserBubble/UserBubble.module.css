@@ -19,12 +19,14 @@
   font-weight: var(--type-bubble-weight);
   line-height: var(--type-bubble-line-height);
   white-space: pre-wrap;
+  word-break: keep-all;
   overflow-wrap: anywhere;
 }
 
-/* Not in the design: sending is faint until the server has it (UserBubble.md memo). */
-.wrap[data-status='sending'] .bubble {
-  opacity: 0.6;
+/* Not in the design: a small note under the bubble while sending, so the text keeps its contrast. */
+.note {
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
 }
 
 .failed {
@@ -36,21 +38,15 @@
 }
 
 .retry {
-  position: relative;
-  padding: 0;
+  /* 44px tall on its own, so the target grows down and never covers the bubble. */
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-2);
   border: 0;
   background: transparent;
   font: inherit;
   font-weight: var(--type-label-weight);
   color: var(--color-leaf);
   cursor: pointer;
-}
-
-/* Small text, 44px finger target (design-and-motion.md). */
-.retry::after {
-  content: '';
-  position: absolute;
-  inset: calc((var(--size-touch-min) - 1em) / -2) calc(var(--space-2) * -1);
 }
 
 .retry:focus-visible {
