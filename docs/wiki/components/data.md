@@ -21,7 +21,9 @@ children: []
 - **금액**: aokrw를 정수 문자열(`text`)로 저장. 읽을 때 `bigint`로 변환. SQLite·Postgres 공통으로 안전.
 - **시간**: `integer` unix ms (UTC). 표시 변환은 앱. 예외: 체인 `resetAt`은 unix 초 그대로 받아 변환한다. 개인 예산 달은 `month_kst` 문자열(`2026-12`).
 - **ID**: 내부 ID는 `text` UUID v7. `orderRef`(bytes32 hex)는 별도 컬럼 `order_ref`(유니크).
-- **마이그레이션**: `drizzle-kit`으로 생성, 커밋. 수동으로 DB를 고치지 않는다. 되돌릴 수 없는 마이그레이션은 PR에 표시.
+- **마이그레이션**: `drizzle-kit`으로 생성(`pnpm --filter @sikyeoyong/api db:generate`), 커밋. 적용은 `pnpm db:migrate`. 스키마는 `apps/api/src/db/schema/`, SQL은 `apps/api/src/db/migrations/`(빌드 때 dist로 복사).
+- **연결**: `openDb`가 WAL, `foreign_keys=ON`, busy_timeout 5000ms를 켠다. 테스트는 `:memory:`. 금액 칸에는 DB에서도 CHECK(숫자만, 앞자리 0 없음, 78자리 이하)를 건다.
+- 수동으로 DB를 고치지 않는다. 되돌릴 수 없는 마이그레이션은 PR에 표시.
 - **체인 데이터 동기화**: 트랜잭션 해시, 블록 번호, 이벤트 로그 인덱스를 저장해서 재동기화 가능하게. 인덱서 이벤트는 `(tx_hash, log_index)` 유니크로 멱등, 커서는 `chain_cursor`를 같은 DB 트랜잭션에서 갱신.
 - **결제 제출 표시**: `orders`와 `wallet_txs`의 제출 시작 칸(`submit_started_at`, tx hash, nonce, `maws_request_id`)은 브로드캐스트나 MAWS 호출 전에 별도 DB 트랜잭션으로 커밋한다 (payment.md "confirm 상태 규칙", D-19).
 - 외래 키를 켠다 (`PRAGMA foreign_keys=ON`). Postgres 이전 시 금액 `text`는 `numeric(78,0)`.

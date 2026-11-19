@@ -4,3 +4,4 @@ packages:
 allowBuilds:
   '@swc/core': true
   esbuild: true
+  better-sqlite3: true

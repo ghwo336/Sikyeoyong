@@ -7,5 +7,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.spec.ts'],
     passWithNoTests: false,
+    // Tests never touch a database file unless a test opens one itself.
+    env: { DATABASE_URL: ':memory:' },
   },
 });
