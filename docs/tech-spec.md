@@ -416,7 +416,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 `resetAt`은 unix 초. 표시는 KST로 변환(`Asia/Seoul`).
 
 ### 3.7 잔소리 계산 (budget 모듈)
-- 개인 예산 사용액 = 이번 달(KST 달력 월) `orders.status IN (paid, delivering, delivered)` 금액 합. 체인 30일 상한과 별개다.
+- 개인 예산 사용액 = 이번 달(KST 달력 월, 주문 `created_at` 기준) `orders.status IN (paid, preparing, delivering, delivered)` 금액 합 ("paid 이상", 환불·취소·실패 제외). 합은 SQL이 아니라 bigint로 한다 (`OrdersService.spentInMonthAokrw`). 체인 30일 상한과 별개다.
 - 판단 시점: (1) 주문 확정 직후, (2) 주문 직전 견적(`projected = spent + amount`).
 - 단계: 사용액 × 10000 ≥ 예산 × 7000이면 `warn70`, × 9000이면 `warn90`, × 10000이면 `over100` (소수 없이 bigint로 비교). 기준값은 `getPolicy(profile).nagThresholdsBps = [7000, 9000, 10000]`(bps), 판정은 `packages/shared`의 `nagStage(policy, spentAokrw, budgetAokrw)`.
 - 중복 방지: `nag_events (user_id, month_kst, level)` 유니크. 같은 단계는 한 달 1번. 단 `over100` 이후 매 주문 직전에는 확인 카드에 짧게 붙인다.
