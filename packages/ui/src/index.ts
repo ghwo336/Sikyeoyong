@@ -17,3 +17,4 @@ export * from './chat/UserBubble';
 export * from './dragon/Dragon';
 export * from './dragon/Egg';
 export * from './dragon/DragonLine';
+export * from './order/RecommendationList';

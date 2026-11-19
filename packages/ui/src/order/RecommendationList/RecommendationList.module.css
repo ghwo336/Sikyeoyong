@@ -1,0 +1,110 @@
+/* Main.dc.html: one white card, rows of store and menu with the price on the right. */
+.card {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  list-style: none;
+}
+
+.item {
+  display: block;
+}
+
+.divider {
+  height: 1px;
+  margin: 0 var(--space-4);
+  background: var(--color-track);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--size-pick-row);
+  padding: var(--size-pick-row-pad-y) var(--space-4);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: -2px;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--size-pick-meta-gap);
+  min-width: 0;
+}
+
+.meta {
+  font-size: var(--type-meta-size);
+  font-weight: var(--type-meta-weight);
+  color: var(--color-ink-secondary);
+}
+
+.menu {
+  font-size: var(--type-row-size);
+  font-weight: var(--type-row-weight);
+}
+
+.end {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.price {
+  font-size: var(--type-row-size);
+  font-weight: var(--type-row-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  padding: var(--size-badge-pad-y) var(--size-badge-pad-x);
+  border-radius: var(--radius-chip);
+  background: var(--color-yolk-tint);
+  color: var(--color-yolk-ink);
+  font-size: var(--type-badge-size);
+  font-weight: var(--type-badge-weight);
+}
+
+/* Loading: still grey bars, no shimmer (nothing moves for reduced motion either). */
+.skeletonRow {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  min-height: var(--size-pick-row);
+  padding: var(--size-pick-row-pad-y) var(--space-4);
+}
+
+.barShort,
+.barLong {
+  display: block;
+  height: var(--type-meta-size);
+  border-radius: var(--radius-chip);
+  background: var(--color-track);
+}
+
+.barShort {
+  width: 40%;
+}
+
+.barLong {
+  width: 65%;
+}
