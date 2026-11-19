@@ -85,7 +85,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 1. 서버 사전 검사 결과가 "승인 필요"(레벨 초과, 처음 보는 가게, 개인 예산 100% 초과 후 주문)이면 Claude에게 도구 결과로 `APPROVAL_REQUIRED`를 돌려준다.
 2. Claude가 `request_owner_approval(reason, merchantId, items)` 호출 → `approvals` 행 생성(pending, 10분 만료).
 3. 앱이 승인 카드 표시. 사용자가 승인하면 서버가 필요한 조치를 수행: 레벨 상향(→ TransferLimit 메타데이터 갱신 트랜잭션) 또는 가게 허용 목록 추가(서버 `allowed_merchants`. MAWS `allowedTargets`는 주문 컨트랙트 주소 하나로 고정이라 바꾸지 않는다, D-13).
-4. 서버가 원래 주문을 재시도하고 결과를 대화에 이어서 스트리밍.
+4. 서버가 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 대화에 다시 보낸다. 결제는 사용자가 카드를 다시 눌렀을 때 confirm에서만 한다 (D-19, payment.md "confirm 상태 규칙"). 거절이나 만료면 주문은 재시도 불가 `failed`.
 
 ---
 
@@ -881,6 +881,7 @@ PAYMENT_PATH=B                        # A | B | C, 스파이크 후 확정
 WAAS_AUTH_TOKEN=                      # 경로 A, C
 AGENT_KEY_ENCRYPTION_KEY=             # 경로 B, 32바이트 base64
 AGENT_FLOAT_MULTIPLIER=2              # 모드 P: 에이전트 지갑 유지액 = 건당 한도 × 이 값
+SUBMITTING_ALERT_MS=600000            # 결제 중(submitting) 주문이 이 시간 넘게 결론이 없으면 운영자 알림 (D-19)
 
 # 2단계
 NTS_SERVICE_KEY=

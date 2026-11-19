@@ -53,7 +53,7 @@ interface PaymentProvider {
 ## 반드시 지킬 규칙 (MUST)
 - **금액은 `bigint` aokrw.** 변환은 `packages/shared`의 함수만.
 - **orderRef 멱등성**: `orderRef`(bytes32)는 서버가 주문 생성 시 한 번 만든다(DB 주문 ID의 keccak). 같은 orderRef로는 체인에서 한 번만 결제된다 (`OrderExists`). 재시도는 같은 orderRef로만.
-- **자동 재시도 금지**: 타임아웃이나 네트워크 오류면 먼저 체인에서 `OrderPlaced(orderRef)` 존재를 확인한다. 없을 때만, 사람이 보는 흐름에서 같은 orderRef로 다시 시도한다. 예외: `CHAIN_AGENT_LIMIT_UNSET`은 TransferLimit 재기록 후 1회.
+- **자동 재시도 금지**: 서버는 결제를 스스로 다시 보내지 않는다. 타임아웃이나 네트워크 오류는 `submitting`으로 두고 결론이 날 때까지 결제하지 않는다. 결론이 나서 재시도 가능한 `failed`가 된 주문만, 사람이 confirm을 다시 눌렀을 때 체인 조회 뒤 같은 orderRef로 다시 시도한다 (아래 "confirm 상태 규칙"). 예외: `CHAIN_AGENT_LIMIT_UNSET`은 TransferLimit 재기록 후 같은 요청 안에서 1회.
 - **TransferLimit 먼저**: 에이전트를 만들면 주문 가능 상태로 표시하기 전에 `TransferLimit`을 기록한다. 없으면 정책을 건 컨트랙트에서 `AgentTransferLimitMetadataInvalid`로 실패한다 (확인된 동작에서 추론).
 - **즉시 충전은 서버 코드만**: `fund`는 LLM 도구가 아니다. 주문 서비스가 결제 직전에 부르거나, 사용자가 버튼으로 부른다.
 - **가스 한도 고정 금지**: 추정값을 쓴다. 가스 한도의 절반은 무조건 과금된다 (확인). 컨트랙트 범위 정책에 막힌 트랜잭션도 가스가 과금된다 (확인).
@@ -62,19 +62,51 @@ interface PaymentProvider {
 - 모든 체인 트랜잭션 해시를 `wallet_txs`, `orders`에 저장하고 탐색기 링크를 만들 수 있게 한다.
 
 ## confirm 상태 규칙 (D-19, 이 절이 원본)
-결제는 `POST /api/orders/:id/confirm`에서만 일어나고, 주문 상태로 멱등하다. 같은 주문의 confirm은 몇 번이 와도 결제는 많아야 한 번이다.
+결제는 `POST /api/orders/:id/confirm`에서만 일어나고, 주문 상태로 멱등하다. 같은 주문의 confirm은 몇 번이 와도 결제는 많아야 한 번이다. 상태 전이는 모두 조건부 UPDATE 하나(`WHERE id = ? AND status = ?`)로 해서 동시에 온 요청 중 하나만 이긴다. 진 요청은 결제하지 않고 200과 현재 주문을 받는다.
 
+### confirm이 상태별로 하는 일
 | 주문 상태 | confirm이 하는 일 | 응답 |
 | --- | --- | --- |
-| `quoted` | 조건부 UPDATE 하나로 `quoted`에서 `submitting`으로 바꾼다. 이긴 요청만 사전 검사, 즉시 충전, `pay`로 간다 | 결제 결과 |
-| `submitting` | 결제하지 않는다 (동시에 들어온 두 번째 요청, 결과를 기다리는 중) | 200, 현재 주문 |
-| `failed` 재시도 가능 | 먼저 체인에서 `OrderPlaced(orderRef)`를 조회한다. 있으면 `paid`로 맞추고 영수증을 만든다. 없으면 조건부 UPDATE로 `submitting`으로 바꾸고 **같은 orderRef로** 결제한다 (사람이 누른 재시도) | 결제 결과 또는 200, 현재 주문 |
-| `failed` 재시도 불가 | 결제하지 않는다. 새 견적이 필요하다고 알린다. 새 견적을 만들기 전에 이전 orderRef가 체인에 없는지 확인한다 | 200, 현재 주문 (`error_code` 포함) |
-| `paid` 이후 (`preparing`, `delivering`, `delivered`, `cancelled`, `refunded`) | 결제하지 않는다 | 200, 현재 주문과 영수증 |
+| `quoted` | `quoted`에서 `submitting`으로 바꾼다. 이긴 요청만 사전 검사, 즉시 충전, `pay`로 간다. 결과는 아래 "실패 분류"대로 상태를 바꾼다 | 결제 결과 |
+| `submitting` | 결제하지 않는다 (동시에 들어온 요청, 결과를 기다리는 중) | 200, 현재 주문 |
+| `failed` 재시도 가능 | 먼저 체인에서 `OrderPlaced(orderRef)`를 조회한다. 있으면 `paid`로 맞추고 영수증을 만든다. 없으면 `failed`에서 `submitting`으로 바꾸고 **같은 orderRef로** 결제한다 (사람이 누른 재시도) | 결제 결과 또는 200, 현재 주문 |
+| `failed` 재시도 불가 | 결제하지 않는다. 새 견적이 필요하다고 알린다 | 200, 현재 주문 (`error_code` 포함) |
 | `pending_approval` | 결제하지 않는다. 승인 흐름이 먼저다 | 200, 현재 주문 |
+| `paid`, `preparing`, `delivering`, `delivered`, `cancelled`, `refunded` | 결제하지 않는다 | 200, 현재 주문과 영수증 |
 
-- **결과를 모르는 제출은 실패가 아니다**: `pay`가 타임아웃이나 네트워크 오류로 끝나면 `failed`로 바꾸지 않고 `submitting`으로 둔다. 인덱서(`OrderPlaced`)나 트랜잭션 영수증 조회로 결론이 나면 `paid` 또는 재시도 가능한 `failed`로 바꾼다.
-- **재시도 가능 여부는 `error_code`로 정한다**: 체인이 막았지만 orderRef가 체인에 남지 않는 실패(`CHAIN_AGENT_LIMIT` 승인 뒤, `CHAIN_INSUFFICIENT_FUNDS`, `CHAIN_AGENT_LIMIT_UNSET`, `MAWS_POLICY_REJECTED`, `SERVER_*` 사전 검사)는 재시도 가능. 주문 자체가 성립하지 않는 실패(`CHAIN_MERCHANT_INACTIVE`, `CHAIN_EAS_REQUIRED`, 견적 만료)는 재시도 불가.
+### 승인 흐름과의 관계
+- 사전 검사나 체인이 승인이 필요한 사유(`SERVER_OVER_LEVEL`, `SERVER_NEW_MERCHANT`, `SERVER_BUDGET_OVER`, `CHAIN_AGENT_LIMIT`)로 막으면 주문은 `failed`가 아니라 `pending_approval`로 간다. 그래서 승인 전에 다시 눌러도 결제하지 않는다 (같은 revert와 가스 과금이 반복되지 않는다).
+- 주인이 승인하면 서버는 필요한 조치(레벨 상향, 가게 허용)를 하고 주문을 `pending_approval`에서 `quoted`로 되돌린 뒤 확인 카드를 다시 보낸다. **결제는 다시 confirm에서만** 한다. 서버가 승인 뒤 스스로 결제하지 않는다.
+- 거절이나 만료면 `failed` 재시도 불가 (`error_code`는 원래 사유).
+
+### 실패 분류 (tech-spec 3.6의 모든 코드)
+| 분류 | 코드 | 주문 상태 |
+| --- | --- | --- |
+| 승인 필요 | `SERVER_OVER_LEVEL`, `SERVER_NEW_MERCHANT`, `SERVER_BUDGET_OVER`, `CHAIN_AGENT_LIMIT` | `pending_approval` |
+| 재시도 가능 (체인에 orderRef가 남지 않은 확정 실패. 조건이 바뀌면 같은 주문으로 결제 가능) | `CHAIN_INSUFFICIENT_FUNDS`, `CHAIN_AGENT_LIMIT_UNSET`, `MAWS_POLICY_REJECTED`, `CHAIN_PERIODIC_LIMIT`, `CHAIN_KYC_LIMIT`, `CHAIN_AGENT_PAUSED`, `SERVER_FROZEN`, `CHAIN_UNAUTHORIZED`, `RATE_LIMITED`, 제출 전에 난 `INTERNAL` | `failed` (재시도 가능) |
+| 재시도 불가 (이 주문은 성립하지 않음) | `CHAIN_MERCHANT_INACTIVE`, `CHAIN_EAS_REQUIRED`, `NOT_FOUND`(가게나 메뉴가 사라짐) | `failed` (재시도 불가) |
+| 결과 모름 | 제출(브로드캐스트) 뒤에 난 `INTERNAL`, 타임아웃, 네트워크 오류, 분류에 없는 모든 것 | `submitting` 유지 |
+| 주문과 무관 | `VALIDATION_FAILED`, `UNAUTHENTICATED`, `FORBIDDEN`, `CONFLICT` | 바꾸지 않음 (전이 전에 거절) |
+
+- 기본값은 "결과 모름"이다. 모르는 코드나 애매한 실패로 새 견적을 만들게 하지 않는다.
+- 견적 유효 시간은 1단계에 없다. 가격이 바뀐 가게는 `NOT_FOUND`(메뉴)나 새 견적으로 처리한다.
+- 재시도 불가 뒤 새 견적을 만들기 전에 이전 orderRef를 확인한다: 이전 제출 트랜잭션이 있었다면 그 트랜잭션이 확정(영수증 있음)되었고 `OrderPlaced(orderRef)`가 없어야 한다. 아직 확정되지 않았으면 새 견적을 막고 기다린다.
+
+### `submitting`을 끝내는 규칙
+- 인덱서가 `OrderPlaced(orderRef)`를 보면 `paid`.
+- 제출 트랜잭션의 영수증이 revert면 그 사유로 위 분류를 따른다.
+- tx hash가 없는 채로 끝났거나(제출 전 실패, 경로 A MAWS 호출이 hash 없이 끝남), 같은 nonce가 다른 트랜잭션으로 소비되었는데 `OrderPlaced`가 없으면 재시도 가능한 `failed`.
+- `submitting`이 `SUBMITTING_ALERT_MS`(설정값, 기본 10분) 넘게 결론이 없으면 운영자에게 알린다. 상태는 사람이 확인할 때까지 그대로 둔다 (자동으로 `failed`로 바꾸지 않는다).
+- 서버가 시작할 때 `submitting`인 주문을 모두 다시 확인한다 (프로세스가 `pay` 전후에 죽은 경우).
+- 사전 검사 실패는 `submitting`으로 바꾼 뒤에 나도 위 분류대로 상태를 바꾼다 (제출 전이므로 결과 모름이 아니다).
+
+### 즉시 충전(fund)의 멱등성
+- 충전 요청 ID는 orderRef에서 만든다(주문당 하나). 확정되지 않은 충전이 있으면 다시 충전하지 않고 그 결과를 기다린다. 잔액 계산에는 확정된 충전만 넣는다. 그래서 재시도가 반복돼도 float 상한을 넘지 않는다.
+
+### 경로별 중복 orderRef 보호
+- 경로 A, B: `placeOrder`가 같은 orderRef의 두 번째 결제를 `OrderExists`로 되돌린다 (tech-spec 5.2 의사 코드, 컨트랙트 테스트로 확인할 것).
+- 경로 C(`transfer.send` + 미리 등록한 의도): 같은 orderRef로 두 번 보냈을 때 컨트랙트 `receive()`가 두 번째를 막는지 (미확인). Q-24.
+
 - 409(`CONFLICT`)는 confirm 상태 때문에 쓰지 않는다. 같은 멱등 키에 다른 내용일 때만이다.
 
 ## 하지 말 것 (MUST NOT)
