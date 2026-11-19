@@ -3,7 +3,6 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  width: 100%;
   border: 0;
   border-radius: var(--radius-button);
   font-family: var(--font-ui);
@@ -26,13 +25,15 @@
 }
 
 .lg {
+  width: 100%;
   min-height: var(--size-button-primary);
   padding: var(--space-3) var(--space-5);
-  font-size: var(--type-row-size);
-  font-weight: var(--type-heading-weight);
+  font-size: var(--type-button-sub-size);
+  font-weight: var(--type-button-sub-weight);
 }
 
 .md {
+  width: auto;
   min-height: var(--size-touch-min);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-chip);
@@ -43,6 +44,11 @@
 .primary {
   background: var(--color-leaf);
   color: var(--color-surface);
+}
+
+.primary.lg {
+  font-size: var(--type-button-size);
+  font-weight: var(--type-button-weight);
 }
 
 .primary:active {
@@ -58,6 +64,12 @@
 .text {
   background: transparent;
   color: var(--color-ink-secondary);
+}
+
+/* Confirm "다시 고를래": 48 high, body text (size.buttonSecondary). */
+.text.lg {
+  min-height: var(--size-button-secondary);
+  font-size: var(--type-body-size);
   font-weight: var(--type-body-weight);
 }
 

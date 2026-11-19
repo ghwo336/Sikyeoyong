@@ -33,14 +33,14 @@ export function renderTokens(tokens) {
   }
   for (const [key, t] of Object.entries(tokens.type)) {
     if (typeof t.size !== 'number') fail(`type.${key}.size must be a number`);
-    add(`type-${key}-size`, `${t.size}px`);
-    if (t.weight !== undefined) add(`type-${key}-weight`, String(t.weight));
-    if (t.lineHeight !== undefined) add(`type-${key}-line-height`, String(t.lineHeight));
+    add(`type-${kebab(key)}-size`, `${t.size}px`);
+    if (t.weight !== undefined) add(`type-${kebab(key)}-weight`, String(t.weight));
+    if (t.lineHeight !== undefined) add(`type-${kebab(key)}-line-height`, String(t.lineHeight));
     if (t.letterSpacing !== undefined) {
       if (t.letterSpacing !== 0 && typeof t.letterSpacing !== 'string') {
         fail(`type.${key}.letterSpacing must be 0 or a CSS length string`);
       }
-      add(`type-${key}-letter-spacing`, t.letterSpacing === 0 ? '0' : t.letterSpacing);
+      add(`type-${kebab(key)}-letter-spacing`, t.letterSpacing === 0 ? '0' : t.letterSpacing);
     }
   }
   tokens.space.forEach((v, i) => add(`space-${i + 1}`, `${v}px`));

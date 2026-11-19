@@ -35,10 +35,11 @@ function expectedVars(): Map<string, string> {
     else for (const [sk, sv] of Object.entries(v)) m.set(`color-${kebab(k)}-${kebab(sk)}`, sv);
   }
   for (const [k, t] of Object.entries(tokens.type)) {
-    m.set(`type-${k}-size`, `${t.size}px`);
-    if (t.weight !== undefined) m.set(`type-${k}-weight`, `${t.weight}`);
-    if (t.lineHeight !== undefined) m.set(`type-${k}-line-height`, `${t.lineHeight}`);
-    if (t.letterSpacing !== undefined) m.set(`type-${k}-letter-spacing`, `${t.letterSpacing}`);
+    m.set(`type-${kebab(k)}-size`, `${t.size}px`);
+    if (t.weight !== undefined) m.set(`type-${kebab(k)}-weight`, `${t.weight}`);
+    if (t.lineHeight !== undefined) m.set(`type-${kebab(k)}-line-height`, `${t.lineHeight}`);
+    if (t.letterSpacing !== undefined)
+      m.set(`type-${kebab(k)}-letter-spacing`, `${t.letterSpacing}`);
   }
   tokens.space.forEach((v, i) => m.set(`space-${i + 1}`, `${v}px`));
   for (const [k, v] of Object.entries(tokens.radius)) m.set(`radius-${kebab(k)}`, `${v}px`);

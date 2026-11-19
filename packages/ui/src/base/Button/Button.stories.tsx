@@ -57,5 +57,13 @@ export const LongLabel: Story = {
   decorators: [(Story) => <div style={{ width: 240 }}>{Story()}</div>],
 };
 
-/** 작은 크기 (md) */
-export const Medium: Story = { args: { size: 'md', variant: 'primary', children: '채우기' } };
+/** 작은 크기 (md): 시안 Wallet처럼 금액 옆에 붙는다 */
+export const Medium: Story = {
+  args: { size: 'md', variant: 'primary', children: '채우기' },
+  render: (args) => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span>20,000원</span>
+      <Button {...args} />
+    </div>
+  ),
+};

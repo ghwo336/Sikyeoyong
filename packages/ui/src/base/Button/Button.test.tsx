@@ -48,9 +48,33 @@ describe('Button (Button.md 테스트 기준)', () => {
   });
 
   it('keeps the touch target at least 44px for every size', () => {
-    // lg uses size.buttonPrimary (56), md uses size.touchMin (44) from design/tokens.json.
+    // Rules: lg 56 (size.buttonPrimary), text lg 48 (size.buttonSecondary), md 44 (size.touchMin).
     expect(css).toMatch(/\.lg\s*\{[^}]*min-height:\s*var\(--size-button-primary\)/);
+    expect(css).toMatch(/\.text\.lg\s*\{[^}]*min-height:\s*var\(--size-button-secondary\)/);
     expect(css).toMatch(/\.md\s*\{[^}]*min-height:\s*var\(--size-touch-min\)/);
+    // And the size class is really on the rendered element (default lg).
+    const { rerender } = render(
+      <Button variant="primary" onPress={() => undefined}>
+        x
+      </Button>,
+    );
+    expect(screen.getByRole('button').classList).toContain('lg');
+    rerender(
+      <Button variant="primary" size="md" onPress={() => undefined}>
+        x
+      </Button>,
+    );
+    expect(screen.getByRole('button').classList).toContain('md');
+    expect(screen.getByRole('button').classList).not.toContain('lg');
+  });
+
+  it('matches the design text sizes per variant (Confirm, Start, Wallet)', () => {
+    expect(css).toMatch(/\.primary\.lg\s*\{[^}]*font-size:\s*var\(--type-button-size\)/);
+    expect(css).toMatch(/\.lg\s*\{[^}]*font-size:\s*var\(--type-button-sub-size\)/);
+    expect(css).toMatch(/\.text\.lg\s*\{[^}]*font-size:\s*var\(--type-body-size\)/);
+    // md sits next to an amount (Wallet "채우기"): content width, not full width.
+    expect(css).toMatch(/\.md\s*\{[^}]*width:\s*auto/);
+    expect(css).not.toMatch(/\.button\s*\{[^}]*width:\s*100%/);
   });
 
   it('is a plain button (never submits a form) and hides the icon from screen readers', () => {
