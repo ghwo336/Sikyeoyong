@@ -15,7 +15,7 @@ children: []
 부화 진행 판단
 
 ## props
-`state: 'closed' | 'wobble' | 'sleeping'`, `species: DragonSpecies`, `size`
+`state: 'closed' | 'wobble' | 'sleeping'`, `species: DragonSpecies` (타입은 `packages/shared`), `size: number` (가로세로 px. 시안 도감 120, Frozen 168)
 
 ## 하네스 상태
 `Egg.stories.tsx`에 아래를 전부 만든다.
@@ -31,4 +31,4 @@ Start, Name, Hatch, Frozen
 - reduced motion이면 흔들림 없음
 
 ## 메모
-알 무늬 기준은 `design/screens/Dragons.dc.html` (D-20).
+알 무늬 기준은 `design/screens/Dragons.dc.html` (D-20). 흔들림은 Motion으로 아래 중심을 축 삼아 회전(transform만), 동작 줄이기면 흔들지 않는다(`useShouldReduceMotion`). 하네스에는 문서 상태 네 개와 "동작 줄이기에서 흔들림"이 있다.

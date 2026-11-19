@@ -1,0 +1,61 @@
+/* Species color: color.dragon.* (tokens.json, D-20). */
+.egg {
+  --egg-mark: var(--color-dragon-green);
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.egg[data-species='water'] {
+  --egg-mark: var(--color-dragon-sky);
+}
+
+.egg[data-species='flower'] {
+  --egg-mark: var(--color-dragon-pink);
+}
+
+.egg[data-species='star'] {
+  --egg-mark: var(--color-dragon-violet);
+}
+
+.shadow {
+  fill: var(--color-egg-shadow);
+}
+
+.shell {
+  fill: var(--color-egg-shell);
+  stroke: var(--color-ink);
+  stroke-width: 1.4;
+}
+
+.mark {
+  fill: var(--egg-mark);
+}
+
+.wave {
+  fill: none;
+  stroke: var(--egg-mark);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.yolk {
+  fill: var(--color-yolk);
+}
+
+.zz,
+.zzSmall {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.zz {
+  stroke: var(--color-ink-secondary);
+  stroke-width: 1.4;
+}
+
+.zzSmall {
+  stroke: var(--color-ink-muted);
+  stroke-width: 1.2;
+}
