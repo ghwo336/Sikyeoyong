@@ -280,5 +280,5 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 배경: user-flow.md 13단계는 "LLM은 변경 카드만 만든다. 확정은 버튼과 재인증"이라고 한다. 그런데 CLAUDE.md 절대 규칙 3과 tech-spec 3.3의 LLM 도구는 읽기 도구, `place_order`, `request_owner_approval`(주문 승인용, reason/merchantId/items)뿐이라 한도 변경 카드를 만드는 도구가 없다. LimitChangeCard 컴포넌트는 만들었지만 카드 데이터를 누가 만드는지 정해지지 않았다.
 - 확인 방법: 호재 님 결정. (a) 정책을 바꾸지 않고 카드 데이터만 돌려주는 읽기 성격의 도구(예: `propose_limit_change`)를 더한다. 고르면 decisions.md부터 적고 CLAUDE.md 절대 규칙 3의 도구 목록과 tech-spec 3.3 도구 목록도 함께 고친다, (b) 서버가 대화를 규칙으로 해석해 카드를 만든다, (c) LimitChat에서는 버튼으로만 고르게 한다.
 - 담당: 호재 님
-- 결론: (a). Claude에 카드만 띄우는 `propose_limit_change`를 더한다. 금액 없이 레벨이나 예산 선택지만 받고, 사용자 메시지에 의도가 없으면 서버가 카드를 버린다. 확정은 버튼과 재인증 (2026-11-19 호재 님, decisions D-21).
+- 결론: (a). Claude에 카드만 띄우는 `propose_limit_change`를 더한다. 금액 없이 레벨이나 예산 선택지만 받고, 사용자 메시지에 의도가 없으면 서버가 카드를 버린다. 확정은 버튼으로만 (레벨 올리기는 재인증, 예산 변경과 내리기는 바로) (2026-11-19 호재 님, decisions D-21).
 - 반영한 곳: decisions D-21, CLAUDE.md 절대 규칙 3, tech-spec 3.3과 9.2, agent-runtime.md, security.md, LimitChangeCard.md

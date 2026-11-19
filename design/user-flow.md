@@ -51,7 +51,7 @@ flowchart TD
 | 10 | Arrived | 맛 평가 | 평가를 추천에 반영, 아낀 돈 계산 | 없음 | |
 | 11 | Receipt | 자세히 보기 펼침 | 영수증 규칙 목록 | 결제 기록 번호, 통과한 정책 이름, 탐색기 링크 | |
 | 12 | Blocked | "레벨 3으로 올리고 시키기" 또는 다시 고르기 | 서버 사전 검사가 먼저 막음 (데모는 체인까지 보냄) | 데모: `ExceededAgentTransferLimit` revert | |
-| 13 | LimitChat | 말로 "5만 원까지 올려 줘", Face ID | LLM은 변경 카드만 만든다. 확정은 버튼과 재인증 | 8004 TransferLimit 50,000 기록 | 내리기와 멈춤은 재인증 없이 바로 |
+| 13 | LimitChat | 말로 "5만 원까지 올려 줘", Face ID | LLM은 변경 카드만 만든다. 확정은 버튼과 재인증 | 8004 TransferLimit 50,000 기록 | 내리기, 멈춤, 예산 변경은 재인증 없이 바로 |
 | 14 | Cap | 알림 받기 | 리셋 시각 표시 | `ExceededPeriodicVolume`의 `resetAt` | 30일 한도는 주인도 못 바꿈 |
 | 15 | Wallet | 잔액, 한도 확인, 채우기, 스위치 | 자세히 보기 스위치는 기기 설정 | 주인 지갑, 에이전트 지갑 잔액 읽기 | |
 | 16 | IdCard | 신분증 보기, 공유 | | 8004 등록 정보, 주인 KYC 여부 | |
