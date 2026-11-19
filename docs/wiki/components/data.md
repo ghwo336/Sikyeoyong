@@ -20,6 +20,7 @@ children: []
 ## 반드시 지킬 규칙 (MUST)
 - **금액**: aokrw를 정수 문자열(`text`)로 저장. 읽을 때 `bigint`로 변환. SQLite·Postgres 공통으로 안전.
 - **시간**: `integer` unix ms (UTC). 표시 변환은 앱. 예외: 체인 `resetAt`은 unix 초 그대로 받아 변환한다. 개인 예산 달은 `month_kst` 문자열(`2026-12`).
+- **CHECK 도우미**: 금액 칸은 `schema/checks.ts`의 `aokrwCheck`, 상태 같은 enum 칸은 `enumCheck`(코드 상수만 받아 DDL에 그대로 넣는다)로 DB에서도 막는다.
 - **ID**: 내부 ID는 `text` UUID v7. `orderRef`(bytes32 hex)는 별도 컬럼 `order_ref`(유니크).
 - **마이그레이션**: `drizzle-kit`으로 생성(`pnpm --filter @sikyeoyong/api db:generate`), 커밋. 적용은 `pnpm db:migrate`. 스키마는 `apps/api/src/db/schema/`, SQL은 `apps/api/src/db/migrations/`(빌드 때 dist로 복사).
 - **연결**: `openDb`가 WAL, `foreign_keys=ON`, busy_timeout 5000ms를 켠다. 테스트는 `:memory:`. `DATABASE_URL`의 상대 경로는 실행 위치 기준이라 pnpm으로 돌리면 `apps/api/data/`에 생긴다. Postgres로 옮기면 금액 칸은 `numeric(78,0)`이 되고 SQLite용 GLOB CHECK는 지운다. 금액 칸에는 DB에서도 CHECK(숫자만, 앞자리 0 없음, 78자리 이하)를 건다.

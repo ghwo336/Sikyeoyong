@@ -65,7 +65,21 @@ describe('migrations (data.md: apply to an empty DB from scratch)', () => {
         "select name from sqlite_master where type = 'table' and name not like '\\_\\_%' escape '\\' and name not like 'sqlite%' order by name",
       )
       .all() as { name: string }[];
-    expect(tables.map((t) => t.name)).toEqual(['menus', 'merchants']);
+    expect(tables.map((t) => t.name)).toEqual([
+      'agent_limit_history',
+      'agents',
+      'allowed_merchants',
+      'approvals',
+      'chat_messages',
+      'menus',
+      'merchants',
+      'nag_events',
+      'oauth_accounts',
+      'order_events',
+      'orders',
+      'sessions',
+      'users',
+    ]);
   });
 
   it('turn on foreign keys and WAL for file databases', () => {
