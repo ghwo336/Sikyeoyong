@@ -27,10 +27,10 @@ children: []
 Wallet
 
 ## 테스트 기준
-- 주소를 보여 주지 않는다 (주소 prop이 없고, 글자는 시안 문구와 금액뿐)
+- 주소를 보여 주지 않는다 (주소 prop이 없다는 것을 `@ts-expect-error`로 typecheck가 지키고, 글자는 시안 문구와 금액뿐)
 - 금액은 formatOkrw (Number를 넘는 금액으로 확인)
 - 채우기는 onTopUp 한 번 (base Button primary md)
-- 로딩이면 숫자 없이 멈춘 회색 줄 두 개와 aria-busy
+- 로딩이면 숫자 없이 멈춘 회색 줄 두 개와 aria-busy, 채우기는 눌러도 시작하지 않음 (잔액을 모르는 채 충전하지 않게)
 - Wallet 시안 값 (라벨 14px, 금액 34/700, 주머니 13px `ink-secondary`, 간격 4, 위아래 여백 16 20)
 
 ## 메모

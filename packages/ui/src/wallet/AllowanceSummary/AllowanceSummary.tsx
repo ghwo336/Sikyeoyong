@@ -36,7 +36,8 @@ export function AllowanceSummary({
           </>
         )}
       </div>
-      <Button variant="primary" size="md" onPress={onTopUp}>
+      {/* No top-up before the balances are known. */}
+      <Button variant="primary" size="md" loading={loading} onPress={onTopUp}>
         채우기
       </Button>
     </div>

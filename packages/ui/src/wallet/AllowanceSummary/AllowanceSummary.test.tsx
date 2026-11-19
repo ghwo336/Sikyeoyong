@@ -20,15 +20,19 @@ describe('AllowanceSummary (AllowanceSummary.md 테스트 기준)', () => {
     expect(container.textContent).not.toMatch(/0x[0-9a-fA-F]/);
   });
 
-  it('has no address prop to pass at all', () => {
-    // Type-level: AllowanceSummaryProps has owner, pocket, onTopUp, loading only.
-    const keys: (keyof Parameters<typeof AllowanceSummary>[0])[] = [
-      'owner',
-      'pocket',
-      'onTopUp',
-      'loading',
-    ];
-    expect(keys).toHaveLength(4);
+  it('has no address prop at all (typecheck fails if one is added)', () => {
+    // @ts-expect-error AllowanceSummary must never take an address (AllowanceSummary.md).
+    render(<AllowanceSummary {...base} address="0xabc" />);
+    expect(screen.queryByText(/0xabc/)).toBeNull();
+  });
+
+  it('does not start a top-up while balances are loading', async () => {
+    const onTopUp = vi.fn();
+    render(<AllowanceSummary {...base} onTopUp={onTopUp} loading />);
+    const button = screen.getByRole('button', { name: '채우기' });
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    await userEvent.click(button);
+    expect(onTopUp).not.toHaveBeenCalled();
   });
 
   it('shows amounts with formatOkrw, past Number exactly', () => {
@@ -60,6 +64,8 @@ describe('AllowanceSummary (AllowanceSummary.md 테스트 기준)', () => {
     expect(rule('.amounts')).toMatch(/gap:\s*var\(--space-1\)/);
     expect(rule('.label')).toMatch(/font-size:\s*var\(--type-small-size\)/);
     expect(rule('.owner')).toMatch(/font-size:\s*var\(--type-wallet-amount-size\)/);
+    expect(rule('.owner')).toMatch(/font-weight:\s*var\(--type-wallet-amount-weight\)/);
+    expect(rule('.amounts')).toMatch(/tabular-nums/);
     expect(rule('.owner')).toMatch(/letter-spacing:\s*var\(--type-wallet-amount-letter-spacing\)/);
     expect(rule('.pocket')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.pocket')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
