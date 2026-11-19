@@ -187,12 +187,12 @@ else:
     if rng is None:
         rng = "HEAD~1..HEAD" if subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD~1"],
                                                capture_output=True).returncode == 0 else "HEAD"
-    base, head = parse_range(rng)
+    RANGE_BASE, RANGE_HEAD = parse_range(rng)
     tracked = zsplit(git("ls-files", "-z"))
-    if base is None:
-        changed = files_of_commit(head)
+    if RANGE_BASE is None:
+        changed = files_of_commit(RANGE_HEAD)
     else:
-        changed = zsplit(git("diff", "-z", "--name-only", "--diff-filter=AMR", base, head))
+        changed = zsplit(git("diff", "-z", "--name-only", "--diff-filter=AMR", RANGE_BASE, RANGE_HEAD))
     msg_revs = commits_in(opt.msg_rng or rng)
 
 tracked = sorted({p for p in tracked if os.path.isfile(p)})
@@ -519,6 +519,22 @@ def pkg_of(p):
     return None
 
 
+def comment_only_change(p):
+    """True if every added or removed line of this file is blank or a comment."""
+    if opt.precommit:
+        diff = git("diff", "HEAD", "--", p, check=False) if has_head else ""
+        if not diff and p in zsplit(git("ls-files", "-z", "--others", "--exclude-standard")):
+            return False  # new untracked file
+    else:
+        diff = (git("diff", RANGE_BASE, RANGE_HEAD, "--", p) if RANGE_BASE
+                else git("show", "--format=", RANGE_HEAD, "--", p))
+    lines = [l[1:].strip() for l in diff.splitlines()
+             if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+    if not lines:
+        return False
+    return all(l == "" or l.startswith(("//", "/*", "*", "*/")) for l in lines)
+
+
 src_by_pkg, test_by_pkg = {}, {}
 for p in changed:
     pk = pkg_of(p)
@@ -526,7 +542,8 @@ for p in changed:
         continue
     if is_test(p):
         test_by_pkg.setdefault(pk, []).append(p)
-    elif re.search(r"/src/.*\.(ts|tsx|sol)$", p) and not re.search(r"(/index\.ts|\.d\.ts|/main\.ts|\.module\.ts)$", p):
+    elif re.search(r"/src/.*\.(ts|tsx|sol)$", p) and not re.search(r"(/index\.ts|\.d\.ts|/main\.ts|\.module\.ts)$", p) \
+            and not comment_only_change(p):
         src_by_pkg.setdefault(pk, []).append(p)
 for pk, srcs in sorted(src_by_pkg.items()):
     if pk not in test_by_pkg and pk != "apps/web":

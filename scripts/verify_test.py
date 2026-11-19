@@ -105,6 +105,10 @@ CASES = [
          hit=["T1 tests-required"]),
     dict(name="src with test", files={"packages/shared/src/money.ts": "export const a = 1n;\n",
          "packages/shared/src/money.test.ts": "it('a', () => {});\n"}, miss=["T1 tests-required"]),
+    dict(name="comment-only change needs no test", base={"packages/shared/src/money.ts": "export const a = 1n;\n"},
+         files={"packages/shared/src/money.ts": "// why this exists\nexport const a = 1n;\n"}, miss=["T1 tests-required"]),
+    dict(name="code change still needs test", base={"packages/shared/src/money.ts": "export const a = 1n;\n"},
+         files={"packages/shared/src/money.ts": "// why\nexport const a = 2n;\n"}, hit=["T1 tests-required"]),
     dict(name="wiki doc not in map", files={"docs/wiki/b.md": WIKI_LEAF},
          edit={"docs/wiki/README.md": WIKI_ROOT.replace("  - a.md\n", "  - a.md\n  - b.md\n")},
          hit=["R8 wiki-map"]),
@@ -170,6 +174,11 @@ def main():
     for case in CASES:
         root = new_repo()
         try:
+            if case.get("base"):
+                for rel, content in case["base"].items():
+                    write(root, rel, content)
+                run(["git", "add", "-A"], root)
+                run(["git", "commit", "-q", "-m", GOOD_MSG], root)
             for rel, content in case.get("files", {}).items():
                 write(root, rel, content)
             for rel, content in case.get("edit", {}).items():
