@@ -72,15 +72,21 @@ describe('Meter (Meter.md 테스트 기준)', () => {
     expect(fill()).toHaveAttribute('data-tone', tone);
   });
 
-  // Main.dc.html line 31-36, Arrived.dc.html line 42-47.
+  // Main.dc.html line 31-36, Arrived.dc.html line 42-47, Confirm.dc.html line 44-52.
   it('matches the design values', () => {
     expect(rule('.track')).toMatch(/height:\s*var\(--size-meter\)/);
     expect(rule('.track')).toMatch(/border-radius:\s*calc\(var\(--size-meter\) \/ 2\)/);
     expect(rule('.track')).toMatch(/background:\s*var\(--color-track\)/);
     expect(rule('.track')).toMatch(/overflow:\s*hidden/);
-    expect(rule('.fill')).toMatch(/background:\s*var\(--color-leaf\)/);
-    expect(rule(".fill[data-tone='warn']")).toMatch(/background:\s*var\(--color-yolk\)/);
-    expect(rule(".fill[data-tone='over']")).toMatch(/background:\s*var\(--color-over\)/);
+    // budget: yolk on the light track. limit: leaf on the line track, gap 6.
+    expect(rule('.budget .track')).toMatch(/background:\s*var\(--color-track\)/);
+    expect(rule('.budget .fill')).toMatch(/background:\s*var\(--color-yolk\)/);
+    expect(rule('.limit .track')).toMatch(/background:\s*var\(--color-line\)/);
+    expect(rule('.limit .fill')).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(rule('.meter.limit')).toMatch(/gap:\s*var\(--size-meter-limit-gap\)/);
+    // warn and over win over both kinds (higher specificity than .kind .fill)
+    expect(rule(".meter .fill[data-tone='warn']")).toMatch(/background:\s*var\(--color-yolk\)/);
+    expect(rule(".meter .fill[data-tone='over']")).toMatch(/background:\s*var\(--color-over\)/);
     expect(rule('.sm')).toMatch(/gap:\s*var\(--space-2\)/);
     expect(rule('.sm')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.md')).toMatch(/gap:\s*var\(--space-3\)/);
@@ -90,6 +96,20 @@ describe('Meter (Meter.md 테스트 기준)', () => {
     expect(rule('.value')).toMatch(/font-weight:\s*var\(--type-row-weight\)/);
     expect(rule('.max')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.numbers')).toMatch(/tabular-nums/);
+  });
+
+  it.each(['budget', 'limit'] as const)('puts only the %s kind class on the meter', (kind) => {
+    const { container } = render(
+      <Meter label="x" value={0n} max={BUDGET} tone="normal" kind={kind} />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain(styles[kind]);
+    expect(root.className).not.toContain(styles[kind === 'budget' ? 'limit' : 'budget']);
+  });
+
+  it('is a budget meter by default', () => {
+    const { container } = render(<Meter label="x" value={0n} max={BUDGET} tone="normal" />);
+    expect((container.firstElementChild as HTMLElement).className).toContain(styles.budget);
   });
 
   it.each(['sm', 'md'] as const)('puts only the %s size class on the meter', (size) => {

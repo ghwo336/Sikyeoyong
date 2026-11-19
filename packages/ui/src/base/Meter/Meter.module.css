@@ -1,4 +1,4 @@
-/* Main.dc.html, Arrived.dc.html: label row over an 8px bar. */
+/* Main.dc.html, Arrived.dc.html (budget), Confirm.dc.html (limit): label row over an 8px bar. */
 .meter {
   display: flex;
   flex-direction: column;
@@ -48,14 +48,36 @@
 .fill {
   height: 100%;
   border-radius: calc(var(--size-meter) / 2);
-  background: var(--color-leaf);
-}
-
-/* Main.dc.html draws 70% in yolk; over the limit is amber, never red (decisions D-17). */
-.fill[data-tone='warn'] {
   background: var(--color-yolk);
 }
 
-.fill[data-tone='over'] {
+/* The month's budget is yolk on the light track (D-17, Main 70%, Arrived 73%). */
+.budget .track {
+  background: var(--color-track);
+}
+
+.budget .fill {
+  background: var(--color-yolk);
+}
+
+/* A limit is leaf on the darker line track, 6 apart (Confirm.dc.html 한 번에, 30일). */
+.meter.limit {
+  gap: var(--size-meter-limit-gap);
+}
+
+.limit .track {
+  background: var(--color-line);
+}
+
+.limit .fill {
+  background: var(--color-leaf);
+}
+
+/* Near the line is yolk, over it is amber, never red (D-17). Same for both kinds. */
+.meter .fill[data-tone='warn'] {
+  background: var(--color-yolk);
+}
+
+.meter .fill[data-tone='over'] {
   background: var(--color-over);
 }

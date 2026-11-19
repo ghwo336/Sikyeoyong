@@ -3,6 +3,7 @@ import styles from './Meter.module.css';
 
 export type MeterTone = 'normal' | 'warn' | 'over';
 export type MeterSize = 'sm' | 'md';
+export type MeterKind = 'budget' | 'limit';
 
 export interface MeterProps {
   /** aokrw spent so far. */
@@ -15,6 +16,12 @@ export interface MeterProps {
   readonly tone: MeterTone;
   /** sm: Main card, 13px, gap 8. md: Arrived, 14px, gap 12. Default sm. */
   readonly size?: MeterSize;
+  /**
+   * budget: the month's delivery budget, yolk (Main, Arrived, D-17).
+   * limit: a spending limit the dragon has, leaf on a darker track, gap 6 (Confirm).
+   * Default budget.
+   */
+  readonly kind?: MeterKind;
 }
 
 /**
@@ -29,13 +36,13 @@ export function fillBasisPoints(value: bigint, max: bigint): number {
 }
 
 /** Draws the current value against a limit as a bar (Meter.md). */
-export function Meter({ value, max, label, tone, size = 'sm' }: MeterProps) {
+export function Meter({ value, max, label, tone, size = 'sm', kind = 'budget' }: MeterProps) {
   const bps = fillBasisPoints(value, max);
   const percent = bps / 100; // display only, never money
   const valueText = formatOkrw(value);
   const maxText = formatOkrw(max);
   return (
-    <div className={`${styles.meter} ${styles[size]}`}>
+    <div className={`${styles.meter} ${styles[size]} ${styles[kind]}`}>
       <div className={styles.row} aria-hidden="true">
         <span className={styles.label}>{label}</span>
         <span className={styles.numbers}>

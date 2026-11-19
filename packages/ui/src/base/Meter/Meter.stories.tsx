@@ -45,3 +45,14 @@ export const Zero: Story = {
 export const ArrivedSize: Story = {
   args: { ...base, value: okrwToAokrw(219_000n), tone: 'warn', size: 'md' },
 };
+
+/** Confirm.dc.html: 한도 막대 (잎색, 진한 바탕, 간격 6) */
+export const ConfirmLimit: Story = {
+  args: {
+    label: '한 번에',
+    value: okrwToAokrw(9_000n),
+    max: okrwToAokrw(10_000n),
+    tone: 'normal',
+    kind: 'limit',
+  },
+};
