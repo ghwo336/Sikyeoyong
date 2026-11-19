@@ -1,0 +1,38 @@
+.line {
+  display: flex;
+  min-width: 0;
+}
+
+/* Done.dc.html: row, 12px gap, centered vertically. */
+.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Cap.dc.html, Blocked.dc.html: column, centered, 16px gap. */
+.center {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.text {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-dragon);
+  letter-spacing: var(--type-dragon-letter-spacing);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.inline .text {
+  font-size: var(--type-dragon-size);
+  line-height: var(--type-dragon-line-height);
+}
+
+.center .text {
+  font-size: var(--type-dragon-large-size);
+  line-height: var(--type-dragon-large-line-height);
+}

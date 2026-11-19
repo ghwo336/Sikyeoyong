@@ -4,3 +4,4 @@ export * from './base/Amount';
 export * from './base/Button';
 export * from './dragon/Dragon';
 export * from './dragon/Egg';
+export * from './dragon/DragonLine';
