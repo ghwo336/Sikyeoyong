@@ -39,6 +39,9 @@ describe('SocialLogin (SocialLogin.md 테스트 기준)', () => {
       'gRed',
     ]);
     expect(tokens).toMatch(/--color-google-blue:\s*#4285F4/);
+    expect(tokens).toMatch(/--color-google-green:\s*#34A853/);
+    expect(tokens).toMatch(/--color-google-yellow:\s*#FBBC05/);
+    expect(tokens).toMatch(/--color-google-red:\s*#EA4335/);
   });
 
   it('starts each sign-in once', async () => {
@@ -51,17 +54,22 @@ describe('SocialLogin (SocialLogin.md 테스트 기준)', () => {
     expect(onGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it('starts nothing else while one sign-in is under way', async () => {
-    const onKakao = vi.fn();
-    const onGoogle = vi.fn();
-    render(<SocialLogin {...base} onKakao={onKakao} onGoogle={onGoogle} loading="kakao" />);
-    expect(kakao()).toHaveAttribute('aria-busy', 'true');
-    expect(google()).not.toHaveAttribute('aria-busy');
-    await userEvent.click(kakao());
-    await userEvent.click(google());
-    expect(onKakao).not.toHaveBeenCalled();
-    expect(onGoogle).not.toHaveBeenCalled();
-  });
+  it.each(['kakao', 'google'] as const)(
+    'starts nothing else while %s sign-in is under way',
+    async (loading) => {
+      const onKakao = vi.fn();
+      const onGoogle = vi.fn();
+      render(<SocialLogin {...base} onKakao={onKakao} onGoogle={onGoogle} loading={loading} />);
+      const busy = loading === 'kakao' ? kakao() : google();
+      const other = loading === 'kakao' ? google() : kakao();
+      expect(busy).toHaveAttribute('aria-busy', 'true');
+      expect(other).not.toHaveAttribute('aria-busy');
+      await userEvent.click(kakao());
+      await userEvent.click(google());
+      expect(onKakao).not.toHaveBeenCalled();
+      expect(onGoogle).not.toHaveBeenCalled();
+    },
+  );
 
   it('shows one terms line with both links', () => {
     render(<SocialLogin {...base} />);
@@ -77,11 +85,12 @@ describe('SocialLogin (SocialLogin.md 테스트 기준)', () => {
 
   // Start.dc.html 30-33.
   it('matches the design values', () => {
-    expect(rule('.login')).toMatch(/gap:\s*var\(--space-2\)/);
+    expect(rule('.login')).toMatch(/gap:\s*var\(--size-social-gap\)/);
+    expect(rule('.terms')).toMatch(/margin:\s*var\(--size-terms-top\) 0 0/);
     expect(rule('.terms')).toMatch(/font-size:\s*var\(--type-fine-size\)/);
     expect(rule('.terms')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.terms')).toMatch(/text-align:\s*center/);
-    expect(rule('.kakaoMark')).toMatch(/width:\s*var\(--size-face-id-icon\)/);
-    expect(rule('.googleMark')).toMatch(/width:\s*var\(--size-details-icon\)/);
+    expect(rule('.kakaoMark')).toMatch(/width:\s*var\(--size-social-mark\)/);
+    expect(rule('.googleMark')).toMatch(/width:\s*var\(--size-google-mark\)/);
   });
 });

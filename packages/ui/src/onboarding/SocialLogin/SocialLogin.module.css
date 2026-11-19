@@ -1,19 +1,19 @@
-/* Start.dc.html 30-33: two 56px buttons, 8 apart, then the terms line. */
+/* Start.dc.html 29-33: two 56px buttons, 10 apart, then the terms line 6 below. */
 .login {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--size-social-gap);
 }
 
 .kakaoMark {
-  width: var(--size-face-id-icon);
-  height: var(--size-face-id-icon);
+  width: var(--size-social-mark);
+  height: var(--size-social-mark);
   fill: var(--color-kakao-ink);
 }
 
 .googleMark {
-  width: var(--size-details-icon);
-  height: var(--size-details-icon);
+  width: var(--size-google-mark);
+  height: var(--size-google-mark);
 }
 
 .gBlue {
@@ -33,7 +33,7 @@
 }
 
 .terms {
-  margin: var(--space-1) 0 0;
+  margin: var(--size-terms-top) 0 0;
   font-size: var(--type-fine-size);
   line-height: var(--type-fine-line-height);
   color: var(--color-ink-secondary);
@@ -43,6 +43,10 @@
 .link {
   color: inherit;
   text-decoration: underline;
+}
+
+.link:hover {
+  color: var(--color-ink);
 }
 
 .link:focus-visible {
