@@ -17,7 +17,7 @@ children: []
 - 키 보관 방식 자체 (MAWS 또는 KMS, `payment.md`)
 
 ## 의존과 인터페이스 경계
-- 모듈 구조와 규칙은 `conventions/architecture.md` "API". 모듈 목록: auth, users, agents, payment, orders, merchants, recommend, budget, approvals, llm, chain, indexer, delivery, admin, demo, (2단계) merchant-api.
+- 모듈 구조와 규칙은 `conventions/architecture.md` "API". 모듈 목록: health(살아있음 확인만), auth, users, agents, payment, orders, merchants, recommend, budget, approvals, llm, chain, indexer, delivery, admin, demo, (2단계) merchant-api.
 - 공통 처리는 `src/common/`: 세션 가드, 역할 가드, zod 검증 파이프(nestjs-zod, 스키마는 `packages/shared/src/api`), `AppErrorCode` 예외 필터, 로깅과 감사 인터셉터.
 - DB는 `src/db`의 DbModule(Drizzle, SQLite WAL). 각 모듈의 저장소(repository)만 DB를 만진다.
 - 엔드포인트 목록은 tech-spec "3.2 REST API". 경로는 그대로 쓰고 구현만 Nest 컨트롤러로 옮긴다.

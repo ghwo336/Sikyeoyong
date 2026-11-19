@@ -6,6 +6,7 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "dev:api": "turbo run dev --filter=@sikyeoyong/api",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint && node scripts/eslint-boundaries.test.mjs && prettier --check .",
