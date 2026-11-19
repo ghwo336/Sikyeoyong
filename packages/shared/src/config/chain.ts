@@ -2,7 +2,7 @@ import { AppError } from '../errors/index.js';
 
 /**
  * Chain settings live only here (CLAUDE.md rule 2). Values are (확인) in
- * docs/_research/maroo-facts.md. The testnet chain id is going to change, so
+ * docs/_research/maroo-facts.md, except schemaRegistry (미확인, tech-spec 7.2 only). The testnet chain id is going to change, so
  * code looks networks up by key, never by number, and the API checks the id
  * against eth_chainId at boot.
  */
@@ -24,11 +24,19 @@ export interface ChainConfig {
     readonly pcl: `0x${string}`;
     readonly agent: `0x${string}`;
     readonly identityRegistry: `0x${string}`;
+    /** (미확인) Address appears only in tech-spec 7.2. Confirm before the KYB schema step. */
     readonly schemaRegistry: `0x${string}`;
   };
 }
 
-export const NETWORKS: { readonly [K in NetworkKey]: ChainConfig } = {
+function deepFreeze<T extends object>(value: T): T {
+  for (const inner of Object.values(value)) {
+    if (inner !== null && typeof inner === 'object') deepFreeze(inner as object);
+  }
+  return Object.freeze(value);
+}
+
+export const NETWORKS: { readonly [K in NetworkKey]: ChainConfig } = deepFreeze({
   'maroo-testnet': {
     key: 'maroo-testnet',
     name: 'Maroo Testnet',
@@ -47,7 +55,7 @@ export const NETWORKS: { readonly [K in NetworkKey]: ChainConfig } = {
       schemaRegistry: '0x1000000000000000000000000000000000000006',
     },
   },
-};
+});
 
 /** Values the API may override from its environment (names in tech-spec 8.3). */
 export interface ChainOverrides {
@@ -74,15 +82,25 @@ export function resolveChainConfig(network: string, overrides: ChainOverrides = 
     throw new AppError('INTERNAL', { reason: 'invalid chain id', chainId });
   }
   const rpcUrl = overrides.rpcUrl ?? base.rpcUrl;
-  if (!/^https?:\/\//.test(rpcUrl)) {
+  if (!isHttpUrlWithHost(rpcUrl)) {
     throw new AppError('INTERNAL', { reason: 'invalid rpc url' });
   }
-  return {
-    ...base,
-    chainId,
-    rpcUrl,
-    okrwDenom: overrides.okrwDenom ?? base.okrwDenom,
-  };
+  // The denom goes into PCL policy encodings; an empty or malformed value would
+  // put the 30-day cap on the wrong token (chain-and-pcl.md).
+  const okrwDenom = overrides.okrwDenom ?? base.okrwDenom;
+  if (!DENOM_RE.test(okrwDenom)) {
+    throw new AppError('INTERNAL', { reason: 'invalid okrw denom' });
+  }
+  return deepFreeze({ ...base, chainId, rpcUrl, okrwDenom });
+}
+
+const DENOM_RE = /^[a-z][a-z0-9/:._-]{2,127}$/;
+
+// shared has no DOM or node types, so no URL global: scheme, then a non-empty host.
+const HTTP_URL_RE = /^https?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?(\/[^\s]*)?$/;
+
+function isHttpUrlWithHost(value: string): boolean {
+  return HTTP_URL_RE.test(value);
 }
 
 /** Explorer link for the "자세히 보기" detail view only (D-17). */

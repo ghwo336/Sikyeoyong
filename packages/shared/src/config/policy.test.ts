@@ -40,6 +40,10 @@ describe('getPolicy (D-07, D-12)', () => {
     expect(l[1] < l[2] && l[2] < l[3]).toBe(true);
   });
 
+  it('rejects unknown profiles at runtime', () => {
+    expect(() => getPolicy('prod' as 'default')).toThrow(AppError);
+  });
+
   it('isPolicyProfile', () => {
     expect(isPolicyProfile('default')).toBe(true);
     expect(isPolicyProfile('demo')).toBe(true);
@@ -53,6 +57,10 @@ describe('floatCapAokrw (D-06)', () => {
     expect(floatCapAokrw(p, 1, 2n)).toBe(won(20_000n));
     expect(floatCapAokrw(p, 3, 2n)).toBe(won(100_000n));
     expect(floatCapAokrw(p, 2, 1n)).toBe(won(30_000n));
+  });
+
+  it('rejects a cap above the uint256 range', () => {
+    expect(() => floatCapAokrw(getPolicy('default'), 3, 10n ** 60n)).toThrow(AppError);
   });
 
   it('rejects multipliers below 1', () => {

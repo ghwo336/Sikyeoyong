@@ -56,6 +56,31 @@ describe('resolveChainConfig', () => {
     expect(() => resolveChainConfig('maroo-testnet', { chainId })).toThrow(AppError);
   });
 
+  it.each(['', ' ', 'A', 'ok', 'Atokrw', 'a tokrw', 'atokrw\n'])(
+    'rejects okrw denom %j',
+    (okrwDenom) => {
+      expect(() => resolveChainConfig('maroo-testnet', { okrwDenom })).toThrow(AppError);
+    },
+  );
+
+  it('accepts the mainnet denom', () => {
+    expect(resolveChainConfig('maroo-testnet', { okrwDenom: 'aokrw' }).okrwDenom).toBe('aokrw');
+  });
+
+  it.each(['', 'http://', 'https://', 'localhost:8545', 'ws://rpc', 'ftp://x'])(
+    'rejects rpc url %j',
+    (rpcUrl) => {
+      expect(() => resolveChainConfig('maroo-testnet', { rpcUrl })).toThrow(AppError);
+    },
+  );
+
+  it('freezes the defaults and resolved configs deeply', () => {
+    const t = NETWORKS['maroo-testnet'];
+    expect(Object.isFrozen(t)).toBe(true);
+    expect(Object.isFrozen(t.precompiles)).toBe(true);
+    expect(Object.isFrozen(resolveChainConfig('maroo-testnet'))).toBe(true);
+  });
+
   it('rejects unknown networks and non-http rpc urls', () => {
     expect(() => resolveChainConfig('mainnet')).toThrow(AppError);
     expect(() => resolveChainConfig('toString')).toThrow(AppError);

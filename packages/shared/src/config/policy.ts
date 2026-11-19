@@ -1,5 +1,5 @@
 import { AppError } from '../errors/index.js';
-import { okrwToAokrw } from '../money/index.js';
+import { MAX_AOKRW, okrwToAokrw } from '../money/index.js';
 
 /**
  * Policy values (decisions D-07, D-12). Amounts are written in whole OKRW for
@@ -48,6 +48,9 @@ export function isPolicyProfile(value: string): value is PolicyProfile {
 }
 
 export function getPolicy(profile: PolicyProfile): PolicyConfig {
+  if (!isPolicyProfile(profile)) {
+    throw new AppError('INTERNAL', { reason: 'unknown policy profile', profile: String(profile) });
+  }
   const cap = PERIODIC_CAP[profile];
   return {
     profile,
@@ -71,7 +74,11 @@ export function floatCapAokrw(policy: PolicyConfig, level: AgentLevel, multiplie
   if (multiplier < 1n) {
     throw new AppError('INTERNAL', { reason: 'float multiplier must be at least 1' });
   }
-  return policy.perOrderLimitAokrw[level] * multiplier;
+  const cap = policy.perOrderLimitAokrw[level] * multiplier;
+  if (cap > MAX_AOKRW) {
+    throw new AppError('INTERNAL', { reason: 'float cap out of range' });
+  }
+  return cap;
 }
 
 export type NagStage = 'none' | 'warn70' | 'warn90' | 'over100';

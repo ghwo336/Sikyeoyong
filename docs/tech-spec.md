@@ -451,7 +451,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 ### 3.7 잔소리 계산 (budget 모듈)
 - 개인 예산 사용액 = 이번 달(KST 달력 월) `orders.status IN (paid, delivering, delivered)` 금액 합. 체인 30일 상한과 별개다.
 - 판단 시점: (1) 주문 확정 직후, (2) 주문 직전 견적(`projected = spent + amount`).
-- 단계: `ratio >= 0.7 → warn70`, `>= 0.9 → warn90`, `>= 1.0 → over100`. 기준값은 `policy.ts`의 `NAG_THRESHOLDS = [0.7, 0.9, 1.0]`.
+- 단계: 사용액 × 10000 ≥ 예산 × 7000이면 `warn70`, × 9000이면 `warn90`, × 10000이면 `over100` (소수 없이 bigint로 비교). 기준값은 `getPolicy(profile).nagThresholdsBps = [7000, 9000, 10000]`(bps), 판정은 `packages/shared`의 `nagStage(policy, spentAokrw, budgetAokrw)`.
 - 중복 방지: `nag_events (user_id, month_kst, level)` 유니크. 같은 단계는 한 달 1번. 단 `over100` 이후 매 주문 직전에는 확인 카드에 짧게 붙인다.
 - 문구: LLM에 맡기지 않고 템플릿 + 변수로 만든 뒤, 대화에서는 LLM이 이어 말하게 한다(숫자 정확성 보장).
 - 추천 연동: `warn70` 이상이면 추천 점수에서 가격 가중치를 올린다.
