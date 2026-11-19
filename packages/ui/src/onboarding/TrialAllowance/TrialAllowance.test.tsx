@@ -28,6 +28,20 @@ describe('TrialAllowance (TrialAllowance.md 테스트 기준)', () => {
     expect(screen.getByText(text)).toBeInTheDocument();
   });
 
+  it('keeps the live region on the words only, never around the button', () => {
+    const { container, rerender } = render(
+      <TrialAllowance amount={AMOUNT} status="idle" onClaim={vi.fn()} />,
+    );
+    const live = container.querySelector('[aria-live]');
+    expect(live).not.toBeNull();
+    expect(live).toBeEmptyDOMElement();
+    expect(live?.contains(screen.getByRole('button'))).toBe(false);
+    rerender(<TrialAllowance amount={AMOUNT} status="done" onClaim={vi.fn()} />);
+    // The same node is still there, now with the words, so it is announced.
+    expect(container.querySelector('[aria-live]')).toBe(live);
+    expect(live).toHaveTextContent('받았어요');
+  });
+
   it('asks once per press while idle', async () => {
     const onClaim = vi.fn();
     render(<TrialAllowance amount={AMOUNT} status="idle" onClaim={onClaim} />);
@@ -50,7 +64,7 @@ describe('TrialAllowance (TrialAllowance.md 테스트 기준)', () => {
     render(<TrialAllowance amount={AMOUNT} status="done" onClaim={onClaim} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByText('받았어요')).toBeInTheDocument();
-    expect(screen.getByText('받았어요').parentElement).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByText('받았어요')).toHaveAttribute('aria-live', 'polite');
   });
 
   // Budget.dc.html 45-51.

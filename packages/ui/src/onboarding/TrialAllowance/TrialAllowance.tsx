@@ -23,21 +23,17 @@ export function TrialAllowance({ amount, status, onClaim }: TrialAllowanceProps)
         <span className={styles.label}>체험용 용돈</span>
         <span className={styles.amount}>{formatOkrw(amount)}</span>
       </div>
-      <div className={styles.end} aria-live="polite">
-        {status === 'done' ? (
-          <span className={styles.done}>받았어요</span>
-        ) : (
-          <Button
-            variant="accent"
-            size="md"
-            loading={status === 'pending'}
-            onPress={() => {
-              if (status === 'idle') onClaim();
-            }}
-          >
+      <div className={styles.end}>
+        {status === 'done' ? null : (
+          // Pending is a loading Button, which ignores presses, so only idle reaches onClaim.
+          <Button variant="accent" size="md" loading={status === 'pending'} onPress={onClaim}>
             받기
           </Button>
         )}
+        {/* Always mounted so screen readers hear the words when they appear. */}
+        <span className={styles.done} aria-live="polite">
+          {status === 'done' ? '받았어요' : null}
+        </span>
       </div>
     </div>
   );

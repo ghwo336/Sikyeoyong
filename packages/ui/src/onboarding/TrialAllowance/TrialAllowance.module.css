@@ -37,6 +37,10 @@
 }
 
 /* No design for after: leaf words where the button was (TrialAllowance.md). */
+.done:empty {
+  display: none;
+}
+
 .done {
   padding: 0 var(--size-pill-pad-x);
   font-size: var(--type-body-size);
