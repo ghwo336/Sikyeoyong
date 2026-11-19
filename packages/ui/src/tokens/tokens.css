@@ -55,6 +55,8 @@
   --type-label-weight: 600;
   --type-input-size: 17px;
   --type-input-weight: 600;
+  --type-small-size: 14px;
+  --type-small-weight: 400;
   --type-chip-size: 14px;
   --type-chip-weight: 400;
   --type-button-size: 17px;
@@ -90,6 +92,7 @@
   --size-chip: 36px;
   --size-chip-padding-x: 14px;
   --size-dragon-chat-gap: 10px;
+  --size-meter: 8px;
   --size-switch-width: 52px;
   --size-switch-height: 32px;
   --size-switch-knob: 26px;
