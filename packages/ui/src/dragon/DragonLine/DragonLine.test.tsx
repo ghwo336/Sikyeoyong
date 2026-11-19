@@ -49,6 +49,7 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
     ['inline', '56'],
     ['sheet', '44'],
     ['center', '128'],
+    ['greeting', '96'],
   ] as const)('%s layout draws a %spx dragon of the given species and mood', (layout, size) => {
     const { container } = render(
       <DragonLine text="x" layout={layout} species="water" mood="worried" />,
@@ -92,6 +93,37 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
     expect(rule('.center .text')).toMatch(/font-size:\s*var\(--type-dragon-large-size\)/);
     expect(rule('.center .text')).toMatch(
       /letter-spacing:\s*var\(--type-dragon-large-letter-spacing\)/,
+    );
+  });
+
+  it('puts what the dragon hands over under its words, in the same column', () => {
+    const { container } = render(
+      <DragonLine text="골라 봤어용." layout="chat" species="forest">
+        <ul aria-label="추천" />
+      </DragonLine>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    // Dragon, then one column: words first, card under them.
+    expect(root.children).toHaveLength(2);
+    const column = root.children[1] as HTMLElement;
+    expect(column.children[0]?.tagName).toBe('P');
+    expect(column.children[1]).toBe(screen.getByRole('list', { name: '추천' }));
+    expect(rule('.body')).toMatch(/flex-direction:\s*column/);
+    expect(rule('.body')).toMatch(/gap:\s*var\(--space-3\)/);
+    expect(rule('.body')).toMatch(/min-width:\s*0/);
+  });
+
+  it('keeps the words right next to the dragon when nothing is handed over', () => {
+    const { container } = render(<DragonLine text="x" layout="chat" species="forest" />);
+    expect((container.firstElementChild as HTMLElement).children[1]?.tagName).toBe('P');
+  });
+
+  it('draws the Budget greeting at 20px, 14 from a 96px dragon', () => {
+    expect(rule('.greeting')).toMatch(/align-items:\s*center/);
+    expect(rule('.greeting')).toMatch(/gap:\s*var\(--size-dragon-greeting-gap\)/);
+    expect(rule('.greeting .text')).toMatch(/font-size:\s*var\(--type-dragon-greeting-size\)/);
+    expect(rule('.greeting .text')).toMatch(
+      /line-height:\s*var\(--type-dragon-greeting-line-height\)/,
     );
   });
 

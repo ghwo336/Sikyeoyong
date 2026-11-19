@@ -32,6 +32,22 @@
   text-align: center;
 }
 
+/* Budget.dc.html: a 96px dragon beside 20px text at 1.5, 14 apart, centered. */
+.greeting {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--size-dragon-greeting-gap);
+}
+
+/* Main.dc.html: the words, then what the dragon hands over, 12 apart in one column. */
+.body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
 .text {
   margin: 0;
   min-width: 0;
@@ -63,4 +79,10 @@
   font-size: var(--type-dragon-large-size);
   line-height: var(--type-dragon-large-line-height);
   letter-spacing: var(--type-dragon-large-letter-spacing);
+}
+
+.greeting .text {
+  font-size: var(--type-dragon-greeting-size);
+  line-height: var(--type-dragon-greeting-line-height);
+  letter-spacing: var(--type-dragon-greeting-letter-spacing);
 }
