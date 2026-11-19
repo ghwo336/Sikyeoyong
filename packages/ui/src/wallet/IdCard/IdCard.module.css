@@ -1,0 +1,91 @@
+/* IdCard.dc.html 25-38: a species-colored card with a portrait, name and four facts. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-id-card-gap);
+  padding: var(--space-5);
+  /* 1.5px outline like the dragon drawings; no 1.5 on the scale, so it stays literal. */
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-id-card);
+  color: var(--color-ink);
+}
+
+.card[data-species='forest'] {
+  background: var(--color-dragon-green);
+}
+
+.card[data-species='water'] {
+  background: var(--color-dragon-sky);
+}
+
+.card[data-species='flower'] {
+  background: var(--color-dragon-pink);
+}
+
+.card[data-species='star'] {
+  background: var(--color-dragon-violet);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--size-limits-gap);
+}
+
+.portrait {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-portrait);
+  height: var(--size-portrait);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-portrait);
+  background: var(--color-egg-shell);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  /* IdCard.dc.html: 2px between label and value lines (no 2 on the 4px scale). */
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--type-card-name-size);
+  font-weight: var(--type-card-name-weight);
+  letter-spacing: var(--type-card-name-letter-spacing);
+}
+
+.owner {
+  font-size: var(--type-body-size);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--size-limits-gap) var(--space-3);
+  margin: 0;
+  font-size: var(--type-caption-size);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fact dt {
+  color: var(--color-card-ink);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: var(--type-row-size);
+  font-weight: var(--type-row-weight);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

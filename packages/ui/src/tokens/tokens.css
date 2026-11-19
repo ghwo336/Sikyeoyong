@@ -34,6 +34,7 @@
   --color-cheek: #FF9E9E;
   --color-sleep-ground: #EEF1F4;
   --color-sleep-line: #D9DEE4;
+  --color-card-ink: #2F4A35;
   --color-scrim: rgba(30, 35, 32, 0.38);
   --color-map-ground: #E8EEE5;
   --color-map-block: #F2F5EF;
@@ -98,6 +99,9 @@
   --type-wallet-amount-size: 34px;
   --type-wallet-amount-weight: 700;
   --type-wallet-amount-letter-spacing: -0.03em;
+  --type-card-name-size: 24px;
+  --type-card-name-weight: 700;
+  --type-card-name-letter-spacing: -0.02em;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -130,6 +134,8 @@
   --radius-sheet: 28px;
   --radius-sheet-handle: 3px;
   --radius-card-button: 16px;
+  --radius-id-card: 22px;
+  --radius-portrait: 18px;
   --radius-bubble: 20px;
   --radius-bubble-tail: 6px;
   --size-screen-width: 390px;
@@ -161,6 +167,8 @@
   --size-badge-pad-y: 2px;
   --size-summary-gap: 10px;
   --size-egg-sleeping: 168px;
+  --size-portrait: 76px;
+  --size-id-card-gap: 18px;
   --size-sleep-gap: 22px;
   --size-sleep-heading-gap: 6px;
   --size-pocket-top: 18px;

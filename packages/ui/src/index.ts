@@ -34,3 +34,4 @@ export * from './order/RecommendationList';
 export * from './order/TasteRating';
 export * from './wallet/AllowanceSummary';
 export * from './wallet/FrozenPanel';
+export * from './wallet/IdCard';
