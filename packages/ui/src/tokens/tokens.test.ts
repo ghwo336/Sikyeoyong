@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { DRAGON_SPECIES } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error -- plain JS build script without type declarations
 import { renderTokens } from '../../scripts/build-tokens.mjs';
@@ -17,6 +18,7 @@ const tokens = JSON.parse(json) as {
   radius: Record<string, number>;
   size: Record<string, number>;
   motion: Record<string, string>;
+  dragonSpecies: Record<string, unknown>;
 };
 const css = readFileSync(resolve(__dirname, 'tokens.css'), 'utf8');
 const base = readFileSync(resolve(__dirname, 'base.css'), 'utf8');
@@ -106,5 +108,17 @@ describe('base.css (hand-maintained)', () => {
 
   it('does not redefine generated variables', () => {
     for (const name of vars.keys()) expect(cssVars(css).has(name)).toBe(false);
+  });
+});
+
+describe('dragonSpecies in tokens.json (D-20)', () => {
+  it('lists exactly the species shared code knows, each with a known dragon color', () => {
+    const species = Object.keys(tokens.dragonSpecies).filter((k) => !k.startsWith('_'));
+    expect(species).toEqual([...DRAGON_SPECIES]);
+    const dragonColors = tokens.color.dragon as Record<string, string>;
+    for (const s of species) {
+      const color = (tokens.dragonSpecies[s] as { color: string }).color;
+      expect(dragonColors[color], `${s} color ${color}`).toBeDefined();
+    }
   });
 });
