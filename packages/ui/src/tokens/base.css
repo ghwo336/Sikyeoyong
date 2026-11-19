@@ -1,0 +1,15 @@
+/*
+ * Hand-maintained tokens that design/tokens.json describes in prose only.
+ * Sources: tokens.json font.* and motion.*, design-and-motion.md.
+ * base.test.ts checks the numbers against the tokens.json strings.
+ */
+:root {
+  /* font.ui "Pretendard Variable", font.dragonVoice "Gowun Dodum", font.code "ui-monospace" */
+  --font-ui: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  --font-dragon: 'Gowun Dodum', 'Pretendard Variable', sans-serif;
+  --font-code: ui-monospace, monospace;
+  /* motion.screen "220ms ease-out", motion.number "400ms" */
+  --motion-screen: 220ms;
+  --motion-screen-easing: ease-out;
+  --motion-number: 400ms;
+}

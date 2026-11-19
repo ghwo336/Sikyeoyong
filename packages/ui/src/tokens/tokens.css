@@ -66,10 +66,4 @@
   --size-button-primary: 56px;
   --size-button-secondary: 48px;
   --size-input: 52px;
-  --font-ui: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
-  --font-dragon: 'Gowun Dodum', 'Pretendard Variable', sans-serif;
-  --font-code: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --motion-screen: 220ms;
-  --motion-number: 400ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }

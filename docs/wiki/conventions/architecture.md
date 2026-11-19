@@ -64,7 +64,7 @@ packages/ui/src/<영역>/<이름>/
 ```
 영역: `base`, `dragon`, `chat`, `order`, `limits`, `onboarding`, `wallet`. 목록과 문서는 `docs/wiki/components/ui/`.
 
-토큰: `design/tokens.json`이 원본이고 `pnpm --filter @sikyeoyong/ui tokens`가 `packages/ui/src/tokens/tokens.css`(CSS 변수 `--color-leaf`, `--space-4`, `--radius-sheet` 등)를 만든다. 생성 파일은 손으로 고치지 않는다 (테스트가 원본과 다르면 실패). 앱은 `@sikyeoyong/ui/tokens.css`를 한 번 import한다. ui 패키지는 소스를 그대로 내보낸다 (웹은 `transpilePackages`, 하네스는 Vite).
+토큰: `design/tokens.json`이 원본이고 `pnpm --filter @sikyeoyong/ui tokens`가 `packages/ui/src/tokens/tokens.css`(색, 글자, 간격, 반경, 크기 변수: `--color-leaf`, `--space-4`, `--radius-sheet` 등)를 만든다. 생성 파일은 손으로 고치지 않는다 (테스트가 tokens.json과 변수 하나하나를 대조한다). tokens.json이 글로만 적은 글꼴 목록과 움직임 값(`--font-ui`, `--font-dragon`, `--font-code`, `--motion-screen`, `--motion-screen-easing`, `--motion-number`)은 `src/tokens/base.css`에 손으로 두고 출처를 적는다. 앱은 둘을 합친 `@sikyeoyong/ui/tokens.css`(`src/tokens/index.css`)를 한 번 import한다. ui 패키지는 소스를 그대로 내보낸다 (웹은 `transpilePackages`, 하네스는 Vite).
 
 ### 규칙 (MUST)
 - **단일 책임:** 컴포넌트 이름을 "~하는 것" 한 문장으로 설명할 수 없으면 쪼갠다. 예: `OrderConfirmSheet`는 확인 시트를 그린다. 결제는 하지 않는다(`onConfirm`만 부른다).

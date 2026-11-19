@@ -8,7 +8,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./tokens.css": "./src/tokens/tokens.css"
+    "./tokens.css": "./src/tokens/index.css"
   },
   "scripts": {
     "tokens": "node scripts/build-tokens.mjs",
