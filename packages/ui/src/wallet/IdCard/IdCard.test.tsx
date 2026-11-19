@@ -66,6 +66,18 @@ describe('IdCard (IdCard.md 테스트 기준)', () => {
     const { container } = render(<IdCard {...base} species={species} />);
     expect(container.firstElementChild).toHaveAttribute('data-species', species);
     expect(container.querySelector('svg')).toHaveAttribute('width', '64');
+    // The portrait is the same species as the card (Dragon head marks, D-20).
+    const MARK = {
+      forest: 'leaf-crest',
+      water: 'fin-ears',
+      flower: 'petal-ears',
+      star: 'star-horn',
+    } as const;
+    for (const [s, part] of Object.entries(MARK)) {
+      const found = container.querySelector(`svg [data-part="${part}"]`);
+      if (s === species) expect(found, part).not.toBeNull();
+      else expect(found, part).toBeNull();
+    }
   });
 
   // IdCard.dc.html 25-38.
