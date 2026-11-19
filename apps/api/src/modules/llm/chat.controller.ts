@@ -23,6 +23,7 @@ export class ChatController {
     // A closed connection stops the model turns (each costs money) and keeps nothing.
     const gone = new AbortController();
     res.on('close', () => {
+      // close also fires after a normal res.end(); only a close before that means the client left.
       if (!res.writableEnded) gone.abort();
     });
     res.status(200);

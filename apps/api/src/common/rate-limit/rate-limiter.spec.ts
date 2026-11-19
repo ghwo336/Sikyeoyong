@@ -29,6 +29,15 @@ describe('RateLimiter', () => {
     expect(r.allow('u1', RULE, 60_001)).toBe(true);
   });
 
+  it('keeps one entry per active key; a key whose window emptied starts fresh', () => {
+    const r = new RateLimiter();
+    r.allow('a', RULE, 0);
+    r.allow('b', RULE, 0);
+    expect(r.size).toBe(2);
+    r.allow('a', RULE, 120_000); // a's old hit left the window: dropped, then counted anew
+    expect(r.size).toBe(2);
+  });
+
   it('keeps keys apart', () => {
     const r = new RateLimiter();
     for (const t of [0, 1, 2]) r.allow('chat:u1', RULE, t);

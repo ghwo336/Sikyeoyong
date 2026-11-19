@@ -178,6 +178,15 @@ export class ChatService {
       await runtime.run({ ctx: { userId }, history, userText: text }, onEvent, signal);
     } catch (err) {
       if (signal?.aborted) {
+        if (
+          !(err instanceof Error && err.message === 'aborted') &&
+          !(err instanceof Error && err.name === 'AbortError')
+        ) {
+          this.logger.warn(
+            'chat turn error after the client left',
+            err instanceof Error ? err.stack : undefined,
+          );
+        }
         // Nobody is listening: keep nothing so the same message can be sent again.
         this.store(() => {
           this.repo.delete(userRowId);

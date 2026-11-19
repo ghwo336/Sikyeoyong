@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { request as httpRequest, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import type Anthropic from '@anthropic-ai/sdk';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { type ChatEvent, zChatEvent } from '@sikyeoyong/shared';
@@ -218,6 +217,13 @@ describe('POST /api/chat/messages (SSE)', () => {
     }
     const over = await post({ text: '21번', clientMessageId: 'r20' });
     expect(over.status).toBe(429);
+    expect(over.body).toEqual({
+      error: {
+        code: 'RATE_LIMITED',
+        message: '잠시 후 다시 시도해 주세요',
+        dragonLine: '숨 좀 돌리고 올게용',
+      },
+    });
     expect(provider.requests).toHaveLength(20);
     // A replay of a finished turn costs nothing, so it still answers.
     expect((await post({ text: '0번', clientMessageId: 'r0' })).status).toBe(200);
@@ -240,22 +246,19 @@ describe('POST /api/chat/messages (SSE)', () => {
 
   it('aborts the turn when the HTTP connection closes (real socket)', async () => {
     let calls = 0;
-    // A slow model: each turn takes 100ms and says one word.
+    let sawAbort: () => void = () => undefined;
+    const aborted = new Promise<void>((r) => {
+      sawAbort = r;
+    });
+    // A model that never answers on its own: only the client leaving can end the turn,
+    // so the test does not depend on timing.
     const slow: LlmProvider = {
       turn: (_req, onText, signal) =>
-        new Promise((resolve, reject) => {
+        new Promise((_resolve, reject) => {
           calls += 1;
           onText('음');
-          const t = setTimeout(() => {
-            resolve({
-              content: [
-                { type: 'tool_use', id: `t${String(calls)}`, name: 'get_context', input: {} },
-              ],
-              stop_reason: 'tool_use',
-            } as unknown as Anthropic.Message);
-          }, 100);
           signal?.addEventListener('abort', () => {
-            clearTimeout(t);
+            sawAbort();
             reject(new Error('aborted'));
           });
         }),
@@ -284,7 +287,11 @@ describe('POST /api/chat/messages (SSE)', () => {
       );
       req.end(JSON.stringify({ text: '오늘 날씨', clientMessageId: 'sock' }));
     });
-    await new Promise((r) => setTimeout(r, 400));
+    await aborted;
+    // The service deletes the turn right after the rejection settles.
+    for (let i = 0; i < 50 && h.db.select().from(chatMessages).all().length > 0; i += 1) {
+      await new Promise((r) => setImmediate(r));
+    }
     expect(calls).toBe(1);
     expect(h.db.select().from(chatMessages).all()).toHaveLength(0);
   });
