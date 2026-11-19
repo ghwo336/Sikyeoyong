@@ -73,7 +73,7 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
   CHAIN_UNAUTHORIZED: {
     httpStatus: 500,
     message: '잠시 후 다시 시도해 주세요',
-    dragonLine: '제가 할 수 없는 일이에용',
+    dragonLine: '앗, 뭔가 꼬였어용. 조금 있다 다시 해 주세용',
   },
   CHAIN_AGENT_PAUSED: {
     httpStatus: 423,
@@ -138,7 +138,7 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
   CONFLICT: {
     httpStatus: 409,
     message: '요청이 서로 맞지 않아요',
-    dragonLine: '앗, 요청이 꼬였어용. 처음부터 다시 해 주세용',
+    dragonLine: '앗, 요청이 꼬였어용. 주문 내역을 먼저 확인해 주세용',
   },
   RATE_LIMITED: {
     httpStatus: 429,

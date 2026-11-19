@@ -236,7 +236,7 @@ apps/api/src/
 | GET | `/merchants/:id` | user | | `{ merchant, menus }` |
 | POST | `/orders/quote` | user | `{ merchantId, items: [{ menuId, qty }] }` | `{ amount, checks: RuleCheck[] }` |
 | POST | `/orders` | user | `{ merchantId, items, clientOrderId }` | `{ order: { status: 'quoted' }, quote }` (앱에서 직접 주문하는 버튼용, LLM `place_order`와 같은 서비스 함수. 결제는 하지 않음) |
-| POST | `/orders/:id/confirm` | user | | `{ order, receipt }` 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다 |
+| POST | `/orders/:id/confirm` | user | | `{ order, receipt }` 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 주문이 `quoted`가 아니면(두 번 누르기, 탭 두 개, 결제 중, 결제 끝) 결제하지 않고 현재 `{ order, receipt }`를 그대로 돌려준다. 에러(409)로 답하지 않는다 |
 | GET | `/orders` | user | `?cursor` | `{ orders, nextCursor }` |
 | GET | `/orders/:id` | user | | `{ order, events, receipt }` |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
@@ -420,7 +420,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 | `CHAIN_AGENT_LIMIT_UNSET` | `AgentTransferLimitMetadataInvalid(reason)` | 503 | 용이 설정이 덜 끝났어요 | "앗, 제 한도가 아직 안 정해졌어용. 잠깐만용" | 서버가 TransferLimit 자동 재기록 후 1회 재시도, 실패 시 운영자 알림 |
 | `CHAIN_KYC_LIMIT` | 전역 KYC 한도 거절 (에러 이름 (미확인), `IPcl` 디코드 결과로 매핑) | 422 | 본인 인증이 없어 한도가 막혔어요 | "주인님 본인 인증이 필요해용" | 테스트넷 KYC 링크 |
 | `CHAIN_EAS_REQUIRED` | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | 422 | 인증이 없거나 만료된 가게예요 | "이 가게는 인증이 없어서 못 시켜용" | 다른 가게 추천 |
-| `CHAIN_UNAUTHORIZED` | `Unauthorized()` (서버 설정 문제) | 500 | 잠시 후 다시 시도해 주세요 | "제가 할 수 없는 일이에용" | 로그, 운영자 알림 |
+| `CHAIN_UNAUTHORIZED` | `Unauthorized()` (서버 설정 문제) | 500 | 잠시 후 다시 시도해 주세요 | "앗, 뭔가 꼬였어용. 조금 있다 다시 해 주세용" | 로그, 운영자 알림 |
 | `CHAIN_AGENT_PAUSED` | 컨트랙트 `AgentIsPaused()` | 423 | 용이가 자고 있어요 | "쉬고 있을게용. 깨워 주면 다시 일할게용." | 깨우기 안내 |
 | `CHAIN_MERCHANT_INACTIVE` | 컨트랙트 `MerchantNotActive(id)` | 422 | 주문할 수 없는 가게예요 | "이 가게는 등록이 안 돼 있어용" | 다른 가게 |
 | `CHAIN_INSUFFICIENT_FUNDS` | 잔액 부족, `INSUFFICIENT_BALANCE`(MAWS) | 422 | 용돈이 부족해요 | "용돈이 모자라용" | 충전 버튼 |
@@ -433,7 +433,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 | `UNAUTHENTICATED` | 세션 없음, 만료 | 401 | 다시 로그인해 주세요 | "주인님, 다시 로그인해 주세용" | 로그인 화면 |
 | `FORBIDDEN` | 역할 부족 | 403 | 권한이 없어요 | "제가 할 수 없는 일이에용" | 없음 |
 | `NOT_FOUND` | 없는 자원 | 404 | 찾을 수 없어요 | "어디 있는지 못 찾겠어용" | 없음 |
-| `CONFLICT` | 같은 멱등 키에 다른 내용, 상태 충돌 (아무것도 처리되지 않음) | 409 | 요청이 서로 맞지 않아요 | "앗, 요청이 꼬였어용. 처음부터 다시 해 주세용" | 새로 시작. 같은 키와 같은 내용은 409가 아니라 처음 응답을 그대로 돌려준다 (server-api.md) |
+| `CONFLICT` | 같은 멱등 키(`clientOrderId`, `clientMessageId`, 충전·회수 요청 ID)에 다른 내용. 이 요청은 처리되지 않았다 | 409 | 요청이 서로 맞지 않아요 | "앗, 요청이 꼬였어용. 주문 내역을 먼저 확인해 주세용" | 주문 내역 확인. 같은 키와 같은 내용은 409가 아니라 처음 응답을 그대로 돌려준다. 이미 결제 중이거나 끝난 주문의 confirm도 409가 아니다 (3.2 confirm 행) |
 | `RATE_LIMITED` | 레이트 리밋 (9.5) | 429 | 잠시 후 다시 시도해 주세요 | "숨 좀 돌리고 올게용" | 잠시 뒤 |
 | `INTERNAL` | 그 밖 | 500 | 잠시 후 다시 시도해 주세요 | "앗, 뭔가 꼬였어용" | 로그 |
 

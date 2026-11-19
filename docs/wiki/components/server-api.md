@@ -31,11 +31,12 @@ children: []
   { "error": { "code": "CHAIN_AGENT_LIMIT", "message": "사람이 읽을 문장", "dragonLine": "드래곤 대사(선택)", "detail": {} } }
   ```
   `code`는 `AppErrorCode`만 (tech-spec 3.6). 체인 revert는 `chain-and-pcl.md` 매핑으로 바꾼다. 원본은 `detail.chain`.
-  HTTP 상태, `message`, `dragonLine`은 `packages/shared`의 `APP_ERRORS[code]`에서만 가져온다(필터에서 따로 정하지 않는다). 요약: 검증 400, 로그인 401, 권한 403, 없음 404, 멱등 충돌 409, 체인·서버 규칙 거절 422, 멈춤 423, 레이트 리밋 429, 서버 설정·그 밖 500, 한도 메타데이터 미설정 503. 같은 멱등 키와 같은 내용의 재요청은 에러가 아니라 처음 응답을 그대로 돌려준다.
+  HTTP 상태, `message`, `dragonLine`은 `packages/shared`의 `APP_ERRORS[code]`에서만 가져온다(필터에서 따로 정하지 않는다). 요약: 검증 400, 로그인 401, 권한 403, 없음 404, 같은 멱등 키에 다른 내용 409, 체인·서버 규칙 거절 422, 멈춤 423, 레이트 리밋 429, 서버 설정·그 밖 500, 한도 메타데이터 미설정 503. 같은 멱등 키와 같은 내용의 재요청은 에러가 아니라 처음 응답을 그대로 돌려준다.
 - **금액**: JSON에서 aokrw 정수 문자열. 숫자 타입 금지.
 - **시간**: unix ms 정수 (체인 `resetAt`은 unix 초, 필드 이름에 단위 표시).
 - **멱등성**: 주문 `clientOrderId`, 대화 `clientMessageId`, 충전과 회수도 클라이언트 요청 ID. 체인에서는 `orderRef`.
 - **결제는 확인 엔드포인트에서만**: `POST /api/orders`와 LLM `place_order`는 견적만. 결제는 `POST /api/orders/:id/confirm`에서만.
+- **confirm은 상태로 멱등**: 주문이 `quoted`일 때만 결제한다. 그 밖의 상태(결제 중, 결제 끝, 실패)에서 온 confirm은 결제하지 않고 현재 주문과 영수증을 200으로 돌려준다. 409로 답하면 사용자가 새 견적으로 다시 결제해 orderRef가 바뀌고 이중 결제가 될 수 있다 (CLAUDE.md 9).
 - **바꿔 끼우는 구현은 프로바이더 토큰으로 주입**: `PaymentProvider`(A, B, C), `LlmProvider`, `MerchantSource`. 설정값으로 고른다.
 - **주기 작업**: `indexer`(3초 간격 getLogs), `delivery`(배달 단계 타이머)는 `@nestjs/schedule`. SQLite라 프로세스 하나.
 - **감사 로그**: 돈, 정책, 동결, 레벨 변경은 누가 언제 무엇을 했는지 기록.

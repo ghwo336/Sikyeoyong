@@ -40,7 +40,7 @@ const EXPECTED: Record<AppErrorCode, { httpStatus: number; message: string; drag
     CHAIN_UNAUTHORIZED: {
       httpStatus: 500,
       message: '잠시 후 다시 시도해 주세요',
-      dragonLine: '제가 할 수 없는 일이에용',
+      dragonLine: '앗, 뭔가 꼬였어용. 조금 있다 다시 해 주세용',
     },
     CHAIN_AGENT_PAUSED: {
       httpStatus: 423,
@@ -105,7 +105,7 @@ const EXPECTED: Record<AppErrorCode, { httpStatus: number; message: string; drag
     CONFLICT: {
       httpStatus: 409,
       message: '요청이 서로 맞지 않아요',
-      dragonLine: '앗, 요청이 꼬였어용. 처음부터 다시 해 주세용',
+      dragonLine: '앗, 요청이 꼬였어용. 주문 내역을 먼저 확인해 주세용',
     },
     RATE_LIMITED: {
       httpStatus: 429,
@@ -217,6 +217,12 @@ describe('AppErrorCode table', () => {
     }
     expect(spec.message.endsWith('용')).toBe(false);
     expect(spec.dragonLine).toMatch(/용[.!?]?$/);
+  });
+
+  it('never tells the user to start over on CONFLICT (double payment risk)', () => {
+    const { message, dragonLine } = APP_ERRORS.CONFLICT;
+    expect(`${message} ${dragonLine}`).not.toMatch(/처음부터|새로|다시 시켜|다시 주문/);
+    expect(dragonLine).toContain('주문 내역');
   });
 
   it('has no em dash or en dash', () => {
