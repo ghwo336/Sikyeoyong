@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Switch } from './Switch';
 
 // Harness states from docs/wiki/components/ui/base/Switch.md.
@@ -14,12 +14,13 @@ type Story = StoryObj<typeof Switch>;
 
 function Row({ initial }: { initial: boolean }) {
   const [on, setOn] = useState(initial);
+  const labelId = useId();
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', width: 342 }}>
-      <span id="stop" style={{ flexGrow: 1 }}>
+      <span id={labelId} style={{ flexGrow: 1 }}>
         용이 멈추기
       </span>
-      <Switch checked={on} onChange={setOn} labelId="stop" />
+      <Switch checked={on} onChange={setOn} labelId={labelId} />
     </div>
   );
 }

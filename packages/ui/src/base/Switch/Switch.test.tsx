@@ -1,10 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Switch } from './Switch';
+
+const reduced = vi.hoisted(() => ({ value: false }));
+vi.mock('../reduced-motion', () => ({ useShouldReduceMotion: () => reduced.value }));
+beforeEach(() => {
+  reduced.value = false;
+});
 
 const css = readFileSync(resolve(__dirname, 'Switch.module.css'), 'utf8');
 const rule = (selector: string) =>
@@ -65,14 +71,43 @@ describe('Switch (Switch.md 테스트 기준)', () => {
     expect(rule(".track[aria-checked='true']")).toMatch(/background:\s*var\(--color-leaf\)/);
     expect(rule('.knob')).toMatch(/width:\s*var\(--size-switch-knob\)/);
     expect(rule('.knob')).toMatch(/background:\s*var\(--color-surface\)/);
-    expect(rule('.track::after')).toMatch(/var\(--size-touch-min\)/);
+    // 3px padding: (32 - 26) / 2
+    expect(rule('.track')).toMatch(
+      /padding:\s*calc\(\(var\(--size-switch-height\) - var\(--size-switch-knob\)\) \/ 2\)/,
+    );
+    // 44px finger target around the 32px track: grows by (44 - 32) / 2 above and below
+    expect(rule('.track::after')).toMatch(
+      /inset:\s*calc\(\(var\(--size-touch-min\) - var\(--size-switch-height\)\) \/ -2\) 0;/,
+    );
   });
 
   it('moves the knob with translate only, and not under reduced motion', () => {
-    expect(rule(".track[aria-checked='true'] .knob")).toMatch(/translate:\s*calc\(/);
+    // travel = inner width 46 - knob 26 = 20 = width - height
+    expect(rule(".track[aria-checked='true'] .knob")).toMatch(
+      /translate:\s*calc\(var\(--size-switch-width\) - var\(--size-switch-height\)\) 0;/,
+    );
+    expect(rule('.knob')).toMatch(/transition:\s*translate /);
     expect(css).not.toMatch(/\.knob[^{]*\{[^}]*(margin|left|right|justify-content)\s*:/);
     expect(css).toMatch(
       /prefers-reduced-motion:\s*reduce\)\s*\{\s*\.knob\s*\{\s*transition:\s*none/,
     );
+  });
+
+  it('stretches the knob while pressed', async () => {
+    render(<Switch checked={false} labelId="x" onChange={vi.fn()} />);
+    const knob = screen.getByRole('switch').querySelector('span');
+    fireEvent.pointerDown(screen.getByRole('switch'), { isPrimary: true, button: 0 });
+    await waitFor(() => {
+      expect(knob?.style.transform).toMatch(/scaleX\(/);
+    });
+  });
+
+  it('does not stretch the knob under reduced motion', async () => {
+    reduced.value = true;
+    render(<Switch checked={false} labelId="x" onChange={vi.fn()} />);
+    const knob = screen.getByRole('switch').querySelector('span');
+    fireEvent.pointerDown(screen.getByRole('switch'), { isPrimary: true, button: 0 });
+    await new Promise((r) => setTimeout(r, 100));
+    expect(knob?.style.transform ?? '').not.toMatch(/scaleX/);
   });
 });

@@ -11,8 +11,9 @@ export interface SwitchProps {
   readonly labelId: string;
 }
 
+// The knob stretches a little while pressed (Switch.md); the spring is tokens.json motion.press.
 const PRESS = { scaleX: 1.15 };
-const SPRING = { type: 'spring', damping: 22, stiffness: 400 } as const;
+const SPRING = { type: 'spring', damping: 18, stiffness: 300 } as const;
 
 /** Draws one on/off switch (Switch.md). What turning it on does is the parent's callback. */
 export function Switch({ checked, onChange, labelId }: SwitchProps) {
