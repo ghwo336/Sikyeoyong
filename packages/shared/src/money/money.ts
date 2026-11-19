@@ -67,8 +67,6 @@ export function formatOkrw(aokrw: bigint): string {
 }
 
 /** zod schema for aokrw strings in API bodies and responses. */
-export const zAokrwString = z
-  .string()
-  .refine(isAokrwString, {
-    message: 'aokrw 정수 문자열이어야 한다 (0 이상, uint256 이하, 앞자리 0 없음)',
-  });
+export const zAokrwString = z.string().refine(isAokrwString, {
+  message: 'aokrw 정수 문자열이어야 한다 (0 이상, uint256 이하, 앞자리 0 없음)',
+});
