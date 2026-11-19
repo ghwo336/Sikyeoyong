@@ -13,12 +13,12 @@ import { z } from 'zod';
  * the server. Secrets are optional in development and required in production.
  */
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
-const int = (min: number) =>
+const int = (min: number, max = Number.MAX_SAFE_INTEGER) =>
   z
     .string()
     .regex(/^\d+$/, 'integer')
     .transform(Number)
-    .refine((n) => Number.isSafeInteger(n) && n >= min, `>= ${min}`);
+    .refine((n) => Number.isSafeInteger(n) && n >= min && n <= max, `${min}..${max}`);
 const optionalText = z
   .string()
   .optional()
@@ -26,7 +26,7 @@ const optionalText = z
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: int(1).default(8787),
+  PORT: int(1, 65535).default(8787),
   PUBLIC_BASE_URL: z.url().default('http://localhost:3000'),
   SESSION_SECRET: optionalText,
   DATABASE_URL: z.string().min(1).default('file:./data/sikyeoyong.db'),
@@ -99,6 +99,8 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
   need('ANTHROPIC_API_KEY', env.ANTHROPIC_API_KEY !== undefined);
   need('LLM_MODEL', env.LLM_MODEL !== undefined);
   need('OPERATOR_KEY', env.OPERATOR_KEY !== undefined);
+  // Required now so a production boot cannot start without a deployed orders proxy; the chain
+  // module commit moves the address into shared deployments resolution (CLAUDE.md 2).
   need('ORDERS_CONTRACT', env.ORDERS_CONTRACT !== undefined);
   if (env.PAYMENT_PATH === 'B')
     need('AGENT_KEY_ENCRYPTION_KEY', env.AGENT_KEY_ENCRYPTION_KEY !== undefined);

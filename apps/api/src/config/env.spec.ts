@@ -88,6 +88,7 @@ describe('loadConfig rejects bad values without leaking them', () => {
     ['PORT', 'abc'],
     ['PORT', '0'],
     ['PORT', '8787.5'],
+    ['PORT', '65536'],
     ['CHAIN_ID', '-1'],
     ['DEMO_MODE', 'yes'],
     ['PAYMENT_PATH', 'D'],
@@ -121,11 +122,35 @@ describe('loadConfig in production', () => {
     expect(loadConfig(PROD).nodeEnv).toBe('production');
   });
 
-  it('requires the secrets for the chosen payment path', () => {
-    const r = codeAndVars(() =>
-      loadConfig({ ...PROD, PAYMENT_PATH: 'A', AGENT_KEY_ENCRYPTION_KEY: undefined }),
-    );
-    expect(r.variables).toEqual(['WAAS_AUTH_TOKEN']);
+  // Expected values written by hand from decisions D-05: path B signs with a server-held agent
+  // key, paths A and C go through MAWS.
+  it.each([
+    ['A', 'WAAS_AUTH_TOKEN'],
+    ['B', 'AGENT_KEY_ENCRYPTION_KEY'],
+    ['C', 'WAAS_AUTH_TOKEN'],
+  ] as const)('path %s requires %s', (path, required) => {
+    const env = {
+      ...PROD,
+      PAYMENT_PATH: path,
+      WAAS_AUTH_TOKEN: 'test-waas',
+      AGENT_KEY_ENCRYPTION_KEY: 'test-enc',
+      [required]: undefined,
+    };
+    expect(codeAndVars(() => loadConfig(env)).variables).toEqual([required]);
+  });
+
+  it.each(['A', 'C'] as const)('path %s does not need the agent key', (path) => {
+    const env = {
+      ...PROD,
+      PAYMENT_PATH: path,
+      WAAS_AUTH_TOKEN: 'test-waas',
+      AGENT_KEY_ENCRYPTION_KEY: undefined,
+    };
+    expect(loadConfig(env).payment.path).toBe(path);
+  });
+
+  it('path B does not need the MAWS token', () => {
+    expect(loadConfig({ ...PROD, WAAS_AUTH_TOKEN: undefined }).payment.path).toBe('B');
   });
 
   it.each(['SESSION_SECRET', 'ANTHROPIC_API_KEY', 'LLM_MODEL', 'OPERATOR_KEY', 'ORDERS_CONTRACT'])(

@@ -845,6 +845,8 @@ volumes: { data: {}, caddy_data: {} }
 
 ### 8.3 환경 변수 (`.env.example`)
 
+아래는 서버(production) 값이다. 저장소의 `.env.example`은 같은 이름에 로컬 기본값(`NODE_ENV=development`, `PUBLIC_BASE_URL=http://localhost:3000`, `DATABASE_URL=file:./data/...`)을 넣는다. 검증은 `apps/api/src/config/env.ts`.
+
 ```bash
 # 서버
 NODE_ENV=production
