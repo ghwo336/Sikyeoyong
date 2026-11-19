@@ -169,6 +169,7 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 원칙 2, 페이지는 조립만: `apps/web/app/**/page.tsx`는 `packages/ui` 컴포넌트를 배치하고 데이터 훅을 연결할 뿐, 스타일·상태 로직·API 호출 코드를 직접 갖지 않는다.
 - 원칙 3, 컴포넌트마다 하네스: `packages/ui/src/<영역>/<이름>/`에 본체, `*.stories.tsx`(상태별 하네스), `*.test.tsx`, 그리고 위키 `docs/wiki/components/ui/<영역>/<이름>.md`. 하네스와 문서 없는 컴포넌트는 합치지 않는다.
 - 원칙 4, 백엔드 모듈: Nest 모듈 하나가 책임 하나. 컨트롤러는 요청 받기, 서비스는 일, 저장소는 DB. 다른 모듈은 내보낸 서비스로만 부른다.
+- 원칙 5, 재사용 (2026-11-19 추가, 호재): UI 컴포넌트는 한 가지 일만 하고, 두 곳 이상에서 같은 모양이나 로직이 나오면 공통 부품으로 뽑아 재사용한다. 이미 있는 부품(base Button 등)을 다시 만들지 않는다. 이유: 35개 감사에서 OrderConfirmSheet가 OrderSummary를 다시 그리고, LimitChangeCard가 Button과 결제 두 번 눌림 잠금을 복사한 것이 나왔다. 영향: architecture.md UI 규칙, 기존 컴포넌트 분해 (겉 props는 유지).
 - 이유: 호재 님 결정(Next로 개발, 단단한 백엔드, 단일 책임). Hono 대비 Nest는 구조를 프레임워크가 강제하고, Express 경험이 그대로 쓰인다. SQLite는 사용자가 거의 없는 데모라 충분하고 Drizzle로 나중에 Postgres로 옮긴다.
 - 영향: D-03, D-04 개정, tech-spec 2장과 3장은 상단 대응표로 읽는다, 위키 components(web, server-api, auth, infra), conventions(architecture 신규, testing, design-and-motion), components/ui 신규, CLAUDE.md.
 
