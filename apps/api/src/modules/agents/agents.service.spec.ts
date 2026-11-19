@@ -1,0 +1,64 @@
+import { AppError } from '@sikyeoyong/shared';
+import { eq } from 'drizzle-orm';
+import { afterEach, describe, expect, it } from 'vitest';
+import { type DbHandle, openDb } from '../../db/client.js';
+import { runMigrations } from '../../db/migrate.js';
+import { agents, users } from '../../db/schema/index.js';
+import { AgentsRepository } from './agents.repository.js';
+import { AgentsService } from './agents.service.js';
+
+const handles: DbHandle[] = [];
+afterEach(() => {
+  while (handles.length) handles.pop()?.close();
+});
+
+function setup() {
+  const h = openDb(':memory:');
+  runMigrations(h.db);
+  handles.push(h);
+  h.db
+    .insert(users)
+    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: '1', createdAt: 1 })
+    .run();
+  h.db
+    .insert(users)
+    .values({ id: 'u2', nickname: '알만', monthlyBudgetAokrw: '1', createdAt: 1 })
+    .run();
+  h.db
+    .insert(agents)
+    .values({
+      id: 'a1',
+      userId: 'u1',
+      dragonName: '용이',
+      dragonSpecies: 'water',
+      paymentPath: 'B',
+      level: 2,
+      createdAt: 1,
+    })
+    .run();
+  return { h, s: new AgentsService(new AgentsRepository(h)) };
+}
+
+describe('AgentsService', () => {
+  it('returns the level and not frozen for an active dragon', () => {
+    const { h, s } = setup();
+    h.db.update(agents).set({ status: 'ACTIVE' }).where(eq(agents.id, 'a1')).run();
+    expect(s.getForUser('u1')).toEqual({ id: 'a1', level: 2, frozen: false });
+  });
+
+  it.each([
+    ['PENDING', false],
+    ['ACTIVE', false],
+    ['FROZEN', true],
+    ['REVOKED', false],
+  ] as const)('status %s reads as frozen=%s', (status, frozen) => {
+    const { h, s } = setup();
+    h.db.update(agents).set({ status }).where(eq(agents.id, 'a1')).run();
+    expect(s.getForUser('u1').frozen).toBe(frozen);
+  });
+
+  it('answers NOT_FOUND when the user has no dragon yet', () => {
+    const { s } = setup();
+    expect(() => s.getForUser('u2')).toThrow(AppError);
+  });
+});
