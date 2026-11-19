@@ -34,5 +34,6 @@ Wallet
 - Wallet 시안 값 (라벨 14px, 금액 34/700, 주머니 13px `ink-secondary`, 간격 4, 위아래 여백 16 20)
 
 ## 메모
+- 불러오는 중 막대는 base `Skeleton`(walletAmount 10em, caption 7.5em)이다.
 - 채우기는 돈이 움직이는 일이라 이 버튼(사용자)으로만 시작한다. LLM 도구에는 충전이 없다 (CLAUDE.md 절대 규칙 3).
 - `type.walletAmount` 토큰을 쓴다.

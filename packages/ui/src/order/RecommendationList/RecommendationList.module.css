@@ -92,19 +92,3 @@
   min-height: var(--size-pick-row);
   padding: var(--size-pick-row-pad-y) var(--space-4);
 }
-
-.barShort,
-.barLong {
-  display: block;
-  height: var(--type-meta-size);
-  border-radius: var(--radius-chip);
-  background: var(--color-track);
-}
-
-.barShort {
-  width: 40%;
-}
-
-.barLong {
-  width: 65%;
-}

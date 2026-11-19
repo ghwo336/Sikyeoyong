@@ -1,5 +1,6 @@
 import { formatOkrw } from '@sikyeoyong/shared';
 import { Fragment } from 'react';
+import { Skeleton } from '../../base/Skeleton';
 import styles from './RecommendationList.module.css';
 
 export interface Recommendation {
@@ -33,8 +34,8 @@ export function RecommendationList({ items, onPick, loading = false }: Recommend
           <Fragment key={i}>
             {i > 0 ? <div className={styles.divider} /> : null}
             <div className={styles.skeletonRow} data-part="skeleton">
-              <span className={styles.barShort} />
-              <span className={styles.barLong} />
+              <Skeleton height="meta" width="40%" />
+              <Skeleton height="meta" width="65%" />
             </div>
           </Fragment>
         ))}

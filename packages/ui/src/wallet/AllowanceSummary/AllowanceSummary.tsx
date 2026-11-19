@@ -1,5 +1,6 @@
 import { formatOkrw } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
+import { Skeleton } from '../../base/Skeleton';
 import styles from './AllowanceSummary.module.css';
 
 export interface AllowanceSummaryProps {
@@ -26,8 +27,9 @@ export function AllowanceSummary({
         <span className={styles.label}>주인님 용돈</span>
         {loading ? (
           <>
-            <span className={styles.barBig} data-part="skeleton" />
-            <span className={styles.barSmall} data-part="skeleton" />
+            {/* About the length of "81,000원" and its line, in em of the amounts block. */}
+            <Skeleton height="walletAmount" width="10em" data-part="skeleton" />
+            <Skeleton height="caption" width="7.5em" data-part="skeleton" />
           </>
         ) : (
           <>

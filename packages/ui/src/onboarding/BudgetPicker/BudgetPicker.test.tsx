@@ -7,7 +7,11 @@ import { describe, expect, it, vi } from 'vitest';
 import chipStyles from '../../base/Chip/Chip.module.css';
 import { BudgetPicker } from './BudgetPicker';
 
-const css = readFileSync(resolve(__dirname, 'BudgetPicker.module.css'), 'utf8');
+// The title and choices are base ChoiceGroup columns; their values live in its CSS.
+const css = readFileSync(
+  resolve(__dirname, '../../base/ChoiceGroup/ChoiceGroup.module.css'),
+  'utf8',
+);
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
 
@@ -65,10 +69,14 @@ describe('BudgetPicker (BudgetPicker.md 테스트 기준)', () => {
 
   // Budget.dc.html 36-43.
   it('matches the design values', () => {
-    expect(rule('.picker')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
+    render(<BudgetPicker options={OPTIONS} value={won(300_000n)} onChange={vi.fn()} />);
+    expect(rule('.group')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     expect(rule('.title')).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(rule('.title')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
-    expect(rule('.choices')).toMatch(/grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-    expect(rule('.choices')).toMatch(/gap:\s*var\(--space-2\)/);
+    // Three equal columns: the columns layout with three radios.
+    expect(screen.getByRole('radiogroup').classList).toContain('columns');
+    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    expect(rule('.columns')).toMatch(/grid-auto-columns:\s*minmax\(0, 1fr\)/);
+    expect(rule('.columns')).toMatch(/gap:\s*var\(--space-2\)/);
   });
 });
