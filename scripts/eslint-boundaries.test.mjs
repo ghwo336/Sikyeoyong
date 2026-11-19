@@ -159,6 +159,43 @@ const cases = [
   ],
   ['packages/ui/src/order/X/X.tsx', "import { L } from '../..';\nexport const a = L;", IMPORTS],
   ['packages/ui/src/order/X/X.tsx', "import { Y } from './Y';\nexport const a = Y;", null],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from '../../index.js';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from './../../index';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from '../../../src';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from '../../../src/index.js';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { L } from '@sikyeoyong/ui';\nexport const a = L;",
+    IMPORTS,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { Y } from '../Y/index.js';\nexport const a = Y;",
+    null,
+  ],
+  [
+    'packages/ui/src/order/X/X.tsx',
+    "import { B } from '../../base/Button/index.js';\nexport const a = B;",
+    null,
+  ],
+  ['packages/shared/src/a.ts', 'export const a = window.x;', 'no-restricted-globals'],
+  ['packages/shared/src/a.ts', "export const a = new Function('x');", 'no-restricted-globals'],
   ['packages/shared/src/a.ts', "export const a = self.fetch('/x');", 'no-restricted-globals'],
   ['packages/shared/src/a.ts', "export const a = eval('1');", 'no-restricted-globals'],
   // api: any folder depth

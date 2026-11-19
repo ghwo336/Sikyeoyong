@@ -205,11 +205,14 @@ export default tseslint.config(
             '@sikyeoyong/api',
             '@sikyeoyong/web',
             '**/apps/**',
+            '@sikyeoyong/ui',
+            '@sikyeoyong/ui/*',
           ],
           message: 'ui 컴포넌트는 props와 콜백만 (architecture.md)',
         },
         {
-          regex: '^\\.\\.(/\\.\\.)*(/index)?/?$|(^|/)src/index$',
+          regex:
+            '^(\\./)?\\.\\.(/\\.\\.)*(/index(\\.[cm]?[jt]sx?)?)?/?$|(^|/)src(/index(\\.[cm]?[jt]sx?)?)?/?$',
           message: 'ui 루트 배럴로 다른 영역을 우회해서 가져오지 않는다 (architecture.md)',
         },
         ...(['base', 'dragon'].includes(area)
