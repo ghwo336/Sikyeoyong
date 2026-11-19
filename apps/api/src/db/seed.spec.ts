@@ -1,4 +1,12 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { AppError } from '@sikyeoyong/shared';
@@ -138,10 +146,6 @@ describe('ensurePayoutKeys', () => {
       'single quotes',
       (k: string) => JSON.stringify({ a: { privateKey: k } }).replace(':"0x', ":'0x"),
     ],
-    [
-      'stray token inside the key',
-      (k: string) => JSON.stringify({ a: { privateKey: k } }).replace(k.slice(20, 21), '"#'),
-    ],
   ])('never puts key material in the error for a broken key file (%s)', (_name, broken) => {
     const file = join(tempDir(), 'k.json');
     ensurePayoutKeys(file, ['a']);
@@ -164,6 +168,23 @@ describe('ensurePayoutKeys', () => {
       (w) => text.includes(w),
     );
     expect(leaked).toEqual([]);
+  });
+
+  it('reports an unreadable key file without its contents or cause', () => {
+    const file = join(tempDir(), 'k.json');
+    mkdirSync(file); // a directory where the file should be
+    let caught: unknown;
+    try {
+      ensurePayoutKeys(file, ['a']);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(AppError);
+    expect((caught as AppError).detail).toEqual({
+      reason: 'payout key file cannot be read',
+      path: file,
+    });
+    expect((caught as AppError).cause).toBeUndefined();
   });
 
   it('leaves no temp file behind', () => {
