@@ -18,5 +18,6 @@ export * from './dragon/Dragon';
 export * from './dragon/Egg';
 export * from './dragon/DragonLine';
 export * from './order/OrderConfirmSheet';
+export * from './order/OrderStatusHeader';
 export * from './order/OrderSummary';
 export * from './order/RecommendationList';

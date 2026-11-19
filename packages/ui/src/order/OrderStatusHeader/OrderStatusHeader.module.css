@@ -1,0 +1,21 @@
+/* Done.dc.html 26-29, Tracking.dc.html 58-61: a 30px line over a 15px line, 4 apart. */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.big {
+  margin: 0;
+  font-size: var(--type-display-size);
+  font-weight: var(--type-display-weight);
+  letter-spacing: var(--type-display-letter-spacing);
+  color: var(--color-ink);
+}
+
+.small {
+  margin: 0;
+  font-size: var(--type-body-size);
+  color: var(--color-ink-secondary);
+}
