@@ -55,6 +55,7 @@ describe('KakaoVerify (KakaoVerify.md 테스트 기준)', () => {
 
   // Verify.dc.html 35-36.
   it('matches the design values', () => {
+    expect(rule('.verify')).toMatch(/gap:\s*var\(--space-3\)/);
     expect(rule('.note')).toMatch(/font-size:\s*var\(--type-fine-size\)/);
     expect(rule('.note')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.note')).toMatch(/text-align:\s*center/);
