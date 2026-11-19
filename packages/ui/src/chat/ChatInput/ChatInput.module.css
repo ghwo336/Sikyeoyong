@@ -1,0 +1,88 @@
+/* Main.dc.html, LimitChat.dc.html: 48px pill field and a 48px leaf send circle, 8 apart. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.input {
+  flex-grow: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: var(--size-chat-input);
+  padding: 0 var(--size-chat-input-pad-x);
+  border: 1px solid var(--color-line-strong);
+  border-radius: calc(var(--size-chat-input) / 2);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--type-body-size);
+  color: var(--color-ink);
+}
+
+.input::placeholder {
+  color: var(--color-ink-secondary);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+.input:disabled {
+  background: var(--color-track);
+}
+
+.send {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-chat-input);
+  height: var(--size-chat-input);
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--size-chat-input) / 2);
+  background: var(--color-leaf);
+  color: var(--color-surface);
+  cursor: pointer;
+}
+
+.send:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+/* Stopped only: the circle turns grey; the arrow stays readable. */
+.send:disabled {
+  background: var(--color-line-strong);
+  color: var(--color-ink-secondary);
+  cursor: default;
+}
+
+.icon {
+  width: var(--size-send-icon);
+  height: var(--size-send-icon);
+}
+
+.note {
+  margin: 0;
+  padding-left: var(--size-chat-input-pad-x);
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+}

@@ -109,6 +109,9 @@
   --size-sheet-top: 10px;
   --size-bubble-max: 260px;
   --size-bubble-pad-y: 11px;
+  --size-chat-input: 48px;
+  --size-chat-input-pad-x: 18px;
+  --size-send-icon: 20px;
   --size-meter: 8px;
   --size-step-sm: 4px;
   --size-step-md: 6px;
