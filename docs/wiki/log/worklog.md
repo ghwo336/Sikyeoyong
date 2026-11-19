@@ -104,3 +104,18 @@ children: []
   - ListRow의 onPress와 Switch trailing 조합을 타입으로 막을지.
   - Arrived 맛 평가를 고르기(radio)로 쓸지 버튼으로 쓸지 화면 조립 때 결정.
 - 다음 할 일: ui 나머지 영역(chat, order, limits, onboarding, wallet), 그다음 API 모듈(orders, agents, budget), 컨트랙트, 가게 체인 등록 시드.
+
+### 2026-11-19 ui 컴포넌트 35개 완료 (Claude, Claude Code)
+- 한 일:
+  - packages/ui의 나머지 영역을 하네스, 테스트, 위키와 함께 만들고 커밋마다 검증 루프를 돌림. chat(UserBubble, ChatInput, QuickReplies, ChatThread), order(RecommendationList, OrderSummary, OrderConfirmSheet, OrderStatusHeader, DeliveryMap, TasteRating, ReceiptDetails), limits(LimitBlocked, CapReached, LimitChangeCard), onboarding(BudgetPicker, EggPicker, HatchProgress, KakaoVerify, SocialLogin), wallet(AllowanceSummary, FrozenPanel, IdCard). IdCard만 검증 진행 중이고 나머지는 PASS.
+  - 공용 도우미: `base/radio-group.ts`(WAI-ARIA radio 그룹 키보드), Sheet `initialFocus`, TopBar `backLabel`, Meter `kind`(예산 노른자, 한도 잎색), DragonLine `sheet` 배치, Dragon 64.
+  - 검증이 잡은 중요한 것: 주문 확인 시트가 열리자마자 시키기 버튼에 포커스가 가서 Enter 한 번이면 결제가 시작될 수 있었다 (고침, 절대 규칙 3). ui 안에 두 번째 금액 표시 함수를 만들었던 것 (지움, formatOkrw 하나로). 테스트 시간대를 서울이 아닌 곳으로 고정 (timeZone 누락을 잡게). 리셋 시각을 분 단위로 올림 (체인 리셋 전 시각을 보이지 않게).
+- 막힌 것: 없음. 호재 님 답을 기다리는 열린 질문: Q-22, Q-23("만 원" 표기, BudgetPicker는 지금 "300,000원"), Q-26, Q-27(입력칸 오류 모양), Q-28(예산 막대 색, 시안 근거로 예산 노른자, 한도 잎색 추론), Q-29(LimitChat 한도 변경 카드를 만드는 경로, P1).
+- 새로 안 마루 사실: 없음.
+- 후속 (검증 MINOR):
+  - 대비가 4.5:1보다 낮은 시안 값: Switch 꺼짐 트랙, Meter 노른자 채움, TextField placeholder, LimitBlocked `leafSubInk`, HatchProgress 대기 줄. 디자인 판단 필요.
+  - 시안과 다르게 통일한 값 (디자인 선택): LimitChat 말풍선 폭 270과 위 여백 16, Receipt 카드 간격 8, Button 반경 16과 18, OrderStatusHeader 24시간제와 Cap 오전/오후.
+  - 실기기 확인: ChatInput 한글 조합 Enter(사파리, iOS), Sheet 본문 위 끌어 닫기(iOS), ChatThread VoiceOver aria-busy.
+  - 카카오, 구글 로그인 버튼의 브랜드 가이드 일치 (미확인).
+  - IdCard 초상 용이 얼굴이 시안과 조금 다름, FrozenPanel 제목 heading 여부는 화면 조립 때.
+- 다음 할 일: apps/web 화면 조립(시안 17장을 ui 컴포넌트로), apps/api 모듈(orders, agents, budget, approvals, users), 컨트랙트, 가게 체인 등록 시드.
