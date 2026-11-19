@@ -38,10 +38,3 @@
 .input[data-error] {
   border-color: var(--color-over);
 }
-
-.error {
-  margin: 0;
-  font-size: var(--type-caption-size);
-  font-weight: var(--type-caption-weight);
-  color: var(--color-over-ink);
-}

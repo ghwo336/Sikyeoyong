@@ -1,0 +1,11 @@
+/* The design has no error look; it borrows the caution ink of Blocked.dc.html (Q-27). */
+.line {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-weight);
+  color: var(--color-over-ink);
+}
+
+.line[data-align='center'] {
+  text-align: center;
+}

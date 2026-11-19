@@ -1,0 +1,19 @@
+/* Confirm.dc.html 56-60, Cap.dc.html, Blocked.dc.html 38-46, LimitChat.dc.html 46-48:
+   the main button over the way out. */
+.pair {
+  display: flex;
+  flex-direction: column;
+}
+
+.xs {
+  gap: var(--space-1);
+}
+
+/* LimitChat.dc.html button gap; the 4px space scale has no 6, so it stays literal. */
+.sm {
+  gap: 6px;
+}
+
+.md {
+  gap: var(--space-2);
+}

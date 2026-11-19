@@ -33,6 +33,7 @@ Cap
 - Cap 시안 값 (시각 30/700, 아래 15px `ink-secondary`, 간격 4, 버튼 사이 8)
 
 ## 메모
+- 두 버튼 묶음은 base `ActionPair` md(8)다.
 - 시각 글자와 날짜 차이는 `packages/shared`의 `formatKstDateTime`, `kstDaysBetween`(time/kst)이다. 분 올림은 이 컴포넌트가 한다. 예전 import를 위해 다시 내보내기만 한다.
 - Cap 시안은 오전과 오후를 쓴다 ("오후 2시"). OrderStatusHeader는 시안에 오전, 오후가 없어 24시간제다. 둘을 맞출지는 후속으로 본다.
 - 위 용이 말("지갑이 텅 비었어용")은 화면이 그린다. 문구는 open-questions Q-26.

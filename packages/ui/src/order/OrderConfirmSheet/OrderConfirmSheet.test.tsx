@@ -18,6 +18,24 @@ const linesRule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(linesCss)?.[2] ??
   '';
 
+// Buttons stack in base ActionPair; error lines are base ErrorLine. Their values live there.
+const pairCss = readFileSync(
+  resolve(__dirname, '../../base/ActionPair/ActionPair.module.css'),
+  'utf8',
+);
+const pairRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    pairCss,
+  )?.[2] ?? '';
+const errCss = readFileSync(
+  resolve(__dirname, '../../base/ErrorLine/ErrorLine.module.css'),
+  'utf8',
+);
+const errRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    errCss,
+  )?.[2] ?? '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base: OrderConfirmSheetProps = {
   open: true,
@@ -188,7 +206,13 @@ describe('OrderConfirmSheet (OrderConfirmSheet.md 테스트 기준)', () => {
     expect(rule('.totalAmount')).toMatch(/letter-spacing:\s*var\(--type-pay-letter-spacing\)/);
     expect(rule('.limits')).toMatch(/gap:\s*var\(--size-limits-gap\)/);
     expect(rule('.limitsTitle')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
-    expect(rule('.actions')).toMatch(/gap:\s*var\(--space-1\)/);
-    expect(rule('.changed')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    {
+      const { unmount } = render(<OrderConfirmSheet {...base} />);
+      expect(document.querySelector('.pair')?.classList).toContain('xs');
+      unmount();
+    }
+    expect(pairRule('.xs')).toMatch(/gap:\s*var\(--space-1\)/);
+    expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    expect(errRule('.line')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
   });
 });

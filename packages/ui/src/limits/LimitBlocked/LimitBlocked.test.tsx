@@ -16,6 +16,16 @@ const buttonRule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
   '';
 
+// Buttons stack in base ActionPair; error lines are base ErrorLine. Their values live there.
+const pairCss = readFileSync(
+  resolve(__dirname, '../../base/ActionPair/ActionPair.module.css'),
+  'utf8',
+);
+const pairRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    pairCss,
+  )?.[2] ?? '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base = {
   attempted: won(45_000n),
@@ -96,7 +106,12 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
     expect(rule('.limit')).toMatch(/font-size:\s*var\(--type-row-size\)/);
     expect(rule('.limit')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.compare')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
-    expect(rule('.actions')).toMatch(/gap:\s*var\(--space-2\)/);
+    {
+      const { unmount } = render(<LimitBlocked {...base} />);
+      expect(document.querySelector('.pair')?.classList).toContain('md');
+      unmount();
+    }
+    expect(pairRule('.md')).toMatch(/gap:\s*var\(--space-2\)/);
     expect(rule('.raiseLines')).toMatch(/gap:\s*2px/);
     expect(rule('.raiseMain')).toMatch(/font-size:\s*var\(--type-button-size\)/);
     expect(rule('.raiseSub')).toMatch(/color:\s*var\(--color-leaf-sub-ink\)/);

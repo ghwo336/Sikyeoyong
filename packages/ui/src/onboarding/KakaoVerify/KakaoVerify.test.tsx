@@ -6,6 +6,14 @@ import { describe, expect, it, vi } from 'vitest';
 import buttonStyles from '../../base/Button/Button.module.css';
 import { KakaoVerify } from './KakaoVerify';
 
+const errCss = readFileSync(
+  resolve(__dirname, '../../base/ErrorLine/ErrorLine.module.css'),
+  'utf8',
+);
+const errRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    errCss,
+  )?.[2] ?? '';
 const css = readFileSync(resolve(__dirname, 'KakaoVerify.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
@@ -44,6 +52,7 @@ describe('KakaoVerify (KakaoVerify.md 테스트 기준)', () => {
     const onVerify = vi.fn();
     render(<KakaoVerify onVerify={onVerify} mode="kakao" status="failed" />);
     expect(screen.getByRole('alert')).toHaveTextContent('인증이 안 됐어요. 다시 해 주세요.');
+    expect(screen.getByRole('alert')).toHaveAttribute('data-align', 'center');
     await userEvent.click(screen.getByRole('button'));
     expect(onVerify).toHaveBeenCalledTimes(1);
   });
@@ -59,6 +68,7 @@ describe('KakaoVerify (KakaoVerify.md 테스트 기준)', () => {
     expect(rule('.note')).toMatch(/font-size:\s*var\(--type-fine-size\)/);
     expect(rule('.note')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.note')).toMatch(/text-align:\s*center/);
-    expect(rule('.failed')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    expect(errRule(".line[data-align='center']")).toMatch(/text-align:\s*center/);
   });
 });

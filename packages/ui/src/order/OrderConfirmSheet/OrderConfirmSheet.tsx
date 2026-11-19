@@ -9,6 +9,8 @@ import { useSubmitLock } from '../../base/useSubmitLock';
 import { DragonLine } from '../../dragon/DragonLine';
 import { type OrderLine, OrderLines } from '../OrderLines';
 import styles from './OrderConfirmSheet.module.css';
+import { ActionPair } from '../../base/ActionPair';
+import { ErrorLine } from '../../base/ErrorLine';
 
 export interface LimitUse {
   /** aokrw used, counting this order. */
@@ -103,19 +105,22 @@ export function OrderConfirmSheet({
       </section>
 
       {priceChangedFrom !== undefined ? (
-        <p className={styles.changed} role="alert">
-          가격이 {formatOkrw(priceChangedFrom)}에서 {amount}으로 바뀌었어요. 다시 확인해 주세요.
-        </p>
+        <ErrorLine>{`가격이 ${formatOkrw(priceChangedFrom)}에서 ${amount}으로 바뀌었어요. 다시 확인해 주세요.`}</ErrorLine>
       ) : null}
 
-      <div className={styles.actions}>
-        <Button variant="primary" loading={confirming} onPress={confirm}>
-          <span className={styles.num}>{amount}</span> 시키기
-        </Button>
-        <Button variant="text" onPress={onCancel}>
-          다시 고를래
-        </Button>
-      </div>
+      <ActionPair
+        gap="xs"
+        primary={
+          <Button variant="primary" loading={confirming} onPress={confirm}>
+            <span className={styles.num}>{amount}</span> 시키기
+          </Button>
+        }
+        secondary={
+          <Button variant="text" onPress={onCancel}>
+            다시 고를래
+          </Button>
+        }
+      />
     </Sheet>
   );
 }

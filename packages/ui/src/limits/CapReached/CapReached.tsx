@@ -1,6 +1,7 @@
 import { formatKstDateTime, formatOkrw, kstDaysBetween } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
 import styles from './CapReached.module.css';
+import { ActionPair } from '../../base/ActionPair';
 
 export interface CapReachedProps {
   /** When the 30-day limit fills again, unix SECONDS (chain resetAt, via the server). */
@@ -36,14 +37,19 @@ export function CapReached({ resetAt, cap, onNotify, onDismiss, now }: CapReache
           {whenText(days)} {formatOkrw(cap)}이 다시 채워져요
         </p>
       </div>
-      <div className={styles.actions}>
-        <Button variant="primary" onPress={onNotify}>
-          다시 채워지면 알려 줘
-        </Button>
-        <Button variant="text" onPress={onDismiss}>
-          괜찮아, 며칠은 집밥 먹을게
-        </Button>
-      </div>
+      <ActionPair
+        gap="md"
+        primary={
+          <Button variant="primary" onPress={onNotify}>
+            다시 채워지면 알려 줘
+          </Button>
+        }
+        secondary={
+          <Button variant="text" onPress={onDismiss}>
+            괜찮아, 며칠은 집밥 먹을게
+          </Button>
+        }
+      />
     </div>
   );
 }

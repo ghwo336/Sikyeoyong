@@ -60,19 +60,6 @@
   white-space: nowrap;
 }
 
-.failed {
-  margin: 0;
-  font-size: var(--type-caption-size);
-  color: var(--color-over-ink);
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  /* LimitChat.dc.html button gap; the 4px space scale has no 6, so it stays literal. */
-  gap: 6px;
-}
-
 /* The two buttons are base Button: primary choice (52, radius 16) and text md (44). */
 .faceId {
   width: var(--size-face-id-icon);

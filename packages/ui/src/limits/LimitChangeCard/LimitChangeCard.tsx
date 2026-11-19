@@ -6,6 +6,8 @@ import { DetailRows } from '../../base/DetailRows';
 import { useSubmitLock } from '../../base/useSubmitLock';
 import styles from './LimitChangeCard.module.css';
 import { Icon } from '../../base/Icon';
+import { ActionPair } from '../../base/ActionPair';
+import { ErrorLine } from '../../base/ErrorLine';
 
 export type LimitField = 'perOrder' | 'monthlyBudget';
 export type LimitChangeStatus = 'idle' | 'confirming' | 'failed';
@@ -76,25 +78,26 @@ export function LimitChangeCard({
         </span>
       </div>
       {detailRows.length > 0 ? <DetailRows rows={detailRows} size="small" gap="loose" /> : null}
-      {status === 'failed' ? (
-        <p className={styles.failed} role="alert">
-          못 바꿨어요. 다시 해 볼까요?
-        </p>
-      ) : null}
-      <div className={styles.actions}>
-        <Button
-          variant="primary"
-          size="choice"
-          loading={confirming}
-          icon={needsReauth ? <Icon name="face-id" className={styles.faceId} /> : undefined}
-          onPress={confirm}
-        >
-          {needsReauth ? 'Face ID로 확인하고 바꾸기' : '바꾸기'}
-        </Button>
-        <Button variant="text" size="md" onPress={onCancel}>
-          그만두기
-        </Button>
-      </div>
+      {status === 'failed' ? <ErrorLine>못 바꿨어요. 다시 해 볼까요?</ErrorLine> : null}
+      <ActionPair
+        gap="sm"
+        primary={
+          <Button
+            variant="primary"
+            size="choice"
+            loading={confirming}
+            icon={needsReauth ? <Icon name="face-id" className={styles.faceId} /> : undefined}
+            onPress={confirm}
+          >
+            {needsReauth ? 'Face ID로 확인하고 바꾸기' : '바꾸기'}
+          </Button>
+        }
+        secondary={
+          <Button variant="text" size="md" onPress={onCancel}>
+            그만두기
+          </Button>
+        }
+      />
     </section>
   );
 }

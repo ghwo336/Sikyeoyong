@@ -13,10 +13,3 @@
   color: var(--color-ink-secondary);
   text-align: center;
 }
-
-.failed {
-  margin: 0;
-  font-size: var(--type-caption-size);
-  color: var(--color-over-ink);
-  text-align: center;
-}

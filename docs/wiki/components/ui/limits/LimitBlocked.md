@@ -33,6 +33,7 @@ Blocked
 - Blocked 시안 값 (넘은 금액 36/700 `overInk`, 한도 16px, 간격 10, 올리기 64 잎색 17/700과 13px `leafSubInk`, 다시 고르기 52 테두리 15/600, 버튼 사이 8)
 
 ## 메모
+- 두 버튼 묶음은 base `ActionPair` md(8)이고, 다음 레벨이 없으면 주 버튼 자리를 비운다.
 - 레벨 로/으로는 `packages/shared`의 `levelWithRo`(text/korean)다. LimitChangeCard도 같은 함수를 쓴다. 이 컴포넌트는 예전 import를 위해 다시 내보내기만 한다.
 - 위 용이 말(숨는 얼굴)은 화면이 `DragonLine` center로 그린다. 이 컴포넌트는 숫자와 두 버튼만.
 - 두 버튼은 base `Button`이다: 올리기는 primary `tall`(64, 두 줄은 이 컴포넌트가 쌓는다), 다시 고르기는 secondary `choice`(52, 15/600). 버튼 크기 값은 Button.module.css에 있고 이 컴포넌트 테스트가 클래스와 값을 함께 본다 (D-18 원칙 5).

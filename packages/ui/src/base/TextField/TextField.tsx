@@ -1,4 +1,5 @@
 import { type HTMLAttributes, useId } from 'react';
+import { ErrorLine } from '../ErrorLine';
 import styles from './TextField.module.css';
 
 export interface TextFieldProps {
@@ -46,11 +47,7 @@ export function TextField({
           onChange(e.target.value);
         }}
       />
-      {hasError ? (
-        <p id={errorId} className={styles.error} role="alert">
-          {error}
-        </p>
-      ) : null}
+      {hasError ? <ErrorLine id={errorId}>{error}</ErrorLine> : null}
     </div>
   );
 }

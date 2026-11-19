@@ -1,9 +1,11 @@
 // Public entry of @sikyeoyong/ui. Components are added per area folder
 // (docs/wiki/components/ui). Import tokens once from the app: '@sikyeoyong/ui/tokens.css'.
+export * from './base/ActionPair';
 export * from './base/Amount';
 export * from './base/Button';
 export * from './base/Chip';
 export * from './base/DetailRows';
+export * from './base/ErrorLine';
 export * from './base/Icon';
 export * from './base/ListRow';
 export * from './base/Meter';

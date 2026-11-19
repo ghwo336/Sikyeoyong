@@ -3,6 +3,7 @@
 import { formatOkrw, levelWithRo } from '@sikyeoyong/shared';
 import { Button } from '../../base/Button';
 import styles from './LimitBlocked.module.css';
+import { ActionPair } from '../../base/ActionPair';
 
 export interface NextLevel {
   readonly level: number;
@@ -40,21 +41,26 @@ export function LimitBlocked({
         <span className={styles.attempted}>{formatOkrw(attempted)}</span>{' '}
         <span className={styles.limit}>/ {limitText}까지</span>
       </p>
-      <div className={styles.actions}>
-        {nextLevel ? (
-          <Button variant="primary" size="tall" onPress={onRaise}>
-            <span className={styles.raiseLines}>
-              <span className={styles.raiseMain}>
-                레벨 {levelWithRo(nextLevel.level)} 올리고 시키기
-              </span>{' '}
-              <span className={styles.raiseSub}>한 번에 {formatOkrw(nextLevel.limit)}까지</span>
-            </span>
+      <ActionPair
+        gap="md"
+        primary={
+          nextLevel ? (
+            <Button variant="primary" size="tall" onPress={onRaise}>
+              <span className={styles.raiseLines}>
+                <span className={styles.raiseMain}>
+                  레벨 {levelWithRo(nextLevel.level)} 올리고 시키기
+                </span>{' '}
+                <span className={styles.raiseSub}>한 번에 {formatOkrw(nextLevel.limit)}까지</span>
+              </span>
+            </Button>
+          ) : undefined
+        }
+        secondary={
+          <Button variant="secondary" size="choice" onPress={onRepick}>
+            {limitText} 안에서 다시 고르기
           </Button>
-        ) : null}
-        <Button variant="secondary" size="choice" onPress={onRepick}>
-          {limitText} 안에서 다시 고르기
-        </Button>
-      </div>
+        }
+      />
     </div>
   );
 }

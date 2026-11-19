@@ -30,6 +30,24 @@ const rowsRule = (selector: string) =>
     rowsCss,
   )?.[2] ?? '';
 
+// Buttons stack in base ActionPair; error lines are base ErrorLine. Their values live there.
+const pairCss = readFileSync(
+  resolve(__dirname, '../../base/ActionPair/ActionPair.module.css'),
+  'utf8',
+);
+const pairRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    pairCss,
+  )?.[2] ?? '';
+const errCss = readFileSync(
+  resolve(__dirname, '../../base/ErrorLine/ErrorLine.module.css'),
+  'utf8',
+);
+const errRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    errCss,
+  )?.[2] ?? '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base: LimitChangeCardProps = {
   field: 'perOrder',
@@ -194,7 +212,13 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(buttonRule('.md')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
     expect(buttonRule('.text')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(buttonRule('.text.md')).toMatch(/font-weight:\s*var\(--type-body-weight\)/);
-    expect(rule('.actions')).toMatch(/gap:\s*6px/);
+    {
+      const { unmount } = render(<LimitChangeCard {...base} status="failed" />);
+      expect(document.querySelector('.pair')?.classList).toContain('sm');
+      unmount();
+    }
+    expect(pairRule('.sm')).toMatch(/gap:\s*6px/);
+    expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
     expect(rule('.faceId')).toMatch(/width:\s*var\(--size-face-id-icon\)/);
   });
 });

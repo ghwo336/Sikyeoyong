@@ -33,6 +33,7 @@ Name
 - Name 시안 값 (라벨 13/600 `ink-secondary`, 칸 52, 여백 16, 1px `line-strong`, 반경 14, 흰 바탕, 글자 17/600, 간격 6)
 
 ## 메모
+- 오류 줄은 base `ErrorLine`(id로 입력칸이 가리킨다)이다.
 - 라벨과 입력 글자는 `type.label`(13/600), `type.input`(17/600) 토큰을 쓴다.
 - 시안에 오류 모양이 없어 Blocked의 주의 색을 빌렸다: 테두리 `color.over`, 안내 13px `color.overInk`. 확정은 open-questions Q-27.
 - placeholder는 `ink-muted`, 보통 굵기. 흰 바탕 대비가 3.2:1이라 placeholder를 쓰는 화면이 생기면 색을 다시 정한다 (Name 시안에는 없다).
