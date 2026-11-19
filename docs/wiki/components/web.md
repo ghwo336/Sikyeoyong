@@ -42,6 +42,21 @@ children: []
 - 서버 상태는 TanStack Query(`lib/query-provider.tsx`, 루트 layout에서 한 번). mutation은 자동 재시도하지 않는다 (절대 규칙 9).
 - 화면 문자열 도우미(`lib/format.ts`): "25분", "가게에서 어디로, 25분쯤", "오늘 오후 12:28"(기기 시간대와 상관없이 KST).
 
+## 화면 틀
+- 화면 틀(390 기준, 가운데 정렬, 최대 480, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
+
+## 조립 현황 (목 데이터)
+| 화면 | 경로 | 컨테이너 | 상태 |
+| --- | --- | --- | --- |
+| Main | `app/(main)/page.tsx` | `features/budget/containers/BudgetMeterContainer`, `features/chat/containers/ChatContainer` | 대화 기록, 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
+
+## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
+- Main 위 줄: 용이 44, 이름 18/700, "레벨 1, 한 번에 10,000원까지" 13px, 설정 버튼(…). 맡을 컴포넌트가 없다. 지금은 빠져 있다.
+- Main 예산 카드: Meter를 감싸는 흰 카드(1px `line`, 반경 16, 여백 12 14, 바깥 0 20). Meter만 있어 막대가 화면 끝에 붙는다.
+- Main 추천 카드 들여쓰기: 시안은 추천 카드가 드래곤 말 아래 같은 칸(32 + 10 들여쓰기)에 있다. DragonLine에 자식 자리가 없고 RecommendationList는 들여쓰지 않아 지금은 화면 폭 그대로다.
+- 입력칸 아래 띠: ChatInput.md는 "화면이 그린다"(여백 10 16 24)지만 웹은 스타일을 두지 않으므로 지금은 입력칸이 화면 끝에 붙는다. ui에 대화 화면 아래 띠(또는 ChatInput 안 여백)가 필요하다.
+- ChatEvent에 빠른 답장이 없다: 시안에 칩이 있어 임시 타입에 `quick_replies` 이벤트를 넣었다. shared `ChatEvent`에 추가가 필요하다.
+
 ## 하지 말 것 (MUST NOT)
 - 체인 ID, RPC, 컨트랙트 주소를 웹 코드에 넣지 않는다.
 - `number`로 금액을 계산하지 않는다.

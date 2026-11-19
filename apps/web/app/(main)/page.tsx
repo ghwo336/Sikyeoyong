@@ -1,5 +1,12 @@
-// Main chat screen (design/screens/Main.dc.html). Assembly only (architecture.md):
-// it will place the chat containers once packages/ui chat components exist.
+// Main chat screen (design/screens/Main.dc.html). Assembly only (architecture.md).
+import { BudgetMeterContainer } from '../../features/budget/containers/BudgetMeterContainer';
+import { ChatContainer } from '../../features/chat/containers/ChatContainer';
+
 export default function MainPage() {
-  return null;
+  return (
+    <>
+      <BudgetMeterContainer />
+      <ChatContainer />
+    </>
+  );
 }
