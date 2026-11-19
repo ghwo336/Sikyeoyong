@@ -46,6 +46,16 @@ describe('CapReached (CapReached.md 테스트 기준)', () => {
     expect(formatKstDateTime(ms)).toBe(text);
   });
 
+  it('rounds the shown time up to the minute, never earlier than the real reset', () => {
+    render(<CapReached {...base} resetAt={RESET_S + 5 * 60 + 30} now={RESET_MS - DAY} />);
+    expect(screen.getByText('12월 3일 오후 2시 6분')).toBeInTheDocument();
+  });
+
+  it('keeps an exact minute as it is', () => {
+    render(<CapReached {...base} resetAt={RESET_S + 5 * 60} now={RESET_MS - DAY} />);
+    expect(screen.getByText('12월 3일 오후 2시 5분')).toBeInTheDocument();
+  });
+
   it('counts days on Korean dates: today, tomorrow, N days', () => {
     // 3 hours before 14:00 KST on the same Korean day
     render(<CapReached {...base} now={RESET_MS - 3 * 60 * 60 * 1000} />);

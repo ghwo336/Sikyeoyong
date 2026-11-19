@@ -69,7 +69,9 @@ function whenText(days: number): string {
 
 /** Shows, large, the day the 30-day limit fills again (CapReached.md). */
 export function CapReached({ resetAt, cap, onNotify, onDismiss, now }: CapReachedProps) {
-  const resetMs = resetAt * 1000; // the chain gives seconds
+  // The chain gives seconds. Round up to the minute: showing 2:05 for 2:05:30 would
+  // invite an order that the chain still rejects.
+  const resetMs = Math.ceil((resetAt * 1000) / 60_000) * 60_000;
   const days = kstDaysBetween(now, resetMs);
   return (
     <div className={styles.cap}>
