@@ -5,7 +5,7 @@ export type UserBubbleStatus = 'sending' | 'sent' | 'failed';
 export interface UserBubbleProps {
   /** What the user said, as typed. */
   readonly text: string;
-  /** Default sent. Sending is shown faint, failed adds a retry under the bubble. */
+  /** Default sent. Sending adds a small note under the bubble, failed adds a retry. */
   readonly status?: UserBubbleStatus;
   /** Sending again is the parent's job; the button shows only when failed. */
   readonly onRetry?: () => void;
