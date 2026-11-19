@@ -47,6 +47,10 @@ describe('DeliveryMap (DeliveryMap.md 테스트 기준)', () => {
     expect(
       screen.getByRole('img', { name: '마루국밥에서 회사까지 경로 지도' }),
     ).toBeInTheDocument();
+    rerender(<DeliveryMap {...base} homeName="집" progress={0.5} rider={{ x: 100, y: 0 }} />);
+    expect(
+      screen.getByRole('img', { name: '라이더가 마루국밥에서 집으로 오는 경로 지도' }),
+    ).toBeInTheDocument();
   });
 
   it('draws the rider only when there is a position (stage 1 mock has none)', () => {
@@ -85,6 +89,8 @@ describe('DeliveryMap (DeliveryMap.md 테스트 기준)', () => {
     [1.7, 'M0 0 L100 0 L100 100'],
     [-1, 'M0 0'],
     [Number.NaN, 'M0 0'],
+    [Number.POSITIVE_INFINITY, 'M0 0 L100 0 L100 100'],
+    [Number.NEGATIVE_INFINITY, 'M0 0'],
   ])('splits the route at progress %s', (p, d) => {
     expect(toPath(splitRoute(L, p).done)).toBe(d);
   });

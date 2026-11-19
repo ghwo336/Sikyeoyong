@@ -17,7 +17,8 @@ export function splitRoute(
 ): { done: Point[]; cut: Point | undefined } {
   const first = route[0];
   if (!first) return { done: [], cut: undefined };
-  const p = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0;
+  // NaN starts at the store; anything else, Infinity too, is clamped to 0..1.
+  const p = Number.isNaN(progress) ? 0 : Math.min(1, Math.max(0, progress));
   let total = 0;
   for (let i = 1; i < route.length; i += 1) total += dist(route[i - 1] as Point, route[i] as Point);
   let left = total * p;
