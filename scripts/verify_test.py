@@ -27,16 +27,23 @@ UI_DOC = "---\nnode: leaf\nparent: _index.md\nchildren: []\n---\n# Btn\n## 하�
 UI_IDX = "---\nnode: root\nparent: null\nchildren:\n  - Btn.md\n---\n# base\nBtn.md\n"
 
 
-def ui_component(stories):
-    return {
+def ui_component(stories, css=True, doc=UI_DOC):
+    files = {
         "packages/ui/src/base/Btn/Btn.tsx": "export const Btn = () => null;\n",
         "packages/ui/src/base/Btn/Btn.module.css": ".a { color: var(--c); }\n",
         "packages/ui/src/base/Btn/Btn.stories.tsx": stories,
         "packages/ui/src/base/Btn/Btn.test.tsx": "it('x', () => {});\n",
         "packages/ui/src/base/Btn/index.ts": "export * from './Btn';\n",
-        "docs/wiki/components/ui/base/Btn.md": UI_DOC,
+        "docs/wiki/components/ui/base/Btn.md": doc,
         "docs/wiki/components/ui/base/_index.md": UI_IDX,
     }
+    if not css:
+        del files["packages/ui/src/base/Btn/Btn.module.css"]
+    return files
+
+
+THREE_STORIES = "export const Default = {};\nexport const Loading = {};\nexport const Failed = {};\n"
+STYLELESS_MEMO = "## 메모\n- ChoiceGroup에 Chip을 넘기기만 한다. 자기 스타일 없음.\n"
 
 
 def t1(before, after, path="packages/shared/src/m.ts"):
@@ -167,6 +174,16 @@ CASES = [
          hit=["D18 ui-harness-states"]),
     dict(name="D18 ui complete component ok", files=ui_component(
          "export const Default = {};\nexport const Loading = {};\nexport const Failed = {};\n"), ok=True),
+    dict(name="D18 ui-style no css and no memo is review", files=ui_component(THREE_STORIES, css=False),
+         hit=["D18 ui-style@packages/ui/src/base/Btn"], ok=True),
+    dict(name="D18 ui-style no css with styleless memo ok", files=ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC + STYLELESS_MEMO), miss=["D18 ui-style"], ok=True),
+    dict(name="D18 ui-style mark outside 메모 does not count", files=ui_component(
+         THREE_STORIES, css=False, doc=UI_DOC.replace("## 테스트 기준\n- x\n", "## 테스트 기준\n- 자기 스타일 없음\n")
+         + "## 메모\n- 없음\n"), hit=["D18 ui-style"], ok=True),
+    dict(name="D18 ui-style css and styleless memo disagree", files=ui_component(
+         THREE_STORIES, doc=UI_DOC + STYLELESS_MEMO), hit=["D18 ui-style"], ok=True),
+    dict(name="D18 ui-style css without memo ok", files=ui_component(THREE_STORIES), miss=["D18 ui-style"], ok=True),
     dict(name="D18 ui imports tanstack", files={"packages/ui/src/base/y.ts": "import { useQuery } from '@tanstack/react-query';\n"},
          hit=["D18 ui-pure"]),
     dict(name="D18 ui cross area", files={"packages/ui/src/order/z.ts": "import { L } from '../limits/L';\n"},
