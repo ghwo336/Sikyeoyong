@@ -129,7 +129,7 @@ export function floatCapAokrw(policy: PolicyConfig, level: AgentLevel, multiplie
   return cap;
 }
 
-/** Nag stages (tech-spec 3.7). One list for the type, BudgetView and the DB CHECK. */
+/** Nag stages (tech-spec 3.7). One list for the type and BudgetView. */
 export const NAG_STAGES = ['none', 'warn70', 'warn90', 'over100'] as const;
 export type NagStage = (typeof NAG_STAGES)[number];
 

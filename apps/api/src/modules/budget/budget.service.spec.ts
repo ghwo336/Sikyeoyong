@@ -28,7 +28,7 @@ async function setup(chain: ChainReader, env: Record<string, string> = {}) {
   handles.push(h);
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: s(300_000n), createdAt: 1 })
+    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: s(200_000n), createdAt: 1 })
     .run();
   h.db
     .insert(agents)
@@ -92,15 +92,17 @@ const chainOf = (usedOkrw: bigint, resetAtSec: number | null): ChainReader => ({
 
 describe('BudgetService.getView (tech-spec 3.2, 3.7)', () => {
   it('builds a BudgetView from the user, the dragon, this month orders and the chain', async () => {
-    const { budget } = await setup(chainOf(219_000n, 1_767_225_600));
+    // Every source differs: user budget 200,000 (policy default is 300,000), DB spend 219,000,
+    // chain 30-day use 250,000. Each field must come from its own source.
+    const { budget } = await setup(chainOf(250_000n, 1_767_225_600));
     const view = await budget.getView('u1', NOW);
     expect(zBudgetView.parse(view)).toEqual({
       monthKst: '2026-12',
-      personalBudget: s(300_000n),
+      personalBudget: s(200_000n),
       personalSpent: s(219_000n),
-      nagLevel: 'warn70', // 73%
+      nagLevel: 'over100', // 219,000 / 200,000
       chainCap: s(500_000n),
-      chainUsed: s(219_000n),
+      chainUsed: s(250_000n),
       chainResetAtSec: 1_767_225_600,
       level: 2,
       perOrderLimit: s(30_000n),
@@ -129,7 +131,14 @@ describe('BudgetService.getView (tech-spec 3.2, 3.7)', () => {
     expect(view.personalSpent).toBe('0');
     expect(view.nagLevel).toBe('none');
     expect(view.frozen).toBe(true);
+  });
+
+  it('drops a refunded order from this month spend', async () => {
+    const { h, budget } = await setup(chainOf(0n, null));
     h.db.update(orders).set({ status: 'refunded' }).where(eq(orders.id, 'o1')).run();
+    const view = await budget.getView('u1', NOW);
+    expect(view.personalSpent).toBe('0');
+    expect(view.nagLevel).toBe('none');
   });
 
   it('passes chain errors through instead of making up numbers', async () => {

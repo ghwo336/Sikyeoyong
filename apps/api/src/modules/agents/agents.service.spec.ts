@@ -1,4 +1,3 @@
-import { AppError } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -62,8 +61,16 @@ describe('AgentsService', () => {
     const wallet = `0x${'ab'.repeat(20)}`;
     h.db.update(agents).set({ walletAddress: wallet }).where(eq(agents.id, 'a1')).run();
     expect(s.getForUser('u1').wallet).toBe(wallet);
-    h.db.update(agents).set({ walletAddress: 'not-an-address' }).where(eq(agents.id, 'a1')).run();
-    expect(() => s.getForUser('u1')).toThrow(AppError);
+    for (const bad of [
+      'not-an-address',
+      `0x${'a'.repeat(39)}`,
+      `0x${'a'.repeat(41)}`,
+      `0x${'g'.repeat(40)}`,
+      'a'.repeat(42),
+    ]) {
+      h.db.update(agents).set({ walletAddress: bad }).where(eq(agents.id, 'a1')).run();
+      expect(() => s.getForUser('u1'), bad).toThrow(expect.objectContaining({ code: 'INTERNAL' }));
+    }
   });
 
   it('answers NOT_FOUND when the user has no dragon yet', () => {
