@@ -7,3 +7,10 @@ pnpm-lock.yaml
 docs
 design
 contracts/lib
+.turbo
+out
+build
+contracts/out
+contracts/cache
+contracts/broadcast
+packages/shared/src/abi

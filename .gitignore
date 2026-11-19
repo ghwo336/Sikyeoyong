@@ -22,12 +22,18 @@ contracts/broadcast/*/31337/
 *.pem
 *.key
 credentials.json
+*.keystore
+keys/
+*-key.json
 
 # data
 *.sqlite
 *.sqlite-*
 *.db
 *.db-*
+
+# logs
+*.log
 
 # os, editor
 .DS_Store

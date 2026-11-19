@@ -6,20 +6,17 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev --filter=@sikyeoyong/api --filter=@sikyeoyong/web",
-    "dev:api": "turbo run dev --filter=@sikyeoyong/api",
-    "dev:web": "turbo run dev --filter=@sikyeoyong/web",
-    "ui:harness": "pnpm --filter @sikyeoyong/ui storybook",
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint && node scripts/eslint-boundaries.test.mjs",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "check:dash": "python3 -I scripts/check-dash.py",
     "check:wiki": "python3 -I scripts/check-wiki.py docs/wiki",
     "wiki:gc": "python3 -I scripts/wiki-gc.py",
     "verify": "python3 -I scripts/verify.py",
-    "verify:test": "python3 -I scripts/verify_test.py"
+    "verify:test": "python3 -I scripts/verify_test.py",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -28,7 +25,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-react-hooks": "7.1.1",
     "prettier": "3.10.1",
-    "turbo": "2.11.13",
+    "turbo": "2.11.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.73.0"
   }
