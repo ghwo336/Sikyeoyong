@@ -62,3 +62,24 @@ children: []
 - 한 일: D-18(Next.js + NestJS + SQLite) 결정을 문서 전체에 반영. 구조 규칙 `conventions/architecture.md` 작성. 시안 17장을 UI 컴포넌트 35개로 나눠 `components/ui/<영역>/<이름>.md`(책임, props, 하네스 상태, 쓰는 화면, 테스트 기준) 작성. 저장소를 맥북 `~/Desktop/products/sikyeoyong`에 둠.
 - 막힌 것: 없음.
 - 다음 할 일: 모노레포 스캐폴딩(pnpm, Turborepo, apps/web, apps/api, packages/ui, packages/shared), `design/tokens.json`으로 CSS 변수 생성, `base`와 `dragon` 컴포넌트부터 하네스와 함께 만들기, 1주차 스파이크.
+
+### 2026-11-19 개발 시작: 검증 루프, 뼈대 (호재 님 + Claude, Claude Code)
+- 한 일:
+  - 커밋마다 검증하는 루프를 만듦: 기계 게이트 `scripts/verify.py`(자체 테스트 `scripts/verify_test.py`), 검증 에이전트 `.claude/agents/commit-verifier.md`, 규칙 `conventions/dev-loop.md`. 같은 커밋 3라운드 FAIL이면 사람에게 올림.
+  - 검증이 커밋 밖으로 번져 개발이 늦어져서, 호재 님 결정으로 범위를 그 커밋으로 조임 (돈, 비밀, 절대 규칙, 빌드 실패만 범위와 상관없이 막음).
+  - 모노레포 루트(pnpm, Turborepo, TS 6, ESLint 경계 규칙과 회귀 테스트 69개, prettier), 공급망 최소 배포 기간을 지키게 버전 고정.
+  - packages/shared: AppErrorCode 표(22개, HTTP 상태, 문구, 대사), 금액 유틸(bigint aokrw, formatOkrw), 체인 설정과 정책값(D-07, D-12).
+  - D-19 결정(호재 님): 결제 실패 뒤 다시 누르면 같은 orderRef로 재시도. payment.md "confirm 상태 규칙"을 원본으로 결제 상태, 승인 흐름, 제출 시작 표시 순서를 정함. `SERVER_PRICE_CHANGED` 추가.
+  - apps/api: NestJS 뼈대, `GET /api/health`, 환경 변수 zod 검증, AppError 예외 필터, ZodValidationPipe (D-03: nestjs-zod가 Nest 12를 지원하지 않아 자체 파이프).
+  - apps/web: Next.js 뼈대, 루트 `pnpm dev`(api + web, 개발 때 /api rewrite).
+  - packages/ui: 토큰 CSS 생성(design/tokens.json), Storybook 하네스, 테스트 환경.
+- 결과물: 브랜치 `feat/phase1-foundation` (main은 문서 기준선만).
+- 막힌 것: 없음. 열린 질문 Q-22(음수 금액 표시), Q-23(예산 칩 "20만 원"), Q-24(경로 C 중복 orderRef), Q-25(판매자 거절 상태).
+- 새로 안 마루 사실: 없음 (schemaRegistry 주소는 미확인 표시).
+- 후속 (검증 MINOR, 다음 관련 커밋에서):
+  - 게이트: 정규식 리터럴 주석 처리, T1 문자열 안 공백, `const amount = useState<number>` 테스트, UTF-8 아닌 파일 exit 2, 복수형 이름 오탐(employees), querySelector('#..') 오탐, file_allowed는 주석에서만, 큰 bigint 리터럴 규칙을 dev-loop 표에.
+  - ESLint: `../.././index` 배럴 우회, verify.py와 ESLint의 `@sikyeoyong/ui/*` 기준 통일.
+  - shared: rpc url 정규식(IPv6, 밑줄, 쿼리만), ChainOverrides에 ws와 탐색기.
+  - api: ORDERS_CONTRACT를 deployments 해석으로(체인 모듈), dragonParams는 formatOkrw와 KST 변환 한곳에서, Node 22.12 부팅 스모크, tech-spec 3.1 모듈 트리(Hono 시절) 정리.
+  - 결제 문서: approvals payload_json에 승인 금액, wallet_txs request_id 규칙과 칸 이름, CHAIN_AGENT_LIMIT_UNSET 조건을 tech-spec 3.6과 chain-and-pcl.md에서 payment.md로 연결.
+- 다음 할 일: 웹에 ui 토큰과 글꼴 연결, base 컴포넌트(Button, Amount 등) 하네스와 함께, Drizzle DB 모듈과 마이그레이션, 목 가게 시드, 컨트랙트.
