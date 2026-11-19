@@ -20,6 +20,11 @@ export class ChatController {
   ): Promise<void> {
     // Checks and records first: a bad resend is still a plain HTTP error (409).
     const stream = this.chat.begin(user.userId, body);
+    // A closed connection stops the model turns (each costs money) and keeps nothing.
+    const gone = new AbortController();
+    res.on('close', () => {
+      if (!res.writableEnded) gone.abort();
+    });
     res.status(200);
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -27,8 +32,8 @@ export class ChatController {
     res.flushHeaders();
     try {
       await stream((event) => {
-        res.write(`data: ${JSON.stringify(event)}\n\n`);
-      });
+        if (!gone.signal.aborted) res.write(`data: ${JSON.stringify(event)}\n\n`);
+      }, gone.signal);
     } finally {
       // Headers are sent, so the error filter cannot answer any more; always close the stream.
       res.end();

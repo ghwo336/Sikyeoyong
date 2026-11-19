@@ -1,5 +1,7 @@
 import 'reflect-metadata';
-import type { Server } from 'node:http';
+import { request as httpRequest, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import type Anthropic from '@anthropic-ai/sdk';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { type ChatEvent, zChatEvent } from '@sikyeoyong/shared';
@@ -219,6 +221,72 @@ describe('POST /api/chat/messages (SSE)', () => {
     expect(provider.requests).toHaveLength(20);
     // A replay of a finished turn costs nothing, so it still answers.
     expect((await post({ text: '0번', clientMessageId: 'r0' })).status).toBe(200);
+  });
+
+  it('keeps nothing and stops the model when the client leaves mid-turn', async () => {
+    const provider = scripted([
+      { blocks: [{ text: '찾아볼게용' }, { tool: 'get_budget', input: {} }] },
+      { blocks: [{ text: '끝' }] },
+    ]);
+    const { app, h } = await setup(provider);
+    const gone = new AbortController();
+    const stream = app.get(ChatService).begin('u1', { text: '예산', clientMessageId: 'leave' });
+    await stream((e) => {
+      if (e.type === 'token') gone.abort();
+    }, gone.signal);
+    expect(provider.requests).toHaveLength(1);
+    expect(h.db.select().from(chatMessages).all()).toHaveLength(0);
+  });
+
+  it('aborts the turn when the HTTP connection closes (real socket)', async () => {
+    let calls = 0;
+    // A slow model: each turn takes 100ms and says one word.
+    const slow: LlmProvider = {
+      turn: (_req, onText, signal) =>
+        new Promise((resolve, reject) => {
+          calls += 1;
+          onText('음');
+          const t = setTimeout(() => {
+            resolve({
+              content: [
+                { type: 'tool_use', id: `t${String(calls)}`, name: 'get_context', input: {} },
+              ],
+              stop_reason: 'tool_use',
+            } as unknown as Anthropic.Message);
+          }, 100);
+          signal?.addEventListener('abort', () => {
+            clearTimeout(t);
+            reject(new Error('aborted'));
+          });
+        }),
+    };
+    const { app, token, h } = await setup(slow);
+    await app.listen(0);
+    const port = (app.getHttpServer() as Server).address() as AddressInfo;
+    await new Promise<void>((done) => {
+      const req = httpRequest(
+        {
+          port: port.port,
+          path: '/api/chat/messages',
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            cookie: `sid=${token}`,
+            'x-requested-with': 'fetch',
+          },
+        },
+        (res) => {
+          res.once('data', () => {
+            req.destroy(); // the user closed the app after the first word
+            done();
+          });
+        },
+      );
+      req.end(JSON.stringify({ text: '오늘 날씨', clientMessageId: 'sock' }));
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    expect(calls).toBe(1);
+    expect(h.db.select().from(chatMessages).all()).toHaveLength(0);
   });
 
   describe('clientMessageId and history', () => {

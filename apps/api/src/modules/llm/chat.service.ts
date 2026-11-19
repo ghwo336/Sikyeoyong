@@ -58,7 +58,7 @@ function readJson<T>(schema: z.ZodType<T>, json: string): T | null {
 }
 
 /** Streams one turn's events to the caller. */
-export type ChatStream = (emit: (event: ChatEvent) => void) => Promise<void>;
+export type ChatStream = (emit: (event: ChatEvent) => void, signal?: AbortSignal) => Promise<void>;
 
 /**
  * One user message in, a stream of ChatEvents out (tech-spec 2.4, 3.3). Every
@@ -117,7 +117,7 @@ export class ChatService {
       // Lost a race with the same clientMessageId.
       throw new AppError('CONFLICT', { reason: 'clientMessageId already used' });
     }
-    return (emit) => this.run(userId, body.text, history, userRowId, emit);
+    return (emit, signal) => this.run(userId, body.text, history, userRowId, emit, signal);
   }
 
   /** The last turns as plain words, oldest first; unanswered or silent turns are skipped. */
@@ -148,6 +148,7 @@ export class ChatService {
     history: Anthropic.MessageParam[],
     userRowId: string,
     emit: (event: ChatEvent) => void,
+    signal?: AbortSignal,
   ): Promise<void> {
     const sent: ChatEvent[] = [];
     const send = (event: ChatEvent) => {
@@ -174,8 +175,15 @@ export class ChatService {
       }
     };
     try {
-      await runtime.run({ ctx: { userId }, history, userText: text }, onEvent);
+      await runtime.run({ ctx: { userId }, history, userText: text }, onEvent, signal);
     } catch (err) {
+      if (signal?.aborted) {
+        // Nobody is listening: keep nothing so the same message can be sent again.
+        this.store(() => {
+          this.repo.delete(userRowId);
+        });
+        return;
+      }
       // The stream has started, so errors become the dragon's words, never a stack or a key.
       const code = err instanceof AppError ? err.code : 'INTERNAL';
       // Server log only: the cause and stack help operations and never reach the screen.
@@ -184,6 +192,12 @@ export class ChatService {
       // messageId names a stored answer; a failed turn stores none, so it gets a fresh id.
       send({ type: 'done', messageId: uuidv7() });
       // Nothing is kept for a failed turn: the same message can be sent again.
+      this.store(() => {
+        this.repo.delete(userRowId);
+      });
+      return;
+    }
+    if (signal?.aborted) {
       this.store(() => {
         this.repo.delete(userRowId);
       });

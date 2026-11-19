@@ -20,7 +20,12 @@ export class ScriptedProvider implements LlmProvider {
 
   constructor(private readonly turns: readonly ScriptedTurn[]) {}
 
-  turn(request: LlmTurnRequest, onText: (text: string) => void): Promise<Anthropic.Message> {
+  turn(
+    request: LlmTurnRequest,
+    onText: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<Anthropic.Message> {
+    if (signal?.aborted) return Promise.reject(new Error('aborted'));
     // Copy the messages: the runtime keeps appending to the same array.
     this.requests.push({ ...request, messages: [...request.messages] });
     const scripted = this.turns[this.next];

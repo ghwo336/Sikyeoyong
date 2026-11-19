@@ -32,7 +32,7 @@ export type RuntimeEvent =
   | { readonly type: 'token'; readonly text: string }
   | { readonly type: 'tool_status'; readonly tool: ToolName; readonly state: 'start' | 'done' }
   | { readonly type: 'tool_output'; readonly tool: ToolName; readonly output: unknown }
-  | { readonly type: 'stopped'; readonly reason: 'end' | 'refusal' | 'limit' };
+  | { readonly type: 'stopped'; readonly reason: 'end' | 'refusal' | 'limit' | 'aborted' };
 
 export interface RuntimeLimits {
   /** Tool calls per user message (agent-runtime.md). */
@@ -90,6 +90,8 @@ export class AgentRuntime {
   async run(
     input: RunInput,
     emit: (event: RuntimeEvent) => void,
+    /** The client went away: no further model turns or tools (each turn costs money). */
+    signal?: AbortSignal,
   ): Promise<Anthropic.MessageParam[]> {
     const messages: Anthropic.MessageParam[] = [
       ...input.history,
@@ -100,12 +102,22 @@ export class AgentRuntime {
     const used: Record<LimitedKind, number> = { order: 0, approval: 0, card: 0 };
 
     for (let turn = 0; turn < this.limits.maxTurns; turn += 1) {
+      if (signal?.aborted) {
+        emit({ type: 'stopped', reason: 'aborted' });
+        return messages;
+      }
       const message = await this.provider.turn(
         { system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages },
         (text) => {
           emit({ type: 'token', text });
         },
+        signal,
       );
+      if (signal?.aborted) {
+        // Gone while the model answered: run no tools for nobody.
+        emit({ type: 'stopped', reason: 'aborted' });
+        return messages;
+      }
       if (message.stop_reason === 'refusal') {
         // Keep no unanswered tool_use in the stored turn, so the next message starts clean.
         const content = message.content.filter((b) => b.type !== 'tool_use');

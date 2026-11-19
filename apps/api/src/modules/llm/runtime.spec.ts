@@ -323,6 +323,40 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     expect(messages).toEqual([{ role: 'user', content: '예산' }]);
   });
 
+  it('stops calling the model and runs no tools once the client is gone', async () => {
+    const gone = new AbortController();
+    const h = handlers();
+    const provider = new ScriptedProvider([
+      { blocks: [{ text: '찾아볼게용' }, tool('get_budget', {})] },
+      { blocks: [{ text: '끝' }] },
+    ]);
+    const events: RuntimeEvent[] = [];
+    const runtime = new AgentRuntime(provider, h);
+    await runtime.run(
+      { ctx: ME, history: [], userText: '예산' },
+      (e) => {
+        events.push(e);
+        if (e.type === 'token') gone.abort(); // the client leaves while the first answer streams
+      },
+      gone.signal,
+    );
+    expect(provider.requests).toHaveLength(1);
+    expect(h.get_budget).not.toHaveBeenCalled();
+    expect(events.at(-1)).toEqual({ type: 'stopped', reason: 'aborted' });
+  });
+
+  it('does not start at all when the signal is already aborted', async () => {
+    const gone = new AbortController();
+    gone.abort();
+    const provider = new ScriptedProvider([{ blocks: [{ text: 'x' }] }]);
+    await new AgentRuntime(provider, handlers()).run(
+      { ctx: ME, history: [], userText: 'a' },
+      () => undefined,
+      gone.signal,
+    );
+    expect(provider.requests).toHaveLength(0);
+  });
+
   it('never runs a tool cut off at max_tokens', async () => {
     const h = handlers();
     const provider = new ScriptedProvider([

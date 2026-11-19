@@ -31,16 +31,23 @@ export class AnthropicProvider implements LlmProvider {
     readonly options: AnthropicProviderOptions,
   ) {}
 
-  async turn(request: LlmTurnRequest, onText: (text: string) => void): Promise<Anthropic.Message> {
-    const stream = this.client.messages.stream({
-      model: this.options.model,
-      max_tokens: this.options.maxTokens ?? 16_000,
-      system: [{ type: 'text', text: request.system, cache_control: { type: 'ephemeral' } }],
-      tools: request.tools,
-      messages: request.messages,
-      output_config: { effort: this.options.effort },
-      cache_control: { type: 'ephemeral' },
-    });
+  async turn(
+    request: LlmTurnRequest,
+    onText: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<Anthropic.Message> {
+    const stream = this.client.messages.stream(
+      {
+        model: this.options.model,
+        max_tokens: this.options.maxTokens ?? 16_000,
+        system: [{ type: 'text', text: request.system, cache_control: { type: 'ephemeral' } }],
+        tools: request.tools,
+        messages: request.messages,
+        output_config: { effort: this.options.effort },
+        cache_control: { type: 'ephemeral' },
+      },
+      { signal },
+    );
     stream.on('text', (delta) => {
       onText(delta);
     });

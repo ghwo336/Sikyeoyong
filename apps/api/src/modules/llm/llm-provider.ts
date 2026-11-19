@@ -13,7 +13,12 @@ export interface LlmTurnRequest {
  * assistant message (stop reason, tool calls).
  */
 export interface LlmProvider {
-  turn(request: LlmTurnRequest, onText: (text: string) => void): Promise<Anthropic.Message>;
+  /** signal: the caller went away (client disconnected); stop and reject. */
+  turn(
+    request: LlmTurnRequest,
+    onText: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<Anthropic.Message>;
 }
 
 export const LLM_PROVIDER = Symbol('LLM_PROVIDER');

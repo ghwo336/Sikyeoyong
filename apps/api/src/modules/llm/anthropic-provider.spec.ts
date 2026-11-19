@@ -8,7 +8,7 @@ const FINAL = { id: 'msg_1', stop_reason: 'end_turn', content: [] } as unknown a
 
 function fakeClient() {
   const handlers: Record<string, (delta: string) => void> = {};
-  const stream = vi.fn((_params: unknown) => ({
+  const stream = vi.fn((_params: unknown, _options?: unknown) => ({
     on: (event: string, cb: (delta: string) => void) => {
       handlers[event] = cb;
     },
@@ -44,6 +44,14 @@ describe('AnthropicProvider', () => {
     expect(params).not.toHaveProperty('tool_choice');
     expect(params).not.toHaveProperty('thinking');
     expect(params).not.toHaveProperty('temperature');
+  });
+
+  it('passes the abort signal to the SDK request', async () => {
+    const { client, stream } = fakeClient();
+    const provider = new AnthropicProvider(client, { model: 'm', effort: 'low' });
+    const gone = new AbortController();
+    await provider.turn({ system: 's', tools: [], messages: [] }, () => undefined, gone.signal);
+    expect(stream.mock.calls[0]?.[1]).toEqual({ signal: gone.signal });
   });
 
   it('streams text deltas and returns the final message', async () => {
