@@ -83,9 +83,9 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 
 **흐름 3: 소유자 승인**
 1. 서버 사전 검사 결과가 "승인 필요"(레벨 초과, 처음 보는 가게, 개인 예산 100% 초과 후 주문)이면 Claude에게 도구 결과로 `APPROVAL_REQUIRED`를 돌려준다.
-2. 주문은 `pending_approval`로 만들어지고, 같은 서비스 함수가 같은 DB 트랜잭션에서 `approvals` 행(`order_id`로 묶음, pending, 10분 만료)을 만든다. Claude가 `request_owner_approval(reason, merchantId, items)`를 부르면 서버는 같은 사용자의 대기 중 승인(같은 가게와 메뉴)에 메시지만 붙인다. 없으면 같은 함수로 주문과 승인을 함께 만든다. confirm 안에서 승인이 필요해진 경우도 같은 함수를 쓴다 (D-19).
-3. 앱이 승인 카드 표시. 사용자가 승인하면 서버가 필요한 조치를 수행: 레벨 상향(→ TransferLimit 메타데이터 갱신 트랜잭션) 또는 가게 허용 목록 추가(서버 `allowed_merchants`. MAWS `allowedTargets`는 주문 컨트랙트 주소 하나로 고정이라 바꾸지 않는다, D-13).
-4. 서버가 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 대화에 다시 보낸다. 결제는 사용자가 카드를 다시 눌렀을 때 confirm에서만 한다 (D-19, payment.md "confirm 상태 규칙"). 거절이나 만료면 주문은 재시도 불가 `failed`.
+2. 주문은 `pending_approval`로 만들어지고, 같은 서비스 함수가 같은 DB 트랜잭션에서 `approvals` 행(`order_id`로 묶음, pending, 10분 만료)을 만든다. Claude가 `request_owner_approval(reason, merchantId, items)`를 부르면 서버는 같은 사용자의 대기 중 승인 가운데 가게와 items(메뉴와 수량 집합)가 같은 것에 메시지만 붙인다. 여러 개면 가장 최근 것. 없으면 같은 함수로 주문과 승인을 함께 만든다. confirm 안에서 승인이 필요해진 경우도 같은 함수를 쓴다 (D-19).
+3. 앱이 승인 카드 표시. 사용자가 승인하면 서버가 필요한 조치를 수행: 레벨 상향(→ TransferLimit 메타데이터 갱신 트랜잭션), 가게 허용 목록 추가(서버 `allowed_merchants`. MAWS `allowedTargets`는 주문 컨트랙트 주소 하나로 고정이라 바꾸지 않는다, D-13), 또는 예산 초과 허락(승인된 approvals 행 자체가 허락이다. 조치 없음).
+4. 레벨 상향이면 TransferLimit 갱신 트랜잭션이 확정된 뒤에, 서버가 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 대화에 다시 보낸다. 결제는 사용자가 카드를 다시 눌렀을 때 confirm에서만 한다 (D-19, payment.md "confirm 상태 규칙"). 거절이나 만료면 주문은 재시도 불가 `failed`.
 
 ---
 
@@ -241,7 +241,7 @@ apps/api/src/
 | GET | `/orders/:id` | user | | `{ order, events, receipt }` |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
 | GET | `/approvals` | user | `?status=pending` | `{ approvals }` |
-| POST | `/approvals/:id/approve` | user | | `{ approval, order? }`. 필요한 조치(레벨 상향, 가게 허용)를 하고 묶인 주문을 `quoted`로 되돌린다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
+| POST | `/approvals/:id/approve` | user | | `{ approval, order? }`. 필요한 조치(레벨 상향, 가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌린다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
 | POST | `/approvals/:id/reject` | user | | `{ approval }` |
 | GET | `/admin/health` | operator | | 체인 연결, MAWS 연결, 인덱서 커서, 정책 동기화 상태 |
 | POST | `/admin/merchants/:id/attest` | operator | | `{ kybUid }` (EAS 발급) |
@@ -441,6 +441,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 - 원본은 `packages/shared/src/errors/app-error-code.ts`의 표 하나이고, 이 표와 글자 하나까지 같아야 한다 (테스트가 이 표를 따로 옮겨 적어 대조한다). 2026-11-19 구현 중 HTTP 열과 아래 6개 코드를 정했다.
 - HTTP: 체인과 서버 규칙 거절은 422, 멈춤(동결)은 423, 한도 메타데이터 미설정은 503, `CHAIN_UNAUTHORIZED`는 서버 설정 문제라 500.
 - `VALIDATION_FAILED`부터 `RATE_LIMITED`까지 6개는 server-api.md의 "모든 에러는 AppErrorCode" 규칙을 지키려고 추가했다.
+- `SERVER_PRICE_CHANGED`는 D-19에서 견적 유효 시간을 두지 않는 대신 confirm마다 가격을 다시 계산하려고 추가했다 (2026-11-19).
 - 사용자 메시지와 대사는 D-17 화면 문구 표(design-and-motion.md)를 따른다: 정책은 "용이 규칙", 멈춤 화면 제목은 시안 Frozen의 "용이가 자고 있어요".
 - 대사의 `{max}`, `{resetAt}`에는 이미 표시용으로 바꾼 문자열을 넣는다 (`formatOkrw` 결과처럼 "원"까지 붙은 금액, KST 날짜). 빈 자리표시가 남으면 `renderDragonLine`이 에러를 낸다.
 
@@ -491,10 +492,10 @@ score(merchant, menu) =
 | `agents` | id, user_id(1:1), dragon_name, status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, level, created_at | 유니크(user_id), 유니크(wallet_address) |
 | `agent_keys` | agent_id → agents, ciphertext, iv, key_version | 경로 B 전용 |
 | `agent_limit_history` | id, agent_id, level, transfer_limit, tx_hash, approval_id?, created_at | |
-| `wallet_txs` | id, agent_id, kind(`fund`/`drain`/`set_limit`/`freeze`/`pay`/`refund`), tx_hash, status, error_code?, created_at | 인덱스(agent_id, created_at) |
+| `wallet_txs` | id, agent_id, kind(`fund`/`drain`/`set_limit`/`freeze`/`pay`/`refund`), request_id(충전은 orderRef와 attempt에서 만듦), order_id?, attempt?, submit_started_at?, nonce?, maws_request_id?, tx_hash?, status, error_code?, created_at | 인덱스(agent_id, created_at), 유니크(request_id) |
 | `merchants` | id, onchain_id?, name, category, tags_json, payout_address, kyb_uid?, verified, active, business_no_hash?, metadata_uri, open_hours_json, source(`seed`/`console`), created_at | 유니크(onchain_id), 유니크(payout_address) |
 | `menus` | id, merchant_id, name, price, tags_json, description, available | 인덱스(merchant_id) |
-| `orders` | id, order_ref(bytes32 hex), user_id, agent_id, merchant_id, amount, items_json, note, status(`quoted`/`pending_approval`/`submitting`/`paid`/`preparing`/`delivering`/`delivered`/`failed`/`cancelled`/`refunded`), tx_hash?, error_code?, receipt_json?, created_at, updated_at | 유니크(order_ref), 인덱스(user_id, created_at) |
+| `orders` | id, order_ref(bytes32 hex), user_id, agent_id, merchant_id, amount, items_json, note, status(`quoted`/`pending_approval`/`submitting`/`paid`/`preparing`/`delivering`/`delivered`/`failed`/`cancelled`/`refunded`), tx_hash?, error_code?, receipt_json?, attempt(사람이 결제를 시작한 횟수, 0부터), submit_started_at?, submit_tx_hash?, submit_nonce?, maws_request_id?, created_at, updated_at | 유니크(order_ref), 인덱스(user_id, created_at), 인덱스(status) (시작 시 submitting 재확인용) |
 | `order_events` | id, order_id, type, payload_json, source(`server`/`chain`), tx_hash?, log_index?, created_at | 유니크(tx_hash, log_index) |
 | `approvals` | id, user_id, agent_id, order_id(→ orders, 승인 대상 주문), reason, payload_json, status(`pending`/`approved`/`rejected`/`expired`), expires_at, decided_at | 인덱스(user_id, status), 유니크(order_id) where status=pending |
 | `allowed_merchants` | user_id, merchant_id, approved_at | PK(user_id, merchant_id) |

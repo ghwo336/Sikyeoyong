@@ -77,6 +77,7 @@ interface PaymentProvider {
 ### 승인 흐름과의 관계
 - 사전 검사나 체인이 승인이 필요한 사유(`SERVER_OVER_LEVEL`, `SERVER_NEW_MERCHANT`, `SERVER_BUDGET_OVER`, `CHAIN_AGENT_LIMIT`)로 막으면 주문은 `failed`가 아니라 `pending_approval`로 간다. 그래서 승인 전에 다시 눌러도 결제하지 않는다 (같은 revert와 가스 과금이 반복되지 않는다).
 - `pending_approval` 전이와 `approvals` 행 생성(`order_id`로 묶음, 10분 만료)은 approvals 모듈이 내보낸 서비스 함수 하나가 같은 DB 트랜잭션에서 한다. LLM `place_order`, `request_owner_approval`, confirm 세 경로가 모두 이 함수를 쓴다. 그래서 승인 행 없이 `pending_approval`에 묶인 주문은 생기지 않는다.
+- **승인된 사유는 그 주문의 confirm에서 다시 막지 않는다**: confirm 사전 검사는 그 주문(`order_id`)에 승인된 approvals 행이 있으면 그 행의 사유만큼 통과시킨다. 레벨 상향과 가게 허용은 조치 자체가 남아서 다시 걸리지 않는다. 예산 초과(`SERVER_BUDGET_OVER`)는 남는 조치가 없으므로, 승인된 행의 금액이 주문 금액과 같을 때만 예산 검사를 건너뛴다. 금액이 다르면(가격이 바뀌어 새 견적) 그 승인은 쓰지 않는다. 그래서 승인 뒤 confirm이 같은 사유로 다시 `pending_approval`에 빠지는 반복이 없다.
 - 주인이 승인하면 서버는 필요한 조치(레벨 상향, 가게 허용)를 한다. 레벨 상향이면 TransferLimit 갱신 트랜잭션이 **확정된 뒤에** 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 다시 보낸다 (먼저 되돌리면 다시 revert되고 가스가 든다). `POST /api/approvals/:id/approve`는 결제하지 않는다. **결제는 다시 confirm에서만** 한다.
 - 거절, 또는 만료(approvals 모듈의 주기 작업이 1분마다 `expires_at`이 지난 대기 승인을 `expired`로 바꾼다)면 묶인 주문은 재시도 불가 `failed` (`error_code`는 원래 사유).
 
@@ -96,7 +97,12 @@ interface PaymentProvider {
 ### `submitting`을 끝내는 규칙
 - 인덱서가 `OrderPlaced(orderRef)`를 보면 `paid`.
 - 제출 트랜잭션의 영수증이 revert면 그 사유로 위 분류를 따른다.
-- **제출 시작 표시**: 서명하거나 MAWS를 부르기 **전에** 주문에 제출 시작 표시를 DB에 쓴다 (경로 B: 서명한 tx hash와 nonce, 경로 A: MAWS 요청 ID). 표시를 쓰기 전에 끝난 실패만 "제출 전"이다.
+- **제출 시작 표시와 순서**: 표시는 체인이나 MAWS에 무엇이든 내보내기 **전에** DB에 커밋한다.
+  - 경로 B: nonce 예약 → 서명 → (`submit_tx_hash`, `submit_nonce`, `submit_started_at`)를 DB에 커밋 → 그다음 브로드캐스트.
+  - 경로 A: `maws_request_id`를 만들어 `submit_started_at`과 함께 DB에 커밋 → 그다음 MAWS 호출.
+  - 표시가 없는 `submitting` 주문(시작 시 재확인 포함)은 "제출 전"이다. 근거: 브로드캐스트와 MAWS 호출은 표시 커밋 뒤에만 하므로, 표시 전에 죽었다면 서명된 트랜잭션도 내보내지지 않았다. 이 경우 재시도 가능 `failed`.
+  - 표시가 있으면 tx hash 유무와 상관없이 위 "결과 모름" 규칙을 따른다.
+  - 저장 칸: tech-spec 4 `orders`의 `attempt`, `submit_started_at`, `submit_tx_hash`, `submit_nonce`, `maws_request_id`.
 - 제출 전에 확정된 거절(MAWS나 WaaS가 오류 코드로 답함, 서명이나 브로드캐스트 전 단계 예외)은 재시도 가능 `failed`.
 - 제출 시작 표시 뒤의 타임아웃, 응답 없음은 tx hash가 없어도 `submitting`으로 두고 운영자 확인으로 넘긴다. hash 없음을 "제출 안 됨"으로 보지 않는다.
 - 같은 nonce가 다른 트랜잭션으로 소비된 경우는 인덱서 DB가 아니라 그 nonce를 쓴 트랜잭션의 영수증 로그를 체인에서 직접 조회해서 판단한다. `OrderPlaced(orderRef)`가 없을 때만 재시도 가능 `failed`.
@@ -106,13 +112,14 @@ interface PaymentProvider {
 
 ### 즉시 충전(fund)의 멱등성
 - 충전 요청 ID는 (orderRef, 시도 번호)에서 만든다. 시도 번호는 사람이 confirm을 다시 눌러 결제를 시작할 때마다 하나 늘린다. 한 시도 안에서는 충전이 많아야 한 번이다.
-- 충전에도 제출 시작 표시를 먼저 쓴다. 표시가 있는데 결론이 없는 충전이 있으면 다시 충전하지 않고 기다린다 (결과 모름). 잔액 계산에는 확정된 충전만 넣고, 새 충전 금액은 float 상한에서 확정 잔액과 결과 모름 충전을 뺀 만큼을 넘지 않는다. 그래서 재시도가 반복돼도 float 상한을 넘지 않는다.
+- 충전에도 같은 순서로 제출 시작 표시를 먼저 쓴다 (tech-spec 4 `wallet_txs`의 `request_id`, `order_id`, `attempt`, `submit_started_at`, `nonce`, `maws_request_id`). 표시가 있는데 결론이 없는 충전이 있으면 다시 충전하지 않고 기다린다 (결과 모름). 잔액 계산에는 확정된 충전만 넣고, 새 충전 금액은 float 상한에서 확정 잔액과 결과 모름 충전을 뺀 만큼을 넘지 않는다. 그래서 재시도가 반복돼도 float 상한을 넘지 않는다.
 - 확정된 충전 뒤 다른 주문이 잔액을 써서 `CHAIN_INSUFFICIENT_FUNDS`가 나면, 다음 시도(새 시도 번호)에서 다시 충전한다.
 
 ### 경로별 중복 orderRef 보호
 - 경로 A, B: `placeOrder`가 같은 orderRef의 두 번째 결제를 `OrderExists`로 되돌린다 (tech-spec 5.2 의사 코드, 컨트랙트 테스트로 확인할 것).
 - 경로 C(`transfer.send` + 미리 등록한 의도): 같은 orderRef로 두 번 보냈을 때 컨트랙트 `receive()`가 두 번째를 막는지 (미확인). Q-24. **Q-24가 닫힐 때까지 경로 C에서는 `failed` 재시도를 하지 않는다** (재시도 가능 실패도 새 견적으로 보내고, 새 견적 전 이전 제출 확정 확인을 따른다).
 
+- `CHAIN_AGENT_LIMIT_UNSET` 예외: 첫 트랜잭션의 영수증이 이 사유의 revert로 **확정된 뒤에만**, 서버가 TransferLimit을 재기록하고(확정 대기) 같은 요청 안에서 같은 orderRef로 한 번 더 보낸다. 경로 A, B만. 경로 C는 Q-24 전까지 하지 않는다.
 - 409(`CONFLICT`)는 confirm 상태 때문에 쓰지 않는다. 같은 멱등 키에 다른 내용일 때만이다.
 
 ## 하지 말 것 (MUST NOT)

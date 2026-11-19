@@ -78,3 +78,10 @@ children: []
 - 누가: 호재 님 결정(D-19)을 Claude가 구체화
 - 영향: decisions.md D-19, payment.md, tech-spec 1.4, 3.2, 3.6, 4, server-api.md
 
+### 2026-11-19 D-19 보강 2 (승인 사유 통과, 제출 시작 표시 순서)
+- 이전: 예산 초과로 승인받은 주문이 confirm에서 다시 예산 검사에 막힘, 제출 시작 표시의 순서와 저장 칸이 없음.
+- 이후: 승인된 사유는 그 주문의 confirm에서 통과(예산 초과는 금액이 같을 때만). 표시를 DB에 커밋한 뒤에만 브로드캐스트, `orders`와 `wallet_txs`에 attempt와 제출 표시 칸.
+- 이유: D-19 문서 검증 3라운드 지적. 호재 님이 4라운드 검증을 허락함.
+- 누가: 호재 님 결정(D-19)을 Claude가 구체화
+- 영향: decisions.md D-19, payment.md, tech-spec 1.4 흐름 3, 3.2 approve, 3.6, 4
+

@@ -180,6 +180,8 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 견적 유효 시간은 두지 않는다. 대신 confirm 사전 검사가 매번 현재 가격을 다시 계산하고, 다르면 `SERVER_PRICE_CHANGED`로 새 견적을 만들게 한다.
 - 승인 흐름(같은 날 바꿈): 승인 필요 사유는 `failed`가 아니라 `pending_approval`로 가고, 승인 행은 주문에 묶어 같은 트랜잭션에서 만든다. 승인되면 주문을 `quoted`로 되돌리고 확인 카드를 다시 보낸다. 서버가 승인 뒤 스스로 결제하지 않는다 (이전 tech-spec 흐름 3의 "서버가 원래 주문을 재시도"를 대체).
 - 경로 C는 같은 orderRef 중복 보호가 확인될 때까지(Q-24) `failed` 재시도를 하지 않는다.
+- 승인된 사유는 그 주문의 confirm에서 다시 막지 않는다. 예산 초과 승인은 승인 금액이 주문 금액과 같을 때만 유효하다.
+- 제출 시작 표시(서명한 tx hash와 nonce, 또는 MAWS 요청 ID)를 DB에 커밋한 **뒤에만** 브로드캐스트하거나 MAWS를 부른다. 표시가 없으면 제출 전, 있으면 결과 모름.
 - 이유: 새 견적은 새 orderRef라 체인의 `OrderExists` 보호를 받지 못해 타임아웃 뒤 이중 결제가 날 수 있다. CLAUDE.md 9(같은 orderRef로만 재시도)를 결제 상태 규칙으로 구체화했다. 에러 코드 커밋 검증 3라운드 지적에서 나왔다.
-- 영향: payment.md "confirm 상태 규칙"(원본), server-api.md, tech-spec 1.4 흐름 1과 흐름 3, 3.2 confirm과 approve 행, 3.6 `SERVER_PRICE_CHANGED`, 4 `approvals.order_id`, 8.3 `SUBMITTING_ALERT_MS`, open-questions Q-24, Q-25.
+- 영향: payment.md "confirm 상태 규칙"(원본), server-api.md, tech-spec 1.4 흐름 1과 흐름 3, 3.2 confirm과 approve 행, 3.6 `SERVER_PRICE_CHANGED`, 4 `approvals.order_id`와 `orders`, `wallet_txs`의 제출 표시 칸, 8.3 `SUBMITTING_ALERT_MS`, open-questions Q-24, Q-25.
 

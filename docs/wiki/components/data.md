@@ -23,6 +23,7 @@ children: []
 - **ID**: 내부 ID는 `text` UUID v7. `orderRef`(bytes32 hex)는 별도 컬럼 `order_ref`(유니크).
 - **마이그레이션**: `drizzle-kit`으로 생성, 커밋. 수동으로 DB를 고치지 않는다. 되돌릴 수 없는 마이그레이션은 PR에 표시.
 - **체인 데이터 동기화**: 트랜잭션 해시, 블록 번호, 이벤트 로그 인덱스를 저장해서 재동기화 가능하게. 인덱서 이벤트는 `(tx_hash, log_index)` 유니크로 멱등, 커서는 `chain_cursor`를 같은 DB 트랜잭션에서 갱신.
+- **결제 제출 표시**: `orders`와 `wallet_txs`의 제출 시작 칸(`submit_started_at`, tx hash, nonce, `maws_request_id`)은 브로드캐스트나 MAWS 호출 전에 별도 DB 트랜잭션으로 커밋한다 (payment.md "confirm 상태 규칙", D-19).
 - 외래 키를 켠다 (`PRAGMA foreign_keys=ON`). Postgres 이전 시 금액 `text`는 `numeric(78,0)`.
 - **삭제**: 주문, 결제, 감사 로그는 삭제하지 않는다 (상태로 표현). 대화 기록과 선호 메모리는 사용자 요청 시 삭제 가능.
 - Postgres 전환을 막는 SQLite 전용 기능을 쓰지 않는다.
