@@ -41,7 +41,9 @@ export function BudgetSetupContainer() {
             size="md"
             loading={claim.isPending}
             onPress={() => {
-              if (!claim.isSuccess) claim.mutate();
+              // Once only: a second tap while it runs or after it worked does nothing.
+              if (claim.isPending || claim.isSuccess) return;
+              claim.mutate();
             }}
           >
             받기

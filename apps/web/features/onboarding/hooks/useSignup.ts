@@ -32,12 +32,13 @@ export function useCreateAgent() {
   });
 }
 
-/** Hatch: the three setup steps, asked again every second until the dragon is up. */
+/** Hatch: the three setup steps, asked again every second while setup is running. */
 export function useAgentSetup() {
   return useQuery({
     queryKey: ['agent-setup'],
     queryFn: () => api.getAgentSetup(),
-    refetchInterval: (q) => (q.state.data?.status === 'ACTIVE' ? false : 1_000),
+    // Stops once the dragon is up or setup failed (then only "다시 깨우기" starts it again).
+    refetchInterval: (q) => (q.state.data?.status === 'PENDING' || !q.state.data ? 1_000 : false),
     staleTime: 0,
   });
 }
