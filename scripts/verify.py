@@ -30,7 +30,8 @@ TESTNET_CHAIN_ID = 450815
 CHAIN_ID_RE = r"\b(450_?815|" + hex(TESTNET_CHAIN_ID) + r")n?\b"
 COMMIT_TYPES = ("feat", "fix", "contract", "docs", "infra", "chore", "test", "refactor")  # git-and-review.md
 ALLOWED_TOOLS = {"get_budget", "get_order_history", "get_context", "recommend_merchants", "get_menu",
-                 "place_order", "request_owner_approval"}  # CLAUDE.md 3, tech-spec 3.3
+                 "place_order", "request_owner_approval",
+                 "propose_limit_change"}  # CLAUDE.md 3, tech-spec 3.3, D-21 (card only, changes nothing)
 UI_AREAS = ("base", "dragon", "chat", "order", "limits", "onboarding", "wallet")
 BANNED_UI = ["지갑", "토큰", "트랜잭션", "KYC", "PCL", "블록체인", "가스비", "해시", "OKRW", "attestation", "시드 문구"]
 WEB_APP_FILES = {"page.tsx", "layout.tsx", "loading.tsx", "error.tsx", "not-found.tsx", "template.tsx",
@@ -617,7 +618,7 @@ for p in tracked:
 if any(p.startswith(TOOLS_DIR) and not is_test(p) for p in tracked):
     tests = [read(p) or "" for p in tracked if p.startswith(TOOLS_DIR) and is_test(p)]
     if not any(all(t in txt for t in ALLOWED_TOOLS) for txt in tests):
-        add("MAJOR", "R3 llm-tools", TOOLS_DIR, "도구 화이트리스트 자동 비교 테스트가 없다 (testing.md). 허용 목록 7개를 모두 적은 테스트")
+        add("MAJOR", "R3 llm-tools", TOOLS_DIR, f"도구 화이트리스트 자동 비교 테스트가 없다 (testing.md). 허용 목록 {len(ALLOWED_TOOLS)}개를 모두 적은 테스트")
 
 
 # ---------------------------------------------------------------- T1 tests accompany source changes

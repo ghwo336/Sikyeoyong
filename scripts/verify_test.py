@@ -20,7 +20,8 @@ GOOD_MSG = "feat(x): 테스트\n\nCo-Authored-By: Claude <noreply@anthropic.com>
 WIKI_ROOT = "---\nnode: root\nparent: null\nchildren:\n  - a.md\n---\n# root\na.md\n"
 WIKI_LEAF = "---\nnode: leaf\nparent: README.md\nchildren: []\n---\n# a\n"
 LLM_TEST = "it('whitelist', () => expect(names).toEqual(['get_budget','get_order_history','get_context'," \
-           "'recommend_merchants','get_menu','place_order','request_owner_approval']));\n"
+           "'recommend_merchants','get_menu','place_order','request_owner_approval'," \
+           "'propose_limit_change']));\n"
 
 UI_DOC = "---\nnode: leaf\nparent: _index.md\nchildren: []\n---\n# Btn\n## 하네스 상태\n- 기본\n- 로딩\n- 실패\n## 테스트 기준\n- x\n"
 UI_IDX = "---\nnode: root\nparent: null\nchildren:\n  - Btn.md\n---\n# base\nBtn.md\n"
