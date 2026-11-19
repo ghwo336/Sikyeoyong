@@ -35,6 +35,7 @@
 }
 
 .chat .text {
+  /* Main.dc.html optical nudge; the 4px space scale has no 2, so it stays literal. */
   margin-top: 2px;
   font-size: var(--type-dragon-size);
   line-height: var(--type-body-line-height);

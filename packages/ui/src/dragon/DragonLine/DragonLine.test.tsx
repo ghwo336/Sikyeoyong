@@ -18,10 +18,10 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
     expect(p).not.toHaveAttribute('style');
   });
 
-  it('never clips the text in any layout rule', () => {
-    const textRules = ['.text', '.chat .text', '.inline .text', '.center .text']
-      .map(rule)
-      .join('\n');
+  it('never clips the text anywhere in the stylesheet', () => {
+    // No rule in this file may clip, so check the whole file (container and
+    // any selector), with comments removed. overflow-wrap is allowed.
+    const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
     for (const banned of [
       'max-height',
       'overflow:',
@@ -30,7 +30,7 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
       'nowrap',
       '-webkit-box',
     ]) {
-      expect(textRules, banned).not.toContain(banned);
+      expect(code, banned).not.toContain(banned);
     }
   });
 
