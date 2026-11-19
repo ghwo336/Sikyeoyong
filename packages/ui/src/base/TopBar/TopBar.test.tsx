@@ -32,8 +32,14 @@ describe('TopBar (TopBar.md 테스트 기준)', () => {
   });
 
   it('has no back button without onBack', () => {
-    render(<TopBar title="용이 용돈" />);
+    render(<TopBar title="주문 상세" />);
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it.each([undefined, null, false])('has no spacer or trailing box for trailing %s', (trailing) => {
+    const { container } = render(<TopBar title="주문 상세" trailing={trailing} />);
+    expect(container.querySelector(`.${styles.spacer}`)).toBeNull();
+    expect(container.querySelector(`.${styles.trailing}`)).toBeNull();
   });
 
   it('shows the title as the screen heading', () => {

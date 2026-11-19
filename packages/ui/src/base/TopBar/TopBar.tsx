@@ -14,6 +14,8 @@ export interface TopBarProps {
 
 /** Draws the back button and title at the top of a screen (TopBar.md). */
 export function TopBar({ title, onBack, trailing }: TopBarProps) {
+  // null and false mean nothing to show, like undefined.
+  const hasTrailing = trailing !== undefined && trailing !== null && trailing !== false;
   return (
     <div className={styles.bar}>
       {onBack ? (
@@ -33,12 +35,12 @@ export function TopBar({ title, onBack, trailing }: TopBarProps) {
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-      ) : trailing !== undefined ? (
+      ) : hasTrailing ? (
         // Budget.dc.html keeps the bar aligned with a 34px spacer when there is no way back.
         <div className={styles.spacer} aria-hidden="true" />
       ) : null}
       {title !== undefined ? <h1 className={styles.title}>{title}</h1> : null}
-      {trailing !== undefined ? <div className={styles.trailing}>{trailing}</div> : null}
+      {hasTrailing ? <div className={styles.trailing}>{trailing}</div> : null}
     </div>
   );
 }
