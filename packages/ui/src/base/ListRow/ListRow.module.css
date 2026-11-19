@@ -1,0 +1,53 @@
+/* Wallet.dc.html: 56px rows, 15px name, 15px value, 16px arrow or a 16px gap. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--size-list-row);
+  font-size: var(--type-body-size);
+  color: var(--color-ink);
+}
+
+.pressable {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--type-body-size);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pressable:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+.label {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.value {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-secondary);
+}
+
+.value[data-tone='accent'] {
+  font-weight: var(--type-row-weight);
+  color: var(--color-leaf);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: var(--size-row-icon);
+  height: var(--size-row-icon);
+  color: var(--color-ink-muted);
+}
+
+.gap {
+  flex-shrink: 0;
+  width: var(--size-row-icon);
+}
