@@ -33,6 +33,6 @@ Main, Budget, Arrived
 ## 메모
 - `sm`은 Main 빠른 답장: 높이 36(`size.chip`), 좌우 여백 14(`size.chipPaddingX`), 1px `line-strong` 테두리, 흰 바탕, 알약, 14px(`type.chip`). 보이는 높이는 36이지만 누르는 영역은 투명하게 44로 넓힌다.
 - `lg`는 Budget 예산: 높이 52(`size.input`), 반경 14, 16/600(`type.row`).
-- `tile`은 Arrived 맛 평가: `lg`와 같은 52 칸이지만 글자는 15/400(`type.body`).
+- `tile`은 Arrived 맛 평가: `lg`와 같은 52 칸이지만 글자는 15/400(`type.body`). Arrived 시안의 맛 평가에는 고른 상태가 없다. 고르기(radio)로 쓸지 누르면 끝나는 버튼으로 쓸지는 Arrived 화면 조립 때 정한다.
 - 고르면 2px 잎색 테두리, 연한 잎색 바탕, `leaf-pressed` 글자색.
 - 누름은 Button과 같은 0.97 스프링, 동작 줄이기면 없음.

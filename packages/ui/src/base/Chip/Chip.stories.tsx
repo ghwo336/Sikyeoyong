@@ -57,15 +57,16 @@ function BudgetPicker() {
   return (
     <div
       role="radiogroup"
-      aria-label="이번 달 예산"
+      aria-label="이번 달 배달 예산"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
+        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
         gap: 'var(--space-2)',
         width: 342,
       }}
     >
-      {['200,000원', '300,000원', '400,000원', '500,000원'].map((label) => (
+      {/* Budget.dc.html labels; the short won format is open question Q-23. */}
+      {['20만 원', '30만 원', '50만 원'].map((label) => (
         <Chip
           key={label}
           size="lg"

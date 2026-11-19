@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Chip } from './Chip';
+import styles from './Chip.module.css';
 
 const css = readFileSync(resolve(__dirname, 'Chip.module.css'), 'utf8');
 const rule = (selector: string) =>
@@ -56,6 +57,19 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     expect(rule('.lg')).toMatch(/border-radius:\s*var\(--radius-input\)/);
     expect(rule('.chip[data-selected]')).toMatch(/border:\s*2px solid var\(--color-leaf\)/);
     expect(rule('.chip[data-selected]')).toMatch(/background:\s*var\(--color-leaf-tint\)/);
+  });
+
+  it.each(['sm', 'lg', 'tile'] as const)('puts the %s class on the chip', (size) => {
+    render(
+      <Chip size={size} onPress={vi.fn()}>
+        또 먹을래
+      </Chip>,
+    );
+    const chip = screen.getByRole('button', { name: '또 먹을래' });
+    expect(chip.className).toContain(styles[size]);
+    for (const other of (['sm', 'lg', 'tile'] as const).filter((s) => s !== size)) {
+      expect(chip.className).not.toContain(styles[other]);
+    }
   });
 
   it('matches every design value per size (Main, Budget, Arrived)', () => {
