@@ -1,1 +1,1 @@
-export { BudgetPicker, type BudgetPickerProps, formatManWon } from './BudgetPicker';
+export { BudgetPicker, type BudgetPickerProps } from './BudgetPicker';

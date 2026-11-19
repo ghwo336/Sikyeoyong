@@ -27,7 +27,7 @@ function Live({ initial }: { initial: bigint }) {
   return <BudgetPicker options={OPTIONS} value={value} onChange={setValue} />;
 }
 
-/** 30만 선택 (Budget.dc.html) */
+/** 30만 선택 (Budget.dc.html. 표기는 Q-23 결론 전까지 "300,000원") */
 export const Thirty: Story = { render: () => <Live initial={okrwToAokrw(300_000n)} /> };
 
 /** 다른 값 선택 */
