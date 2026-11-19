@@ -15,7 +15,7 @@ children: []
 언제 어떤 표정을 쓸지 (부모가 mood를 넘김)
 
 ## props
-`mood: 'default' | 'happy' | 'excited' | 'worried' | 'hiding' | 'sleeping' | 'eating' | 'cooking'`, `size: 32 | 44 | 56 | 96 | 128`, `species: DragonSpecies`, `wings?: boolean`
+`mood: 'default' | 'happy' | 'excited' | 'worried' | 'hiding' | 'sleeping' | 'eating' | 'cooking'`, `size: 32 | 44 | 56 | 64 | 96 | 128` (64는 IdCard 초상), `species: DragonSpecies`, `wings?: boolean`
 
 ## 하네스 상태
 `Dragon.stories.tsx`에 아래를 전부 만든다.

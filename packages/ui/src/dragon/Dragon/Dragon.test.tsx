@@ -129,4 +129,10 @@ describe('Dragon species colors (tokens.json dragonSpecies)', () => {
     expect(block).toContain(`--dragon-body: var(--color-dragon-${color});`);
     expect(block).toContain(`--dragon-accent: var(--color-dragon-accent-${color});`);
   });
+
+  it.each([32, 44, 56, 64, 96, 128] as const)('draws at %spx (IdCard portrait is 64)', (size) => {
+    const svg = svgOf(<Dragon mood="default" size={size} species="forest" />);
+    expect(svg?.getAttribute('width')).toBe(String(size));
+    expect(svg?.getAttribute('height')).toBe(String(size));
+  });
 });

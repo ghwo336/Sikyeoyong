@@ -4,7 +4,7 @@ import styles from './Dragon.module.css';
 
 export type DragonMood =
   'default' | 'happy' | 'excited' | 'worried' | 'hiding' | 'sleeping' | 'eating' | 'cooking';
-export type DragonSize = 32 | 44 | 56 | 96 | 128;
+export type DragonSize = 32 | 44 | 56 | 64 | 96 | 128;
 
 export interface DragonProps {
   readonly mood: DragonMood;
