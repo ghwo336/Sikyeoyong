@@ -39,6 +39,7 @@ Confirm
 - Confirm 시안 값 (주문 간격 10, 품목 사이도 10, 줄 16px, 결제할 금액 24/700, 한도 간격 14, 버튼 사이 4)
 
 ## 메모
+- 메뉴 줄과 요청은 같은 영역의 `OrderLines` `size="row"`(16px, 간격 10)다. 예전에는 OrderSummary 마크업을 복사했었다.
 - 틀은 base `Sheet`, 위 말은 `DragonLine` sheet 배치, 막대는 `Meter` limit, 버튼은 `Button` primary와 text다.
 - 두 번 누름 잠금은 base 훅 `useSubmitLock`이다. ref로 잡고, 부모가 confirming을 내린 다음 그리기에서 풀린다. 부모는 onConfirm을 받으면 confirming을 올려야 한다.
 - 가격 변경 문구는 시안에 없다 (디자인 선택). 시안 문구가 생기면 바꾼다.

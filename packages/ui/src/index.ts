@@ -28,6 +28,7 @@ export * from './onboarding/KakaoVerify';
 export * from './onboarding/SocialLogin';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';
+export * from './order/OrderLines';
 export * from './order/OrderStatusHeader';
 export * from './order/OrderSummary';
 export * from './order/ReceiptDetails';

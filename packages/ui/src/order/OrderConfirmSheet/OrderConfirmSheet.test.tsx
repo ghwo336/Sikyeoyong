@@ -12,6 +12,12 @@ const css = readFileSync(resolve(__dirname, 'OrderConfirmSheet.module.css'), 'ut
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
 
+// The menu lines and request are OrderLines; their values live in OrderLines.module.css.
+const linesCss = readFileSync(resolve(__dirname, '../OrderLines/OrderLines.module.css'), 'utf8');
+const linesRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(linesCss)?.[2] ??
+  '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const base: OrderConfirmSheetProps = {
   open: true,
@@ -170,10 +176,12 @@ describe('OrderConfirmSheet (OrderConfirmSheet.md 테스트 기준)', () => {
   // Confirm.dc.html 31-60.
   it('matches the design values', () => {
     expect(rule('.order')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
-    expect(rule('.lines')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
+    render(<OrderConfirmSheet {...base} />);
+    expect(screen.getByRole('list').classList).toContain('row');
+    expect(linesRule('.row')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     expect(rule('.route')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
-    expect(rule('.line')).toMatch(/font-size:\s*var\(--type-row-size\)/);
-    expect(rule('.request')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    expect(linesRule('.row')).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    expect(linesRule('.request')).toMatch(/font-size:\s*var\(--type-small-size\)/);
     expect(rule('.divider')).toMatch(/margin:\s*var\(--space-1\) 0/);
     expect(rule('.divider')).toMatch(/background:\s*var\(--color-track\)/);
     expect(rule('.totalAmount')).toMatch(/font-size:\s*var\(--type-pay-size\)/);

@@ -10,6 +10,12 @@ const css = readFileSync(resolve(__dirname, 'OrderSummary.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
 
+// The menu lines and request are OrderLines; their values live in OrderLines.module.css.
+const linesCss = readFileSync(resolve(__dirname, '../OrderLines/OrderLines.module.css'), 'utf8');
+const linesRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(linesCss)?.[2] ??
+  '';
+
 const won = (n: bigint) => okrwToAokrw(n);
 const STORE = '마루국밥 본점에서 회사(역삼동)로';
 
@@ -119,11 +125,13 @@ describe('OrderSummary (OrderSummary.md 테스트 기준)', () => {
     expect(card).toMatch(/border-radius:\s*var\(--radius-card\)/);
     expect(rule('.head')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.head')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.line')).toMatch(/font-size:\s*var\(--type-body-size\)/);
-    expect(rule('.request')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    render(<OrderSummary store={STORE} items={[]} total={0n} />);
+    expect(screen.getByRole('list').classList).toContain('body');
+    expect(linesRule('.body')).toMatch(/font-size:\s*var\(--type-body-size\)/);
+    expect(linesRule('.request')).toMatch(/font-size:\s*var\(--type-small-size\)/);
     expect(rule('.divider')).toMatch(/background:\s*var\(--color-track\)/);
     expect(rule('.divider')).toMatch(/margin:\s*2px 0/);
-    expect(rule('.lines')).toMatch(/gap:\s*var\(--space-2\)/);
+    expect(linesRule('.body')).toMatch(/gap:\s*var\(--space-2\)/);
     expect(rule('.totalLabel')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
     expect(rule('.totalAmount')).toMatch(/font-size:\s*var\(--type-total-size\)/);
     expect(rule('.totalAmount')).toMatch(/font-weight:\s*var\(--type-total-weight\)/);

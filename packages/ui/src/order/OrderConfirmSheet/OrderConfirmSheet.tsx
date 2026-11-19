@@ -7,7 +7,7 @@ import { Meter, type MeterTone } from '../../base/Meter';
 import { Sheet } from '../../base/Sheet';
 import { useSubmitLock } from '../../base/useSubmitLock';
 import { DragonLine } from '../../dragon/DragonLine';
-import type { OrderLine } from '../OrderSummary';
+import { type OrderLine, OrderLines } from '../OrderLines';
 import styles from './OrderConfirmSheet.module.css';
 
 export interface LimitUse {
@@ -74,20 +74,7 @@ export function OrderConfirmSheet({
 
       <section className={styles.order} aria-label="주문 내용">
         <p className={styles.route}>{route}</p>
-        <ul className={styles.lines}>
-          {items.map((l, i) => (
-            // Lines have no id and the order never changes.
-            <li key={i} className={styles.line}>
-              <span>
-                {l.name} {String(l.quantity)}개
-              </span>
-              <span className={styles.num}>{formatOkrw(l.price)}</span>
-            </li>
-          ))}
-        </ul>
-        {request !== undefined && request !== '' ? (
-          <p className={styles.request}>요청: {request}</p>
-        ) : null}
+        <OrderLines items={items} request={request} size="row" />
         <div className={styles.divider} aria-hidden="true" />
         <div className={styles.total}>
           <span className={styles.totalLabel}>결제할 금액</span>
