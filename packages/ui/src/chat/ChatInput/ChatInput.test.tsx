@@ -69,6 +69,9 @@ describe('ChatInput (ChatInput.md 테스트 기준)', () => {
     expect(fireEvent.submit(form())).toBe(false);
     rerender(<ChatInput value="국밥" onChange={vi.fn()} onSend={onSend} placeholder="" sending />);
     expect(fireEvent.submit(form())).toBe(false);
+    // Stopped: even a submit that gets past the disabled controls sends nothing
+    rerender(<ChatInput value="국밥" onChange={vi.fn()} onSend={onSend} placeholder="" disabled />);
+    expect(fireEvent.submit(form())).toBe(false);
     expect(onSend).toHaveBeenCalledTimes(1);
   });
 
