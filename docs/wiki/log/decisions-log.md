@@ -63,3 +63,11 @@ children: []
 - 이유: 호재 님 결정(Next로 개발, 단단한 백엔드, 단일 책임, 컨텍스트 공유).
 - 누가: 호재 님
 - 영향: decisions.md(D-03, D-04, D-10, D-18), conventions/architecture.md 신규, components/ui/ 신규(35개), components/web.md(app.md 대체), server-api.md, auth.md, infra.md, testing.md, design-and-motion.md, tech-spec 상단 대응표, plan, pitch, design/README.md, user-flow.md, CLAUDE.md(읽는 순서 7, 8, 규칙 13, 분업표, 명령어), README.md, Q-18 닫힘, Q-20 갱신
+
+### 2026-11-19 D-19 결제 실패 뒤 다시 누르기
+- 이전: confirm 재시도 규칙이 문서마다 달랐다 (payment.md는 같은 orderRef 재시도, server-api.md 초안은 실패 주문의 confirm을 결제 없이 돌려줌).
+- 이후: 실패 주문은 체인 조회 뒤 같은 orderRef로 재시도, 결과 모르는 제출은 submitting 유지, 재시도 불가 실패만 새 견적.
+- 이유: 타임아웃 뒤 새 견적으로 이중 결제가 날 수 있음 (커밋 검증 지적).
+- 누가: 호재 님
+- 영향: decisions.md D-19, payment.md, server-api.md, tech-spec 1.4, 3.2
+

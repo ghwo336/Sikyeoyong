@@ -36,7 +36,7 @@ children: []
 - **시간**: unix ms 정수 (체인 `resetAt`은 unix 초, 필드 이름에 단위 표시).
 - **멱등성**: 주문 `clientOrderId`, 대화 `clientMessageId`, 충전과 회수도 클라이언트 요청 ID. 체인에서는 `orderRef`.
 - **결제는 확인 엔드포인트에서만**: `POST /api/orders`와 LLM `place_order`는 견적만. 결제는 `POST /api/orders/:id/confirm`에서만.
-- **confirm은 상태로 멱등**: 주문이 `quoted`일 때만 결제한다. 그 밖의 상태(결제 중, 결제 끝, 실패)에서 온 confirm은 결제하지 않고 현재 주문과 영수증을 200으로 돌려준다. 409로 답하면 사용자가 새 견적으로 다시 결제해 orderRef가 바뀌고 이중 결제가 될 수 있다 (CLAUDE.md 9).
+- **confirm은 상태로 멱등** (D-19): 상태별 동작은 `payment.md` "confirm 상태 규칙"이 원본이다. 요지: `quoted`와 재시도 가능한 `failed`에서만 결제하고(실패는 체인 조회 뒤 같은 orderRef로), 상태 전이는 조건부 UPDATE 하나로 해서 동시에 온 요청 중 하나만 결제로 간다. 나머지 상태는 결제 없이 200과 현재 주문. confirm 상태 때문에 409를 쓰지 않는다.
 - **바꿔 끼우는 구현은 프로바이더 토큰으로 주입**: `PaymentProvider`(A, B, C), `LlmProvider`, `MerchantSource`. 설정값으로 고른다.
 - **주기 작업**: `indexer`(3초 간격 getLogs), `delivery`(배달 단계 타이머)는 `@nestjs/schedule`. SQLite라 프로세스 하나.
 - **감사 로그**: 돈, 정책, 동결, 레벨 변경은 누가 언제 무엇을 했는지 기록.

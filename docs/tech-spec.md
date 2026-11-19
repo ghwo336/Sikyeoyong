@@ -71,7 +71,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 2. 런타임이 Claude에 도구와 함께 요청. Claude가 `get_budget`, `recommend_merchants` 호출.
 3. 서버가 추천 3곳을 결정적으로 계산해서 돌려주고, Claude가 드래곤 말투로 설명. 앱에 추천 카드 표시.
 4. 사용자가 "2번" 선택 → Claude가 `place_order(merchantId, items)` 호출 → 서버가 서버 규칙을 1차 검사하고(승인이 필요하면 흐름 3으로) 견적(`orders.status = quoted`)을 만들고 확인 카드(`order_confirm` 이벤트: 가게, 메뉴, 금액, 통과 예정 규칙)를 보낸다. **결제는 아직 하지 않는다.**
-5. 사용자가 카드의 "시켜용" 버튼을 누름 → `POST /api/orders/:id/confirm` → 서버 사전 검사(서버 규칙: 동결 여부, 개인 예산, 처음 보는 가게, 레벨 한도) → 모드 P면 에이전트 지갑 잔액 확인과 즉시 충전(`fund`, float 상한 이내) → `PaymentProvider.preflight` → `pay` (`placeOrder{value}` 트랜잭션). 자연어 "응"만으로는 결제하지 않는다.
+5. 사용자가 카드의 "시켜용" 버튼을 누름 → `POST /api/orders/:id/confirm` → 서버 사전 검사(서버 규칙: 동결 여부, 개인 예산, 처음 보는 가게, 레벨 한도) → 모드 P면 에이전트 지갑 잔액 확인과 즉시 충전(`fund`, float 상한 이내) → `PaymentProvider.preflight` → `pay` (`placeOrder{value}` 트랜잭션). 자연어 "응"만으로는 결제하지 않는다. 결제는 주문이 `quoted`이거나 재시도 가능한 `failed`일 때만 하고, 상태 전이는 조건부 UPDATE 하나로 한다. 타임아웃은 `failed`가 아니라 `submitting`으로 둔다 (D-19, payment.md "confirm 상태 규칙").
 6. 영수증 생성: 통과한 규칙 목록(서버 규칙 + 체인 규칙), 트랜잭션 해시, Explorer 링크. 배달 상태 타이머 시작.
 7. 인덱서가 `OrderPlaced` 이벤트로 DB 확정.
 
@@ -236,7 +236,7 @@ apps/api/src/
 | GET | `/merchants/:id` | user | | `{ merchant, menus }` |
 | POST | `/orders/quote` | user | `{ merchantId, items: [{ menuId, qty }] }` | `{ amount, checks: RuleCheck[] }` |
 | POST | `/orders` | user | `{ merchantId, items, clientOrderId }` | `{ order: { status: 'quoted' }, quote }` (앱에서 직접 주문하는 버튼용, LLM `place_order`와 같은 서비스 함수. 결제는 하지 않음) |
-| POST | `/orders/:id/confirm` | user | | `{ order, receipt }` 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 주문이 `quoted`가 아니면(두 번 누르기, 탭 두 개, 결제 중, 결제 끝) 결제하지 않고 현재 `{ order, receipt }`를 그대로 돌려준다. 에러(409)로 답하지 않는다 |
+| POST | `/orders/:id/confirm` | user | | `{ order, receipt }` 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 상태별 동작은 payment.md "confirm 상태 규칙"(D-19): `quoted`와 재시도 가능한 `failed`(체인 조회 뒤 같은 orderRef)만 결제, 그 밖은 결제 없이 현재 `{ order, receipt }`. 409로 답하지 않는다 |
 | GET | `/orders` | user | `?cursor` | `{ orders, nextCursor }` |
 | GET | `/orders/:id` | user | | `{ order, events, receipt }` |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
@@ -433,7 +433,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 | `UNAUTHENTICATED` | 세션 없음, 만료 | 401 | 다시 로그인해 주세요 | "주인님, 다시 로그인해 주세용" | 로그인 화면 |
 | `FORBIDDEN` | 역할 부족 | 403 | 권한이 없어요 | "제가 할 수 없는 일이에용" | 없음 |
 | `NOT_FOUND` | 없는 자원 | 404 | 찾을 수 없어요 | "어디 있는지 못 찾겠어용" | 없음 |
-| `CONFLICT` | 같은 멱등 키(`clientOrderId`, `clientMessageId`, 충전·회수 요청 ID)에 다른 내용. 이 요청은 처리되지 않았다 | 409 | 요청이 서로 맞지 않아요 | "앗, 요청이 꼬였어용. 주문 내역을 먼저 확인해 주세용" | 주문 내역 확인. 같은 키와 같은 내용은 409가 아니라 처음 응답을 그대로 돌려준다. 이미 결제 중이거나 끝난 주문의 confirm도 409가 아니다 (3.2 confirm 행) |
+| `CONFLICT` | 같은 멱등 키(`clientOrderId`, `clientMessageId`, 충전·회수 요청 ID)에 다른 내용. 이 요청은 처리되지 않았다 | 409 | 요청이 서로 맞지 않아요 | "앗, 요청이 꼬였어용. 주문 내역을 먼저 확인해 주세용" | 주문 내역 확인. 같은 키와 같은 내용은 409가 아니라 처음 응답을 그대로 돌려준다. confirm은 주문 상태로 처리하고 409를 쓰지 않는다 (D-19) |
 | `RATE_LIMITED` | 레이트 리밋 (9.5) | 429 | 잠시 후 다시 시도해 주세요 | "숨 좀 돌리고 올게용" | 잠시 뒤 |
 | `INTERNAL` | 그 밖 | 500 | 잠시 후 다시 시도해 주세요 | "앗, 뭔가 꼬였어용" | 로그 |
 

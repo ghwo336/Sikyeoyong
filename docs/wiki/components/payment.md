@@ -61,6 +61,22 @@ interface PaymentProvider {
 - 경로 A에서 MAWS `allowedTargets`는 주문 컨트랙트 주소 하나로 고정한다 (D-13). 소유자 주소는 MAWS가 항상 허용한다.
 - 모든 체인 트랜잭션 해시를 `wallet_txs`, `orders`에 저장하고 탐색기 링크를 만들 수 있게 한다.
 
+## confirm 상태 규칙 (D-19, 이 절이 원본)
+결제는 `POST /api/orders/:id/confirm`에서만 일어나고, 주문 상태로 멱등하다. 같은 주문의 confirm은 몇 번이 와도 결제는 많아야 한 번이다.
+
+| 주문 상태 | confirm이 하는 일 | 응답 |
+| --- | --- | --- |
+| `quoted` | 조건부 UPDATE 하나로 `quoted`에서 `submitting`으로 바꾼다. 이긴 요청만 사전 검사, 즉시 충전, `pay`로 간다 | 결제 결과 |
+| `submitting` | 결제하지 않는다 (동시에 들어온 두 번째 요청, 결과를 기다리는 중) | 200, 현재 주문 |
+| `failed` 재시도 가능 | 먼저 체인에서 `OrderPlaced(orderRef)`를 조회한다. 있으면 `paid`로 맞추고 영수증을 만든다. 없으면 조건부 UPDATE로 `submitting`으로 바꾸고 **같은 orderRef로** 결제한다 (사람이 누른 재시도) | 결제 결과 또는 200, 현재 주문 |
+| `failed` 재시도 불가 | 결제하지 않는다. 새 견적이 필요하다고 알린다. 새 견적을 만들기 전에 이전 orderRef가 체인에 없는지 확인한다 | 200, 현재 주문 (`error_code` 포함) |
+| `paid` 이후 (`preparing`, `delivering`, `delivered`, `cancelled`, `refunded`) | 결제하지 않는다 | 200, 현재 주문과 영수증 |
+| `pending_approval` | 결제하지 않는다. 승인 흐름이 먼저다 | 200, 현재 주문 |
+
+- **결과를 모르는 제출은 실패가 아니다**: `pay`가 타임아웃이나 네트워크 오류로 끝나면 `failed`로 바꾸지 않고 `submitting`으로 둔다. 인덱서(`OrderPlaced`)나 트랜잭션 영수증 조회로 결론이 나면 `paid` 또는 재시도 가능한 `failed`로 바꾼다.
+- **재시도 가능 여부는 `error_code`로 정한다**: 체인이 막았지만 orderRef가 체인에 남지 않는 실패(`CHAIN_AGENT_LIMIT` 승인 뒤, `CHAIN_INSUFFICIENT_FUNDS`, `CHAIN_AGENT_LIMIT_UNSET`, `MAWS_POLICY_REJECTED`, `SERVER_*` 사전 검사)는 재시도 가능. 주문 자체가 성립하지 않는 실패(`CHAIN_MERCHANT_INACTIVE`, `CHAIN_EAS_REQUIRED`, 견적 만료)는 재시도 불가.
+- 409(`CONFLICT`)는 confirm 상태 때문에 쓰지 않는다. 같은 멱등 키에 다른 내용일 때만이다.
+
 ## 하지 말 것 (MUST NOT)
 - 임의 주소로 보내는 함수를 어댑터에 만들지 않는다. 나가는 곳은 주문 컨트랙트, 소유자 주소(drain), 8004(메타데이터)뿐이다.
 - float 상한을 넘게 충전하지 않는다.

@@ -171,3 +171,11 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 원칙 4, 백엔드 모듈: Nest 모듈 하나가 책임 하나. 컨트롤러는 요청 받기, 서비스는 일, 저장소는 DB. 다른 모듈은 내보낸 서비스로만 부른다.
 - 이유: 호재 님 결정(Next로 개발, 단단한 백엔드, 단일 책임). Hono 대비 Nest는 구조를 프레임워크가 강제하고, Express 경험이 그대로 쓰인다. SQLite는 사용자가 거의 없는 데모라 충분하고 Drizzle로 나중에 Postgres로 옮긴다.
 - 영향: D-03, D-04 개정, tech-spec 2장과 3장은 상단 대응표로 읽는다, 위키 components(web, server-api, auth, infra), conventions(architecture 신규, testing, design-and-motion), components/ui 신규, CLAUDE.md.
+
+## D-19 결제 실패 뒤 다시 누르기: 같은 주문번호로 재시도 (2026-11-19, 호재)
+- 결제 확인(`POST /api/orders/:id/confirm`) 뒤 결제가 실패하거나 응답이 없던 주문에서 사용자가 다시 누르면, 새 견적을 만들지 않고 **같은 orderRef로** 다시 시도한다. 그 전에 체인에서 `OrderPlaced(orderRef)`를 조회해서 이미 결제됐으면 결제하지 않고 결제 완료로 맞춘다.
+- 결과를 모르는 제출(타임아웃, 네트워크 오류)은 실패(`failed`)가 아니라 결제 중(`submitting`)으로 둔다. 결론이 날 때까지 다시 눌러도 결제하지 않는다.
+- 재시도할 수 없는 실패(견적 만료, 가게 정지 등)만 새 견적을 만들고, 새 견적 전에 이전 orderRef가 체인에 없는지 확인한다.
+- 이유: 새 견적은 새 orderRef라 체인의 `OrderExists` 보호를 받지 못해 타임아웃 뒤 이중 결제가 날 수 있다. CLAUDE.md 9(같은 orderRef로만 재시도)를 결제 상태 규칙으로 구체화했다. 에러 코드 커밋 검증 3라운드 지적에서 나왔다.
+- 영향: payment.md "confirm 상태 규칙"(원본), server-api.md, tech-spec 1.4 흐름 1, 3.2 confirm 행.
+
