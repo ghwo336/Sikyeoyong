@@ -126,22 +126,24 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 
 ### 2.4 대화 UI와 스트리밍
 - `POST /api/chat/messages`는 `text/event-stream`으로 응답. 웹은 `fetch` + `ReadableStream` 파서, 네이티브는 같은 코드(React Native `fetch`의 스트리밍 지원이 불안정하면 `react-native-sse` 대체, (미확인) 실제 기기에서 확인).
-- 이벤트 종류 (서버와 공유 타입 `packages/shared/src/chat-events.ts`):
+- 이벤트 종류 (서버와 웹이 같이 쓰는 zod 스키마 `packages/shared/src/api/chat.ts`의 `zChatEvent`. 주문 카드 모양은 `api/orders.ts`, 내 정보와 가입은 `api/me.ts`. 남는 칸은 거절한다):
 
 ```ts
 type ChatEvent =
   | { type: 'token'; text: string }                       // 드래곤 말 조각
   | { type: 'tool_status'; tool: string; state: 'start' | 'done' }
   | { type: 'recommendations'; items: RecommendationCard[] }
+  | { type: 'quick_replies'; items: { id: string; label: string }[] } // 빠른 답장 칩 (Main.dc.html, 2026-11-19 추가)
   | { type: 'order_confirm'; quote: OrderQuote }            // 확인 카드, 버튼으로만 결제
   | { type: 'order_receipt'; order: OrderReceipt }
-  | { type: 'order_failed'; code: AppErrorCode; dragonLine: string; detail?: unknown }
+  | { type: 'order_failed'; code: AppErrorCode; dragonLine: string } // detail은 응답에 싣지 않는다 (server-api.md, detail.public만)
   | { type: 'approval_request'; approval: ApprovalCard }
   | { type: 'limit_change_card'; card: LimitChangeCardView } // 한도 변경 카드, 버튼으로만 바꿈 (D-21)
   | { type: 'nag'; level: 'warn70' | 'warn90' | 'over100'; message: string; spent: string; budget: string }
   | { type: 'done'; messageId: string };
 ```
 
+- `order_receipt`(OrderReceipt)와 `approval_request`(ApprovalCard)는 orders, approvals 모듈에서 카드 모양을 정할 때 `zChatEvent`에 더한다 (2026-11-19 기준 아직 없음).
 - `LimitChangeCardView` (D-21, ui `LimitChangeCard` props와 이름을 맞춤): `{ cardId: string; field: 'perOrder' | 'monthlyBudget'; from: string; to: string; levelFrom?: 1 | 2 | 3; levelTo?: 1 | 2 | 3; needsReauth: boolean; rows: { label: string; value: string }[] }`. `from`, `to`는 aokrw 문자열.
 - 금액은 전부 **문자열(aokrw 정수)** 로 주고받고, 표시용 변환은 `packages/shared/src/money/`(패키지 루트에서 재수출)의 `formatOkrw()` 하나만 쓴다. 표시 규칙은 `conventions/code-style.md` 금액 항목.
 
