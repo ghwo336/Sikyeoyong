@@ -21,3 +21,4 @@ export * from './order/OrderConfirmSheet';
 export * from './order/OrderStatusHeader';
 export * from './order/OrderSummary';
 export * from './order/RecommendationList';
+export * from './order/TasteRating';
