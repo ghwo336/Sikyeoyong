@@ -14,6 +14,15 @@ export interface ReceiptDetailsProps {
   readonly defaultOpen?: boolean;
 }
 
+/** Only https links leave the app (no javascript: or plain http). */
+function isHttps(url: string): boolean {
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** "0x8f3a…c21e": the first 6 and last 4 characters. Short values stay as they are. */
 export function shortHash(hash: string): string {
   return hash.length <= 12 ? hash : `${hash.slice(0, 6)}…${hash.slice(-4)}`;
@@ -38,7 +47,7 @@ export function ReceiptDetails({
         type="button"
         className={styles.toggle}
         aria-expanded={open}
-        aria-controls={panelId}
+        aria-controls={open ? panelId : undefined}
         onClick={() => {
           setOpen((o) => !o);
         }}
@@ -74,15 +83,18 @@ export function ReceiptDetails({
             <div className={styles.rules}>
               <span className={styles.label}>통과한 마루 규칙 {String(rules.length)}개</span>
               <ul className={styles.ruleList}>
-                {rules.map((r) => (
-                  <li key={r}>{r}</li>
+                {rules.map((r, i) => (
+                  // The same label can come twice; the order is fixed.
+                  <li key={`${String(i)}-${r}`}>{r}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          <a className={styles.link} href={explorerUrl} target="_blank" rel="noopener noreferrer">
-            마루 탐색기에서 보기
-          </a>
+          {isHttps(explorerUrl) ? (
+            <a className={styles.link} href={explorerUrl} target="_blank" rel="noopener noreferrer">
+              마루 탐색기에서 보기
+            </a>
+          ) : null}
         </div>
       ) : null}
     </div>

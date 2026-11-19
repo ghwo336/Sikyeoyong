@@ -34,6 +34,37 @@ describe('ReceiptDetails (ReceiptDetails.md 테스트 기준)', () => {
     expect(screen.queryByText('결제 기록 번호')).toBeNull();
   });
 
+  it('shows nothing but the toggle while closed, before and after opening (D-17)', async () => {
+    const { container } = render(<ReceiptDetails {...base} />);
+    const closed = () => {
+      // Chain words, rule names, the record number and the link live only inside.
+      expect(container.firstElementChild?.textContent).toBe('자세히 보기');
+      expect(screen.queryByRole('link')).toBeNull();
+      expect(screen.queryByRole('list')).toBeNull();
+    };
+    closed();
+    await userEvent.click(toggle());
+    expect(screen.getByRole('link')).toBeInTheDocument();
+    await userEvent.click(toggle());
+    closed();
+  });
+
+  it('points aria-controls at the panel only while it exists', async () => {
+    render(<ReceiptDetails {...base} />);
+    expect(toggle()).not.toHaveAttribute('aria-controls');
+    await userEvent.click(toggle());
+    expect(document.getElementById(toggle().getAttribute('aria-controls') ?? '')).not.toBeNull();
+  });
+
+  it('links only to https explorer addresses', () => {
+    const { rerender } = render(<ReceiptDetails {...base} defaultOpen />);
+    expect(screen.getByRole('link')).toBeInTheDocument();
+    rerender(<ReceiptDetails {...base} explorerUrl="javascript:alert(1)" defaultOpen />);
+    expect(screen.queryByRole('link')).toBeNull();
+    rerender(<ReceiptDetails {...base} explorerUrl="http://example.invalid/tx" defaultOpen />);
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
   it('opens with the keyboard too', async () => {
     render(<ReceiptDetails {...base} />);
     toggle().focus();

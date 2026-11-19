@@ -27,11 +27,12 @@ children: []
 Receipt
 
 ## 테스트 기준
-- aria-expanded와 aria-controls, 클릭과 Enter로 열고 닫음
+- aria-expanded, 클릭과 Enter로 열고 닫음. aria-controls는 패널이 있을 때만
+- 접힌 상태(처음과 다시 닫은 뒤)에는 "자세히 보기" 말고 아무 글자도, 링크도, 목록도 없다 (D-17)
 - 체인이 실제로 검사한 규칙만 넘긴다는 전제 (tech-spec 2.5). 받은 목록을 순서 그대로, 개수와 함께 보이고 더하거나 빼지 않는다
 - 규칙이 없으면(경로 C) 규칙 묶음을 그리지 않는다
 - 결제 기록 번호는 앞 6자와 끝 4자로 줄이고(12자 이하는 그대로) 전체는 title
-- 탐색기 링크는 새 탭, rel noopener noreferrer, 높이 44
+- 탐색기 링크는 https 주소일 때만, 새 탭, rel noopener noreferrer, 높이 44
 - Receipt 시안 값 (카드 `line` 반경 20, 토글 52 15/600, 화살표 18, 펼침 13px, 규칙 12px 고정폭 줄간격 1.7 `inkCode`)
 
 ## 메모
