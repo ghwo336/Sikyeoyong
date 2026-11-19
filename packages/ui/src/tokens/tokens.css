@@ -83,6 +83,8 @@
   --type-blocked-amount-size: 36px;
   --type-blocked-amount-weight: 700;
   --type-blocked-amount-letter-spacing: -0.03em;
+  --type-change-to-size: 22px;
+  --type-change-to-weight: 700;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
@@ -114,6 +116,7 @@
   --radius-card: 20px;
   --radius-sheet: 28px;
   --radius-sheet-handle: 3px;
+  --radius-card-button: 16px;
   --radius-bubble: 20px;
   --radius-bubble-tail: 6px;
   --size-screen-width: 390px;
@@ -144,6 +147,8 @@
   --size-badge-pad-x: 8px;
   --size-badge-pad-y: 2px;
   --size-summary-gap: 10px;
+  --size-face-id-icon: 20px;
+  --size-arrow-icon: 16px;
   --size-raise-button: 64px;
   --size-choice-button: 52px;
   --size-details-toggle: 52px;

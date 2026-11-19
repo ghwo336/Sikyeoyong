@@ -19,6 +19,7 @@ export * from './dragon/Egg';
 export * from './dragon/DragonLine';
 export * from './limits/CapReached';
 export * from './limits/LimitBlocked';
+export * from './limits/LimitChangeCard';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';
 export * from './order/OrderStatusHeader';
