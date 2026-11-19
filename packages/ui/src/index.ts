@@ -5,6 +5,7 @@ export * from './base/Button';
 export * from './base/Chip';
 export * from './base/ListRow';
 export * from './base/Meter';
+export * from './base/Sheet';
 export * from './base/StepProgress';
 export * from './base/Switch';
 export * from './base/TextField';

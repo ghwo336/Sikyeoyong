@@ -31,6 +31,7 @@
   --color-egg-shell: #FFFDF6;
   --color-cheek: #FF9E9E;
   --color-sleep-ground: #EEF1F4;
+  --color-scrim: rgba(30, 35, 32, 0.38);
   --color-kakao: #FEE500;
   --color-kakao-ink: #191919;
   --type-display-size: 30px;
@@ -98,6 +99,9 @@
   --size-back-icon: 22px;
   --size-list-row: 56px;
   --size-row-icon: 16px;
+  --size-sheet-handle-width: 40px;
+  --size-sheet-handle-height: 5px;
+  --size-sheet-top: 10px;
   --size-meter: 8px;
   --size-step-sm: 4px;
   --size-step-md: 6px;
