@@ -32,17 +32,29 @@ export const HISTORY_TURNS = 20;
 
 const zUserContent = z.object({ text: z.string() });
 const zAssistantContent = z.object({ events: z.array(zChatEvent) });
+/** History needs only the words, so it reads stored turns loosely: a later ChatEvent change must not lock anyone out. */
+const zSpoken = z.object({
+  events: z.array(z.unknown()).transform((events) =>
+    events
+      .map((e) => {
+        const token = z.object({ type: z.literal('token'), text: z.string() }).safeParse(e);
+        return token.success ? token.data.text : '';
+      })
+      .join(''),
+  ),
+});
+
+function readJson<T>(schema: z.ZodType<T>, json: string): T | null {
+  try {
+    const r = schema.safeParse(JSON.parse(json));
+    return r.success ? r.data : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Streams one turn's events to the caller. */
 export type ChatStream = (emit: (event: ChatEvent) => void) => Promise<void>;
-
-function sameText(stored: string, text: string): boolean {
-  return zUserContent.parse(JSON.parse(stored)).text === text;
-}
-
-function spokenText(events: readonly ChatEvent[]): string {
-  return events.map((e) => (e.type === 'token' ? e.text : '')).join('');
-}
 
 /**
  * One user message in, a stream of ChatEvents out (tech-spec 2.4, 3.3). Every
@@ -69,10 +81,13 @@ export class ChatService {
     const existing = this.repo.findUserMessage(userId, body.clientMessageId);
     if (existing !== undefined) {
       const reply = this.repo.findReply(existing.id);
-      if (!sameText(existing.contentJson, body.text) || reply === undefined) {
+      const sameText = readJson(zUserContent, existing.contentJson)?.text === body.text;
+      const stored = reply === undefined ? null : readJson(zAssistantContent, reply.contentJson);
+      if (!sameText || stored === null) {
+        // A different text, a turn still running, or a stored answer this version cannot replay.
         throw new AppError('CONFLICT', { reason: 'clientMessageId already used' });
       }
-      const events = zAssistantContent.parse(JSON.parse(reply.contentJson)).events;
+      const events = stored.events;
       return (emit) => {
         events.forEach(emit);
         return Promise.resolve();
@@ -106,9 +121,14 @@ export class ChatService {
       if (row.role !== 'user') continue;
       const reply = answers.get(row.id);
       if (reply === undefined) continue;
-      const said = spokenText(zAssistantContent.parse(JSON.parse(reply.contentJson)).events);
-      if (said === '') continue;
-      out.push({ role: 'user', content: zUserContent.parse(JSON.parse(row.contentJson)).text });
+      const asked = readJson(zUserContent, row.contentJson)?.text;
+      const said = readJson(zSpoken, reply.contentJson)?.events;
+      if (asked === undefined || said === undefined) {
+        this.logger.warn(`skipped an unreadable stored turn ${row.id}`);
+        continue;
+      }
+      if (asked === '' || said === '') continue;
+      out.push({ role: 'user', content: asked });
       out.push({ role: 'assistant', content: said });
     }
     return out;
@@ -153,22 +173,36 @@ export class ChatService {
       // Server log only: the cause and stack help operations and never reach the screen.
       this.logger.error(`chat turn failed: ${code}`, err instanceof Error ? err.stack : undefined);
       send({ type: 'token', text: dragonLineFor(code) });
-      send({ type: 'done', messageId: userRowId });
+      // messageId names a stored answer; a failed turn stores none, so it gets a fresh id.
+      send({ type: 'done', messageId: uuidv7() });
       // Nothing is kept for a failed turn: the same message can be sent again.
-      this.repo.delete(userRowId);
+      this.store(() => {
+        this.repo.delete(userRowId);
+      });
       return;
     }
     if (turn.refused) send({ type: 'token', text: REFUSAL_LINE });
     const replyId = uuidv7();
     send({ type: 'done', messageId: replyId });
-    this.repo.insert({
-      id: replyId,
-      userId,
-      role: 'assistant',
-      contentJson: JSON.stringify({ events: sent }),
-      clientMessageId: null,
-      replyToId: userRowId,
-      createdAt: Date.now(),
+    this.store(() => {
+      this.repo.insert({
+        id: replyId,
+        userId,
+        role: 'assistant',
+        contentJson: JSON.stringify({ events: sent }),
+        clientMessageId: null,
+        replyToId: userRowId,
+        createdAt: Date.now(),
+      });
     });
+  }
+
+  /** The answer is already on screen; a storage failure is logged, never thrown into the closed stream. */
+  private store(write: () => void): void {
+    try {
+      write();
+    } catch (err) {
+      this.logger.error('chat storage failed', err instanceof Error ? err.stack : undefined);
+    }
   }
 }
