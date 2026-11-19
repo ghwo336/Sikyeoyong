@@ -1,3 +1,4 @@
+import { Button } from '../../base/Button';
 import styles from './UserBubble.module.css';
 
 export type UserBubbleStatus = 'sending' | 'sent' | 'failed';
@@ -21,9 +22,9 @@ export function UserBubble({ text, status = 'sent', onRetry }: UserBubbleProps) 
         <div className={styles.failed}>
           <span>못 보냈어요</span>
           {onRetry ? (
-            <button type="button" className={styles.retry} onClick={onRetry}>
+            <Button variant="link" size="sm" onPress={onRetry}>
               다시 보내기
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

@@ -91,7 +91,29 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(screen.getByTestId('icon').parentElement).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it.each(['primary', 'secondary', 'text', 'kakao'] as const)(
+  it('keeps the screen sizes that used to be hand-built buttons (Blocked, LimitChat, Frozen)', () => {
+    // sm 44 (size.touchMin), choice 52 (size.choiceButton), tall 64 (size.raiseButton).
+    expect(css).toMatch(/\.sm\s*\{[^}]*min-height:\s*var\(--size-touch-min\)/);
+    expect(css).toMatch(/\.choice\s*\{[^}]*min-height:\s*var\(--size-choice-button\)/);
+    expect(css).toMatch(/\.tall\s*\{[^}]*min-height:\s*var\(--size-raise-button\)/);
+    // LimitChat card button: radius 16, 16/700.
+    expect(css).toMatch(/\.primary\.choice\s*\{[^}]*border-radius:\s*var\(--radius-card-button\)/);
+    // Wallet "채우기" and Frozen "돌려받기" are 0 18px pills.
+    expect(css).toMatch(/\.md\s*\{[^}]*padding:\s*0 var\(--size-pill-pad-x\)/);
+    expect(css).toMatch(/\.outline\s*\{[^}]*border:\s*1px solid var\(--color-ink\)/);
+    expect(css).toMatch(/\.link\s*\{[^}]*color:\s*var\(--color-leaf\)/);
+  });
+
+  it.each(['sm', 'choice', 'tall'] as const)('renders the %s size class', (size) => {
+    render(
+      <Button variant="primary" size={size} onPress={() => undefined}>
+        x
+      </Button>,
+    );
+    expect(screen.getByRole('button').classList).toContain(size);
+  });
+
+  it.each(['primary', 'secondary', 'outline', 'text', 'link', 'kakao'] as const)(
     'renders the %s variant class',
     (variant) => {
       render(

@@ -35,10 +35,37 @@
 .md {
   width: auto;
   min-height: var(--size-touch-min);
-  padding: var(--space-2) var(--space-4);
+  /* Wallet "채우기" and Frozen "돌려받기": 44 high, 0 18px. */
+  padding: 0 var(--size-pill-pad-x);
   border-radius: var(--radius-chip);
   font-size: var(--type-body-size);
   font-weight: var(--type-row-weight);
+}
+
+/* UserBubble "다시 보내기", HatchProgress "다시 깨우기": small text, 44 to the finger. */
+.sm {
+  width: auto;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-2);
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-label-weight);
+}
+
+/* Blocked "다시 고르기": 52 high, 15/600. LimitChat changes radius and text for primary. */
+.choice {
+  width: 100%;
+  min-height: var(--size-choice-button);
+  padding: 0 var(--space-4);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+}
+
+/* Blocked "레벨 3으로 올리고 시키기": 64 high for a main line and a sub line. The lines
+   and their text sizes belong to the caller. */
+.tall {
+  width: 100%;
+  min-height: var(--size-raise-button);
+  padding: var(--space-2) var(--space-4);
 }
 
 .primary {
@@ -61,6 +88,20 @@
   border: 1px solid var(--color-line-strong);
 }
 
+/* LimitChat card button: 52 high, radius 16, 16/700. */
+.primary.choice {
+  border-radius: var(--radius-card-button);
+  font-size: var(--type-row-size);
+  font-weight: var(--type-button-weight);
+}
+
+/* Frozen "돌려받기": a white pill with an ink line. */
+.outline {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-ink);
+}
+
 .text {
   background: transparent;
   color: var(--color-ink-secondary);
@@ -71,6 +112,16 @@
   min-height: var(--size-button-secondary);
   font-size: var(--type-body-size);
   font-weight: var(--type-body-weight);
+}
+
+/* LimitChat "그만두기": 44 high, 15px regular, fills the column it sits in. */
+.text.md {
+  font-weight: var(--type-body-weight);
+}
+
+.link {
+  background: transparent;
+  color: var(--color-leaf);
 }
 
 .kakao {

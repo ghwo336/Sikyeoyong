@@ -14,6 +14,11 @@ import {
 const css = readFileSync(resolve(__dirname, 'LimitChangeCard.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
+// The buttons are base Button; their sizes live in Button.module.css.
+const buttonCss = readFileSync(resolve(__dirname, '../../base/Button/Button.module.css'), 'utf8');
+const buttonRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
+  '';
 
 const won = (n: bigint) => okrwToAokrw(n);
 const base: LimitChangeCardProps = {
@@ -158,11 +163,20 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(rule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
     expect(rule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
     expect(rule('.row')).toMatch(/font-size:\s*var\(--type-small-size\)/);
-    const confirm = rule('.confirm');
-    expect(confirm).toMatch(/min-height:\s*var\(--size-choice-button\)/);
-    expect(confirm).toMatch(/border-radius:\s*var\(--radius-card-button\)/);
-    expect(confirm).toMatch(/font-size:\s*var\(--type-row-size\)/);
-    expect(rule('.cancel')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    // Confirm: Button primary choice (52, radius 16, 16/700). Cancel: Button text md (44, 15/400).
+    render(<LimitChangeCard {...base} />);
+    const confirm = screen.getByRole('button', { name: /바꾸기$/ });
+    expect([...confirm.classList]).toEqual(expect.arrayContaining(['primary', 'choice']));
+    const cancel = screen.getByRole('button', { name: '그만두기' });
+    expect([...cancel.classList]).toEqual(expect.arrayContaining(['text', 'md']));
+    expect(buttonRule('.choice')).toMatch(/min-height:\s*var\(--size-choice-button\)/);
+    const primaryChoice = buttonRule('.primary.choice');
+    expect(primaryChoice).toMatch(/border-radius:\s*var\(--radius-card-button\)/);
+    expect(primaryChoice).toMatch(/font-size:\s*var\(--type-row-size\)/);
+    expect(primaryChoice).toMatch(/font-weight:\s*var\(--type-button-weight\)/);
+    expect(buttonRule('.md')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(buttonRule('.text')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(buttonRule('.text.md')).toMatch(/font-weight:\s*var\(--type-body-weight\)/);
     expect(rule('.actions')).toMatch(/gap:\s*6px/);
     expect(rule('.faceId')).toMatch(/width:\s*var\(--size-face-id-icon\)/);
   });

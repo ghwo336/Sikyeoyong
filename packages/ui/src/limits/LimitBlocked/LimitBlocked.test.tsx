@@ -9,6 +9,11 @@ import { LimitBlocked, levelWithRo } from './LimitBlocked';
 const css = readFileSync(resolve(__dirname, 'LimitBlocked.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
+// The buttons are base Button; their sizes live in Button.module.css.
+const buttonCss = readFileSync(resolve(__dirname, '../../base/Button/Button.module.css'), 'utf8');
+const buttonRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
+  '';
 
 const won = (n: bigint) => okrwToAokrw(n);
 const base = {
@@ -87,12 +92,20 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
     expect(rule('.limit')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.compare')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     expect(rule('.actions')).toMatch(/gap:\s*var\(--space-2\)/);
-    expect(rule('.raise')).toMatch(/min-height:\s*var\(--size-raise-button\)/);
-    expect(rule('.raise')).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(rule('.raiseLines')).toMatch(/gap:\s*2px/);
     expect(rule('.raiseMain')).toMatch(/font-size:\s*var\(--type-button-size\)/);
     expect(rule('.raiseSub')).toMatch(/color:\s*var\(--color-leaf-sub-ink\)/);
-    expect(rule('.repick')).toMatch(/min-height:\s*var\(--size-choice-button\)/);
-    expect(rule('.repick')).toMatch(/border:\s*1px solid var\(--color-line-strong\)/);
-    expect(rule('.repick')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
+    // Raise: Button primary tall (64, leaf). Repick: Button secondary choice (52, pale line, 15/600).
+    render(<LimitBlocked {...base} nextLevel={{ level: 3, limit: won(50_000n) }} />);
+    const raise = screen.getByRole('button', { name: /올리고/ });
+    expect([...raise.classList]).toEqual(expect.arrayContaining(['primary', 'tall']));
+    const repick = screen.getByRole('button', { name: /다시 고르기/ });
+    expect([...repick.classList]).toEqual(expect.arrayContaining(['secondary', 'choice']));
+    expect(buttonRule('.tall')).toMatch(/min-height:\s*var\(--size-raise-button\)/);
+    expect(buttonRule('.primary')).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(buttonRule('.choice')).toMatch(/min-height:\s*var\(--size-choice-button\)/);
+    expect(buttonRule('.choice')).toMatch(/font-size:\s*var\(--type-body-size\)/);
+    expect(buttonRule('.choice')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
+    expect(buttonRule('.secondary')).toMatch(/border:\s*1px solid var\(--color-line-strong\)/);
   });
 });

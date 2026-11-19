@@ -88,45 +88,8 @@
   gap: 6px;
 }
 
-.confirm {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: var(--size-choice-button);
-  border: 0;
-  border-radius: var(--radius-card-button);
-  background: var(--color-leaf);
-  color: var(--color-surface);
-  font-family: var(--font-ui);
-  font-size: var(--type-row-size);
-  font-weight: var(--type-button-weight);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.confirm[data-loading] {
-  cursor: progress;
-  opacity: 0.6;
-}
-
+/* The two buttons are base Button: primary choice (52, radius 16) and text md (44). */
 .faceId {
   width: var(--size-face-id-icon);
   height: var(--size-face-id-icon);
-}
-
-.cancel {
-  min-height: var(--size-touch-min);
-  border: 0;
-  background: transparent;
-  font-family: var(--font-ui);
-  font-size: var(--type-body-size);
-  color: var(--color-ink-secondary);
-  cursor: pointer;
-}
-
-.confirm:focus-visible,
-.cancel:focus-visible {
-  outline: 2px solid var(--color-leaf);
-  outline-offset: 2px;
 }

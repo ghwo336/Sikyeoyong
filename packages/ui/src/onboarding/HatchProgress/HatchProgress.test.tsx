@@ -11,6 +11,12 @@ const rule = (selector: string) =>
     css,
   )?.[2] ?? '';
 
+// The retry button is base Button; its size lives in Button.module.css.
+const buttonCss = readFileSync(resolve(__dirname, '../../base/Button/Button.module.css'), 'utf8');
+const buttonRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
+  '';
+
 const LABELS = ['용이 용돈 주머니 만들기', '용이 신분증 만들기', '한 번에 쓸 수 있는 돈 새기기'];
 const steps = (...s: HatchStep['status'][]): HatchStep[] =>
   LABELS.map((label, i) => ({ label, status: s[i] ?? 'waiting' }));
@@ -95,6 +101,17 @@ describe('HatchProgress (HatchProgress.md 테스트 기준)', () => {
     expect(rule('.failRing')).toMatch(/stroke:\s*var\(--color-over\)/);
     expect(rule(".step[data-status='failed'] .state")).toMatch(/color:\s*var\(--color-over-ink\)/);
     expect(rule('.icon')).toMatch(/width:\s*var\(--size-status-icon\)/);
-    expect(rule('.retry')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    // Retry: Button link sm (leaf, 13/600, 44 tall).
+    render(
+      <HatchProgress
+        steps={[{ label: '용이 신분증 만들기', status: 'failed' }]}
+        onRetry={() => undefined}
+      />,
+    );
+    const retry = screen.getByRole('button', { name: '다시 깨우기' });
+    expect([...retry.classList]).toEqual(expect.arrayContaining(['link', 'sm']));
+    expect(buttonRule('.sm')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(buttonRule('.sm')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
+    expect(buttonRule('.sm')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
   });
 });

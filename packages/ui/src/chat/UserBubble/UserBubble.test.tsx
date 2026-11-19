@@ -11,6 +11,12 @@ const rule = (selector: string) =>
     css,
   )?.[2] ?? '';
 
+// The retry button is base Button; its size lives in Button.module.css.
+const buttonCss = readFileSync(resolve(__dirname, '../../base/Button/Button.module.css'), 'utf8');
+const buttonRule = (selector: string) =>
+  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(buttonCss)?.[2] ??
+  '';
+
 const text = '점심 시켜 줘. 따뜻한 걸로';
 
 describe('UserBubble (UserBubble.md 테스트 기준)', () => {
@@ -67,9 +73,13 @@ describe('UserBubble (UserBubble.md 테스트 기준)', () => {
     expect(b).toMatch(/word-break:\s*keep-all/);
     expect(rule('.note')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.failed')).toMatch(/color:\s*var\(--color-over-ink\)/);
-    expect(rule('.retry')).toMatch(/color:\s*var\(--color-leaf\)/);
-    expect(rule('.retry')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
-    expect(css).not.toMatch(/\.retry::after/);
-    expect(rule('.retry:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    // Retry: Button link sm (leaf text, 44 tall on its own, no ::after that could cover the bubble).
+    render(<UserBubble text="안녕" status="failed" onRetry={() => undefined} />);
+    const retry = screen.getByRole('button', { name: '다시 보내기' });
+    expect([...retry.classList]).toEqual(expect.arrayContaining(['link', 'sm']));
+    expect(buttonRule('.link')).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(buttonRule('.sm')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(buttonCss).not.toMatch(/::after/);
+    expect(buttonRule('.button:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
   });
 });

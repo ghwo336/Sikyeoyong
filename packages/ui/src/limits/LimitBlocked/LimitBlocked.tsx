@@ -1,9 +1,7 @@
 'use client';
 
 import { formatOkrw } from '@sikyeoyong/shared';
-import { motion } from 'motion/react';
-import { PRESS_SCALE, PRESS_SPRING } from '../../base/press';
-import { useShouldReduceMotion } from '../../base/reduced-motion';
+import { Button } from '../../base/Button';
 import styles from './LimitBlocked.module.css';
 
 export interface NextLevel {
@@ -32,8 +30,6 @@ export function levelWithRo(level: number): string {
   return `${String(level)}${[0, 3, 6].includes(last) ? '으로' : '로'}`;
 }
 
-const PRESS = { scale: PRESS_SCALE };
-
 /** Compares the amount with the limit, large, and offers raising the level or picking again. */
 export function LimitBlocked({
   attempted,
@@ -42,8 +38,6 @@ export function LimitBlocked({
   onRaise,
   onRepick,
 }: LimitBlockedProps) {
-  const reduceMotion = useShouldReduceMotion();
-  const tap = reduceMotion ? undefined : PRESS;
   const limitText = formatOkrw(limit);
   return (
     <div className={styles.blocked}>
@@ -53,28 +47,18 @@ export function LimitBlocked({
       </p>
       <div className={styles.actions}>
         {nextLevel ? (
-          <motion.button
-            type="button"
-            className={styles.raise}
-            whileTap={tap}
-            transition={PRESS_SPRING}
-            onClick={onRaise}
-          >
-            <span className={styles.raiseMain}>
-              레벨 {levelWithRo(nextLevel.level)} 올리고 시키기
-            </span>{' '}
-            <span className={styles.raiseSub}>한 번에 {formatOkrw(nextLevel.limit)}까지</span>
-          </motion.button>
+          <Button variant="primary" size="tall" onPress={onRaise}>
+            <span className={styles.raiseLines}>
+              <span className={styles.raiseMain}>
+                레벨 {levelWithRo(nextLevel.level)} 올리고 시키기
+              </span>{' '}
+              <span className={styles.raiseSub}>한 번에 {formatOkrw(nextLevel.limit)}까지</span>
+            </span>
+          </Button>
         ) : null}
-        <motion.button
-          type="button"
-          className={styles.repick}
-          whileTap={tap}
-          transition={PRESS_SPRING}
-          onClick={onRepick}
-        >
+        <Button variant="secondary" size="choice" onPress={onRepick}>
           {limitText} 안에서 다시 고르기
-        </motion.button>
+        </Button>
       </div>
     </div>
   );

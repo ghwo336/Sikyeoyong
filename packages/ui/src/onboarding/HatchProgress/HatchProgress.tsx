@@ -1,3 +1,4 @@
+import { Button } from '../../base/Button';
 import styles from './HatchProgress.module.css';
 
 export type HatchStepStatus = 'done' | 'doing' | 'waiting' | 'failed';
@@ -60,9 +61,9 @@ export function HatchProgress({ steps, onRetry }: HatchProgressProps) {
               <>
                 {/* The icon is hidden from screen readers, so say it failed in words. */}
                 <span className={styles.srOnly}>안 됐어요</span>
-                <button type="button" className={styles.retry} onClick={onRetry}>
+                <Button variant="link" size="sm" onPress={onRetry}>
                   다시 깨우기
-                </button>
+                </Button>
               </>
             ) : (
               <span className={styles.state}>안 됐어요</span>

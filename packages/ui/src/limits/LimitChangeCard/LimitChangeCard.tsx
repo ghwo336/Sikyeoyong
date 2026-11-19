@@ -1,9 +1,7 @@
 'use client';
 
 import { formatOkrw } from '@sikyeoyong/shared';
-import { motion } from 'motion/react';
-import { PRESS_SCALE, PRESS_SPRING } from '../../base/press';
-import { useShouldReduceMotion } from '../../base/reduced-motion';
+import { Button } from '../../base/Button';
 import { useSubmitLock } from '../../base/useSubmitLock';
 import { levelWithRo } from '../LimitBlocked';
 import styles from './LimitChangeCard.module.css';
@@ -39,8 +37,6 @@ const FIELD_LABEL: Record<LimitField, string> = {
   monthlyBudget: '이번 달 배달 예산',
 };
 
-const PRESS = { scale: PRESS_SCALE };
-
 function FaceIdIcon() {
   return (
     <svg
@@ -71,8 +67,6 @@ export function LimitChangeCard({
   onCancel,
   status = 'idle',
 }: LimitChangeCardProps) {
-  const reduceMotion = useShouldReduceMotion();
-  const tap = reduceMotion ? undefined : PRESS;
   const confirming = status === 'confirming';
   // One press changes once; after a failure it can be pressed again.
   const confirm = useSubmitLock(confirming, onConfirm);
@@ -123,21 +117,18 @@ export function LimitChangeCard({
         </p>
       ) : null}
       <div className={styles.actions}>
-        <motion.button
-          type="button"
-          className={styles.confirm}
-          aria-busy={confirming || undefined}
-          data-loading={confirming || undefined}
-          whileTap={confirming ? undefined : tap}
-          transition={PRESS_SPRING}
-          onClick={confirm}
+        <Button
+          variant="primary"
+          size="choice"
+          loading={confirming}
+          icon={needsReauth ? <FaceIdIcon /> : undefined}
+          onPress={confirm}
         >
-          {needsReauth ? <FaceIdIcon /> : null}
           {needsReauth ? 'Face ID로 확인하고 바꾸기' : '바꾸기'}
-        </motion.button>
-        <button type="button" className={styles.cancel} onClick={onCancel}>
+        </Button>
+        <Button variant="text" size="md" onPress={onCancel}>
           그만두기
-        </button>
+        </Button>
       </div>
     </section>
   );

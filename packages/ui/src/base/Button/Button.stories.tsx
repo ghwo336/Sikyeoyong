@@ -12,7 +12,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 기본 네 종류 */
+/** 기본 여섯 종류 */
 export const Variants: Story = {
   render: (args) => (
     <div style={{ display: 'grid', gap: 12 }}>
@@ -22,8 +22,14 @@ export const Variants: Story = {
       <Button {...args} variant="secondary">
         구글로 시작하기
       </Button>
+      <Button {...args} variant="outline">
+        돌려받기
+      </Button>
       <Button {...args} variant="text">
         다시 고를래
+      </Button>
+      <Button {...args} variant="link">
+        다시 보내기
       </Button>
       <Button {...args} variant="kakao">
         카카오로 시작하기
@@ -66,4 +72,51 @@ export const Medium: Story = {
       <Button {...args} />
     </div>
   ),
+};
+
+/** 작은 글자 버튼 (sm, link): 실패 줄 옆 "다시 보내기", "다시 깨우기" */
+export const Small: Story = {
+  args: { size: 'sm', variant: 'link', children: '다시 보내기' },
+  render: (args) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span>못 보냈어요</span>
+      <Button {...args} />
+    </div>
+  ),
+};
+
+/** 고르기 크기 (choice, 52): Blocked "다시 고르기", LimitChat "바꾸기"와 "그만두기" */
+export const Choice: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Button {...args} variant="primary" size="choice">
+        바꾸기
+      </Button>
+      <Button {...args} variant="secondary" size="choice">
+        10,000원 안에서 다시 고르기
+      </Button>
+      <Button {...args} variant="text" size="md">
+        그만두기
+      </Button>
+    </div>
+  ),
+};
+
+/** 두 줄 크기 (tall, 64): Blocked "레벨 올리고 시키기". 줄은 부르는 쪽이 쌓는다 */
+export const Tall: Story = {
+  args: {
+    size: 'tall',
+    variant: 'primary',
+    children: (
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        <span>레벨 3으로 올리고 시키기</span>
+        <span style={{ fontSize: 13 }}>한 번에 50,000원까지</span>
+      </span>
+    ),
+  },
+};
+
+/** 테두리 알약 (outline md): Frozen "돌려받기" */
+export const Outline: Story = {
+  args: { size: 'md', variant: 'outline', children: '돌려받기' },
 };
