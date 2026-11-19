@@ -28,7 +28,7 @@ const SKELETON_ROWS = 3;
 export function RecommendationList({ items, onPick, loading = false }: RecommendationListProps) {
   if (loading) {
     return (
-      <div className={styles.card} aria-busy="true" aria-label="추천 고르는 중">
+      <div className={styles.card} role="status" aria-busy="true" aria-label="추천 고르는 중">
         {Array.from({ length: SKELETON_ROWS }, (_, i) => (
           <Fragment key={i}>
             {i > 0 ? <div className={styles.divider} /> : null}
@@ -45,7 +45,8 @@ export function RecommendationList({ items, onPick, loading = false }: Recommend
   if (items.length === 0) return null;
 
   return (
-    <ul className={styles.card}>
+    // role=list keeps the list meaning in Safari VoiceOver despite list-style: none.
+    <ul className={styles.card} role="list">
       {items.map((item, i) => (
         <li key={item.id} className={styles.item}>
           {i > 0 ? <div className={styles.divider} aria-hidden="true" /> : null}
@@ -56,15 +57,21 @@ export function RecommendationList({ items, onPick, loading = false }: Recommend
               onPick(item.id);
             }}
           >
+            {/* The spaces between spans keep the button name readable: "가게, 25분 메뉴 9,000원". */}
             <span className={styles.text}>
               <span className={styles.meta}>
                 {item.store}, {item.eta}
-              </span>
+              </span>{' '}
               <span className={styles.menu}>{item.menu}</span>
-            </span>
+            </span>{' '}
             <span className={styles.end}>
               <span className={styles.price}>{formatOkrw(item.price)}</span>
-              {item.needsApproval ? <span className={styles.badge}>허락 필요</span> : null}
+              {item.needsApproval ? (
+                <>
+                  {' '}
+                  <span className={styles.badge}>허락 필요</span>
+                </>
+              ) : null}
             </span>
           </button>
         </li>

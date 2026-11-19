@@ -48,6 +48,27 @@ describe('RecommendationList (RecommendationList.md 테스트 기준)', () => {
     ]);
   });
 
+  it('keeps bigint precision: sub-won dust and amounts past Number', () => {
+    render(
+      <RecommendationList
+        items={[
+          { id: 'dust', store: 'a', eta: '1분', menu: 'b', price: okrwToAokrw(9_000n) + 1n },
+          {
+            id: 'huge',
+            store: 'c',
+            eta: '2분',
+            menu: 'd',
+            price: okrwToAokrw(123_456_789_012_345_678n),
+          },
+        ]}
+        onPick={vi.fn()}
+      />,
+    );
+    // Written by hand, not with formatOkrw, so a Number or float path cannot pass.
+    expect(screen.getByText('9,000원')).toBeInTheDocument();
+    expect(screen.getByText('123,456,789,012,345,678원')).toBeInTheDocument();
+  });
+
   it('shows prices with formatOkrw', () => {
     render(<RecommendationList items={ITEMS} onPick={vi.fn()} />);
     expect(screen.getByText('9,000원')).toBeInTheDocument();
@@ -59,7 +80,9 @@ describe('RecommendationList (RecommendationList.md 테스트 기준)', () => {
     render(<RecommendationList items={ITEMS} onPick={vi.fn()} />);
     const rows = screen.getAllByRole('button');
     expect(rows).toHaveLength(3);
-    expect(rows[0]).toHaveTextContent('마루국밥 본점, 25분돼지국밥9,000원');
+    expect(rows[0]).toHaveAccessibleName('마루국밥 본점, 25분 돼지국밥 9,000원');
+    expect(rows[2]).toHaveAccessibleName('한상보쌈, 35분 보쌈 정식 12,000원 허락 필요');
+    expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 
@@ -78,6 +101,7 @@ describe('RecommendationList (RecommendationList.md 테스트 기준)', () => {
   it('shows three busy skeleton rows while loading, and no buttons', () => {
     const { container } = render(<RecommendationList items={ITEMS} onPick={vi.fn()} loading />);
     expect(container.firstElementChild).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status', { name: '추천 고르는 중' })).toBeInTheDocument();
     expect(container.querySelectorAll('[data-part="skeleton"]')).toHaveLength(3);
     expect(screen.queryByRole('button')).toBeNull();
   });
@@ -110,6 +134,8 @@ describe('RecommendationList (RecommendationList.md 테스트 기준)', () => {
     expect(badge).toMatch(/font-size:\s*var\(--type-badge-size\)/);
     expect(badge).toMatch(/padding:\s*var\(--size-badge-pad-y\) var\(--size-badge-pad-x\)/);
     expect(rule('.row:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    // Inside the overflow-hidden card the ring must sit inside the row, or it is cut off.
+    expect(rule('.row:focus-visible')).toMatch(/outline-offset:\s*-2px/);
     expect(css).not.toMatch(/@keyframes|animation/);
   });
 });
