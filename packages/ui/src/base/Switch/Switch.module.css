@@ -1,0 +1,53 @@
+/* Wallet.dc.html: 52 x 32 track, 3px padding, 26px white knob; leaf when on, line-strong when off. */
+.track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: var(--size-switch-width);
+  height: var(--size-switch-height);
+  padding: calc((var(--size-switch-height) - var(--size-switch-knob)) / 2);
+  border: 0;
+  border-radius: calc(var(--size-switch-height) / 2);
+  background: var(--color-line-strong);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.track[aria-checked='true'] {
+  background: var(--color-leaf);
+}
+
+.track:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+/* 32px to the eye, 44px to the finger (design-and-motion.md). */
+.track::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--size-touch-min) - var(--size-switch-height)) / -2) 0;
+}
+
+.knob {
+  display: block;
+  width: var(--size-switch-knob);
+  height: var(--size-switch-knob);
+  border-radius: calc(var(--size-switch-knob) / 2);
+  background: var(--color-surface);
+  transform-origin: left center;
+  transition: translate var(--motion-screen) var(--motion-screen-easing);
+}
+
+/* Slide with translate only (no layout properties): track inner width minus knob. */
+.track[aria-checked='true'] .knob {
+  translate: calc(var(--size-switch-width) - var(--size-switch-height)) 0;
+  transform-origin: right center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: none;
+  }
+}
