@@ -1,0 +1,44 @@
+import { formatOkrw } from '@sikyeoyong/shared';
+import { Button } from '../../base/Button';
+import styles from './AllowanceSummary.module.css';
+
+export interface AllowanceSummaryProps {
+  /** aokrw the owner has (주인님 용돈). */
+  readonly owner: bigint;
+  /** aokrw already in the dragon's pocket for orders. */
+  readonly pocket: bigint;
+  /** Topping up is the parent's job (it moves money, so never from the chat). */
+  readonly onTopUp: () => void;
+  /** Balances still loading: grey bars, no numbers. */
+  readonly loading?: boolean;
+}
+
+/** Draws the owner's allowance, the dragon's pocket and the top-up button. No addresses. */
+export function AllowanceSummary({
+  owner,
+  pocket,
+  onTopUp,
+  loading = false,
+}: AllowanceSummaryProps) {
+  return (
+    <div className={styles.summary}>
+      <div className={styles.amounts} aria-busy={loading || undefined}>
+        <span className={styles.label}>주인님 용돈</span>
+        {loading ? (
+          <>
+            <span className={styles.barBig} data-part="skeleton" />
+            <span className={styles.barSmall} data-part="skeleton" />
+          </>
+        ) : (
+          <>
+            <span className={styles.owner}>{formatOkrw(owner)}</span>
+            <span className={styles.pocket}>용이 주머니에 {formatOkrw(pocket)}</span>
+          </>
+        )}
+      </div>
+      <Button variant="primary" size="md" onPress={onTopUp}>
+        채우기
+      </Button>
+    </div>
+  );
+}

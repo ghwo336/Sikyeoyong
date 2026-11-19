@@ -1,0 +1,52 @@
+/* Wallet.dc.html 24-31: the allowance large on the left, the top-up pill on the right. */
+.summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 var(--space-5);
+}
+
+.amounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
+
+.owner {
+  font-size: var(--type-wallet-amount-size);
+  font-weight: var(--type-wallet-amount-weight);
+  letter-spacing: var(--type-wallet-amount-letter-spacing);
+  overflow-wrap: anywhere;
+}
+
+.pocket {
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+}
+
+/* Loading: still bars the height of the text they stand for, no shimmer. */
+.barBig,
+.barSmall {
+  display: block;
+  border-radius: var(--radius-chip);
+  background: var(--color-track);
+}
+
+/* Widths in em of the 14px label, about the length of "81,000원" and its line. */
+.barBig {
+  width: 10em;
+  height: var(--type-wallet-amount-size);
+}
+
+.barSmall {
+  width: 7.5em;
+  height: var(--type-caption-size);
+}

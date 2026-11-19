@@ -94,6 +94,9 @@
   --type-fine-size: 12px;
   --type-fine-weight: 400;
   --type-fine-line-height: 1.6;
+  --type-wallet-amount-size: 34px;
+  --type-wallet-amount-weight: 700;
+  --type-wallet-amount-letter-spacing: -0.03em;
   --type-small-size: 14px;
   --type-small-weight: 400;
   --type-chip-size: 14px;
