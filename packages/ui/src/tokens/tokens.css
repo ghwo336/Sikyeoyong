@@ -47,6 +47,7 @@
   --color-google-red: #EA4335;
   --type-display-size: 30px;
   --type-display-weight: 700;
+  --type-display-line-height: 1.3;
   --type-display-letter-spacing: -0.03em;
   --type-title-size: 26px;
   --type-title-weight: 700;
@@ -110,6 +111,12 @@
   --type-button-weight: 700;
   --type-button-sub-size: 16px;
   --type-button-sub-weight: 600;
+  --type-dragon-hero-size: 22px;
+  --type-dragon-hero-line-height: 1.5;
+  --type-dragon-hero-letter-spacing: 0;
+  --type-dragon-greeting-size: 20px;
+  --type-dragon-greeting-line-height: 1.5;
+  --type-dragon-greeting-letter-spacing: 0;
   --type-dragon-large-size: 19px;
   --type-dragon-large-line-height: 1.55;
   --type-dragon-large-letter-spacing: 0;
@@ -138,7 +145,9 @@
   --radius-portrait: 18px;
   --radius-bubble: 20px;
   --radius-bubble-tail: 6px;
+  --radius-budget-card: 16px;
   --size-screen-width: 390px;
+  --size-screen-max: 480px;
   --size-touch-min: 44px;
   --size-button-primary: 56px;
   --size-button-secondary: 48px;
@@ -197,4 +206,11 @@
   --size-switch-width: 52px;
   --size-switch-height: 32px;
   --size-switch-knob: 26px;
+  --size-signup-gap: 22px;
+  --size-hatch-top: 56px;
+  --size-display-gap: 10px;
+  --size-dragon-greeting-gap: 14px;
+  --size-budget-card-pad-x: 14px;
+  --size-trial-top: 18px;
+  --size-input-band-top: 10px;
 }

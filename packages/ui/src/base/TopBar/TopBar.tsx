@@ -1,8 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { IconButton } from '../IconButton';
 import styles from './TopBar.module.css';
-import { Icon } from '../Icon';
 
 export interface TopBarProps {
   /** Screen title next to the back button (Receipt "주문 상세", IdCard "용이 신분증"). */
@@ -22,9 +22,7 @@ export function TopBar({ title, onBack, backLabel = '뒤로', trailing }: TopBar
   return (
     <div className={styles.bar}>
       {onBack ? (
-        <button type="button" className={styles.back} aria-label={backLabel} onClick={onBack}>
-          <Icon name="back" className={styles.icon} />
-        </button>
+        <IconButton icon="back" label={backLabel} onPress={onBack} edge="start" />
       ) : hasTrailing ? (
         // Budget.dc.html keeps the bar aligned with a 34px spacer when there is no way back.
         <div className={styles.spacer} aria-hidden="true" />

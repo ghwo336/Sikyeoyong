@@ -1,0 +1,30 @@
+/* Name, Verify, Receipt (back), Main (settings): a 44px see-through button, 22px ink icon. */
+.button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-touch-min);
+  height: var(--size-touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+/* Optical: the back chevron lines up with the 20px screen edge. */
+.button[data-edge='start'] {
+  margin-left: -10px;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}
+
+/* 22 like the back chevron and the settings dots (size.backIcon). */
+.icon {
+  width: var(--size-back-icon);
+  height: var(--size-back-icon);
+}

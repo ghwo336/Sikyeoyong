@@ -1,0 +1,33 @@
+/* Main.dc.html, LimitChat.dc.html: 44px dragon, name over one line, settings at the end, 12 apart. */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  /* Main.dc.html: name and line sit 2px apart; the 4px scale has no 2. */
+  gap: 2px;
+  min-width: 0;
+}
+
+/* 18/700, -0.02em (type.heading). */
+.name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--type-heading-size);
+  font-weight: var(--type-heading-weight);
+  letter-spacing: var(--type-heading-letter-spacing);
+}
+
+/* 13px secondary ink (type.caption). */
+.caption {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-weight);
+  color: var(--color-ink-secondary);
+}

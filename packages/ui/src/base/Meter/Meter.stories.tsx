@@ -21,6 +21,18 @@ type Story = StoryObj<typeof meta>;
 const BUDGET = okrwToAokrw(300_000n);
 const base = { label: '이번 달 배달비', max: BUDGET } as const;
 
+/** Main.dc.html: 흰 카드 안 (테두리 1px, 반경 16, 안쪽 12 14) */
+export const Framed: Story = {
+  args: { ...base, value: okrwToAokrw(210_000n), tone: 'warn', framed: true },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 350 }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 /** 30%: normal */
 export const Thirty: Story = {
   args: { ...base, value: okrwToAokrw(90_000n), tone: 'normal' },

@@ -4,9 +4,17 @@ import styles from './Icon.module.css';
  * back: TopBar "<". chevron-right: ListRow arrow. chevron-down: ReceiptDetails toggle.
  * arrow-right: LimitChangeCard "from -> to". arrow-up: ChatInput send. face-id: LimitChangeCard
  * reauth. kakao: Kakao speech bubble (Start.dc.html, brand guide match unconfirmed).
+ * more: ChatHeader settings, three dots (Main.dc.html).
  */
 export type IconName =
-  'back' | 'chevron-right' | 'chevron-down' | 'arrow-right' | 'arrow-up' | 'face-id' | 'kakao';
+  | 'back'
+  | 'chevron-right'
+  | 'chevron-down'
+  | 'arrow-right'
+  | 'arrow-up'
+  | 'face-id'
+  | 'kakao'
+  | 'more';
 
 interface Glyph {
   readonly paths: readonly string[];
@@ -27,6 +35,15 @@ const GLYPHS: Record<IconName, Glyph> = {
     paths: [
       'M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2',
       'M9 10v1M15 10v1M12 10v4h-1M9.5 16.5c1.4 1 3.6 1 5 0',
+    ],
+    stroke: '1.8',
+  },
+  // Main.dc.html settings button: three r 1.2 circles at x 5, 12, 19, a 1.8 line.
+  more: {
+    paths: [
+      'M3.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0',
+      'M10.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0',
+      'M17.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0',
     ],
     stroke: '1.8',
   },

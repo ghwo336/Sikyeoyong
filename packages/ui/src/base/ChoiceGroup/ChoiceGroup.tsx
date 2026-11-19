@@ -50,7 +50,7 @@ export function ChoiceGroup<T>({
   const selectedIndex = value === undefined ? -1 : options.indexOf(value);
   const group = (
     <div
-      className={`${styles.choices} ${styles[layout]}`}
+      className={styles[layout]}
       role="radiogroup"
       aria-labelledby={title !== undefined ? titleId : undefined}
       aria-label={title === undefined ? label : undefined}

@@ -113,6 +113,22 @@ describe('Meter (Meter.md 테스트 기준)', () => {
     expect(root.className).not.toContain(styles[kind === 'budget' ? 'limit' : 'budget']);
   });
 
+  it('sits in the Main card only when framed', () => {
+    const { container, rerender } = render(
+      <Meter label="x" value={0n} max={BUDGET} tone="normal" />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).not.toHaveAttribute('data-framed');
+    rerender(<Meter label="x" value={0n} max={BUDGET} tone="normal" framed />);
+    expect(root).toHaveAttribute('data-framed');
+    // Main.dc.html: white, 1px line, radius 16, 12 14 inside.
+    const card = rule('.meter[data-framed]');
+    expect(card).toMatch(/padding:\s*var\(--space-3\) var\(--size-budget-card-pad-x\)/);
+    expect(card).toMatch(/border:\s*1px solid var\(--color-line\)/);
+    expect(card).toMatch(/border-radius:\s*var\(--radius-budget-card\)/);
+    expect(card).toMatch(/background:\s*var\(--color-surface\)/);
+  });
+
   it('is a budget meter by default', () => {
     const { container } = render(<Meter label="x" value={0n} max={BUDGET} tone="normal" />);
     expect((container.firstElementChild as HTMLElement).className).toContain(styles.budget);

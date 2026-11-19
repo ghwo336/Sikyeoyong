@@ -32,10 +32,10 @@ Verify, Name, Budget, Done, Receipt, IdCard, Frozen
 - 뒤로 버튼 aria-label "뒤로" (backLabel로 바꿀 수 있다), 클릭과 Enter로 onBack 한 번
 - onBack이 없으면 버튼이 없다. trailing만 있으면 34px 빈 칸으로 줄을 맞춘다 (Budget)
 - 제목은 h1
-- 시안 값 (막대 48, 버튼 44를 왼쪽으로 10 당김, 화살표 22 선 2, 제목 17/600, trailing 앞 간격 8)
+- 시안 값 (막대 48, 뒤로는 `IconButton` edge start, 화살표 선 2, 제목 17/600, trailing 앞 간격 8. 버튼 크기와 당김 값은 IconButton 테스트가 본다)
 
 ## 메모
-- 뒤로 화살표는 base `Icon` `back`이다. 크기 22는 이 컴포넌트 CSS(`size.backIcon`)가 정한다.
+- 뒤로 버튼은 base `IconButton` `back`, `edge="start"`(44를 왼쪽으로 10 당김, 화살표 22 `size.backIcon`)다. 2026-11-19 ChatHeader 설정 버튼과 같은 모양이라 뽑았다 (D-18 원칙 5).
 - `type.barTitle`(17/600), `size.topBar`(48), `size.backIcon`(22) 토큰을 쓴다.
 - 왼쪽 10px 당김과 34px 빈 칸은 화살표를 화면 여백 20에 맞추는 시안 보정이라 리터럴로 둔다.
 - Wallet의 "용이 용돈"(20/700, 뒤로 없음)은 화면 제목이라 TopBar가 아니라 그 화면이 그린다.

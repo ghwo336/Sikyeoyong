@@ -5,7 +5,7 @@ import { Meter } from '@sikyeoyong/ui';
 import { useBudget } from '../hooks/useBudget';
 import { BUDGET_TONE } from '../tone';
 
-/** This month's delivery budget bar on Main (Main.dc.html). */
+/** This month's delivery budget bar on Main, in its white card (Main.dc.html). */
 export function BudgetMeterContainer() {
   const { data } = useBudget();
   if (!data) return null;
@@ -15,6 +15,7 @@ export function BudgetMeterContainer() {
       value={parseAokrw(data.personalSpent)}
       max={parseAokrw(data.personalBudget)}
       tone={BUDGET_TONE[data.nagLevel]}
+      framed
     />
   );
 }

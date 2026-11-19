@@ -21,6 +21,9 @@ children:
   - ActionPair.md
   - ChoiceGroup.md
   - Skeleton.md
+  - ScreenTitle.md
+  - Hero.md
+  - IconButton.md
 ---
 
 # 기초 (base)
@@ -48,5 +51,8 @@ children:
 | [ActionPair](ActionPair.md) | 주 버튼과 물러나는 버튼을 시안 간격으로 세로로 쌓는다. |
 | [ChoiceGroup](ChoiceGroup.md) | 하나만 고르는 선택지 묶음을 질문과 함께 그리고 라디오 키보드 규칙을 맡는다. |
 | [Skeleton](Skeleton.md) | 불러오는 중인 글자 자리에 멈춘 회색 막대를 그린다. |
-| [Icon](Icon.md) | 한 가지 색 아이콘 하나를 이름으로 그린다 (뒤로, 화살표, Face ID, 카카오). |
+| [Icon](Icon.md) | 한 가지 색 아이콘 하나를 이름으로 그린다 (뒤로, 화살표, Face ID, 카카오, 설정). |
+| [IconButton](IconButton.md) | 글자 없이 아이콘 하나만 보이는 44px 버튼을 그린다 (뒤로, 설정). |
+| [ScreenTitle](ScreenTitle.md) | 화면 제목(h1)과 그 아래 짧은 설명을 묶어 그린다 (Start, Verify, Name, Hatch). |
+| [Hero](Hero.md) | 큰 그림과 그 아래 글 묶음을 남은 높이 가운데에 세로로 쌓는다 (Start, Hatch). |
 | [useSubmitLock](useSubmitLock.md) | 제출 콜백을 감싸 두 번 눌러도 한 번만 부르는 훅 (결제, 한도 바꾸기). |

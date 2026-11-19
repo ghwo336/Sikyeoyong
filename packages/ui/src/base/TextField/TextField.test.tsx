@@ -74,6 +74,29 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     expect(container.querySelector('p')).toBeNull();
   });
 
+  it('reads the hint line under the field, after the error when both are there', () => {
+    const hint = '레벨 1로 태어나요. 한 번에 10,000원까지.';
+    const { rerender } = render(
+      <TextField label="이름" value="용이" hint={hint} onChange={vi.fn()} />,
+    );
+    const input = screen.getByLabelText('이름');
+    expect(input).toHaveAccessibleDescription(hint);
+    expect(input).not.toHaveAttribute('aria-invalid');
+    // The hint is not an alert: it is there from the start.
+    expect(screen.queryByRole('alert')).toBeNull();
+    rerender(
+      <TextField label="이름" value="" hint={hint} error="이름을 지어 주세요" onChange={vi.fn()} />,
+    );
+    expect(input).toHaveAccessibleDescription(`이름을 지어 주세요 ${hint}`);
+    expect(screen.getByText(hint)).toBeInTheDocument();
+  });
+
+  it('draws no hint line for an empty hint', () => {
+    const { container } = render(<TextField label="이름" value="" hint="" onChange={vi.fn()} />);
+    expect(container.querySelector('p')).toBeNull();
+    expect(screen.getByLabelText('이름')).not.toHaveAttribute('aria-describedby');
+  });
+
   it('hands every typed value to the parent and keeps the 8 character cap', async () => {
     const onChange = vi.fn();
     render(<Controlled onChange={onChange} />);
@@ -110,5 +133,10 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     expect(rule('.input:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
     expect(rule('.input[data-error]')).toMatch(/border-color:\s*var\(--color-over\)/);
     expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
+    // Name.dc.html: the hint is 14px secondary, 10 under the field (6 gap and 4).
+    expect(rule('.hint')).toMatch(/margin:\s*var\(--space-1\) 0 0/);
+    expect(rule('.hint')).toMatch(/font-size:\s*var\(--type-small-size\)/);
+    expect(rule('.hint')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(rule('.hint')).toMatch(/font-variant-numeric:\s*tabular-nums/);
   });
 });

@@ -59,10 +59,9 @@ describe('TopBar (TopBar.md 테스트 기준)', () => {
     );
     expect(screen.getByRole('progressbar', { name: '3단계 중 2단계' })).toBeInTheDocument();
     const bar = container.firstElementChild as HTMLElement;
-    expect(Array.from(bar.children).map((c) => c.className)).toEqual([
-      styles.back,
-      styles.trailing,
-    ]);
+    expect(bar.children[0]).toBe(screen.getByRole('button', { name: '뒤로' }));
+    expect(bar.children[1]).toHaveClass(styles.trailing ?? 'trailing');
+    expect(bar.children).toHaveLength(2);
   });
 
   it('keeps alignment with a spacer when there is trailing content but no way back (Budget)', () => {
@@ -77,8 +76,9 @@ describe('TopBar (TopBar.md 테스트 기준)', () => {
     expect(bar.querySelector(`.${styles.spacer}`)).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('draws the design chevron', () => {
+  it('draws the design chevron, pulled to the screen edge', () => {
     const { container } = render(<TopBar onBack={vi.fn()} />);
+    expect(screen.getByRole('button', { name: '뒤로' })).toHaveAttribute('data-edge', 'start');
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('aria-hidden', 'true');
     expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
@@ -90,14 +90,7 @@ describe('TopBar (TopBar.md 테스트 기준)', () => {
   it('matches the design values', () => {
     expect(rule('.bar')).toMatch(/height:\s*var\(--size-top-bar\)/);
     expect(rule('.bar')).toMatch(/align-items:\s*center/);
-    const back = rule('.back');
-    expect(back).toMatch(/width:\s*var\(--size-touch-min\)/);
-    expect(back).toMatch(/height:\s*var\(--size-touch-min\)/);
-    expect(back).toMatch(/margin-left:\s*-10px/);
-    expect(back).toMatch(/background:\s*transparent/);
-    expect(back).toMatch(/color:\s*var\(--color-ink\)/);
-    expect(rule('.back:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
-    expect(rule('.icon')).toMatch(/width:\s*var\(--size-back-icon\)/);
+    // The 44px button pulled 10 left with its 22px chevron is base IconButton (IconButton.md).
     expect(rule('.spacer')).toMatch(/width:\s*calc\(var\(--size-touch-min\) - 10px\)/);
     expect(rule('.title')).toMatch(/font-size:\s*var\(--type-bar-title-size\)/);
     expect(rule('.title')).toMatch(/font-weight:\s*var\(--type-bar-title-weight\)/);

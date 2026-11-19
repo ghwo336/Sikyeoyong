@@ -15,7 +15,7 @@ children: []
 크기와 색 (부르는 쪽 클래스가 정한다. 화면마다 아이콘 크기 토큰이 다르다), 버튼 (Button `icon`이나 부르는 쪽 버튼이 감싼다), 그림(용이, 알, 지도)과 여러 색 마크
 
 ## props
-`name: 'back' | 'chevron-right' | 'chevron-down' | 'arrow-right' | 'arrow-up' | 'face-id' | 'kakao'`, `className?: string` (크기, 색), `data-*` (부르는 쪽 CSS 상태, 예: `data-open`)
+`name: 'back' | 'chevron-right' | 'chevron-down' | 'arrow-right' | 'arrow-up' | 'face-id' | 'kakao' | 'more'`, `className?: string` (크기, 색), `data-*` (부르는 쪽 CSS 상태, 예: `data-open`)
 
 ## 하네스 상태
 `Icon.stories.tsx`에 아래를 전부 만든다.
@@ -23,11 +23,11 @@ children: []
 - 부르는 쪽이 크기와 색을 정함 (`SizedByCaller`)
 
 ## 쓰는 화면
-TopBar(back), ListRow(chevron-right), ReceiptDetails(chevron-down), LimitChangeCard(arrow-right, face-id), ChatInput(arrow-up), SocialLogin과 KakaoVerify(kakao)
+TopBar(back), ListRow(chevron-right), ReceiptDetails(chevron-down), LimitChangeCard(arrow-right, face-id), ChatInput(arrow-up), SocialLogin과 KakaoVerify(kakao), ChatHeader(more, `IconButton`으로)
 
 ## 테스트 기준
 - 모든 이름이 `aria-hidden`, viewBox 24, `currentColor`
-- 선 아이콘의 선 굵기와 경로가 시안 그대로 (back, chevron 2, arrow-up 2.2, face-id 1.8에 이음 둥글림 없음)
+- 선 아이콘의 선 굵기와 경로가 시안 그대로 (back, chevron 2, arrow-up 2.2, face-id 1.8에 이음 둥글림 없음, more는 점 세 개 1.8에 이음 둥글림 없음)
 - kakao는 채움, 선 없음
 - 부르는 쪽 클래스와 `data-*`가 붙는다
 - 한 가지 색 아이콘을 다른 컴포넌트가 직접 그리지 않는다 (소스를 훑는 테스트)

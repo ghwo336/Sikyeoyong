@@ -4,6 +4,14 @@
   flex-direction: column;
 }
 
+/* Main.dc.html: the month's budget sits in a white card, 1px line, radius 16, 12 14 inside. */
+.meter[data-framed] {
+  padding: var(--space-3) var(--size-budget-card-pad-x);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-budget-card);
+  background: var(--color-surface);
+}
+
 .sm {
   gap: var(--space-2);
   font-size: var(--type-caption-size);

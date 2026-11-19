@@ -102,6 +102,13 @@
   border: 1px solid var(--color-ink);
 }
 
+/* Budget "받기": a white pill with a leaf line and leaf words. */
+.accent {
+  background: var(--color-surface);
+  color: var(--color-leaf);
+  border: 1px solid var(--color-leaf);
+}
+
 .text {
   background: transparent;
   color: var(--color-ink-secondary);

@@ -1,7 +1,14 @@
 'use client';
 
-import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
-import { BudgetPicker, Button, DragonLine, ListRow, StepProgress, TopBar } from '@sikyeoyong/ui';
+import { parseAokrw } from '@sikyeoyong/shared';
+import {
+  BudgetPicker,
+  Button,
+  DragonLine,
+  StepProgress,
+  TopBar,
+  TrialAllowance,
+} from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBudget } from '../../budget/hooks/useBudget';
@@ -28,27 +35,19 @@ export function BudgetSetupContainer() {
       <TopBar trailing={<StepProgress steps={SIGNUP_STEPS} current={3} />} />
       <DragonLine
         text={`안녕하세용!\n${nameIs(me.dragonName)}. 이번 달엔 얼마까지 시킬까용?`}
-        layout="inline"
+        layout="greeting"
         species={me.dragonSpecies}
       />
       <BudgetPicker options={options} value={value} onChange={setPicked} />
-      <ListRow
-        label="체험용 용돈"
-        value={formatOkrw(parseAokrw(config.trialAllowance))}
-        trailing={
-          <Button
-            variant="secondary"
-            size="md"
-            loading={claim.isPending}
-            onPress={() => {
-              // Once only: a second tap while it runs or after it worked does nothing.
-              if (claim.isPending || claim.isSuccess) return;
-              claim.mutate();
-            }}
-          >
-            받기
-          </Button>
-        }
+      <TrialAllowance
+        amount={parseAokrw(config.trialAllowance)}
+        status={claim.isSuccess ? 'done' : claim.isPending ? 'pending' : 'idle'}
+        onClaim={() => {
+          // Once only: TrialAllowance calls this only while idle, and the server must also
+          // take a second call as the same claim (web.md "남은 일").
+          if (claim.isPending || claim.isSuccess) return;
+          claim.mutate();
+        }}
       />
       <Button
         variant="primary"

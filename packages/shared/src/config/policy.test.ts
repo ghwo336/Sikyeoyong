@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors/index.js';
-import { floatCapAokrw, getPolicy, hasLimitIntent, isPolicyProfile, nagStage } from './policy.js';
+import {
+  floatCapAokrw,
+  getPolicy,
+  hasLimitIntent,
+  isPolicyProfile,
+  nagStage,
+  POLICY_PROFILES,
+} from './policy.js';
 
 // verify-allow: R4 independent oracle for expected values, not production code
 const OKRW = 10n ** 18n;
@@ -33,6 +40,12 @@ describe('getPolicy (D-07, D-12)', () => {
     const scene4 = won(45_000n);
     expect(scene4 > p.perOrderLimitAokrw[1]).toBe(true);
     expect(scene4 <= p.perOrderLimitAokrw[3]).toBe(true);
+  });
+
+  it('gives level 1 the same per-order limit in every profile (web BORN_LINE reads default)', () => {
+    for (const profile of POLICY_PROFILES) {
+      expect(getPolicy(profile).perOrderLimitAokrw[1]).toBe(won(10_000n));
+    }
   });
 
   it('levels strictly increase', () => {

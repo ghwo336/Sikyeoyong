@@ -11,7 +11,8 @@ async function settle<T>(p: Promise<T>): Promise<T> {
   return p;
 }
 
-const statuses = async () => (await settle(mockApi.getAgentSetup())).steps.map((s) => s.status);
+const setup = () => settle(mockApi.getAgentSetup());
+const statuses = async () => (await setup()).steps.map((s) => s.status);
 
 describe('mock sign-up', () => {
   beforeEach(() => {
@@ -31,10 +32,15 @@ describe('mock sign-up', () => {
     await settle(mockApi.createAgent({ dragonName: '봄봄', dragonSpecies: 'star' }));
     // createAgent started the clock at T0; settle moved it 300ms.
     expect(await statuses()).toEqual(['doing', 'waiting', 'waiting']);
+    // Midway the dragon is still PENDING, so the hatch screen keeps asking.
     vi.setSystemTime(T0 + 1_500);
-    expect(await statuses()).toEqual(['done', 'doing', 'waiting']);
+    const first = await setup();
+    expect(first.status).toBe('PENDING');
+    expect(first.steps.map((s) => s.status)).toEqual(['done', 'doing', 'waiting']);
     vi.setSystemTime(T0 + 3_000);
-    expect(await statuses()).toEqual(['done', 'done', 'doing']);
+    const second = await setup();
+    expect(second.status).toBe('PENDING');
+    expect(second.steps.map((s) => s.status)).toEqual(['done', 'done', 'doing']);
     vi.setSystemTime(T0 + 4_500);
     const after = await settle(mockApi.getAgentSetup());
     expect(after.status).toBe('ACTIVE');

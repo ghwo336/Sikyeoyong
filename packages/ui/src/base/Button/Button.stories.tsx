@@ -12,7 +12,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 기본 여섯 종류 */
+/** 기본 일곱 종류 */
 export const Variants: Story = {
   render: (args) => (
     <div style={{ display: 'grid', gap: 12 }}>
@@ -24,6 +24,9 @@ export const Variants: Story = {
       </Button>
       <Button {...args} variant="outline">
         돌려받기
+      </Button>
+      <Button {...args} variant="accent">
+        받기
       </Button>
       <Button {...args} variant="text">
         다시 고를래
@@ -119,4 +122,9 @@ export const Tall: Story = {
 /** 테두리 알약 (outline md): Frozen "돌려받기" */
 export const Outline: Story = {
   args: { size: 'md', variant: 'outline', children: '돌려받기' },
+};
+
+/** 잎색 테두리 알약 (accent md): Budget "받기" */
+export const Accent: Story = {
+  args: { size: 'md', variant: 'accent', children: '받기' },
 };

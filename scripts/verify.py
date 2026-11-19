@@ -33,6 +33,14 @@ ALLOWED_TOOLS = {"get_budget", "get_order_history", "get_context", "recommend_me
                  "place_order", "request_owner_approval",
                  "propose_limit_change"}  # CLAUDE.md 3, tech-spec 3.3, D-21 (card only, changes nothing)
 UI_AREAS = ("base", "dragon", "chat", "order", "limits", "onboarding", "wallet")
+STYLELESS_MARK = "자기 스타일 없음"  # architecture.md: a styleless assembly says so in its doc 메모
+# The mark counts only where its sentence ends: then a period, a parenthesis or the line end.
+# "자기 스타일 없음이 아니다" does not count.
+STYLELESS_RE = re.compile(re.escape(STYLELESS_MARK) + r"[ \t]*(?:[.(]|$)", re.M)
+# What a styleless body must not have: inline style, its own class, its own CSS module.
+STYLED_BODY = [(r"\bstyle=\{", "인라인 style"),
+               (r"className=(?:\"|'|\{\s*(?:styles\b|['\"`]))", "자기 className"),
+               (r"\.module\.css['\"]", "CSS 모듈 import")]
 BANNED_UI = ["지갑", "토큰", "트랜잭션", "KYC", "PCL", "블록체인", "가스비", "해시", "OKRW", "attestation", "시드 문구"]
 WEB_APP_FILES = {"page.tsx", "layout.tsx", "loading.tsx", "error.tsx", "not-found.tsx", "template.tsx",
                  "global-error.tsx", "globals.css"}
@@ -510,9 +518,23 @@ for area, name in sorted(ui_dirs):
     for suffix in (f"{name}.tsx", f"{name}.stories.tsx", f"{name}.test.tsx", "index.ts"):
         if not os.path.isfile(f"{d}/{suffix}"):
             add("BLOCKER", "D18 ui-harness", d, f"{suffix} 없음 (본체, 하네스, 테스트, index 필수)")
-    if not os.path.isfile(f"{d}/{name}.module.css"):
-        add("REVIEW", "D18 ui-style", d, f"{name}.module.css 없음. 스타일이 정말 필요 없는지")
     doc = f"docs/wiki/components/ui/{area}/{name}.md"
+    # architecture.md (D-18 principle 3 note): a component with no style of its own has no
+    # module.css and says STYLELESS_MARK in its doc's 메모, with what draws it instead.
+    memo = re.search(r"##\s*메모\s*\n(.*?)(\n##\s|\Z)", read(doc) or "", re.S)
+    styleless = bool(memo and STYLELESS_RE.search(memo.group(1)))
+    has_css = os.path.isfile(f"{d}/{name}.module.css")
+    if not has_css and not styleless:
+        add("REVIEW", "D18 ui-style", d,
+            f"{name}.module.css 없음. 스타일이 필요 없으면 문서 메모에 '{STYLELESS_MARK}'과 이유를 적는다")
+    if has_css and styleless:
+        add("REVIEW", "D18 ui-style", d, f"문서 메모는 '{STYLELESS_MARK}'인데 {name}.module.css가 있다. 둘 중 하나를 고친다")
+    if styleless and os.path.isfile(f"{d}/{name}.tsx"):
+        body = code_text(f"{d}/{name}.tsx")
+        for pat, what in STYLED_BODY:
+            if re.search(pat, body):
+                add("MAJOR", "D18 ui-style", f"{d}/{name}.tsx",
+                    f"문서 메모는 '{STYLELESS_MARK}'인데 본체에 {what}. 스타일은 CSS 모듈(토큰)로 두고 메모를 고친다")
     if not os.path.isfile(doc):
         add("BLOCKER", "D18 ui-doc", d, f"위키 문서 {doc} 없음")
         continue

@@ -31,6 +31,33 @@ describe('ChatContainer', () => {
     expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(3);
   });
 
+  it('puts the recommendation card under the dragon words, not at the screen edge', async () => {
+    setup();
+    const card = await screen.findByRole('button', { name: /돼지국밥 9,000원/ });
+    const words = screen.getByText(/비 오니까 국물 어때용/).closest('p');
+    // Main.dc.html: words and card share one column next to the small dragon.
+    expect(words?.parentElement?.contains(card)).toBe(true);
+  });
+
+  it('draws the header and top it is given around the thread, input last', async () => {
+    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChatContainer header={<h1>머리</h1>} top={<p>예산</p>} />
+      </QueryClientProvider>,
+    );
+    const input = await screen.findByRole('textbox', { name: '용이에게 말하기' });
+    const head = screen.getByRole('heading', { name: '머리' });
+    const log = screen.getByRole('log');
+    expect(head.compareDocumentPosition(screen.getByText('예산'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(screen.getByText('예산').compareDocumentPosition(log)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(log.compareDocumentPosition(input)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('picking a recommendation opens the sheet and does not pay', async () => {
     setup();
     await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
