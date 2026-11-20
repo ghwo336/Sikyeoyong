@@ -72,7 +72,7 @@
 - 즉 **에이전트를 여러 개 만들어도 하루 누적은 소유자 단위로 합산** (전역 KYC 한도에 한해).
 
 ### 3.5 PCL 프록시 (확인, pcl-proxy-hook)
-- `deployPclProxy`: Transparent, UUPS, Beacon, Diamond. 구현과 1:1.
+- `deployPclProxy`: Transparent, UUPS, Beacon, Diamond. 구현과 1:1. kind 값 Transparent 1, UUPS 2, Beacon 3, Diamond 4. UUPS는 `(logic, initializer)`, initializer는 배포 트랜잭션에서 위임 호출되어 원자적이고 프록시 주소는 `PclProxyDeployed` 이벤트로 받는다 (확인, 2026-11-20 테스트넷 실제 배포, `@maroo-chain/viem@0.5.0`). OZ `UUPSUpgradeable` 구현이 그대로 초기화됐다.
 - 프록시가 실행 전 `preCall`, 실행 후 `postCall` 호출. 실패한 호출은 정책 평가 생략.
 - 훅 호출자는 등록된 PCL 프록시 또는 `PclParams.entrypoints`의 신뢰 엔트리포인트만. EOA, 7702 위임 EOA, 임의 컨트랙트는 `Unauthorized`.
 - 정책은 직접 호출자가 아니라 principal(최종 사용자) 기준으로 평가.
@@ -82,6 +82,7 @@
 ### 3.6 정책 관리 (확인, pcl-policy-admin)
 - 전역 정책 관리자 `IPcl.policyAdmin()` 단일 주소. 4개 메서드만: registerPolicyTemplate, removePolicyTemplate, setGlobalPolicies, removeGlobalPolicies.
 - 컨트랙트 범위 정책은 "적절한 호출자"가 `changeContractPolicies`로 관리, `contractPolicies`로 조회. 인자와 권한 상세는 pcl-contract-admin-binding 문서 확인 필요. (부분 미확인)
+- 확인 (2026-11-20, 테스트넷 실제 배포): `changeContractPolicies({ contract, admin, policies })`, `contractPolicies(contract)`는 `{ _contract, admin, policies[] }`를 돌려준다. 정책 admin은 `deployPclProxy` 호출자로 배포와 동시에 묶였다 (정책 설정 전 `pclProxy(proxy).admin`이 이미 배포자). `placeOrder(uint64,bytes32)` 셀렉터 `0x62dac134`에 `LOGICAL_POLICY`(And: `AGENT_OKRW_TRANSFER_LIMIT_POLICY` 값 없음, `PERIODIC_VOLUME_POLICY` `{token atokrw, maxAmount, resetPeriodSeconds}`)가 받아들여졌고 읽어서 같았다. 배포 가스: 구현 1,897,105, 프록시 456,599, 정책 108,772, 가스 가격 9,000 gwei, 합계 22.16 tOKRW (추정값과 사용량이 같았다). 컨트랙트 범위 정책이 시뮬레이션(eth_call)에서 재현되는지는 아직 시험하지 않았다 (Q-14). F-20.
 - 주소 리스트: `createAddressList` 누구나, 호출자가 리스트 admin. `updateAddressList` 등은 리스트 admin만.
 - 정책 관리자도 컨트랙트 범위 정책을 우회하지 못함.
 
@@ -91,7 +92,7 @@
 - OKRW는 네이티브 코인. ERC-20 진입점 없음. 결제 함수는 `payable`. 최소 단위 aokrw(10^18). 테스트넷 denom `atokrw`.
 - 가스 한도의 절반은 무조건 과금, 단순 전송도 약 22,300 가스. 고정 가스 금지.
 - 지원하는 EVM 하드포크(Shanghai PUSH0, Cancun MCOPY와 TSTORE)는 문서에 없다 (미확인, 2026-11-20 `pcl-proxy-hook` 재확인, Q-32, F-11). 시켜용 컨트랙트는 `evm_version = paris`로 컴파일한다.
-- `deployPclProxy`의 시그니처, kind 값, 초기화 데이터 전달, OZ `UUPSUpgradeable` 호환 여부는 문서에 없다 (미확인, 2026-11-20 재확인, Q-13, F-12).
+- `deployPclProxy`의 시그니처, kind 값, 초기화 데이터 전달, OZ `UUPSUpgradeable` 호환은 문서 사이트에는 없고 SDK `@maroo-chain/viem`과 실제 배포로 확인했다 (확인, 2026-11-20, 3.5, Q-13 닫힘, F-12, F-21). 이 배포로 `paris` 바이트코드가 테스트넷에서 실행되는 것도 확인했다 (PUSH0 등 상위 하드포크는 여전히 미확인, Q-32).
 
 ## 4.1 기술 기획 조사로 추가 확인 (2026-11-18)
 | 항목 | 내용 | 상태 | 출처 |
@@ -99,7 +100,7 @@
 | 평가 단계 | 전역 정책: RPC 제출 시점에 거절되면 브로드캐스트되지 않음(가스 없음, 블록 미포함). 컨트랙트 범위 정책: 프록시 경유 실행 중 평가, 거절되면 revert되지만 블록에 포함되고 가스 과금 | 확인 | /concepts/compliance/pcl-policy-enforcement |
 | EAS_POLICY 범위 | 트랜잭션 sender의 attestation만 검사 (`EasNoAttestationReceived(address sender)`) | 확인 (기술 기획 조사), 정책 강제 페이지에서는 암시 수준 | /concepts/compliance/pcl-template-eas-policy |
 | 셀렉터당 정책 | 한 셀렉터에 PolicySet 하나. 같은 셀렉터 중복은 `InvalidParameter`. 여러 규칙은 `LOGICAL_POLICY`로 묶고 자식에는 셀렉터를 넣지 않음 | 확인 | pcl-policy-structure, pcl-policy-enforcement |
-| 컨트랙트 정책 admin | 처음 `changeContractPolicies`를 호출한 주소가 admin, 한 번만 지정. `changeContractPolicies`는 전체 교체 | 확인 (기술 기획 조사) | pcl-contract-admin-binding |
+| 컨트랙트 정책 admin | 문서: 처음 `changeContractPolicies`를 호출한 주소가 admin, 한 번만 지정. 실제(2026-11-20): `deployPclProxy` 호출자가 배포와 동시에 admin (F-20). `changeContractPolicies`는 전체 교체 | 확인 (기술 기획 조사, 실제 배포로 보정) | pcl-contract-admin-binding |
 | EAS 인덱싱 | attestation은 `indexAttestation`으로 인덱싱돼야 정책에서 인정 | 확인 (기술 기획 조사) | EAS 개념 문서 |
 | 테스트넷 | Cosmos chain-id `maroo-testnet-1`, WebSocket `wss://ws-testnet.maroo.io`, denom `atokrw`, decimals 18 | 확인 | /resources/network/testnet-access |
 | TransferLimit와 선불 | 컨트랙트 범위에서는 직접 sender 귀속만, 실행 전 call value 검사. 컨트랙트가 내보내는 지급이 에이전트 한도로 집계되는지는 미확인 (스파이크 S10) | 부분 확인 | pcl-template-agent-okrw-transfer-limit-policy |

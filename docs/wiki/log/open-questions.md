@@ -129,14 +129,19 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 반영한 곳:
 
 ### Q-13 `deployPclProxy` kind 값과 초기화, PolicySet·LogicalPolicy·ForEachPolicy의 Solidity 타입과 enum 값은?
-- 상태: 열림
+- 상태: 닫힘 (2026-11-20, 테스트넷 실제 배포로 확인)
 - 우선순위: P0
 - 배경: 배포 스크립트와 정책 인코딩 (tech-spec "5.5", "5.6"). `AGENT_OKRW_TRANSFER_LIMIT_POLICY`의 필드 없는 struct 인코딩도 미확인.
 - 덧붙임 (2026-11-20): `SikyeoyongOrders.initialize`는 접근 제어가 없어 `deployPclProxy`가 초기화 데이터를 같이 받는지(원자적 초기화)도 이 질문으로 확인한다. 못 받으면 초기화 뒤 `owner()`, `operator()`를 다시 읽어 확인한다 (contracts.md "반드시 지킬 규칙").
 - 확인 방법: `IPcl.sol` 원본(`@maroo-chain/contracts`) 확인, 스파이크 S4.
 - 담당: 구현 세션
-- 결론:
-- 반영한 곳:
+- 결론 (확인, 2026-11-20): 공식 SDK `@maroo-chain/viem@0.5.0`이 인코딩을 맡는다. 우리는 Solidity 타입을 직접 만들지 않는다.
+  - kind: `pclProxyKinds` = Unspecified 0, Transparent 1, UUPS 2, Beacon 3, Diamond 4. 시켜용은 UUPS(2).
+  - UUPS는 `deployPclProxy({ kind, logic, initializer })`. `initialOwner` 없음. `initializer`(`initialize(operator, owner, false)` calldata)는 같은 트랜잭션에서 위임 호출되어 원자적이다. 배포 직후 `owner()`, `operator()`가 운영자 주소로 읽혔다. OZ `UUPSUpgradeable` 구현이 PCL UUPS 프록시 뒤에서 그대로 초기화됐다 (`evm_version = paris` 바이트코드도 실행됨, Q-32의 일부 답).
+  - 프록시 주소는 반환값이 아니라 영수증의 `PclProxyDeployed` 이벤트(`deployPclProxy.extractEvent(logs).args.proxy`).
+  - 정책: `policy.and([policy.agentOkrwTransferLimit(), policy.periodicVolume({ limits: [{ token: 'atokrw', maxAmount, resetPeriodSeconds }] })], { selector })`. `AGENT_OKRW_TRANSFER_LIMIT_POLICY`는 값 없는 정책(`{}`)으로 인코딩된다. `changeContractPolicies({ contract, admin, policies })`가 받아들였고 `contractPolicies`가 `{ _contract, admin, policies[] }`로 돌려줬으며 `PolicySet.decode`로 읽힌다. ForEach는 쓰지 않았다(Q-06).
+  - 정책 admin은 `deployPclProxy` 호출자가 배포와 동시에 묶인다 (`pclProxy(proxy).admin`이 `changeContractPolicies` 전에 이미 운영자). 문서의 "첫 `changeContractPolicies` 호출자" 설명과 다르다 (F-20).
+- 반영한 곳: chain-and-pcl.md "배포", maroo-facts 3.5, 3.6, tech-spec 5.5, 5.6, 5.9, `infra/scripts/deploy-orders.ts`
 
 ### Q-14 `simulateContract`(eth_call)에서 컨트랙트 범위 정책이 재현되나?
 - 상태: 열림

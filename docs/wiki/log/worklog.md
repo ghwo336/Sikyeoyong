@@ -336,3 +336,13 @@ children: []
 - 한 일: 허락 대기 뒤 모델 말을 막고 서버 문장과 칩(973e47d), 한도 카드를 그 턴의 말 뒤로(be79eb6), 빈 추천의 까닭 `empty`(11d387f), 멈춘 동안 추천 누름에 쉰다는 줄과 입력 안내(573a872), 세션 답 전 Splash는 버튼 아님(3f2ecd2), 날씨 같은 사실은 도구 결과에 있을 때만(3182b93), 영수증 한도 줄은 "지금" 값(b8e2b60), /limit/cap 바로 방문은 대화로(5669a00), 막대 바탕과 꺼진 입력 칸의 `--theme-track`(7a70751), "되용"을 "돼용"으로(9a9a19d).
 - 못 한 것: 주인 허락 카드(새 가게, 30일 한도)가 웹에 없어 허락 대기는 서버 문장과 칩으로만 안내한다. 영수증의 주문 때 한도는 주문에 저장하지 않아 보일 수 없다(저장 칸 필요). `WEATHER_PROVIDER=static`은 늘 "비"라 모델이 여전히 비를 말할 수 있다(데모 장면과 맞물려 판단 필요).
 - 다음 할 일: 허락 카드 조립 뒤 `approval-wait.ts` 문장과 칩을 그 카드로, 주문에 그때 한도 남기기, 정적 날씨를 실제 날씨나 "모름"으로.
+
+### 2026-11-21 오더스 컨트랙트 테스트넷 실제 배포 (demo 프로필, 호재 님 승인)
+- 한 일:
+  - `infra/` (`@sikyeoyong/infra`) 새 패키지: `deploy-orders.ts`(forge build, 구현, UUPS `deployPclProxy`+initialize, owner/operator 확인, 정책, 재조회, 기록), `apply-policy.ts`(`--check`). 쓰기마다 eth_call과 estimateGas 시뮬레이션, 가스 예산 300 OKRW, 기록이 있으면 `--force` 없이는 멈춤. `contracts:deploy:testnet`과 `policy:apply`가 이를 부른다. `deploy-testnet.sh`는 지움.
+  - shared: `deployments.ts`(검증, `resolveOrdersContract`, env `ORDERS_CONTRACT` 우선), `deployments-data.ts`(등록).
+  - 실제 배포 (체인 450815, demo): 구현 `0xf3091258a7ecee5a1b71577a573690bcdf8914e6`(블록 23814924), 프록시 `0x36713c60A8b4E54b56997553aD4b8b16d7C02Db8`(23814926), 정책(23814928). 가스 22.16 tOKRW. tx는 `deployments/450815.demo.json`과 탐색기 `https://explorer-testnet.maroo.io/tx/<해시>`.
+  - Q-13 닫음, F-20(정책 admin은 deployPclProxy 호출자), F-21, F-22 기록.
+- 다음 할 일: API 체인 모듈이 `resolveOrdersContract`와 `ORDERS_CONTRACT`를 쓰게(지금은 env만), `contractPolicies`를 `ChainReader`로 읽기, 목 가게 `registerMerchant`(가게 payout 키), 에이전트 TransferLimit 기록, `placeOrder` 실제 호출로 한도 revert와 `simulatePclProxy`(Q-14) 확인, `Deploy.s.sol` 주석과 기록 쓰기(이제 TS가 전부 함)를 정리.
+- 메모: worktree에는 `.env`가 없어 `node --env-file=<메인 저장소 .env>`로 직접 실행했다 (키는 출력하지 않음).
+

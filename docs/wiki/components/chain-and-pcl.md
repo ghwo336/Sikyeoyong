@@ -17,10 +17,32 @@ children: []
 - 전역 정책 변경 (우리는 권한 없음. 정책 관리자 단일 주소만, 확인)
 
 ## 의존과 인터페이스 경계
-- 설정 파일: `packages/shared/src/config/chain.ts` (네트워크별), `packages/shared/src/config/policy.ts` (정책값, 프로필), `packages/shared/src/config/deployments/<chainId>.<profile>.json` (배포 주소).
+- 설정 파일: `packages/shared/src/config/chain.ts` (네트워크별), `packages/shared/src/config/policy.ts` (정책값, 프로필), `packages/shared/src/config/deployments/<chainId>.<profile>.json` (배포 주소, `deployments.ts`가 검증하고 `deployments-data.ts`가 등록).
+- 배포 도구: `infra/` (`@sikyeoyong/infra`, `infra/scripts/deploy-orders.ts`, `apply-policy.ts`. Node 22.18 이상에서 TS를 직접 실행).
 - 프리컴파일: PCL `0x1000000000000000000000000000000000000005`, Agent `0x100000000000000000000000000000000000000A`, IdentityRegistry `0x8004000000000000000000000000000000000001` (확인), SchemaRegistry `0x1000000000000000000000000000000000000006` (미확인, tech-spec 7.2에만 있음). 이것도 설정 파일에 둔다.
 - 읽기 클라이언트는 viem. 서버만 체인을 읽는다.
 - 다른 모듈은 `modules/chain/chain.service.ts`의 `ChainReader`(`CHAIN_READER` 토큰)로만 체인 값을 받는다. 지금은 `periodicVolume`(30일 사용량과 resetAt 초)만 있다. 컨트랙트 배포 전이라 `PAYMENT_PATH=mock`이면 목 결제의 창(`mockPeriodicVolume`, 결제하면 차고 기간이 끝나면 비워짐)을, 그 밖의 개발 경로는 빈 창(0, null)을 읽고, production은 진짜 viem 읽기가 붙기 전까지 INTERNAL로 실패한다 (지어낸 체인 값을 보이지 않게). `contractPeriodicVolume` 반환 모양은 (미확인).
+
+## 배포 (확인, 2026-11-20 테스트넷 실제 실행)
+`pnpm contracts:deploy:testnet --profile <default|demo>`는 `infra/scripts/deploy-orders.ts`를 `OPERATOR_KEY`(환경에서만, 출력하지 않음)로 돌린다. `--force` 없이는 `deployments/<chainId>.<profile>.json`이 있으면 멈춘다. `--max-spend <OKRW>`(기본 300)를 넘길 쓰기는 보내기 전에 멈춘다.
+1. `forge build`, 구현 컨트랙트 배포 (viem `deployContract`).
+2. `deployPclProxy({ kind: UUPS, logic, initializer })`. initializer는 `initialize(operator, owner, false)`이고 배포 트랜잭션에서 원자적으로 실행된다. 프록시는 `PclProxyDeployed` 이벤트에서 읽는다.
+3. 확인: `pclProxy(proxy)`(kind 2, admin = 운영자), `isPclProxy`, `owner()`, `operator()`.
+4. `changeContractPolicies`: `placeOrder(uint64,bytes32)` 하나에 And(`policy.agentOkrwTransferLimit()`, `policy.periodicVolume`). 값은 `policy.ts` 프로필. default는 `registerMerchant(bytes32,string)`에 `policy.eas`를 더한다(`KYB_SCHEMA_UID` 필요, Q-07). demo는 EAS 없음 (D-33).
+5. `contractPolicies`를 다시 읽어 요청과 같은지 대조하고, 풀어 쓴 요약과 `policyHash`를 배포 기록에 넣는다.
+쓰기마다 먼저 eth_call과 estimateGas로 시뮬레이션한다. 실패하면 멈추고 자동 재시도하지 않는다. `pnpm policy:apply --profile <p>`는 현재 정책을 읽어 `policy.ts`와 비교하고 다르면 전체를 다시 쓴다. 체인에 우리가 관리하지 않는 셀렉터가 있으면 지워지므로 멈춘다. `--check`는 비교만 하고 다르면 종료 코드 1이다.
+
+배포 기록은 `packages/shared/src/config/deployments/<chainId>.<profile>.json`이고 `deployments-data.ts`에 import 한 줄을 더해 등록한다. API는 `resolveOrdersContract(DEPLOYMENTS, chainId, profile, ORDERS_CONTRACT)`로 읽고 `ORDERS_CONTRACT` 환경변수가 있으면 그 값이 이긴다.
+
+| 항목 | 테스트넷 demo 프로필 (2026-11-20) |
+| --- | --- |
+| 구현 | `0xf3091258a7ecee5a1b71577a573690bcdf8914e6`, 블록 23814924, tx `0x7f148a42...bae323` |
+| 프록시 (`ORDERS_CONTRACT`) | `0x36713c60A8b4E54b56997553aD4b8b16d7C02Db8`, 블록 23814926, tx `0x6d31a8de...527f8a` |
+| 정책 | `placeOrder` And(건당 한도, 60,000 OKRW / 3,600초), 블록 23814928, tx `0xf7682258...767636` |
+| 운영자, owner, 정책 admin | `0xBb71B672BC33745283842ce701F5b0FC28d023d3` (지금은 같은 주소, 2단계에 분리) |
+| 가스 | 합계 22.16 tOKRW |
+
+전체 tx 해시는 배포 기록 JSON에 있다. 정책 admin은 `deployPclProxy` 호출자로 배포와 동시에 정해진다 (아래 규칙, F-20).
 
 ## 정책이 언제 막는가 (D-02 표현 규칙, 확인)
 | 정책 | 평가 시점 | 거절되면 |
@@ -39,7 +61,7 @@ children: []
 | 전역 | KYC 한도 | 건당 2,000,000, 하루 10,000,000 OKRW | 이미 적용됨. 에이전트 전송은 소유자 하루 누적에 합산 (확인) |
 | 2단계 | `ALLOW_LIST_POLICY` | 에이전트 송금처 = 주문 컨트랙트 | 테스트넷 v0.11.1 미등록 (확인). 등록되면 추가 |
 
-토큰 이름은 `"atokrw"` (테스트넷 denom, 설정값 `OKRW_DENOM`). 실제 등록된 템플릿은 적용 전에 `IPcl.policyTemplate(templateId)`로 확인한다. 제거된 `OKRW_EAS_*` 템플릿은 쓰지 않는다 (`UnknownPolicyType`). 정책 인코딩은 tech-spec "5.6 붙일 정책"의 예시를 따르되 PolicySet, LogicalPolicy의 Solidity 타입과 enum 값은 `IPcl.sol` ABI에서 가져온다 (미확인, Q-13).
+토큰 이름은 `"atokrw"` (테스트넷 denom, 설정값 `OKRW_DENOM`). 실제 등록된 템플릿은 적용 전에 `IPcl.policyTemplate(templateId)`로 확인한다. 제거된 `OKRW_EAS_*` 템플릿은 쓰지 않는다 (`UnknownPolicyType`). 정책 인코딩은 공식 SDK `@maroo-chain/viem`의 `policy.*`와 `PolicySet`에 맡긴다. Solidity 타입과 enum 값을 직접 쓰지 않는다 (확인, Q-13 닫힘). `AGENT_OKRW_TRANSFER_LIMIT_POLICY`는 값 없는 정책이다.
 
 ## revert 매핑 (tech-spec 3.6과 같은 코드. 문구와 HTTP 상태의 원본은 `packages/shared` `APP_ERRORS`)
 | revert | AppErrorCode | 사용자에게 |
@@ -62,7 +84,7 @@ children: []
 - 체인 ID와 주소는 설정 파일에서만 읽는다. 테스트넷 체인 ID(450815)는 바뀔 예정이다 (확인). 부팅 시 `eth_chainId`와 대조한다.
 - 정책값은 `policy.ts` 한곳, 프로필(`POLICY_PROFILE=default|demo`)로 고른다. 체인에 적용된 값과 다르면 `pnpm policy:apply --check`가 실패해야 한다.
 - **`changeContractPolicies`는 전체 교체다** (확인). 항상 `contractPolicies`로 현재 값을 읽고 전체 배열을 다시 만든다. 빠뜨린 항목은 조용히 지워진다.
-- **정책 admin은 처음 `changeContractPolicies`를 호출한 주소로 한 번만 정해진다** (확인). 프록시 배포 직후 같은 스크립트에서 운영자 키로 첫 호출을 한다. admin 키를 잃으면 정책을 영구히 못 바꾼다.
+- **정책 admin은 한 번만 정해진다** (확인). 문서는 첫 `changeContractPolicies` 호출자라고 하지만, 실제로는 `deployPclProxy` 호출자가 배포와 동시에 admin이 된다 (확인, 2026-11-20, F-20). 같은 운영자 키로 배포하고 정책을 건다. admin 키를 잃으면 정책을 영구히 못 바꾼다.
 - 정책 변경 절차: `policy.ts` 수정, PR 리뷰, `pnpm policy:apply`, `contractPolicies` 조회로 확인, worklog 기록. 앱 배포는 필요 없다 (데모 리허설 추가 장면).
 - `resetAt`은 unix 초. 표시할 때 Asia/Seoul로 변환.
 - preflight와 `simulateContract`는 사용자 경험용이다. 컨트랙트 범위 정책이 시뮬레이션에서 재현되는지는 미확인 (Q-14). 결과를 보장으로 다루지 않는다.
@@ -83,7 +105,7 @@ children: []
 - `policy:apply --check`가 불일치를 잡는다. 전체 교체로 항목이 빠지는 실수를 잡는 테스트.
 
 ## 열린 질문
-- Q-04 `changeContractPolicies` 인자·권한, Q-05 30일 주기 시작 시점, Q-06 `FOR_EACH_POLICY` 소유자 합산, Q-08 체인 ID·Mock KYC 전환, Q-13 PolicySet 타입, Q-14 시뮬레이션 재현
+- Q-04 `changeContractPolicies` 인자·권한, Q-05 30일 주기 시작 시점, Q-06 `FOR_EACH_POLICY` 소유자 합산, Q-08 체인 ID·Mock KYC 전환, Q-14 시뮬레이션 재현 (Q-13은 닫힘)
 
 ## 관련 문서
 - `docs/_research/maroo-facts.md` 3장, 4.1

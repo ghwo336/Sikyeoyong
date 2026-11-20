@@ -156,3 +156,24 @@ children: []
 - 확인 (2026-11-20, 시켜용 실제 연동): beta.8 웹 SDK `pouchiEmbedded`는 콜백 주소가 `https:`가 아니면 금고를 열기 전에 `POUCHI_EMBEDDED_REQUEST_INVALID`를 던진다(`pouchi-embedded.js` prewarmOnce, mountEmbedded). 등록은 `http://localhost:3000`으로 되지만 SDK가 쓸 수 없다. 오류 이름만으로는 원인(https)을 알 수 없다.
 - 영향: 로컬 개발로 시작하려는 개발자가 어느 쪽을 믿어야 할지 모른다.
 - 제안: 테스트넷 로컬 개발이 되는 범위(로그인만, 서명까지 등)를 한 곳에 적기.
+
+### F-20 컨트랙트 정책 admin이 "첫 changeContractPolicies 호출자"가 아니라 "deployPclProxy 호출자"로 이미 묶임
+- 상태: 열림
+- 종류: 문서 불일치
+- 발견: 2026-11-20 테스트넷 실제 배포. `pcl-contract-admin-binding` 문서는 처음 `changeContractPolicies`를 호출한 주소가 admin이 된다고 한다. `@maroo-chain/viem@0.5.0`의 `deployPclProxy` 주석은 "배포자가 프록시의 정책 admin으로 원자적으로 묶인다"고 쓴다. 배포 직후 `pclProxy(proxy)`의 admin이 배포자였다 (정책 설정 전). SDK가 맞고 문서가 낡았다.
+- 영향: 우리는 "배포 직후 같은 키로 즉시 첫 호출" 순서를 지키려 했지만, 실제로는 배포 트랜잭션 자체가 admin을 정한다. 다른 사람이 먼저 잡을 틈이 없다는 점은 더 안전하다.
+- 제안: 문서를 SDK 동작에 맞추고, 배포자와 admin이 다를 때(스마트 계정 경유)의 규칙을 적기.
+
+### F-21 `deployPclProxy`, 정책 인코딩 문서가 없고 SDK 주석에만 있음 (F-12의 해결 경로)
+- 상태: 열림
+- 종류: 문서 누락
+- 발견: 2026-11-20. kind 값, UUPS의 initializer 전달, `PolicySet` 인코딩, `contractPolicies` 반환 모양은 문서 사이트가 아니라 `@maroo-chain/viem` 타입 선언과 README에서만 알 수 있었다. 문서 사이트만 보면 Q-13이 계속 열려 있다.
+- 영향: SDK를 모르면 PolicySet의 Solidity 타입을 직접 추측해야 한다.
+- 제안: concepts 문서에 SDK 링크와 UUPS, Transparent 배포 예제, 정책 조합 예제를 넣기.
+
+### F-22 SDK 체인 정의가 viem 2.57.20의 `Chain` 타입과 맞지 않음
+- 상태: 열림
+- 종류: 도구 버그 (타입)
+- 발견: 2026-11-20. `marooTestnet`을 펼쳐 id와 rpcUrls만 바꾸면 `prepareTransactionRequest` 훅의 `phase`에 `afterFillTransactionError`가 있어 viem 2.57.20의 `Chain`에 대입되지 않는다. `as unknown as Chain`으로 우회했다.
+- 영향: 체인 ID를 설정에서 받으려는 앱이 캐스트를 해야 한다.
+- 제안: viem 호환 범위를 올리거나 `marooTestnet.extend({ id, rpcUrls })` 같은 도우미 제공.

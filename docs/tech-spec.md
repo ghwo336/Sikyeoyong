@@ -656,10 +656,10 @@ function placeOrder(uint64 merchantId, bytes32 orderRef) external payable nonRee
 
 ### 5.5 PCL 프록시 배포 절차
 1. 구현 컨트랙트 배포 (`forge create` 또는 스크립트).
-2. `IPcl(0x1000000000000000000000000000000000000005).deployPclProxy(kind)` 호출로 프록시 배포 (Transparent, UUPS, Beacon, Diamond 중 UUPS) (확인, [pcl-proxy-hook](https://docs.maroo.io/concepts/compliance/pcl-proxy-hook)). `kind` 열거값, 구현 주소를 넘기는 방법, 반환값 외 초기화 절차는 (미확인). 고급 가이드 [managing-contract-policies](https://docs.maroo.io/guides/advanced/managing-contract-policies)에도 배포 절차는 없다. `IPcl.sol` 인터페이스 파일을 받아 시그니처 확인이 1주차 첫 작업.
-3. 프록시를 통해 `initialize(operator, owner, vaultMode=false)` 호출.
+2. PCL 프리컴파일의 `deployPclProxy`로 프록시 배포 (Transparent 1, UUPS 2, Beacon 3, Diamond 4 중 UUPS) (확인, [pcl-proxy-hook](https://docs.maroo.io/concepts/compliance/pcl-proxy-hook), 2026-11-20 실제 배포). 공식 SDK `@maroo-chain/viem@0.5.0`의 `walletClient.pcl.deployPclProxy({ kind: pclProxyKinds.UUPS, logic, initializer })`를 쓴다. 프록시 주소는 반환값이 아니라 `PclProxyDeployed` 이벤트(`deployPclProxy.extractEvent(receipt.logs).args.proxy`).
+3. `initializer`(`initialize(operator, owner, vaultMode=false)` calldata)는 2의 같은 트랜잭션에서 원자적으로 실행된다 (확인). 별도 호출이 없어 남이 먼저 초기화할 틈이 없다. 배포 후 `owner()`, `operator()`를 읽어 확인한다.
 4. `IPcl.pclProxy(proxy)`로 `{kind, admin, proxy}` 확인 (확인, [apis/contract](https://docs.maroo.io/apis/contract)).
-5. 컨트랙트 범위 정책 바인딩 (5.6). **최초 `changeContractPolicies` 호출자가 정한 admin이 이후 게이트키퍼가 되고 한 번만 지정된다** (확인, [pcl-contract-admin-binding](https://docs.maroo.io/concepts/compliance/pcl-contract-admin-binding)). 배포 스크립트 안에서 프록시 배포 직후 같은 운영자 키로 즉시 바인딩해야 남이 먼저 admin을 잡지 못한다.
+5. 컨트랙트 범위 정책 바인딩 (5.6). 정책 admin은 한 번만 지정된다 (확인, [pcl-contract-admin-binding](https://docs.maroo.io/concepts/compliance/pcl-contract-admin-binding)). 문서는 첫 `changeContractPolicies` 호출자라고 하지만 실제로는 `deployPclProxy` 호출자가 배포와 동시에 admin이다 (확인, 2026-11-20, F-20). 같은 운영자 키로 `changeContractPolicies({ contract, admin, policies })`를 부른다.
 6. 정책 admin 키 분실 시 정책을 영구히 못 바꾸므로, 1단계는 운영자 키, 2단계에 Safe 멀티시그로 admin 이전 (`changeContractPolicies`에 새 admin을 넣어 호출, 되돌릴 수 없음).
 
 ### 5.6 붙일 정책
@@ -687,7 +687,7 @@ const periodic = encodeAbiParameters(
   parseAbiParameters('(string[] tokens, (uint256 maxAmount, uint64 resetPeriodSeconds)[] limits)'),
   [{ tokens: [cfg.okrwDenom], limits: [{ maxAmount: parseEther(cfg.periodicCapOkrw), resetPeriodSeconds: BigInt(cfg.periodicSeconds) }] }],
 );
-const agentLimit = '0x';  // 필드 없는 struct. abi.encode() 결과 형태 (미확인)
+const agentLimit = '0x';  // 필드 없는 struct. 실제 코드는 SDK policy.agentOkrwTransferLimit()를 쓴다 (확인, 값 없는 정책)
 const placeOrderSel = toFunctionSelector('placeOrder(uint64,bytes32)');
 
 // LogicalPolicy { quantifier: And, children: PolicySet[] }  enum 숫자값 (미확인, IPcl.sol 확인)
@@ -699,7 +699,7 @@ const logical = encodeAbiParameters(
   ] }],
 );
 ```
-PolicySet의 실제 Solidity 타입(`selector`가 `bytes4`인지 `bytes`인지, `templateId`가 `string`인지)은 가이드 예시가 selector `"0x"`를 쓰는 점에서 `bytes`일 가능성이 있다 (추론). `IPcl.sol` ABI를 그대로 쓰고 위 타입 문자열은 직접 만들지 않는다.
+위 `encodeAbiParameters` 예시는 설명용이다. 실제 인코딩은 SDK `policy.and`, `policy.periodicVolume`, `policy.agentOkrwTransferLimit`, `policy.eas`와 `PolicySet.decode`가 맡는다 (확인, Q-13 닫힘). 구현은 `infra/src/policies.ts`. `selector`는 PolicySet마다 `toFunctionSelector('placeOrder(uint64,bytes32)')` = `0x62dac134`이고 And의 자식에는 넣지 않는다.
 
 ### 5.7 TransferLimit 메타데이터 기록 (viem 예시)
 에이전트를 만든 직후, 그리고 건당 한도가 바뀔 때마다 소유자가 기록한다. 기록 전에 정책이 걸린 `placeOrder`를 호출하면 `AgentTransferLimitMetadataInvalid`로 실패한다 (확인된 동작에서 (추론)).
@@ -723,9 +723,12 @@ await ownerWallet.writeContract({
 - 퍼즈: `placeOrder` 금액 경계(0, 1, uint128 max).
 
 ### 5.9 테스트넷 배포 스크립트 (`contracts/script/Deploy.s.sol` + `infra/scripts/deploy-orders.ts`)
-1. `forge script Deploy --rpc-url $MAROO_RPC_URL --broadcast` (가스: 고정값 금지, 추정값 사용. 가스 한도의 절반은 무조건 과금 (확인, maroo-facts)).
-2. TS 스크립트가 `deployPclProxy` 호출, 초기화, 정책 바인딩, `contractPolicies` 재조회로 검증.
-3. 결과를 `packages/shared/src/config/deployments/<chainId>.<profile>.json`에 기록 (주소, 배포 블록, 정책 해시). 서버는 이 파일과 환경 변수를 같이 읽는다.
+`pnpm contracts:deploy:testnet --profile <default|demo>`가 `infra/scripts/deploy-orders.ts` 하나로 전부 한다 (`forge script Deploy`는 쓰지 않는다. 단계는 chain-and-pcl.md "배포"). 가스는 고정하지 않고 추정값을 쓰며(가스 한도의 절반은 무조건 과금, maroo-facts), `--max-spend`(기본 300 OKRW)를 넘길 쓰기는 보내기 전에 멈춘다.
+1. forge build, 구현 배포, `deployPclProxy(UUPS, initialize)`, owner와 operator 확인.
+2. `changeContractPolicies`(쓰기 전 eth_call과 estimateGas로 시뮬레이션), `contractPolicies` 재조회와 대조.
+3. 결과를 `packages/shared/src/config/deployments/<chainId>.<profile>.json`에 기록 (구현, 프록시, 배포 tx와 블록, 정책 요약과 해시). 서버는 `resolveOrdersContract`로 이 파일을 읽고 `ORDERS_CONTRACT`가 있으면 그 값이 이긴다.
+4. `pnpm policy:apply --profile <p> [--check]`: `policy.ts`와 체인을 비교하고 다르면 전체를 다시 쓴다.
+테스트넷 demo 프로필 실제 배포 (2026-11-20): 프록시 `0x36713c60A8b4E54b56997553aD4b8b16d7C02Db8`, 합계 22.16 tOKRW.
 
 ---
 
