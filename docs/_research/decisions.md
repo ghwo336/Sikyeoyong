@@ -317,3 +317,13 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
   - **용이 모습 바꾸기(Look)**: `PATCH /agents/:id { dragonSpecies }`. 주인만, 체인에 기록하지 않는다. 이름, 지갑, 한도(D-31), 8004 등록은 그대로다. 바뀌는 것은 모습, 말버릇(종별 한 줄, tokens `line`), 앱 색. 입구는 용이 용돈(Wallet) 화면의 "용이 모습" 줄, 주소 `/dragon/look`(제안).
 - 이유: 내가 고른 용이 앱 전체에 드러나야 "내 용"이 된다(D-20의 연장). 경고색까지 바꾸면 돈 화면을 잘못 읽을 수 있어서 뺀다.
 - 영향: design/README, user-flow(15, 18), tokens.json, packages/ui 토큰과 Dragon, 웹 레이아웃(html 속성), agents 모듈(PATCH), tech-spec 3.2, 위키 ui/dragon, ui/base 토큰 문서.
+
+## D-33 테스트넷 실제 트랜잭션: 데모 프로필 KYB 정책 없음, 금액은 실제 그대로, 가게 키는 보관하고 언제든 회수 (2026-11-21, 호재 님 결정)
+- 배경: 호재 님 "트잭이 나가게 하고 싶다", "실제 트잭을 일으켜도 좋다". 시드 가게(66곳)는 KYB 증명(EAS)이 없다. 테스트넷 faucet은 한 번에 5,000 tOKRW, 지갑당 10,000까지다.
+- 결정:
+  - **데모 프로필은 `registerMerchant`에 `EAS_POLICY`를 걸지 않는다** (2026-11-20 호재 님 "demo 프로필은 KYB 정책 빼기"). 주문 쪽 정책(`placeOrder`에 건당 TransferLimit과 30일 PERIODIC_VOLUME을 And로)은 그대로 건다. default 프로필은 D-07대로 EAS를 건다. 화면과 데모 말에서 "가게는 KYB를 체인이 확인한다"는 데모 프로필에서 말하지 않는다 (규칙 11).
+  - **금액은 실제 그대로**: 9,000원 주문은 9,000 tOKRW다. 줄이거나 나누지 않는다 (체인 한도와 화면 숫자가 같아야 한다). 돈은 faucet을 여러 지갑(운영자, 가게 지갑)으로 받아 운영자에게 모아 쓴다.
+  - **가게마다 개인키 하나**(지금처럼 `seed/.keys/merchants.json`, git 밖, 600). 키는 지우지 않고, 바뀔 때마다 덧붙이기만 하는 보관본(`seed/.keys/archive/`)에도 남긴다. 주인(호재 님)이 언제든 가게 지갑의 돈을 지정한 주소로 빼는 회수 스크립트를 둔다. 사람이 명시적으로 실행할 때만 돌고, LLM 도구나 서버 API에는 없다 (규칙 3).
+  - 운영자 키는 `.env`의 `OPERATOR_KEY`(테스트넷 전용, 2026-11-20 생성, 주소 0xBb71B672BC33745283842ce701F5b0FC28d023d3). 배포, 가게 가스 충전, 에이전트 등록과 충전에 쓴다.
+- 이유: 데모에서 실제 체인이 한도를 지키는 것을 보여 주려면 진짜 트랜잭션이 필요하다. KYB 발급 경로가 아직 없다(Q-19, Q-40).
+- 영향: chain-and-pcl.md, payment.md, merchants.md, tech-spec 5.6과 7.1, infra 스크립트, packages/shared deployments.
