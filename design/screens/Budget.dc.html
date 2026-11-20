@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>시켜용 예산 정하기</title>
+<title>시켜용 한도 정하기</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -29,18 +29,20 @@ button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
 </div>
 
 <div style="display: flex; gap: 14px; align-items: center">
-<svg width="96" height="96" viewBox="0 0 64 64" aria-hidden="true" style="flex-shrink: 0"><path d="M10 26 C4 22 4 14 8 12 C10 18 14 20 18 22 Z" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M54 26 C60 22 60 14 56 12 C54 18 50 20 46 22 Z" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><g><path d="M27 15 C21 12 20 5 25 2 C29 5 30 11 27 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M26.5 13 L25 5" stroke="#1E2320" stroke-width="0.9" stroke-linecap="round"></path></g><g><path d="M37 15 C43 12 44 5 39 2 C35 5 34 11 37 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M37.5 13 L39 5" stroke="#1E2320" stroke-width="0.9" stroke-linecap="round"></path></g><circle cx="32" cy="30" r="16" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8"></circle><circle cx="26" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="38" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="26.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><circle cx="38.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><ellipse cx="21.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><ellipse cx="42.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><path d="M29.5 33.5 Q32 37 34.5 33.5" fill="none" stroke="#1E2320" stroke-width="1.6" stroke-linecap="round"></path><path d="M8 38 L14 33 L20 38 L26 33 L32 38 L38 33 L44 38 L50 33 L56 38 C56 52 46 60 32 60 C18 60 8 52 8 38 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path></svg>
-<p style="margin: 0; font-family: 'Gowun Dodum', Pretendard, sans-serif; font-size: 20px; line-height: 1.5; letter-spacing: 0">안녕하세용!<br>용이예용. 이번 달엔 얼마까지 시킬까용?</p>
+<svg width="{{size}}" height="{{size}}" viewBox="0 0 64 64" aria-hidden="true" style="flex-shrink: 0; transition: width 240ms cubic-bezier(.2,.8,.2,1), height 240ms cubic-bezier(.2,.8,.2,1)"><path d="M10 26 C4 22 4 14 8 12 C10 18 14 20 18 22 Z" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M54 26 C60 22 60 14 56 12 C54 18 50 20 46 22 Z" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><g><path d="M27 15 C21 12 20 5 25 2 C29 5 30 11 27 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M26.5 13 L25 5" stroke="#1E2320" stroke-width="0.9" stroke-linecap="round"></path></g><g><path d="M37 15 C43 12 44 5 39 2 C35 5 34 11 37 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path><path d="M37.5 13 L39 5" stroke="#1E2320" stroke-width="0.9" stroke-linecap="round"></path></g><circle cx="32" cy="30" r="16" fill="{{dragon}}" stroke="#1E2320" stroke-width="1.8"></circle><circle cx="26" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="38" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="26.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><circle cx="38.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><ellipse cx="21.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><ellipse cx="42.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><path d="M29.5 33.5 Q32 37 34.5 33.5" fill="none" stroke="#1E2320" stroke-width="1.6" stroke-linecap="round"></path><path d="M8 38 L14 33 L20 38 L26 33 L32 38 L38 33 L44 38 L50 33 L56 38 C56 52 46 60 32 60 C18 60 8 52 8 38 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+<p style="margin: 0; font-family: 'Gowun Dodum', Pretendard, sans-serif; font-size: 20px; line-height: 1.5; letter-spacing: 0">안녕하세용!<br>용이예용. 얼마까지 맡겨 줄래용?</p>
 </div>
 
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="2">
 <div style="display: flex; flex-direction: column; gap: 10px">
-<div style="font-size: 15px; font-weight: 600">이번 달 배달 예산</div>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px" role="radiogroup" aria-label="이번 달 배달 예산">
-<sc-for list="{{chips}}" as="c" hint-placeholder-count="3">
-<button role="radio" aria-checked="{{c.checked}}" onClick="{{c.pick}}" class="num" style="{{c.style}}">{{c.label}}</button>
+<div style="font-size: 15px; font-weight: 600">{{r.title}}</div>
+<div style="display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 8px; border-radius: 18px; background: #FFFFFF; border: 1px solid #E3E8E2" role="group" aria-label="{{r.title}}">
+<button aria-label="{{r.lessLabel}}" onClick="{{r.less}}" disabled="{{r.atMin}}" style="width: 48px; height: 48px; border: 0; border-radius: 24px; background: #EEF3EC; font-size: 22px; font-weight: 600; opacity: {{r.lessOpacity}}">−</button>
+<output class="num" aria-live="polite" style="flex-grow: 1; text-align: center; font-size: 24px; font-weight: 700">{{r.value}}</output>
+<button aria-label="{{r.moreLabel}}" onClick="{{r.more}}" disabled="{{r.atMax}}" style="width: 48px; height: 48px; border: 0; border-radius: 24px; background: #EEF3EC; font-size: 22px; font-weight: 600; opacity: {{r.moreOpacity}}">+</button>
+</div>
+</div>
 </sc-for>
-</div>
-</div>
 
 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #E3E8E2; padding-top: 18px">
 <div style="display: flex; flex-direction: column; gap: 2px">
@@ -56,18 +58,28 @@ button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"dragon":{"editor":"color","default":"#8FD694","options":["#8FD694","#9AD3F0","#F7B7C8","#C9B8F2"]},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
-constructor(p) { super(p); this.state = { budget: 300000 }; }
+constructor(p) { super(p); this.state = { perOrder: 10000, period: 300000 }; }
 renderVals() {
-const opts = [200000, 300000, 500000];
-const b = this.state.budget;
+const won = (v) => v.toLocaleString('ko-KR') + '원';
+const stage = this.state.perOrder <= 10000 ? 1 : this.state.perOrder <= 30000 ? 2 : 3;
+const row = (key, title, min, max, step) => {
+const v = this.state[key];
+const set = (n) => this.setState({ [key]: Math.min(max, Math.max(min, n)) });
+return {
+title, value: won(v),
+lessLabel: title + ' ' + won(step) + ' 내리기', moreLabel: title + ' ' + won(step) + ' 올리기',
+less: () => set(v - step), more: () => set(v + step),
+atMin: v <= min, atMax: v >= max,
+lessOpacity: v <= min ? 0.35 : 1, moreOpacity: v >= max ? 0.35 : 1
+};
+};
 return {
 dragon: this.props.dragon ?? '#8FD694',
-chips: opts.map((v) => ({
-label: (v / 10000) + '만 원',
-checked: v === b ? 'true' : 'false',
-style: 'height: 52px; border-radius: 14px; font-size: 16px; font-weight: 600; ' + (v === b ? 'border: 2px solid #2E7D4F; background: #E4F4E6; color: #1F5C3A' : 'border: 1px solid #D5DDD3; background: #FFFFFF; color: #1E2320'),
-pick: () => this.setState({ budget: v })
-}))
+size: [0, 80, 92, 104][stage],
+rows: [
+row('perOrder', '한 번에 쓸 돈', 5000, 50000, 5000),
+row('period', '30일에 쓸 돈', 50000, 500000, 50000)
+]
 };
 }
 }

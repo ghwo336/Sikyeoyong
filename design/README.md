@@ -17,7 +17,7 @@
 | | `Verify.dc.html` | 본인 인증 (카카오톡) | `app/(onboarding)/verify/page.tsx` |
 | | `Name.dc.html` | 알 고르기 (숲, 물, 꽃, 별), 이름 짓기 | `app/(onboarding)/name/page.tsx` |
 | | `Hatch.dc.html` | 부화 중 (지갑 생성, 신분증 등록, 한도 기록) | `app/(onboarding)/hatch/page.tsx` |
-| | `Budget.dc.html` | 이번 달 예산, 체험용 용돈 | `app/(onboarding)/budget/page.tsx` |
+| | `Budget.dc.html` | 한 번에 쓸 돈, 30일에 쓸 돈(D-31), 체험용 용돈 | `app/(onboarding)/budget/page.tsx` |
 | 2 주문하고 기다리기 | `Main.dc.html` | 대화, 추천. 위에 진행 중인 주문 카드(누르면 주문 화면), 상단에 주문 내역 버튼 (2026-11-20) | `app/(main)/page.tsx` |
 | | `Confirm.dc.html` | 주문 확인 시트 | 바텀시트 (대화 화면 위) |
 | | `Done.dc.html` | 조리 중 | `app/orders/[id]/page.tsx` (상태별) |
