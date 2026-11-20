@@ -266,3 +266,21 @@ describe('LLM_PROVIDER (D-30)', () => {
     ).not.toThrow();
   });
 });
+
+describe('AGENT_GAS_SHARE_OKRW bounds (D-25)', () => {
+  const share = (v: string) => loadConfig({ AGENT_GAS_SHARE_OKRW: v }).payment.gasShareAokrw;
+
+  it('defaults to 100 OKRW', () => {
+    expect(loadConfig({}).payment.gasShareAokrw).toBe(okrwToAokrw(100n));
+  });
+
+  it('accepts 0 and the 1,000 OKRW cap', () => {
+    expect(share('0')).toBe(0n);
+    expect(share('1000')).toBe(1000n * OKRW);
+  });
+
+  it('rejects above the cap and below zero', () => {
+    expect(() => share('1001')).toThrow(AppError);
+    expect(() => share('-1')).toThrow(AppError);
+  });
+});
