@@ -16,6 +16,7 @@ children: []
 
 ## 의존과 인터페이스 경계
 - 환경변수 이름 목록은 `.env.example`이 기준. 다른 컴포넌트는 이 이름만 쓴다. 상세와 `.env.example` 전문은 tech-spec "8.3 환경 변수".
+- `OWNER_MODE=custodial|pouch` (D-24): 지금은 custodial. pouch는 파우치 SDK가 나온 뒤에만 켠다.
 - MAWS MCP 서버는 `WAAS_AUTH_TOKEN`으로 대화형 로그인 없이 컨테이너에서 실행 (확인, 가이드 있음). 서버는 내부 네트워크로만 접근.
 
 ## 반드시 지킬 규칙 (MUST)
@@ -48,5 +49,3 @@ children: []
 ## 관련 문서
 - `docs/tech-spec.md` "8. 인프라"
 - `security.md`, `auth.md`
-
-- `OWNER_MODE=custodial|pouch` (D-24): 지금은 custodial. pouch는 파우치 SDK가 나온 뒤에만 켠다.

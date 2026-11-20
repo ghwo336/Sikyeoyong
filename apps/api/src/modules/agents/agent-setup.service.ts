@@ -73,7 +73,8 @@ export class AgentSetupService {
         // The user's wallet must sign (pouch). Hatching waits for that confirm; not wired before Q-30.
         throw new Error('owner signature needed before the agent can be ACTIVE');
       }
-      const txHash = limited.txHashes[0] ?? '';
+      const txHash = limited.txHashes[0];
+      if (txHash === undefined) throw new Error('TransferLimit write returned no transaction');
       this.repo.activate(agentId, {
         id: uuidv7(),
         level: agent.level,

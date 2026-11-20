@@ -33,4 +33,9 @@ export function createPaymentProvider(config: AppConfig): PaymentProvider {
   };
 }
 
-export { OWNER_AUTHORITY, createOwnerAuthority, runOwnerAction } from './owner-authority.js';
+export {
+  CustodialOwner,
+  OWNER_AUTHORITY,
+  createOwnerAuthority,
+  runOwnerAction,
+} from './owner-authority.js';

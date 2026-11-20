@@ -2,9 +2,14 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { type AgentWallet, type PaymentProvider, zAgentSetupView } from '@sikyeoyong/shared';
+import {
+  type AgentWallet,
+  type OwnerAuthority,
+  type PaymentProvider,
+  zAgentSetupView,
+} from '@sikyeoyong/shared';
 import request from 'supertest';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { configureApp } from '../../app.setup.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
@@ -13,7 +18,7 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agentLimitHistory, agents, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
-import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
+import { CustodialOwner, OWNER_AUTHORITY, PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
 import { AgentsModule } from './agents.module.js';
 
@@ -25,7 +30,7 @@ afterEach(async () => {
   }
 });
 
-async function setup(override?: (p: PaymentProvider) => PaymentProvider) {
+async function setup(override?: (p: PaymentProvider) => PaymentProvider, owner?: OwnerAuthority) {
   const h = openDb(':memory:');
   runMigrations(h.db);
   for (const id of ['u1', 'u2'])
@@ -34,16 +39,24 @@ async function setup(override?: (p: PaymentProvider) => PaymentProvider) {
     t === DB ? h : t === APP_CONFIG ? loadConfig({ PAYMENT_PATH: 'mock' }) : undefined,
   );
   const moduleRef0 = await builder.compile();
-  if (override !== undefined) {
+  if (override !== undefined || owner !== undefined) {
     const real = moduleRef0.get<PaymentProvider>(PAYMENT_PROVIDER);
-    builder = Test.createTestingModule({ imports: [AgentsModule] })
-      .useMocker((t) =>
-        t === DB ? h : t === APP_CONFIG ? loadConfig({ PAYMENT_PATH: 'mock' }) : undefined,
-      )
-      .overrideProvider(PAYMENT_PROVIDER)
-      .useValue(override(real));
+    builder = Test.createTestingModule({ imports: [AgentsModule] }).useMocker((t) =>
+      t === DB ? h : t === APP_CONFIG ? loadConfig({ PAYMENT_PATH: 'mock' }) : undefined,
+    );
+    if (override !== undefined) {
+      const fake = override(real);
+      builder = builder
+        .overrideProvider(PAYMENT_PROVIDER)
+        .useValue(fake)
+        .overrideProvider(OWNER_AUTHORITY)
+        .useValue(owner ?? new CustodialOwner(fake));
+    } else if (owner !== undefined) {
+      builder = builder.overrideProvider(OWNER_AUTHORITY).useValue(owner);
+    }
   }
-  const moduleRef = override === undefined ? moduleRef0 : await builder.compile();
+  const moduleRef =
+    override === undefined && owner === undefined ? moduleRef0 : await builder.compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
   open.push({ app, h });
@@ -142,6 +155,87 @@ describe('POST /api/agents and hatching (user-flow 4)', () => {
     expect(zAgentSetupView.parse((await as('u1').get('/api/agents/me')).body).status).toBe(
       'ACTIVE',
     );
+  });
+
+  it('as the owner, binds the agent and then writes its TransferLimit, once each, before ACTIVE', async () => {
+    const calls: string[] = [];
+    const { as, settle } = await setup((real) =>
+      Object.assign(Object.create(real) as PaymentProvider, {
+        bindAgent: (a: AgentWallet) => {
+          calls.push('bind');
+          return real.bindAgent(a);
+        },
+        setTransferLimit: (a: AgentWallet, amount: bigint) => {
+          calls.push(`limit:${amount.toString()}`);
+          return real.setTransferLimit(a, amount);
+        },
+      }),
+    );
+    await as('u1').post('/api/agents', { dragonName: '용이', dragonSpecies: 'forest' });
+    await settle();
+    expect(calls).toEqual(['bind', 'limit:10000000000000000000000']);
+    expect(zAgentSetupView.parse((await as('u1').get('/api/agents/me')).body).status).toBe(
+      'ACTIVE',
+    );
+  });
+
+  it('stays not ACTIVE when binding fails, and a retry finishes it', async () => {
+    let failBind = true;
+    const { h, as, settle } = await setup((real) =>
+      Object.assign(Object.create(real) as PaymentProvider, {
+        bindAgent: (a: AgentWallet) =>
+          failBind ? Promise.reject(new Error('rpc down')) : real.bindAgent(a),
+      }),
+    );
+    await as('u1').post('/api/agents', { dragonName: '용이', dragonSpecies: 'forest' });
+    await settle();
+    expect(zAgentSetupView.parse((await as('u1').get('/api/agents/me')).body).status).toBe(
+      'FAILED',
+    );
+    expect(h.db.select().from(agents).all()[0]?.status).toBe('PENDING');
+    expect(h.db.select().from(agentLimitHistory).all()).toHaveLength(0);
+    failBind = false;
+    await as('u1').post('/api/agents/me/setup/retry');
+    await settle();
+    expect(zAgentSetupView.parse((await as('u1').get('/api/agents/me')).body).status).toBe(
+      'ACTIVE',
+    );
+  });
+
+  it('never turns ACTIVE when the owner must sign on the device (pouch)', async () => {
+    const confirm = vi.fn();
+    const userSigns: OwnerAuthority = {
+      mode: 'pouch',
+      prepare: (action) => Promise.resolve({ id: 'p1', action, signer: 'user' }),
+      confirm,
+    };
+    const { h, as, settle } = await setup(undefined, userSigns);
+    await as('u1').post('/api/agents', { dragonName: '용이', dragonSpecies: 'forest' });
+    await settle();
+    expect(h.db.select().from(agents).all()[0]?.status).toBe('PENDING');
+    expect(h.db.select().from(agentLimitHistory).all()).toHaveLength(0);
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('never turns ACTIVE when only the bind still needs the owner signature', async () => {
+    // Bind waits for the user's device; the TransferLimit would go through. Still not ACTIVE.
+    let inner: OwnerAuthority | undefined;
+    const bindNeedsUser: OwnerAuthority = {
+      mode: 'pouch',
+      prepare: (action) =>
+        action.kind === 'bind'
+          ? Promise.resolve({ id: 'b1', action, signer: 'user' })
+          : (inner as OwnerAuthority).prepare(action),
+      confirm: (prepared) => (inner as OwnerAuthority).confirm(prepared),
+    };
+    const { h, as, settle } = await setup((real) => {
+      inner = new CustodialOwner(real);
+      return real;
+    }, bindNeedsUser);
+    await as('u1').post('/api/agents', { dragonName: '용이', dragonSpecies: 'forest' });
+    await settle();
+    expect(h.db.select().from(agents).all()[0]?.status).toBe('PENDING');
+    expect(h.db.select().from(agentLimitHistory).all()).toHaveLength(0);
   });
 
   it('is 404 before a dragon exists and 401 without a session', async () => {
