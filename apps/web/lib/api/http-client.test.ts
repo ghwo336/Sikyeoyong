@@ -123,6 +123,32 @@ describe('createHttpApi', () => {
     await expect(createHttpApi(no).verifyIdentity()).rejects.toMatchObject({ code: 'INTERNAL' });
   });
 
+  it('a level raise posts the level to /api/agents/me/level and checks the answer', async () => {
+    const ok = fakeFetch({
+      'POST /api/agents/me/level': {
+        body: JSON.stringify({ level: 2, perOrderLimit: W10000, txHash: `0x${'a'.repeat(64)}` }),
+      },
+    });
+    await createHttpApi(ok).raiseLevel(2);
+    expect(ok.mock.calls[0]?.[1]?.body).toBe('{"level":2}');
+    expect((ok.mock.calls[0]?.[1]?.headers as Record<string, string>)['X-Requested-With']).toBe(
+      'fetch',
+    );
+    const numberLimit = fakeFetch({
+      'POST /api/agents/me/level': { body: '{"level":2,"perOrderLimit":10000,"txHash":null}' },
+    });
+    await expect(createHttpApi(numberLimit).raiseLevel(2)).rejects.toThrow();
+    const frozen = fakeFetch({
+      'POST /api/agents/me/level': {
+        status: 409,
+        body: JSON.stringify({ error: { code: 'SERVER_FROZEN', message: '멈춰 있어요' } }),
+      },
+    });
+    await expect(createHttpApi(frozen).raiseLevel(2)).rejects.toMatchObject({
+      code: 'SERVER_FROZEN',
+    });
+  });
+
   it('collects the chat SSE stream into events', async () => {
     const stream =
       'data: {"type":"token","text":"찾아볼게용."}\n\n' +
