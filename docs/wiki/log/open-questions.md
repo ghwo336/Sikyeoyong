@@ -284,7 +284,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 결론: (a). Claude에 카드만 띄우는 `propose_limit_change`를 더한다. 금액 없이 레벨이나 예산 선택지만 받고, 사용자 메시지에 의도가 없으면 서버가 카드를 버린다. 확정은 버튼으로만 (레벨 올리기는 재인증, 예산 변경과 내리기는 바로) (2026-11-19 호재 님, decisions D-21).
 - 반영한 곳: decisions D-21, CLAUDE.md 절대 규칙 3, tech-spec 3.3과 9.2, agent-runtime.md, security.md, LimitChangeCard.md
 
-### Q-30 `bindAgent`를 언제 소유자 직접 호출로 여나?
+### Q-31 `bindAgent`를 언제 소유자 직접 호출로 여나?
 - 상태: 열림
 - 우선순위: P1
 - 배경: D-08과 tech-spec 5.3은 소유자가 `bindAgent`를 부르고 컨트랙트가 8004에서 소유 관계를 확인한다고 한다. 그런데 확인 인터페이스(`IAgent.getAgentIds` 페이지 인자, IdentityRegistry `ownerOf`)가 미확인이다 (Q-11, S11). 확인 없이 열면 아무나 남의 에이전트를 자기에게 묶어 멈추거나 환불을 받을 수 있다. 그래서 1단계 구현(2026-11-20)은 `bindAgent`를 운영자만 부르게 하고 주인은 호출자(운영자)로 둔다. 1단계는 모든 에이전트의 8004 소유자가 운영자라 결과가 같다 (tech-spec 5.3).
@@ -293,7 +293,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 결론:
 - 반영한 곳: contracts/src/SikyeoyongOrders.sol `bindAgent`, contracts.md "명세와 다른 점"
 
-### Q-31 마루 EVM은 어느 하드포크까지 지원하나? (PUSH0, MCOPY, TSTORE)
+### Q-32 마루 EVM은 어느 하드포크까지 지원하나? (PUSH0, MCOPY, TSTORE)
 - 상태: 열림
 - 우선순위: P1
 - 배경: docs.maroo.io에서 EVM 버전(Shanghai의 PUSH0, Cancun의 MCOPY와 TSTORE) 지원 여부를 찾지 못했다 (미확인). 지원하지 않는 옵코드가 바이트코드에 있으면 배포나 호출이 실패한다. 그래서 `contracts/foundry.toml`은 가장 보수적인 `evm_version = "paris"`로 컴파일하고, 재진입 가드는 일시 저장소(`ReentrancyGuardTransient`) 대신 저장소 기반 `ReentrancyGuard`를 쓴다.
@@ -302,7 +302,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 결론:
 - 반영한 곳: contracts/foundry.toml, contracts.md "구현"
 
-### Q-32 운영자 키를 어떻게 바꾸나?
+### Q-33 운영자 키를 어떻게 바꾸나?
 - 상태: 열림
 - 우선순위: P2
 - 배경: tech-spec 5.2에 `operator` 변수는 있지만 바꾸는 함수가 없다. 명세에 없는 기능이라 구현(2026-11-20)도 만들지 않았다. 지금은 owner가 UUPS 업그레이드로만 바꿀 수 있다. 운영자 권한은 가게 활성화, 에이전트 바인딩, 환불 대행이다 (환불 돈은 소유자에게만 간다). 1단계는 owner와 운영자가 같은 키라 키가 새면 업그레이드 권한도 함께 넘어간다.

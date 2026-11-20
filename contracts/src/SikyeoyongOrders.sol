@@ -136,7 +136,7 @@ contract SikyeoyongOrders is Initializable, UUPSUpgradeable, OwnableUpgradeable,
     /// @notice 에이전트를 호출자에게 묶는다. 묶인 주인은 바꿀 수 없다.
     /// 1단계는 운영자만 부른다: 모든 에이전트의 8004 소유자가 운영자이고 (tech-spec 5.3),
     /// 8004 소유 확인 인터페이스가 미확인이라(스파이크 S11, Q-11) 아무나 남의 에이전트를 묶지 못하게 막는다.
-    /// 8004 확인이 되면 업그레이드로 소유자 직접 호출을 연다 (open-questions Q-30).
+    /// 8004 확인이 되면 업그레이드로 소유자 직접 호출을 연다 (open-questions Q-31).
     function bindAgent(address agent) external onlyOperator {
         if (agent == address(0)) revert ZeroAddress();
         address current = agentOwner[agent];

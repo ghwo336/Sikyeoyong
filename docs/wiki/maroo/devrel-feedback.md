@@ -95,7 +95,7 @@ children: []
 - 상태: 열림
 - 종류: 문서 누락
 - 발견: 2026-11-20 컨트랙트 구현 세션. `pcl-proxy-hook`과 기존 조사 문서 어디에도 EVM 버전, Shanghai(PUSH0), Cancun(MCOPY, TSTORE) 지원 여부가 없다.
-- 영향: solc `evm_version`을 정할 수 없어 가장 보수적인 `paris`로 컴파일하고, 일시 저장소 재진입 가드(OZ `ReentrancyGuardTransient`)를 못 쓴다 (open-questions Q-31).
+- 영향: solc `evm_version`을 정할 수 없어 가장 보수적인 `paris`로 컴파일하고, 일시 저장소 재진입 가드(OZ `ReentrancyGuardTransient`)를 못 쓴다 (open-questions Q-32).
 - 제안: 네트워크 문서에 cosmos/evm 버전, 활성 하드포크, 권장 `evm_version`을 한 줄로.
 
 ### F-12 `deployPclProxy` UUPS 프록시와 OpenZeppelin UUPS의 호환, 원자적 초기화가 문서에 없음

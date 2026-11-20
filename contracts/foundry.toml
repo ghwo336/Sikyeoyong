@@ -9,7 +9,7 @@ out = "out"
 libs = ["lib"]
 # 컴파일러는 정확한 버전으로 고정한다.
 solc_version = "0.8.30"
-# 마루 EVM이 어느 하드포크까지 지원하는지(PUSH0, MCOPY, TSTORE) 문서에서 찾지 못했다 (미확인, open-questions Q-31).
+# 마루 EVM이 어느 하드포크까지 지원하는지(PUSH0, MCOPY, TSTORE) 문서에서 찾지 못했다 (미확인, open-questions Q-32).
 # 그래서 가장 보수적인 paris로 컴파일한다. 확인되면 올린다.
 evm_version = "paris"
 optimizer = true
