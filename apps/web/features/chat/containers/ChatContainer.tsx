@@ -14,7 +14,9 @@ import {
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { minutes } from '../../../lib/format';
+import { useBudget } from '../../budget/hooks/useBudget';
 import { LimitChangeContainer } from '../../limits/containers/LimitChangeContainer';
+import { needsApprovalNow } from '../../limits/fit';
 import { useMe } from '../../me/hooks/useMe';
 import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
@@ -38,6 +40,7 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
   const router = useRouter();
   const chat = useChat();
   const me = useMe().data;
+  const budget = useBudget().data;
   const createOrder = useCreateOrder();
   const [draft, setDraft] = useState('');
   const entries = chat.thread?.entries ?? [];
@@ -75,7 +78,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
           eta: minutes(r.etaMin),
           menu: r.menu,
           price: parseAokrw(r.price),
-          needsApproval: r.needsApproval,
+          // Redrawn against the limits now: a raise clears 허락 필요 on older cards.
+          needsApproval: budget ? needsApprovalNow(parseAokrw(r.price), budget) : r.needsApproval,
         }))}
         onPick={(id) => {
           pick(e, id);

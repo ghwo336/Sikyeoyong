@@ -17,6 +17,7 @@ vi.mock('../../../lib/api', () => ({
 }));
 
 const { ChatContainer } = await import('./ChatContainer');
+const { handQuoteToChat } = await import('../hooks/useChat');
 
 function setup() {
   const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
@@ -111,6 +112,29 @@ describe('ChatContainer', () => {
       expect(push).toHaveBeenCalledWith('/limit/cap');
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(confirmOrder).not.toHaveBeenCalled();
+  });
+  it('after a raise: opens the sheet the raise handed over and old cards drop 허락 필요 (user-flow 12)', async () => {
+    await mockApi.createOrder({
+      merchantId: 'hansang-bossam',
+      items: [{ menuId: 'bossam-set', qty: 1 }],
+      clientOrderId: 'c-raise',
+    });
+    await mockApi.setLimits({ perOrderLimit: okrwToAokrw(15_000n).toString() });
+    const res = await mockApi.requoteOrder('order-bossam-set');
+    expect(res.order.status).toBe('quoted');
+    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    if (res.quote) handQuoteToChat(qc, res.quote);
+    render(
+      <QueryClientProvider client={qc}>
+        <ChatContainer />
+      </QueryClientProvider>,
+    );
+    const sheet = await screen.findByRole('dialog', { name: '주문 확인' });
+    expect(within(sheet).getAllByText(/보쌈/).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.queryByText('허락 필요')).not.toBeInTheDocument();
+    });
     expect(confirmOrder).not.toHaveBeenCalled();
   });
 });

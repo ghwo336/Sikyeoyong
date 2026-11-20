@@ -1,7 +1,7 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import type { ChatEvent } from '@sikyeoyong/shared';
 import { api, type OrderQuote } from '../../../lib/api';
 import { chatStamp } from '../../../lib/format';
@@ -14,6 +14,15 @@ export interface ChatThreadData {
 }
 
 const THREAD_KEY = ['chat', 'thread'] as const;
+const HANDOFF_KEY = ['chat', 'handoff'] as const;
+
+/**
+ * Another screen hands the chat a confirm card to open on arrival: the order quoted again after
+ * the owner raised the per-order limit (Blocked, user-flow 12 "O -> I"). Opening it pays nothing.
+ */
+export function handQuoteToChat(qc: QueryClient, quote: OrderQuote): void {
+  qc.setQueryData(HANDOFF_KEY, quote);
+}
 
 /**
  * Today's conversation and sending to the dragon (GET /chat/history, POST /chat/messages).
@@ -34,8 +43,14 @@ export function useChat() {
     staleTime: Infinity,
   });
   // The last quote stays after closing so the sheet can slide down with its content.
-  const [quote, setQuote] = useState<OrderQuote | undefined>(undefined);
-  const [quoteOpen, setQuoteOpen] = useState(false);
+  // A card handed over by another screen opens with the chat (handQuoteToChat), once.
+  const [quote, setQuote] = useState<OrderQuote | undefined>(() =>
+    qc.getQueryData<OrderQuote>(HANDOFF_KEY),
+  );
+  const [quoteOpen, setQuoteOpen] = useState(() => quote !== undefined);
+  useEffect(() => {
+    qc.removeQueries({ queryKey: HANDOFF_KEY });
+  }, [qc]);
   const showQuote = (q: OrderQuote) => {
     setQuote(q);
     setQuoteOpen(true);

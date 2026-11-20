@@ -71,6 +71,11 @@ export interface ApiClient {
   createOrder(body: CreateOrderBody): Promise<CreateOrderResult>;
   /** POST /orders/:id/confirm. The only call that pays (CLAUDE.md rule 3). */
   confirmOrder(orderId: string): Promise<{ readonly order: OrderView }>;
+  /**
+   * POST /orders/:id/requote: after a per-order raise from Blocked, the order that waited for it
+   * comes back with its confirm card (user-flow 12). Never pays; the sheet's button still does.
+   */
+  requoteOrder(orderId: string): Promise<CreateOrderResult>;
   getOrder(orderId: string): Promise<{ readonly order: OrderView }>;
   /**
    * GET /orders: the owner's recent orders, newest first, at most ORDER_LIST_MAX, quotes never

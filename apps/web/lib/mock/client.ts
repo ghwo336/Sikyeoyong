@@ -379,6 +379,18 @@ export const mockApi: ApiClient = {
       return { order: orderAt(rec, at, Date.now()) };
     });
   },
+  // POST /orders/:id/requote: a waiting order that now fits the per-order limit is quoted again.
+  requoteOrder: (orderId) =>
+    later(null).then((): CreateOrderResult => {
+      const w = waiting.get(orderId);
+      if (w && parseAokrw(w.price) > perOrderNow()) {
+        return { order: { id: orderId, status: 'pending_approval' } };
+      }
+      const rec = w ?? RECOMMENDATIONS.find((r) => orderIdOf(r.menuId) === orderId);
+      if (!rec) throw new AppError('NOT_FOUND', { reason: 'mock order' });
+      waiting.delete(orderId);
+      return { order: { id: orderId, status: 'quoted' }, quote: quoteFor(rec) };
+    }),
   getOrder: (orderId) => {
     // Only a confirmed order exists. A reload loses the mock's memory, like a server restart.
     const p = paid.get(orderId);

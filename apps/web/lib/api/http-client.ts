@@ -176,6 +176,10 @@ export function createHttpApi(
     createOrder: async (body) => zCreateOrderResult.parse(await call('POST', '/orders', body)),
     confirmOrder: async (orderId) =>
       zOrderResult.parse(await call('POST', `/orders/${encodeURIComponent(orderId)}/confirm`)),
+    requoteOrder: async (orderId) =>
+      zCreateOrderResult.parse(
+        await call('POST', `/orders/${encodeURIComponent(orderId)}/requote`),
+      ),
     getOrder: async (orderId) =>
       zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),
     listOrders: async () => zOrderList.parse(await call('GET', '/orders')),

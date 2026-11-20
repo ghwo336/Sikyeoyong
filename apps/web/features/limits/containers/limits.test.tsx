@@ -11,6 +11,7 @@ const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 
 const setLimits = vi.fn();
+const requoteOrder = vi.fn();
 const getBudget = vi.fn();
 const W12000 = okrwToAokrw(12_000n).toString();
 const waiting: OrderView = {
@@ -31,6 +32,7 @@ vi.mock('../../../lib/api', () => ({
     getBudget: () => getBudget() as unknown,
     getOrder: () => Promise.resolve({ order: waiting }),
     setLimits: (b: unknown) => setLimits(b) as unknown,
+    requoteOrder: (id: string) => requoteOrder(id) as unknown,
   },
 }));
 
@@ -38,15 +40,22 @@ const { BlockedContainer } = await import('./BlockedContainer');
 const { RaiseContainer } = await import('./RaiseContainer');
 const { CapContainer } = await import('./CapContainer');
 
+let qc: QueryClient;
 function wrap(ui: ReactNode) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
 beforeEach(() => {
   push.mockReset();
   setLimits.mockReset();
-  setLimits.mockResolvedValue(undefined);
+  setLimits.mockResolvedValue({
+    perOrderLimit: okrwToAokrw(15_000n).toString(),
+    myPeriodicLimit: BUDGET.myPeriodicLimit,
+    txHash: null,
+  });
+  requoteOrder.mockReset();
+  requoteOrder.mockResolvedValue({ order: { id: 'o-bossam', status: 'pending_approval' } });
   getBudget.mockReset();
   getBudget.mockResolvedValue(BUDGET);
 });
@@ -71,6 +80,29 @@ describe('limit screens', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/');
     });
+  });
+
+  it('after the raise the waiting order is quoted again and handed to the chat (user-flow 12, O -> I)', async () => {
+    const quote = {
+      orderId: 'o-bossam',
+      store: '한상보쌈',
+      destination: '회사(역삼동)',
+      etaMin: 35,
+      items: [{ name: '보쌈 정식', quantity: 1, price: W12000 }],
+      amount: W12000,
+      dragonLine: '보쌈 정식 시킬게용.\n이대로 괜찮아용?',
+      perOrderLimit: okrwToAokrw(15_000n).toString(),
+      periodUsedAfter: W12000,
+      periodCap: BUDGET.chainCap,
+    };
+    requoteOrder.mockResolvedValue({ order: { id: 'o-bossam', status: 'quoted' }, quote });
+    wrap(<RaiseContainer orderId="o-bossam" />);
+    await userEvent.click(await screen.findByRole('button', { name: /Face ID로 확인하고 바꾸기/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/');
+    });
+    expect(requoteOrder).toHaveBeenCalledWith('o-bossam');
+    expect(qc.getQueryData(['chat', 'handoff'])).toEqual(quote);
   });
 
   it('Cap shows when the 30 days refill', async () => {
