@@ -8,6 +8,7 @@ import { LlmModule } from './modules/llm/llm.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { MerchantsModule } from './modules/merchants/merchants.module.js';
 import { OrdersModule } from './modules/orders/orders.module.js';
+import { OwnerApprovalsModule } from './modules/owner-approvals/owner-approvals.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { OrdersModule } from './modules/orders/orders.module.js';
     UsersModule,
     MerchantsModule,
     OrdersModule,
+    OwnerApprovalsModule,
   ],
 })
 export class AppModule {}

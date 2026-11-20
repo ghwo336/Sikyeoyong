@@ -23,6 +23,7 @@ const API_MODULES = [
   'recommend',
   'budget',
   'approvals',
+  'owner-approvals',
   'llm',
   'chain',
   'indexer',

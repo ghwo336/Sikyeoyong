@@ -68,3 +68,17 @@ export {
   type MerchantList,
   type MerchantListQuery,
 } from './merchants.js';
+export {
+  APPROVAL_REASONS,
+  APPROVAL_STATUSES,
+  zApprovalDecision,
+  zApprovalIdParam,
+  zApprovalList,
+  zApprovalListQuery,
+  zApprovalReason,
+  zApprovalStatus,
+  zApprovalView,
+  type ApprovalDecision,
+  type ApprovalList,
+  type ApprovalView,
+} from './approvals.js';

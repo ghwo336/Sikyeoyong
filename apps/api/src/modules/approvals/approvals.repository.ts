@@ -1,10 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
-import { APPROVAL_REASONS, allowedMerchants, approvals } from '../../db/schema/index.js';
+import {
+  APPROVAL_REASONS,
+  APPROVAL_STATUSES,
+  allowedMerchants,
+  approvals,
+} from '../../db/schema/index.js';
 
 export type ApprovalReason = (typeof APPROVAL_REASONS)[number];
+export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
+export type ApprovalRow = typeof approvals.$inferSelect;
 
 export interface NewApproval {
   readonly id: string;
@@ -47,6 +54,43 @@ export class ApprovalsRepository {
       )
       .all()
       .map((r) => r.payload);
+  }
+
+  findForUser(id: string, userId: string): ApprovalRow | undefined {
+    return this.handle.db
+      .select()
+      .from(approvals)
+      .where(and(eq(approvals.id, id), eq(approvals.userId, userId)))
+      .get();
+  }
+
+  /** The user's pending approvals, oldest first (expired ones are filtered by the service). */
+  listPending(userId: string): ApprovalRow[] {
+    return this.handle.db
+      .select()
+      .from(approvals)
+      .where(and(eq(approvals.userId, userId), eq(approvals.status, 'pending')))
+      .orderBy(asc(approvals.expiresAt), asc(approvals.id))
+      .all();
+  }
+
+  /** pending to a decision, one conditional UPDATE: of racing decisions exactly one wins. */
+  decide(id: string, to: Exclude<ApprovalStatus, 'pending'>, nowMs: number): boolean {
+    const r = this.handle.db
+      .update(approvals)
+      .set({ status: to, decidedAt: nowMs })
+      .where(and(eq(approvals.id, id), eq(approvals.status, 'pending')))
+      .run();
+    return r.changes === 1;
+  }
+
+  /** Idempotent: a store allowed twice stays allowed once. */
+  allowMerchant(userId: string, merchantId: string, nowMs: number): void {
+    this.handle.db
+      .insert(allowedMerchants)
+      .values({ userId, merchantId, approvedAt: nowMs })
+      .onConflictDoNothing()
+      .run();
   }
 
   isMerchantAllowed(userId: string, merchantId: string): boolean {

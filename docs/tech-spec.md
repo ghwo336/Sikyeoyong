@@ -247,8 +247,8 @@ apps/api/src/
 | GET | `/orders/:id` | user | | `{ order, events, receipt }` |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
 | GET | `/approvals` | user | `?status=pending` | `{ approvals }` |
-| POST | `/approvals/:id/approve` | user | | `{ approval, order? }`. 필요한 조치(레벨 상향, 가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌린다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
-| POST | `/approvals/:id/reject` | user | | `{ approval }` |
+| POST | `/approvals/:id/approve` | user | | `{ approval, order, quote? }` (`zApprovalDecision`). 필요한 조치(가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌려 확인 카드를 다시 준다. 레벨 초과는 400이고 `POST /agents/me/level { approvalId }`로 올린다 (TransferLimit 기록과 재인증이 필요해서, payment.md). 만료된 승인은 `expired`와 실패한 주문을 답한다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
+| POST | `/approvals/:id/reject` | user | | `{ approval, order }`. 묶인 주문은 재시도 불가 `failed` |
 | GET | `/health` | 공개 | | `{ status: 'ok' }`. 프로세스 살아있음만 (compose 헬스체크용, 2026-11-19 추가). 체인과 MAWS 상태는 `/admin/health` |
 | GET | `/admin/health` | operator | | 체인 연결, MAWS 연결, 인덱서 커서, 정책 동기화 상태 |
 | POST | `/admin/merchants/:id/attest` | operator | | `{ kybUid }` (EAS 발급) |

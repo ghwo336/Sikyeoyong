@@ -191,21 +191,12 @@ export class OrderQuoteService {
     };
   }
 
-  /** A resend with a used clientOrderId: the same request gets the order as it is now; another is 409. */
-  private async replay(
-    userId: string,
-    row: OrderRow,
-    req: QuoteRequest,
-    nowMs: number,
-  ): Promise<CreateOrderResult> {
+  /**
+   * The order as it is now, with its confirm card while it is quoted and its store can
+   * still take it (a resend, or the order quoted again after the owner's approval).
+   */
+  async current(userId: string, row: OrderRow, nowMs: number): Promise<CreateOrderResult> {
     const lines = parseStoredLines(row.itemsJson);
-    const stored = {
-      merchantId: row.merchantId,
-      items: lines.map((l) => ({ menuId: l.menuId, qty: l.quantity })),
-    };
-    if (!sameRequest(stored, req)) {
-      throw new AppError('CONFLICT', { reason: 'clientOrderId used for another order' });
-    }
     const order = { id: row.id, status: row.status };
     if (row.status !== 'quoted') return { order };
     const found = this.merchants.lookupForOrder(row.merchantId, nowMs);
@@ -226,6 +217,24 @@ export class OrderQuoteService {
         row.note,
       ),
     };
+  }
+
+  /** A resend with a used clientOrderId: the same request gets the order as it is now; another is 409. */
+  private async replay(
+    userId: string,
+    row: OrderRow,
+    req: QuoteRequest,
+    nowMs: number,
+  ): Promise<CreateOrderResult> {
+    const lines = parseStoredLines(row.itemsJson);
+    const stored = {
+      merchantId: row.merchantId,
+      items: lines.map((l) => ({ menuId: l.menuId, qty: l.quantity })),
+    };
+    if (!sameRequest(stored, req)) {
+      throw new AppError('CONFLICT', { reason: 'clientOrderId used for another order' });
+    }
+    return this.current(userId, row, nowMs);
   }
 }
 

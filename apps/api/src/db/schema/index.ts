@@ -3,6 +3,7 @@ export { chatMessages, nagEvents } from './chat.js';
 export { menus, merchants } from './merchants.js';
 export {
   APPROVAL_REASONS,
+  APPROVAL_STATUSES,
   ORDER_STATUSES,
   allowedMerchants,
   approvals,

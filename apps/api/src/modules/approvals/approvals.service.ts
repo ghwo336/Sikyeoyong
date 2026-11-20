@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { AppError, type AppErrorCode } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
-import { type ApprovalReason, ApprovalsRepository } from './approvals.repository.js';
+import {
+  type ApprovalReason,
+  type ApprovalRow,
+  ApprovalsRepository,
+} from './approvals.repository.js';
 
-export type { ApprovalReason } from './approvals.repository.js';
+export type { ApprovalReason, ApprovalRow } from './approvals.repository.js';
 
 /** A pending approval expires after 10 minutes (payment.md "승인 흐름과의 관계"). */
 export const APPROVAL_TTL_MS = 10 * 60_000;
@@ -82,6 +86,41 @@ export class ApprovalsService {
       } catch {
         return false;
       }
+    });
+  }
+
+  findForUser(id: string, userId: string): ApprovalRow | undefined {
+    return this.repo.findForUser(id, userId);
+  }
+
+  /** Every pending row of the user, oldest first; the caller expires those past expires_at. */
+  listPending(userId: string): ApprovalRow[] {
+    return this.repo.listPending(userId);
+  }
+
+  /**
+   * The owner's decision (or the clock's: expired) and its effect on the order in one
+   * transaction. Returns false, writing nothing, when the approval was no longer
+   * pending (another decision won). If effect throws, nothing is written.
+   * allowMerchant: also remember the store (NEW_MERCHANT, D-07).
+   */
+  decide(
+    approval: ApprovalRow,
+    to: 'approved' | 'rejected' | 'expired',
+    effect: () => unknown,
+    nowMs: number,
+    opts: { allowMerchant?: string } = {},
+  ): boolean {
+    return this.repo.inTransaction(() => {
+      if (!this.repo.decide(approval.id, to, nowMs)) return false;
+      if (opts.allowMerchant !== undefined) {
+        this.repo.allowMerchant(approval.userId, opts.allowMerchant, nowMs);
+      }
+      const done = effect();
+      if (done instanceof Promise) {
+        throw new AppError('INTERNAL', { reason: 'effect must be synchronous' });
+      }
+      return true;
     });
   }
 
