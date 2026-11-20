@@ -84,6 +84,18 @@ export class ApprovalsRepository {
     return r.changes === 1;
   }
 
+  findPendingByOrder(orderId: string): ApprovalRow | undefined {
+    return this.handle.db
+      .select()
+      .from(approvals)
+      .where(and(eq(approvals.orderId, orderId), eq(approvals.status, 'pending')))
+      .get();
+  }
+
+  setPayload(id: string, payloadJson: string): void {
+    this.handle.db.update(approvals).set({ payloadJson }).where(eq(approvals.id, id)).run();
+  }
+
   /** Idempotent: a store allowed twice stays allowed once. */
   allowMerchant(userId: string, merchantId: string, nowMs: number): void {
     this.handle.db

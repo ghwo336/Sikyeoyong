@@ -123,7 +123,7 @@ describe('LlmToolHandlers (agent-runtime.md)', () => {
         ],
       },
       {
-        blocks: [{ tool: 'request_owner_approval', input: { reason: 'NEW_MERCHANT' } }],
+        blocks: [{ tool: 'get_order_history', input: { days: 7 } }],
       },
       { blocks: [{ text: '아직 주문은 못 해용.' }] },
     ]);

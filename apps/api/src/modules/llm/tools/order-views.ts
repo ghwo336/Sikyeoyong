@@ -1,5 +1,5 @@
 import { AppError, formatOkrw, parseAokrw } from '@sikyeoyong/shared';
-import type { QuoteOutcome } from '../../orders/orders.service.js';
+import type { ApprovalRequestOutcome, QuoteOutcome } from '../../orders/orders.service.js';
 import { ToolReply } from './tool-reply.js';
 
 const won = (aokrw: string) => formatOkrw(parseAokrw(aokrw));
@@ -37,4 +37,16 @@ export function placeOrderReply(outcome: QuoteOutcome): unknown {
   }
   // place_order sends no clientOrderId, so it never resends: any other state is a server bug.
   throw new AppError('INTERNAL', { reason: 'place_order quote in an unexpected state' });
+}
+
+/**
+ * request_owner_approval's answer. The reason is the server's (the model's guess is
+ * not trusted); nothing is paid or approved here. If the server's rules need no
+ * owner after all, the confirm card comes up as for place_order.
+ */
+export function approvalRequestReply(outcome: ApprovalRequestOutcome): unknown {
+  if (outcome.kind === 'quoted') {
+    return placeOrderReply({ result: outcome.result, approvalReason: null });
+  }
+  return { status: 'APPROVAL_REQUESTED', paid: false, reason: outcome.reason };
 }

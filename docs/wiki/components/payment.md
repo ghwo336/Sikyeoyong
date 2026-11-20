@@ -111,7 +111,7 @@ interface PaymentProvider {
 - 요청 메모(`note`, 최대 100자)는 `orders.note`에 저장하고 확인 카드의 `request`로 보낸다.
 - `OrderQuoteService.create`는 `{ result, approvalReason }`을 돌려준다. `POST /orders`는 `result`만 보내고, LLM `place_order`는 승인 사유를 `APPROVAL_REQUIRED`와 함께 모델에 준다 (agent-runtime.md "코드").
 - 다른 모듈은 `OrdersService.quote` 창구로만 견적을 만든다 (`OrderQuoteService`는 모듈 밖으로 내보내지 않는다).
-- 아직: 같은 가게 60초 쿨다운(같은 가게, 같은 items의 살아 있는 `quoted` 주문이 있으면 그 견적을 다시 보여 줄지도 함께 검토), `DEMO_BYPASS_SERVER_LIMIT`, `request_owner_approval`.
+- 아직: 같은 가게 60초 쿨다운(같은 가게, 같은 items의 살아 있는 `quoted` 주문이 있으면 그 견적을 다시 보여 줄지도 함께 검토), `DEMO_BYPASS_SERVER_LIMIT`. (`request_owner_approval`은 agent-runtime.md "코드".)
 
 ### 실패 분류 (tech-spec 3.6의 모든 코드)
 | 분류 | 코드 | 주문 상태 |

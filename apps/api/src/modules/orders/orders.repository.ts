@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { ORDER_STATUSES, orders } from '../../db/schema/index.js';
@@ -63,6 +63,22 @@ export class OrdersRepository {
         )
         .get() !== undefined
     );
+  }
+
+  /** The user's orders waiting for approval, newest first (optionally at one store). */
+  pendingApproval(userId: string, merchantId?: string): OrderRow[] {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, userId),
+          eq(orders.status, 'pending_approval'),
+          ...(merchantId === undefined ? [] : [eq(orders.merchantId, merchantId)]),
+        ),
+      )
+      .orderBy(desc(orders.createdAt), desc(orders.id))
+      .all();
   }
 
   findByClientOrderId(userId: string, clientOrderId: string): OrderRow | undefined {

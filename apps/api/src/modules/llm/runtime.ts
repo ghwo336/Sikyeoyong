@@ -50,8 +50,8 @@ export interface RuntimeLimits {
   readonly maxOrderCalls: number;
   /**
    * request_owner_approval per user message, counted apart from place_order:
-   * flow 3 is place_order coming back with an approval-needed code
-   * (SERVER_OVER_LEVEL, SERVER_NEW_MERCHANT, SERVER_BUDGET_OVER), then one approval request.
+   * flow 3 is place_order coming back with APPROVAL_REQUIRED and the server's
+   * reason (OVER_LEVEL_LIMIT, NEW_MERCHANT, OVER_PERSONAL_BUDGET), then one approval request.
    */
   readonly maxApprovalCalls: number;
   /** propose_limit_change per user message (D-21). */

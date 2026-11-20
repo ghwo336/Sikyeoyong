@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import type { AppErrorCode, CreateOrderResult } from '@sikyeoyong/shared';
 import { OrderApprovalEffects } from './order-approval-effects.service.js';
+import {
+  type ApprovalRequest,
+  type ApprovalRequestOutcome,
+  OrderApprovalRequests,
+} from './order-approval-request.service.js';
 import { OrderQuoteService, type QuoteOutcome, type QuoteRequest } from './order-quote.service.js';
 import { OrderSpend } from './order-spend.service.js';
 
 export { SPENT_STATUSES } from './order-spend.service.js';
 export type { QuoteOutcome, QuoteRequest } from './order-quote.service.js';
+export type { ApprovalRequest, ApprovalRequestOutcome } from './order-approval-request.service.js';
 
 /**
  * What other modules may ask of orders (architecture.md: one exported service).
@@ -17,6 +23,7 @@ export class OrdersService {
     private readonly spend: OrderSpend,
     private readonly quotes: OrderQuoteService,
     private readonly approvalEffects: OrderApprovalEffects,
+    private readonly approvalRequests: OrderApprovalRequests,
   ) {}
 
   /** Personal budget spend in a KST calendar month (budget module, nag). */
@@ -53,5 +60,14 @@ export class OrdersService {
     userId: string,
   ): { merchantId: string; store: string; amount: string } {
     return this.approvalEffects.summary(orderId, userId);
+  }
+
+  /** request_owner_approval: the dragon asks the owner. Never pays, never decides. */
+  requestApproval(
+    userId: string,
+    req: ApprovalRequest,
+    nowMs: number = Date.now(),
+  ): Promise<ApprovalRequestOutcome> {
+    return this.approvalRequests.request(userId, req, nowMs);
   }
 }

@@ -46,7 +46,8 @@ children: []
 - LLM에게는 위 도구만 준다. 새 도구를 추가하려면 decisions.md에 기록하고 보안 리뷰를 받는다.
 - `place_order`는 서버가 다시 검증한다: 가게가 등록·인증됐는지, 메뉴와 가격이 DB와 맞는지, 금액이 레벨 한도·개인 예산·30일 상한 안인지, 처음 보는 가게면 승인이 있는지. LLM이 준 금액을 믿지 않는다 (금액은 입력에 없다).
 - 주문 전에 사용자에게 확인을 받는다 (가게, 메뉴, 금액). `place_order`는 견적과 확인 카드(`order_confirm` 이벤트)를 만들고, 결제는 사용자가 카드의 버튼을 눌렀을 때(`POST /api/orders/:id/confirm`) 실행한다. 자연어 "응"만으로 결제하지 않는다 (tech-spec "1.4 요청 흐름 3개").
-- 코드 (2026-11-20): `tools/handlers.ts`의 `place_order`가 `OrdersService.quote`(주문 모듈의 견적, `POST /orders`와 같은 함수)를 세션 사용자로 부른다. `clientOrderId`는 없다(null). 화면에는 `order_confirm` 카드(aokrw 문자열), 모델에는 `tools/order-views.ts`의 표시 말(`CONFIRM_CARD_SHOWN`, "9,000원", `paid: false`)만 간다. 주문 ID와 aokrw 정수는 모델에 가지 않는다. 승인이 필요하면 카드 없이 `APPROVAL_REQUIRED`와 사유. 아직: 같은 가게 연속 주문 60초 쿨다운, `request_owner_approval`.
+- 코드 (2026-11-20): `tools/handlers.ts`의 `place_order`가 `OrdersService.quote`(주문 모듈의 견적, `POST /orders`와 같은 함수)를 세션 사용자로 부른다. `clientOrderId`는 없다(null). 화면에는 `order_confirm` 카드(aokrw 문자열), 모델에는 `tools/order-views.ts`의 표시 말(`CONFIRM_CARD_SHOWN`, "9,000원", `paid: false`)만 간다. 주문 ID와 aokrw 정수는 모델에 가지 않는다. 승인이 필요하면 카드 없이 `APPROVAL_REQUIRED`와 사유. 아직: 같은 가게 연속 주문 60초 쿨다운.
+- 코드 (2026-11-20): `request_owner_approval`은 `OrdersService.requestApproval`로 간다. 같은 사용자의 살아 있는(만료 전) 대기 승인 가운데 가게와 메뉴·수량이 같은 가장 최근 주문에 `message`(최대 200자, 화면에 글자로만)를 붙인다. 가게를 안 주면 가장 최근의 살아 있는 대기 승인에 붙인다. 없으면 `place_order`와 같은 견적 함수로 주문을 만든다: 서버 규칙이 승인을 요구하면 대기 승인과 메시지, 요구하지 않으면 확인 카드. 모델이 준 `reason`은 쓰지 않고 서버가 판정한 사유만 `APPROVAL_REQUESTED`로 돌려준다. 승인하거나 결제하지 않는다.
 - 한 메시지당 도구 호출 최대 8회, `place_order` 1회, `request_owner_approval` 1회 (따로 센다. 흐름 3은 주문이 승인 필요로 돌아온 뒤 승인 요청). 같은 가게 연속 주문 60초 쿨다운.
 - 도구 스키마는 `strict: true`이고 strict가 지원하지 않는 키워드를 넣지 않는다. 범위와 길이는 `TOOL_INPUTS`(zod)가 검사한다. 금액성 입력(`maxPriceOkrw`)은 zod에서 aokrw `bigint`로 바꿔 핸들러에 넘긴다.
 - 모델이 거절(refusal)하면 답하지 않은 tool_use를 대화 기록에서 뺀다.

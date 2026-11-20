@@ -15,7 +15,7 @@ import { UsersService } from '../../users/users.service.js';
 import type { SessionContext, ToolHandlers } from '../runtime.js';
 import type { ToolName } from './definitions.js';
 import { menuForModel, recommendReply } from './merchant-views.js';
-import { placeOrderReply } from './order-views.js';
+import { approvalRequestReply, placeOrderReply } from './order-views.js';
 
 const won = (aokrw: string) => formatOkrw(parseAokrw(aokrw));
 const kstTime = (unixMs: number) => `${formatKstDate(unixMs)} ${formatKstClock(unixMs)}`;
@@ -88,7 +88,19 @@ export class LlmToolHandlers {
             now(),
           )
           .then(placeOrderReply),
-      request_owner_approval: notReady('request_owner_approval'),
+      // Asks the owner; never approves or pays. The reason input is ignored: the server decides.
+      request_owner_approval: (ctx, input) =>
+        this.orders
+          .requestApproval(
+            ctx.userId,
+            {
+              ...(input.merchantId === undefined ? {} : { merchantId: input.merchantId }),
+              ...(input.items === undefined ? {} : { items: input.items }),
+              ...(input.message === undefined ? {} : { message: input.message }),
+            },
+            now(),
+          )
+          .then(approvalRequestReply),
       propose_limit_change: notReady('propose_limit_change'),
     };
   }

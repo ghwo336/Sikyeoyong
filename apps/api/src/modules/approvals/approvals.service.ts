@@ -124,8 +124,39 @@ export class ApprovalsService {
     });
   }
 
+  /**
+   * request_owner_approval (tech-spec 1.4 flow 3): the dragon's words to the owner,
+   * kept on the order's live approval card (at most 200 characters, shown as text only).
+   * Returns the approval's reason, or null when the order has no live pending approval.
+   */
+  attachMessage(
+    orderId: string,
+    message: string | undefined,
+    nowMs: number,
+  ): ApprovalReason | null {
+    const row = this.repo.findPendingByOrder(orderId);
+    if (row === undefined || row.expiresAt <= nowMs) return null;
+    if (message !== undefined) {
+      const payload = parsePayload(row.payloadJson);
+      this.repo.setPayload(row.id, JSON.stringify({ ...payload, message: message.slice(0, 200) }));
+    }
+    return row.reason;
+  }
+
   /** Whether the owner has allowed this store (D-07 "처음 보는 가게", server only). */
   isMerchantAllowed(userId: string, merchantId: string): boolean {
     return this.repo.isMerchantAllowed(userId, merchantId);
+  }
+}
+
+function parsePayload(json: string): Record<string, string> {
+  try {
+    const v: unknown = JSON.parse(json);
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return {};
+    return Object.fromEntries(
+      Object.entries(v).filter((e): e is [string, string] => typeof e[1] === 'string'),
+    );
+  } catch {
+    return {};
   }
 }
