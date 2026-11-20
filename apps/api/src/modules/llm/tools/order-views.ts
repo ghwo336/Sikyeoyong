@@ -1,4 +1,4 @@
-import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
+import { AppError, formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import type { QuoteOutcome } from '../../orders/orders.service.js';
 import { ToolReply } from './tool-reply.js';
 
@@ -35,6 +35,6 @@ export function placeOrderReply(outcome: QuoteOutcome): unknown {
   if (result.order.status === 'pending_approval') {
     return { status: 'APPROVAL_REQUIRED', paid: false, reason: approvalReason };
   }
-  // A resend of an order already past its quote: say where it is, never that it was paid now.
-  return { status: result.order.status, paid: false };
+  // place_order sends no clientOrderId, so it never resends: any other state is a server bug.
+  throw new AppError('INTERNAL', { reason: 'place_order quote in an unexpected state' });
 }

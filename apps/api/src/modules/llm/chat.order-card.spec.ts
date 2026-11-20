@@ -13,6 +13,7 @@ import { runMigrations } from '../../db/migrate.js';
 import { allowedMerchants, approvals, orders } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
+import { CHAIN_READER } from '../chain/chain.service.js';
 import { ScriptedProvider } from './harness/scripted-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
@@ -54,10 +55,15 @@ async function setup(provider: ScriptedProvider) {
     .insert(allowedMerchants)
     .values({ userId: 'u1', merchantId: 'm-gukbap', approvedAt: 1 })
     .run();
+  const chain = { used: 0n };
   const moduleRef = await Test.createTestingModule({ imports: [LlmModule] })
     .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig({}) : undefined))
     .overrideProvider(LLM_PROVIDER)
     .useValue(provider)
+    .overrideProvider(CHAIN_READER)
+    .useValue({
+      periodicVolume: () => Promise.resolve({ usedAokrw: chain.used, resetAtSec: null }),
+    })
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
@@ -74,7 +80,10 @@ async function setup(provider: ScriptedProvider) {
       .set('Cookie', `sid=${auth.issue(who, 'web')}`)
       .set('X-Requested-With', 'fetch')
       .send({ text, clientMessageId });
-  return { h, post };
+  const setChainUsed = (v: bigint) => {
+    chain.used = v;
+  };
+  return { h, post, setChainUsed };
 }
 
 function events(text: string): ChatEvent[] {
@@ -149,5 +158,16 @@ describe('place_order in the chat stream: a confirm card, never a payment', () =
     expect(order?.userId).toBe('u2');
     expect(order?.status).toBe('pending_approval'); // m-gukbap is new for u2
     expect(h.db.select().from(approvals).get()?.reason).toBe('NEW_MERCHANT');
+  });
+
+  it('a refused quote (30-day cap) gives the model the error, the screen no card, and makes no order', async () => {
+    const provider = placeTurns(1);
+    const { h, post, setChainUsed } = await setup(provider);
+    setChainUsed(BigInt('495000000000000000000000')); // 495,000 + 9,000 > 500,000
+    const list = events((await post('u1', '시켜 줘', 'c1')).text);
+    expect(list.some((e) => e.type === 'order_confirm')).toBe(false);
+    expect(provider.resultsAfter(1)[0]?.is_error).toBe(true);
+    expect(toolResult(provider)).toContain('CHAIN_PERIODIC_LIMIT');
+    expect(h.db.select().from(orders).all()).toHaveLength(0);
   });
 });

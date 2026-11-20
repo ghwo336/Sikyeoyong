@@ -104,7 +104,10 @@ interface PaymentProvider {
 - `orderRef`는 `keccak256(주문 ID의 UTF-8 바이트)` (`modules/orders/order-ref.ts`). ID만 있으면 다시 만들 수 있다.
 - 처음 보는 가게 판정의 "결제 주문"은 그 사용자의 paid 이상만이다. quoted, failed, 승인 대기 주문은 치지 않는다 (새 `clientOrderId`로 다시 보내 승인을 건너뛰지 못하게).
 - `clientOrderId`(`orders.client_order_id`, 사용자별 고유, 마이그레이션 0004): 같은 요청을 다시 보내면 규칙이 그사이 바뀌었어도 처음 만든 주문의 지금 상태를 돌려주고, 다른 요청이면 409. 동시에 온 두 요청은 고유 인덱스로 하나만 쓰이고 진 쪽도 같은 답을 받는다.
-- 아직: `place_order` 도구 연결, `DEMO_BYPASS_SERVER_LIMIT`, `request_owner_approval`.
+- 요청 메모(`note`, 최대 100자)는 `orders.note`에 저장하고 확인 카드의 `request`로 보낸다.
+- `OrderQuoteService.create`는 `{ result, approvalReason }`을 돌려준다. `POST /orders`는 `result`만 보내고, LLM `place_order`는 승인 사유를 `APPROVAL_REQUIRED`와 함께 모델에 준다 (agent-runtime.md "코드").
+- 다른 모듈은 `OrdersService.quote` 창구로만 견적을 만든다 (`OrderQuoteService`는 모듈 밖으로 내보내지 않는다).
+- 아직: 같은 가게 60초 쿨다운(같은 가게, 같은 items의 살아 있는 `quoted` 주문이 있으면 그 견적을 다시 보여 줄지도 함께 검토), `DEMO_BYPASS_SERVER_LIMIT`, `request_owner_approval`.
 
 ### 실패 분류 (tech-spec 3.6의 모든 코드)
 | 분류 | 코드 | 주문 상태 |
