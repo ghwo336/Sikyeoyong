@@ -14,7 +14,7 @@ children: []
 - 결제 (`payment.md`), KYB attestation 정책 (`chain-and-pcl.md`)
 
 ## 의존과 인터페이스 경계
-- 시드 파일: `seed/merchants.json` (스키마 예시는 tech-spec "7.1 1단계: 목 가게 시드"). 시드 파일 zod 스키마(`SeedFile`)와 DB 적재는 `apps/api/src/db/seed.ts`(`pnpm db:seed`). 시드는 서버 전용 입력이라 공유 패키지에 두지 않는다. 체인 등록 단계(KYB 증명, `registerMerchant`)는 `infra/scripts/seed-merchants.ts`(후속, 컨트랙트 작업 때).
+- 시드 파일: `seed/merchants.json` (스키마 예시는 tech-spec "7.1 1단계: 목 가게 시드"). 시드 파일 zod 스키마(`SeedFile`)와 DB 적재는 `apps/api/src/db/seed.ts`(`pnpm db:seed`). 시드는 서버 전용 입력이라 공유 패키지에 두지 않는다. 체인 등록은 `infra/scripts/register-merchants.ts`(`pnpm merchants:register`, 아래 "온체인 등록 절차"). 결과는 `seed/onchain/<chainId>.<profile>.json`이고 `pnpm merchants:sync-onchain`(또는 `pnpm db:seed`)이 `merchants.onchain_id`에 넣는다.
 - 서버는 `MerchantSource` 인터페이스(`modules/merchants/merchant-source.ts`, 토큰 `MERCHANT_SOURCE`)로 가게를 읽는다. 구현은 `DbMerchantSource` 하나다: 1단계 시드 가게와 2단계 판매자 콘솔 가게가 같은 테이블이라 같은 구현으로 읽는다. 실제 제휴 가게가 생기면 다른 구현을 추가. 저장된 JSON 칸(태그, 영업시간)이 깨졌으면 로그만 남기고 빈 값으로 읽는다(태그 없음, 영업 안 함). 도착 예상 시간 `etaMin`은 1단계 목 가게에서 배달 타이머 기본값 합(30 + 60 + 90초)인 3분이다 (`MOCK_ETA_MIN`, delivery 모듈이 생기면 그쪽 값으로).
 - 코드: 저장소 `merchants.repository.ts`(쿼리만), 규칙 `merchants.service.ts`, HTTP `merchants.controller.ts`, 영업시간 판정 `open-hours.ts`(`isOpenAt`, KST, 자정 넘는 구간 "15:00-02:00", "24:00"은 하루 끝, 못 읽는 키나 구간은 닫힘).
 - API: `GET /api/merchants?category&verified`(`{ merchants: MerchantCard[] }`), `GET /api/merchants/:id`(`{ merchant, menus }`). 둘 다 `SessionGuard`. 스키마는 shared `api/merchants.ts`(`zMerchantCard`, `zMenuView`, `zMerchantListQuery`). 메뉴 가격은 aokrw 문자열. 쿼리 `verified`는 `true`만 받는다(`false`나 모르는 키는 400). 숨긴 가게(미인증, 비활성)를 id로 물으면 없는 가게와 같이 404 `NOT_FOUND`이고 메뉴를 내주지 않는다. 가게는 사용자별 데이터가 없어 누가 물어도 같은 답이다.
@@ -37,6 +37,14 @@ children: []
 - `pnpm merchants:balances [--keys <폴더>] [--merchant <키>]`: 읽기 전용. 가게 이름, 주소, 잔액(tOKRW 문자열)만 출력한다. 보관본에만 있는 가게는 `(archived)`가 붙는다.
 - `pnpm merchants:sweep --to <체크섬 주소> (--merchant <키> | --all) [--dry-run] [--keys <폴더>]`: 가게 지갑마다 `잔액 - 가스 추정 x 가스 가격`을 `--to`로 보낸다. 잔액이 0이거나 가스에도 모자라면 건너뛴다. `--dry-run`은 가게별 잔액, 수수료, 보낼 금액만 보여 주고 아무것도 보내지 않는다. 한 지갑이 실패해도 나머지는 계속하고 자동 재시도는 없다.
 - 키는 어떤 출력과 오류에도 싣지 않는다. 사람이 직접 실행할 때만 돌고 LLM 도구와 서버 API에는 없다 (규칙 3).
+
+## 온체인 등록 절차 (데모 프로필, D-33)
+- 실행은 소유자만: `pnpm merchants:register --keys <seed/.keys/merchants.json> --db <sqlite 파일> [--only a,b] [--dry-run] [--max-spend 250]`. 운영자 키는 `.env`의 `OPERATOR_KEY`(출력하지 않음). 진짜 트랜잭션이고 운영자 잔액을 쓴다.
+- 가게마다: (1) 운영자가 payout 지갑에 가스비만 보낸다(`estimateGas` x `estimateFeesPerGas`의 `maxFeePerGas` x 1.1, 이미 있으면 건너뜀), (2) payout 지갑이 `registerMerchant(0x0, metadataURI)`를 호출(데모 프로필은 KYB 정책이 없어 `kybUid`는 0, 확인), (3) `MerchantRegistered` 이벤트에서 `merchantId`를 읽고, (4) 운영자가 `setMerchantStatus(id, Active)`. 쓰기 전에 시뮬레이션하고 예산(`--max-spend`)을 넘길 쓰기 앞에서 멈춘다. 자동 재시도 없음.
+- 멱등, 이어서 실행 가능: 체인의 `merchantIdByPayout`을 먼저 묻고, 등록만 되고 기록이 없으면 이벤트 로그에서 해시를 복구한다. 가게마다 기록 파일을 바로 저장한다.
+- `metadataURI`는 DB의 `metadata_uri`(`--db`로 읽기 전용 조회)다. 로컬 DB는 `http://localhost:3000/...`이라 체인에는 이 값이 남는다. 공개 도메인 값으로 다시 쓸 수 없다(컨트랙트에 수정 함수 없음).
+- 기록 파일 `seed/onchain/450815.demo.json`(공개 정보만: merchantKey, onchainId, payout, 트랜잭션 해시, 블록. 키 없음). 파싱은 shared `parseMerchantOnchain`. 동기화는 payout 주소로 맞춰 `onchain_id`를 채우며(`merchant-onchain-sync.ts`), 이미 다른 값이 있으면 멈춘다.
+- 비용 (확인, 2026-11-21): `registerMerchant`는 가게당 약 3.0 tOKRW(334,618 가스 x 9,000 gwei), `setMerchantStatus` 약 1.6, 가스비 송금 약 0.2. 가게당 약 4.8, 가스비 여유분(약 0.5)은 payout 지갑에 남는다(`pnpm merchants:sweep`로 회수). 65곳 전부는 약 310 tOKRW가 필요하다. 예산 250으로 46곳(id 1~46)을 등록했고 나머지 19곳은 예산을 더 받은 뒤 같은 명령을 다시 돌리면 이어서 등록한다.
 
 ## 실제 가게 등록 (2단계 규칙)
 1. 사장님 가입 (카카오 로그인, 역할 `merchant`).

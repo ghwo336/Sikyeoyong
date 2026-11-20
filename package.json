@@ -31,7 +31,8 @@
     "contracts:test": "forge test --root contracts",
     "contracts:deploy:testnet": "node --env-file-if-exists=.env infra/scripts/deploy-orders.ts",
     "policy:apply": "node --env-file-if-exists=.env infra/scripts/apply-policy.ts",
-    "merchants:register": "node --env-file-if-exists=.env infra/scripts/register-merchants.ts"
+    "merchants:register": "node --env-file-if-exists=.env infra/scripts/register-merchants.ts",
+    "merchants:sync-onchain": "pnpm --filter @sikyeoyong/api build && node apps/api/dist/db/merchant-onchain-sync.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

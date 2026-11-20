@@ -177,3 +177,10 @@ children: []
 - 발견: 2026-11-20. `marooTestnet`을 펼쳐 id와 rpcUrls만 바꾸면 `prepareTransactionRequest` 훅의 `phase`에 `afterFillTransactionError`가 있어 viem 2.57.20의 `Chain`에 대입되지 않는다. `as unknown as Chain`으로 우회했다.
 - 영향: 체인 ID를 설정에서 받으려는 앱이 캐스트를 해야 한다.
 - 제안: viem 호환 범위를 올리거나 `marooTestnet.extend({ id, rpcUrls })` 같은 도우미 제공.
+
+### F-23 가스 가격이 세 가지(조회 9,000, 수수료 추정 10,600, 시뮬레이션 기본 17,000 gwei)라 "가스 여유" 계산이 어렵다
+- 상태: 열림
+- 종류: 문서 누락, 도구 동작
+- 발견: 2026-11-21. 가게 지갑에 가스비를 보내 `registerMerchant`를 시뮬레이션하자 "gas required exceeds allowance"로 거절됐다. 잔액 4.5 tOKRW인데 허용 가스가 265,726이라, 시뮬레이션이 약 17,000 gwei(2 x baseFee + tip)로 잔액을 나눈 것이다. 실제 과금은 9,000 gwei였다.
+- 영향: 앱이 지갑에 보낼 가스비를 정하려면 maxFee 기준(10,600)으로 여유를 두고, 시뮬레이션에도 같은 수수료를 넘겨야 한다. 가게 1곳 등록이 약 4.8 tOKRW라 65곳은 약 310 tOKRW가 든다.
+- 제안: 가스 가격 정책(baseFee, 팁, 수수료 추정 훅)을 문서화하고, 시뮬레이션 기본 수수료를 추정값과 맞추기.

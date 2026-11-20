@@ -813,6 +813,8 @@ await ownerWallet.writeContract({
 
 스크립트는 멱등: 이미 등록된 가게는 건너뛴다(`merchantIdByPayout` 조회).
 
+**구현 상태 (2026-11-21, D-33 데모 프로필)**: 3~4단계(EAS)는 데모 프로필에서 하지 않는다. 5단계는 `pnpm merchants:register`(`infra/scripts/register-merchants.ts`): 운영자가 payout에 가스비를 보내고(2단계), payout 지갑이 `registerMerchant(0x0, metadataURI)`, 운영자가 `setMerchantStatus(id, Active)`. 결과는 `seed/onchain/<chainId>.<profile>.json`, 동기화는 `pnpm merchants:sync-onchain` 또는 `pnpm db:seed`(`merchants.onchain_id`). 절차와 비용은 wiki `merchants.md`.
+
 ### 7.2 2단계: 실제 가게 등록 흐름
 
 ```

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { uuidv7 } from '../common/ids.js';
 import { loadConfig } from '../config/env.js';
 import { type Db, openDb } from './client.js';
+import { syncFromRecordFile } from './merchant-onchain-sync.js';
 import { runMigrations } from './migrate.js';
 import { ensurePayoutKeys } from './merchant-keys/payout-keys.js';
 import { menus, merchants } from './schema/index.js';
@@ -134,6 +135,9 @@ if (require.main === module) {
   const handle = openDb(config.databaseUrl);
   runMigrations(handle.db);
   const result = seedMerchants(handle.db, seed, payouts, config.publicBaseUrl);
+  const sync = syncFromRecordFile(handle.db, root, config.chain.chainId, config.policy.profile);
   handle.close();
   console.warn(`seed: inserted ${result.inserted}, skipped ${result.skipped}`);
+  if (sync !== null)
+    console.warn(`seed: onchain ids updated ${sync.updated}, unchanged ${sync.unchanged}`);
 }

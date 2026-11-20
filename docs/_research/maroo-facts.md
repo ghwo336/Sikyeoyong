@@ -91,6 +91,7 @@
 - 체인 ID 450815는 변경 예정. Mock KYC 전환 예정. 둘 다 시점 미정. **하드코딩 금지.**
 - OKRW는 네이티브 코인. ERC-20 진입점 없음. 결제 함수는 `payable`. 최소 단위 aokrw(10^18). 테스트넷 denom `atokrw`.
 - 가스 한도의 절반은 무조건 과금, 단순 전송도 약 22,300 가스. 고정 가스 금지.
+- 확인 (2026-11-21, 테스트넷 46곳 등록): 가스 가격 조회는 9,000 gwei, `estimateFeesPerGas`의 `maxFeePerGas`는 10,600 gwei, viem 기본 시뮬레이션은 약 17,000 gwei. 노드는 잔액이 가스 한도 x maxFee 이상인지 먼저 본다. 실제 과금은 가스 사용량 x 9,000 gwei였다 (`registerMerchant` 334,618 가스 = 3.01 tOKRW, `setMerchantStatus` 약 1.6). EAS 정책이 없는 데모 프로필에서 payout 지갑이 `kybUid=0x0`으로 `registerMerchant`를 호출해 성공했다. F-23.
 - 지원하는 EVM 하드포크(Shanghai PUSH0, Cancun MCOPY와 TSTORE)는 문서에 없다 (미확인, 2026-11-20 `pcl-proxy-hook` 재확인, Q-32, F-11). 시켜용 컨트랙트는 `evm_version = paris`로 컴파일한다.
 - `deployPclProxy`의 시그니처, kind 값, 초기화 데이터 전달, OZ `UUPSUpgradeable` 호환은 문서 사이트에는 없고 SDK `@maroo-chain/viem`과 실제 배포로 확인했다 (확인, 2026-11-20, 3.5, Q-13 닫힘, F-12, F-21). 이 배포로 `paris` 바이트코드가 테스트넷에서 실행되는 것도 확인했다 (PUSH0 등 상위 하드포크는 여전히 미확인, Q-32).
 

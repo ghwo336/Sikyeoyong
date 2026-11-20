@@ -57,7 +57,7 @@ children: []
 | --- | --- | --- | --- |
 | `placeOrder(uint64,bytes32)` | `LOGICAL_POLICY` (And) | 자식 1: `AGENT_OKRW_TRANSFER_LIMIT_POLICY` (값은 8004 `TransferLimit`) / 자식 2: `PERIODIC_VOLUME_POLICY` 운영 500,000 OKRW / 2,592,000초, 데모 60,000 OKRW / 3,600초 | 한 셀렉터에 PolicySet 하나만이라 And로 묶는다. 자식에는 셀렉터를 넣지 않는다 (확인). 테스트넷 전역 정책은 TransferLimit를 검사하지 않으므로 여기에 건다 (확인) |
 | `placeOrderFromVault(uint64,uint256,bytes32)` | 위와 같음 | 위와 같음 | 모드 V일 때만 |
-| `registerMerchant(bytes32,string)` | `EAS_POLICY` | KYB 스키마 UID | sender(=가게 payout) 검사. attestation은 `indexAttestation`으로 인덱싱돼야 인정 (확인). 스키마와 attester는 Q-07 |
+| `registerMerchant(bytes32,string)` | `EAS_POLICY` (default 프로필만. demo는 정책 없음, D-33) | KYB 스키마 UID | demo: EAS 없이 payout 지갑이 `kybUid=0x0`으로 호출해 통과했다 (확인, 2026-11-21, 테스트넷 46곳 등록, `merchants.md`). default: sender(=가게 payout) 검사. attestation은 `indexAttestation`으로 인덱싱돼야 인정 (확인). 스키마와 attester는 Q-07 |
 | 전역 | KYC 한도 | 건당 2,000,000, 하루 10,000,000 OKRW | 이미 적용됨. 에이전트 전송은 소유자 하루 누적에 합산 (확인) |
 | 2단계 | `ALLOW_LIST_POLICY` | 에이전트 송금처 = 주문 컨트랙트 | 테스트넷 v0.11.1 미등록 (확인). 등록되면 추가 |
 
