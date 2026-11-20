@@ -52,8 +52,10 @@ const base: OrderView = {
   },
 };
 
-function wrap(ui: ReactNode) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function wrap(
+  ui: ReactNode,
+  qc = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
@@ -122,14 +124,24 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     const perOrder = await screen.findByText('한 번에 쓸 수 있는 돈');
     expect(perOrder.tagName).toBe('DT');
     expect(perOrder.nextElementSibling?.textContent).toBe('9,000 / 10,000원');
+    const thirty = await screen.findByText('30일 한도');
+    expect(thirty.tagName).toBe('DT');
+    // fixtures BUDGET: 41,000 used of the demo profile's 60,000.
+    expect(thirty.nextElementSibling?.textContent).toBe('41,000 / 60,000원');
   });
 
   it.each(['failed', 'cancelled', 'refunded'] as const)(
     'a %s order shows no receipt: nothing looks paid',
     async (status) => {
       getOrder.mockResolvedValue({ order: { ...base, status } });
-      wrap(<ReceiptContainer orderId="o1" />);
-      expect(await screen.findByRole('heading', { name: '주문 상세' })).toBeInTheDocument();
+      const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      wrap(<ReceiptContainer orderId="o1" />, qc);
+      // Wait until the order (and the budget) actually arrived, then look.
+      await waitFor(() => {
+        expect(qc.getQueryState(['order', 'o1'])?.status).toBe('success');
+        expect(qc.getQueryState(['budget'])?.status).toBe('success');
+      });
+      expect(screen.getByRole('heading', { name: '주문 상세' })).toBeInTheDocument();
       expect(screen.queryByText('결제 수단')).toBeNull();
       expect(screen.queryByText('9,000원')).toBeNull();
     },
