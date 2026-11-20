@@ -65,6 +65,12 @@ children: []
 - 한도 화면 layout(`app/limit/layout.tsx`: Blocked, 한도 올리기, Cap)은 `data-theme="fixed"`라 종과 상관없이 기본 색이다. 바탕은 `.screen[data-theme='fixed']`가 칠한다. 확인 시트는 ui `OrderConfirmSheet`가 스스로 고정이다.
 - 시안과 다른 점: Confirm, Blocked, Cap 시안은 버튼과 막대에 종 색(`sy_accent`)을 쓰지만 D-32 결정(돈과 경고는 고정)을 따른다. `themeColor`(주소창 색)와 manifest 색은 숲 그대로다.
 
+## 첫 진입 로딩 (Splash, user-flow 0, 2026-11-20)
+- Main(`/`)의 세션 입구만 `<EntryGate splash>`다. 다른 화면은 묻는 동안 아무것도 그리지 않는다 (그대로).
+- 시점은 `features/me/hooks/useSplashTiming` 하나가 정한다: 세션 답이 1초(`SPLASH_DELAY_MS`) 안에 오면 Splash 없이 바로 넘어간다 ("1초 안에 끝나면 바로 넘긴다"). 1초가 지나도 모르면 Splash를 띄우고(나타나기는 페이드), 한 번 뜨면 적어도 0.8초(`SPLASH_MIN_MS`) 둔다. 막 뜬 화면이 번쩍 사라지지 않게 하려는 것이고, 화면을 누르면 그 기다림을 건너뛴다 ("화면을 누르면 넘어감"). 답 전에 누르면 답이 오는 즉시 넘어간다 (답 없이 갈 곳은 모른다).
+- 다음 화면(Main 또는 Start 등으로 가는 redirect)이 뜰 때까지 Splash가 남아 빈 화면이 끼지 않는다. 종은 GET /me가 있으면 그 종, 없으면 `<html data-species>`(이 기기가 마지막으로 쓴 종)이고 바탕도 그 테마 색이다.
+- 동작 줄이기는 ui `Splash`가 한다 (오르내림과 점 멈춤, 페이드만).
+
 ## 가입 뒤로 (Verify, Name)
 - 뒤로 버튼은 브라우저 기록(`router.back()`)이 아니라 이전 단계로 `router.replace`한다: Verify는 /start, Name은 /verify (2026-11-19 판단).
 - 이유: 새로고침은 기록이 남지만, 직접 링크나 새 탭으로 들어오면 앞 기록이 없거나 다른 사이트라 `router.back()`이 아무것도 안 하거나 앱을 떠난다. 가입은 한 줄로 이어지는 단계라 "뒤로"는 언제나 앞 단계다. push 대신 replace라 브라우저 뒤로로 같은 단계를 오가며 기록이 쌓이지 않는다.

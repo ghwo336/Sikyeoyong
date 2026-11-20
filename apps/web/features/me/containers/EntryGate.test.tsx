@@ -1,7 +1,8 @@
 import { AppError } from '@sikyeoyong/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ME } from '../../../lib/mock/fixtures';
 
 const replace = vi.fn();
@@ -29,12 +30,12 @@ const setupOf = (status: 'PENDING' | 'ACTIVE' | 'FAILED') => ({
   ],
 });
 
-function draw() {
+function draw(splash = false) {
   // retryDelay 0 so the gate's own retry rule (retryMe) runs without waiting.
   const qc = new QueryClient({ defaultOptions: { queries: { retryDelay: 0 } } });
   render(
     <QueryClientProvider client={qc}>
-      <EntryGate>
+      <EntryGate splash={splash}>
         <p>대화 화면</p>
       </EntryGate>
     </QueryClientProvider>,
@@ -113,5 +114,60 @@ describe('EntryGate', () => {
     expect(await screen.findByText('대화 화면')).toBeInTheDocument();
     expect(getMe).toHaveBeenCalledTimes(4); // first try and three retries
     expect(replace).not.toHaveBeenCalled();
+  });
+});
+
+describe('EntryGate splash (Splash.dc.html, user-flow 0)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('a quick answer goes straight to the chat with no splash', async () => {
+    getMe.mockResolvedValue(ME);
+    getAgentSetup.mockResolvedValue(setupOf('ACTIVE'));
+    draw(true);
+    expect(await screen.findByText('대화 화면')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('a slow check shows the splash after a second; nothing before it', () => {
+    vi.useFakeTimers();
+    getMe.mockReturnValue(new Promise(() => undefined));
+    draw(true);
+    act(() => {
+      vi.advanceTimersByTime(900);
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('용이를 깨우는 중이에요');
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('once up, a tap lets the next step in as soon as the answer is there', async () => {
+    let answer: (v: unknown) => void = () => undefined;
+    getMe.mockReturnValue(
+      new Promise((r) => {
+        answer = r;
+      }),
+    );
+    getAgentSetup.mockResolvedValue(setupOf('ACTIVE'));
+    draw(true);
+    expect(await screen.findByRole('status', {}, { timeout: 2_000 })).toBeInTheDocument();
+    answer(ME);
+    await userEvent.click(screen.getByText('시켜용'));
+    expect(await screen.findByText('대화 화면')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('other screens never show it', () => {
+    vi.useFakeTimers();
+    getMe.mockReturnValue(new Promise(() => undefined));
+    draw();
+    act(() => {
+      vi.advanceTimersByTime(3_000);
+    });
+    expect(screen.queryByRole('status')).toBeNull();
   });
 });
