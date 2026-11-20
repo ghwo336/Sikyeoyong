@@ -50,6 +50,7 @@ export function insertMerchant(
     verified?: boolean;
     active?: boolean;
     openHours?: Record<string, string>;
+    source?: 'seed' | 'console';
   } = {},
 ): void {
   payoutSeq += 1;
@@ -64,7 +65,7 @@ export function insertMerchant(
       active: opts.active ?? true,
       metadataUri: `http://localhost/api/merchants/${id}/meta.json`,
       openHoursJson: JSON.stringify(opts.openHours ?? { 'mon-sun': '00:00-24:00' }),
-      source: 'seed',
+      source: opts.source ?? 'seed',
       createdAt: 1,
     })
     .run();

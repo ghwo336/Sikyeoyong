@@ -289,6 +289,17 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
     expect(h.db.select().from(approvals).all()).toHaveLength(0);
   });
 
+  it('in demo mode a store that is not seeded still asks the owner (D-27 is seed stores only)', async () => {
+    const { h, as } = await setup(undefined, { DEMO_MODE: 'true' });
+    insertMerchant(h.db, 'm-console', { name: '등록가게', source: 'console' });
+    insertMenu(h.db, 'x-console', 'm-console', 7_000n);
+    const r = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-console', qty: 1 }], 'm-console'))).body,
+    );
+    expect(r.order.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()?.reason).toBe('NEW_MERCHANT');
+  });
+
   it('outside demo mode the same seeded store is still new (D-07 unchanged)', async () => {
     const { h, as } = await setup(undefined, {});
     const r = zCreateOrderResult.parse(

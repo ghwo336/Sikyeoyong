@@ -169,3 +169,14 @@ describe('MerchantsService', () => {
     expect(svc().categoryOf('nope')).toBeNull();
   });
 });
+
+describe('MerchantsService.isSeeded (D-27)', () => {
+  it('is true for a seeded store, false for a registered one and for an unknown id', () => {
+    const s = new MerchantsService(
+      source([merchant('m-seed'), merchant('m-console', { source: 'console' })], []),
+    );
+    expect(s.isSeeded('m-seed')).toBe(true);
+    expect(s.isSeeded('m-console')).toBe(false);
+    expect(s.isSeeded('nope')).toBe(false);
+  });
+});

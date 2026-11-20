@@ -82,7 +82,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 6. 주의 (확인): 컨트랙트 범위 정책은 실행 단계(프록시 `preCall`/`postCall`)에서 평가되므로 거절된 트랜잭션도 블록에 포함되고 가스가 과금된다. 멤풀 단계에서 막히는 것은 전역 정책뿐이다. [pcl-policy-enforcement](https://docs.maroo.io/concepts/compliance/pcl-policy-enforcement)
 
 **흐름 3: 소유자 승인**
-1. 서버 사전 검사 결과가 "승인 필요"(레벨 초과, 처음 보는 가게, 개인 예산 100% 초과 후 주문)이면 Claude에게 도구 결과로 `APPROVAL_REQUIRED`를 돌려준다.
+1. 서버 사전 검사 결과가 "승인 필요"(레벨 초과, 처음 보는 가게(`DEMO_MODE`에서는 시드 가게는 제외, D-27), 개인 예산 100% 초과 후 주문)이면 Claude에게 도구 결과로 `APPROVAL_REQUIRED`를 돌려준다.
 2. 주문은 `pending_approval`로 만들어지고, 같은 서비스 함수가 같은 DB 트랜잭션에서 `approvals` 행(`order_id`로 묶음, pending, 10분 만료)을 만든다. Claude가 `request_owner_approval(reason, merchantId, items)`를 부르면 서버는 같은 사용자의 대기 중 승인 가운데 가게와 items(메뉴와 수량 집합)가 같은 것에 메시지만 붙인다. 여러 개면 가장 최근 것. 없으면 같은 함수로 주문과 승인을 함께 만든다. confirm 안에서 승인이 필요해진 경우도 같은 함수를 쓴다 (D-19).
 3. 앱이 승인 카드 표시. 사용자가 승인하면 서버가 필요한 조치를 수행: 레벨 상향(`POST /agents/me/level { level, approvalId }`, 재인증 뒤 TransferLimit 메타데이터 갱신 트랜잭션), 가게 허용 목록 추가(서버 `allowed_merchants`. MAWS `allowedTargets`는 주문 컨트랙트 주소 하나로 고정이라 바꾸지 않는다, D-13), 또는 예산 초과 허락(승인된 approvals 행 자체가 허락이다. 조치 없음). 가게 허용과 예산 초과는 `POST /approvals/:id/approve`가 한다.
 4. 레벨 상향이면 TransferLimit 갱신 트랜잭션이 확정된 뒤에, 서버가 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 대화에 다시 보낸다. 결제는 사용자가 카드를 다시 눌렀을 때 confirm에서만 한다 (D-19, payment.md "confirm 상태 규칙"). 거절이나 만료면 주문은 재시도 불가 `failed`.
