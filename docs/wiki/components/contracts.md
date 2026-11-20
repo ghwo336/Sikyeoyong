@@ -60,6 +60,7 @@ children: []
 1. 컨트랙트에서 나가는 돈은 **Active 가게의 payout** 또는 **그 에이전트의 소유자**에게만 간다. 다른 어떤 주소로도 나가지 않는다.
 2. `placeOrder`의 `msg.sender`는 에이전트 자신이다. 컨트랙트 범위 `AGENT_OKRW_TRANSFER_LIMIT_POLICY`는 직접 sender 귀속만 하고 실행 전 call value를 검사한다 (확인). 대리 호출 함수를 만들지 않는다.
 3. 같은 `orderRef`는 한 번만 결제된다 (`OrderExists`).
+   - 결제 쪽 주의 (payment.md, D-19): `orderRef`는 에이전트별이 아니라 컨트랙트 전역 키라 다른 에이전트가 먼저 차지할 수 있다. 체인의 `OrderPlaced(orderRef)`를 찾아 결제 완료로 맞출 때는 이벤트의 `agent`, `merchantId`, `amount`가 그 주문과 같은지 대조한다. 다르면 결제 완료로 맞추지 않고 운영자 알림.
 4. 모드 P: 컨트랙트는 돈을 보관하지 않는다 (받은 즉시 payout으로 보냄, 컨트랙트 잔액 0 유지). 모드 V: 선불 합계 = 컨트랙트 OKRW 잔액.
 5. 일시 정지된 에이전트는 주문 불가 (`AgentIsPaused`). 모드 V의 `withdraw`는 정지 중에도 가능.
 6. `withdraw`는 소유자만, 받는 주소는 소유자 고정 (인자로 받는 주소 없음).
