@@ -9,11 +9,12 @@ children:
   - EggPicker.md
   - HatchProgress.md
   - TrialAllowance.md
+  - Splash.md
 ---
 
 # 가입 (onboarding)
 
-로그인, 본인 인증, 알 고르기, 부화, 체험용 용돈. Budget 화면의 두 금액은 `limits/AmountStepper`가 그린다 (D-31).
+첫 진입 로딩, 로그인, 본인 인증, 알 고르기, 부화, 체험용 용돈. Budget 화면의 두 금액은 `limits/AmountStepper`가 그린다 (D-31).
 
 영역 사이 import는 `base`와 `dragon`만 허용한다 (`conventions/architecture.md`).
 
@@ -26,3 +27,4 @@ children:
 | [EggPicker](EggPicker.md) | 알 네 가지(숲, 물, 꽃, 별) 중 하나를 고르게 하고 고른 알을 그린다. |
 | [HatchProgress](HatchProgress.md) | 부화 세 단계(용돈 주머니, 신분증, 한도 새기기)의 진행을 그린다. |
 | [TrialAllowance](TrialAllowance.md) | 체험용 용돈 줄(이름, 금액, 받기 또는 받은 뒤)을 그린다. |
+| [Splash](Splash.md) | 앱 첫 진입 로딩 화면(테마 색 바탕, 오르내리는 용이, 깨우는 중 점 셋)을 그린다. |

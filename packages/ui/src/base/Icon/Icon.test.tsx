@@ -79,7 +79,8 @@ describe('Icon (Icon.md 테스트 기준)', () => {
 
   it('is the only place that draws a one-color icon (D-18 principle 5)', () => {
     // Pictures and multi-color marks keep their own svg: the dragon, the egg, the map,
-    // the hatch status marks (per-part colors and a spinning arc) and Google's four-color G.
+    // the hatch status marks (per-part colors and a spinning arc), Google's four-color G and the
+    // splash's white edge around the dragon (a picture, not an icon).
     const own = new Set([
       'base/Icon/Icon.tsx',
       'dragon/Dragon/Dragon.tsx',
@@ -87,6 +88,7 @@ describe('Icon (Icon.md 테스트 기준)', () => {
       'order/DeliveryMap/DeliveryMap.tsx',
       'onboarding/HatchProgress/HatchProgress.tsx',
       'onboarding/SocialLogin/SocialLogin.tsx',
+      'onboarding/Splash/Splash.tsx',
     ]);
     const src = resolve(__dirname, '../..');
     const found: string[] = [];

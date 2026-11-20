@@ -1,0 +1,177 @@
+/* Splash.dc.html: the whole screen in the theme color (D-32 loading background), white words,
+   everything centered 28 apart, 0 32 40 inside. It fades in (opacity only). */
+.splash {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-7);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  padding: 0 var(--space-8) 40px;
+  overflow: hidden;
+  background: var(--theme-accent);
+  color: var(--color-surface);
+  cursor: pointer;
+  animation: splash-in var(--motion-screen) var(--motion-screen-easing);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 40px;
+}
+
+/* The dragon and its white edge go up and down together, 10px over 1.6s. */
+.bob {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  animation: splash-bob 1.6s ease-in-out infinite;
+}
+
+.halo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--color-surface);
+}
+
+.bob > :last-child {
+  position: relative;
+}
+
+/* The shadow under it shrinks while the dragon is up. Ink at 28%. */
+.shadow {
+  width: 92px;
+  height: 12px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-ink) 28%, transparent);
+  animation: splash-shadow 1.6s ease-in-out infinite;
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-display-gap);
+}
+
+/* 44 in the dragon's font, line height 1.1. */
+.title {
+  margin: 0;
+  font-family: var(--font-dragon);
+  font-size: 44px;
+  line-height: 1.1;
+  letter-spacing: var(--type-dragon-letter-spacing);
+}
+
+.tagline {
+  margin: 0;
+  font-size: var(--type-button-sub-size);
+  color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  font-size: var(--type-small-size);
+  color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+}
+
+.dots {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Three yolk dots, 9 round, hopping one after another. */
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-yolk);
+  opacity: 0.35;
+  animation: splash-dot var(--motion-typing) ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.footer {
+  position: absolute;
+  right: 0;
+  bottom: 36px;
+  left: 0;
+  margin: 0;
+  text-align: center;
+  font-size: var(--type-fine-size);
+  color: color-mix(in srgb, var(--color-surface) 78%, transparent);
+}
+
+@keyframes splash-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes splash-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes splash-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.22;
+  }
+  50% {
+    transform: scaleX(0.8);
+    opacity: 0.12;
+  }
+}
+
+@keyframes splash-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* Reduced motion: no bobbing or hopping; the dots stay lit and the fade-in stays. */
+@media (prefers-reduced-motion: reduce) {
+  .bob,
+  .shadow,
+  .dot {
+    animation: none;
+  }
+
+  .dot {
+    opacity: 1;
+  }
+}
