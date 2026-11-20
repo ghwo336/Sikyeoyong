@@ -43,9 +43,12 @@ contract Deploy is Script {
     /// 배포 기록 폴더 (contracts/ 기준). foundry.toml fs_permissions가 이 폴더만 쓰기 허용한다.
     string internal constant DEPLOYMENTS_DIR = "/../packages/shared/src/config/deployments/";
 
-    function run() external returns (address implementation) {
-        uint256 expectedChainId = vm.envUint("CHAIN_ID");
-        string memory profile = vm.envOr("POLICY_PROFILE", string("default"));
+    function run() external returns (address) {
+        return deploy(vm.envUint("CHAIN_ID"), vm.envOr("POLICY_PROFILE", string("default")));
+    }
+
+    /// run()의 본체. 환경변수를 읽지 않아서 테스트가 병렬로 불러도 서로 섞이지 않는다.
+    function deploy(uint256 expectedChainId, string memory profile) public returns (address implementation) {
         checkTarget(expectedChainId, block.chainid, profile);
 
         string memory path = deploymentPath(block.chainid, profile);
