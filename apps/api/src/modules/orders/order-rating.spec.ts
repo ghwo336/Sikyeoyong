@@ -11,11 +11,11 @@ import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { ORDER_STATUSES, orderRatings, orders } from '../../db/schema/index.js';
-
-type OrderStatus = (typeof ORDER_STATUSES)[number];
 import { insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
 import { OrdersModule } from './orders.module.js';
+
+type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 const open: { app: INestApplication; h: DbHandle }[] = [];
 afterEach(async () => {

@@ -142,10 +142,16 @@ describe('createHttpApi', () => {
     const bad = fakeFetch({
       'GET /api/wallet': { body: '{"owner":81000,"pocket":"0","savedThisMonth":"0"}' },
       'POST /api/agents/me/drain': { body: '{"refunded":"1","txHashes":["0x12"]}' },
+      'POST /api/agents/me/freeze': { body: '{"frozen":"yes","txHashes":[]}' },
+      'POST /api/signup/trial': { body: '{"granted":1}' },
+      'GET /api/me/id-card': { body: '{"ownerName":"","ownerVerified":true,"bornAt":1}' },
     });
     const api = createHttpApi(bad);
     await expect(api.getWallet()).rejects.toThrow();
     await expect(api.refundPocket()).rejects.toThrow();
+    await expect(api.setFrozen(true)).rejects.toThrow();
+    await expect(api.claimTrialAllowance()).rejects.toThrow();
+    await expect(api.getIdCard()).rejects.toThrow();
   });
 
   it('with a dev login key, login posts it to the dev login (as a cookie write)', async () => {

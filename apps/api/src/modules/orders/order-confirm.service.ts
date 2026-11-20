@@ -180,7 +180,7 @@ export class OrderConfirmService {
    * "주인님 용돈"): recorded only after the fund succeeded, so a failed or skipped top-up records
    * nothing. Refusing an order when the ledger is short is open (open-questions Q-38).
    * The money already moved when the ledger is written, so a ledger failure never turns the
-   * payment into a failure: it is logged (order, amount, tx) for reconciliation instead.
+   * payment into a failure: it is logged (user, tx) for reconciliation instead.
    */
   private async topUp(
     userId: string,

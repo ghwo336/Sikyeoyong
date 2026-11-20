@@ -148,7 +148,6 @@ export const allowedMerchants = sqliteTable(
 );
 
 /** Arrived screen taste rating (user-flow 10): one per order, a second replaces it. Feeds recommendations later. */
-
 export const orderRatings = sqliteTable(
   'order_ratings',
   {
