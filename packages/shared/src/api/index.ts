@@ -93,8 +93,10 @@ export {
 export {
   zFreezeResult,
   zIdCardView,
+  zRefundResult,
   zWalletView,
   type FreezeResult,
   type IdCardView,
+  type RefundResult,
   type WalletView,
 } from './wallet.js';

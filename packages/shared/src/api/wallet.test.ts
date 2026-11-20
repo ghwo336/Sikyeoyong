@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { zFreezeResult, zIdCardView, zWalletView } from './wallet.js';
+import { zFreezeResult, zIdCardView, zRefundResult, zWalletView } from './wallet.js';
 
 describe('zWalletView', () => {
   it('reads aokrw strings only', () => {
@@ -33,5 +33,18 @@ describe('zFreezeResult', () => {
     });
     expect(zFreezeResult.safeParse({ ...v, txHashes: ['0x1234'] }).success).toBe(false);
     expect(zFreezeResult.safeParse({ ...v, agent: {} }).success).toBe(false);
+  });
+});
+
+describe('zRefundResult', () => {
+  it('reads the refunded amount as an aokrw string only', () => {
+    const v = { refunded: '20000000000000000000000', txHashes: [`0x${'b'.repeat(64)}`] };
+    expect(zRefundResult.parse(v)).toEqual(v);
+    expect(zRefundResult.parse({ refunded: '0', txHashes: [] })).toEqual({
+      refunded: '0',
+      txHashes: [],
+    });
+    expect(zRefundResult.safeParse({ ...v, refunded: 20000 }).success).toBe(false);
+    expect(zRefundResult.safeParse({ ...v, refunded: '1.5' }).success).toBe(false);
   });
 });

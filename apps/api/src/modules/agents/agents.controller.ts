@@ -3,6 +3,7 @@ import {
   type AgentSetupView,
   type CreateAgentBody,
   type FreezeResult,
+  type RefundResult,
   type SetLevelBody,
   type SetLevelResult,
   zCreateAgentBody,
@@ -13,6 +14,7 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { AgentFreezeService } from './agent-freeze.service.js';
 import { AgentLevelService } from './agent-level.service.js';
+import { AgentRefundService } from './agent-refund.service.js';
 import { AgentsService } from './agents.service.js';
 
 /** POST /api/agents, GET /api/agents/me, POST /api/agents/me/setup/retry. HTTP only. */
@@ -23,6 +25,7 @@ export class AgentsController {
     private readonly agents: AgentsService,
     private readonly levels: AgentLevelService,
     private readonly freezes: AgentFreezeService,
+    private readonly refunds: AgentRefundService,
   ) {}
 
   @Post()
@@ -59,6 +62,13 @@ export class AgentsController {
   @HttpCode(200)
   unfreeze(@CurrentUser() user: SessionUser): Promise<FreezeResult> {
     return this.freezes.unfreeze(user.userId);
+  }
+
+  /** Frozen screen "돌려받기": the pocket back to the owner, only while frozen. */
+  @Post('me/drain')
+  @HttpCode(200)
+  refund(@CurrentUser() user: SessionUser): Promise<RefundResult> {
+    return this.refunds.refund(user.userId);
   }
 
   @Post('me/setup/retry')

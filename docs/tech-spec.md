@@ -236,7 +236,7 @@ apps/api/src/
 | POST | `/agents/me/freeze` | user | | `FreezeResult` (`{ frozen, txHashes }`, `api/wallet.ts`). 서버 동결 플래그 먼저(바로 `SERVER_FROZEN`), 그다음 소유자 포트로 체인 `setAgentPaused`. 체인 호출이 실패해도 서버는 멈춘 채로 남고 주인이 다시 누른다(자동 재시도 없음). 이미 멈춘 용이면 체인 멈춤만 다시 보낸다. 2026-11-20 구현 (`agents/agent-freeze.service.ts`) |
 | POST | `/agents/me/unfreeze` | user | | `FreezeResult`. 체인 재개 먼저, 그다음 서버 플래그. 체인 호출이 실패하면 계속 멈춤. 이미 깨어 있으면 아무것도 보내지 않는다 |
 | POST | `/agents/me/fund` | user | `{ amount }` (aokrw 문자열) | `{ txHash }` |
-| POST | `/agents/me/drain` | user | | `{ txHashes }` |
+| POST | `/agents/me/drain` | user | | `RefundResult` (`{ refunded, txHashes }`, `api/wallet.ts`, 멈춤 화면 "돌려받기"). 멈춘 용이만(아니면 409 `CONFLICT`, 멈춘 동안은 주문 확정이 막혀 주머니가 다른 데서 움직이지 않는다). 소유자 포트 drain 뒤 잔액 차이(전 - 후)를 주인 용돈 장부 `refund`로 기록. 같은 용이의 동시 요청은 하나만 옮긴다(프로세스 안 잠금). 실패하면 아무것도 기록하지 않고 주인이 다시 누른다. 2026-11-20 구현 (`agents/agent-refund.service.ts`) |
 | GET | `/budget` | user | | `BudgetView` (아래) |
 | GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 이번 달 예산에서 쓴 돈을 뺀 값(0 아래로 안 감, Q-37). 용이 없으면 404 |
 | POST | `/chat/messages` | user | `{ text, clientMessageId }` | SSE `ChatEvent` 스트림 |

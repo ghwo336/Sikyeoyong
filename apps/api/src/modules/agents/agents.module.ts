@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
+import { AllowanceModule } from '../allowance/allowance.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
 import { PaymentModule } from '../payment/payment.module.js';
 import { AgentFreezeService } from './agent-freeze.service.js';
 import { AgentLevelService } from './agent-level.service.js';
+import { AgentRefundService } from './agent-refund.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
 import { AgentsController } from './agents.controller.js';
 import { AgentsRepository } from './agents.repository.js';
 import { AgentsService } from './agents.service.js';
 
 @Module({
-  imports: [AuthModule, PaymentModule, IdentityModule],
+  imports: [AuthModule, PaymentModule, IdentityModule, AllowanceModule],
   controllers: [AgentsController],
   providers: [
     AgentsRepository,
@@ -18,6 +20,7 @@ import { AgentsService } from './agents.service.js';
     AgentSetupService,
     AgentLevelService,
     AgentFreezeService,
+    AgentRefundService,
   ],
   exports: [AgentsService],
 })

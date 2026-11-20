@@ -42,3 +42,15 @@ export const zFreezeResult = z
   })
   .strict();
 export type FreezeResult = z.infer<typeof zFreezeResult>;
+
+/**
+ * POST /agents/me/drain (Frozen.dc.html "돌려받기"): how much went back from the dragon's
+ * pocket to the owner (aokrw, "0" when the pocket was empty) and the chain transactions.
+ */
+export const zRefundResult = z
+  .object({
+    refunded: zAokrwString,
+    txHashes: z.array(z.string().regex(/^0x[0-9a-fA-F]{64}$/)),
+  })
+  .strict();
+export type RefundResult = z.infer<typeof zRefundResult>;
