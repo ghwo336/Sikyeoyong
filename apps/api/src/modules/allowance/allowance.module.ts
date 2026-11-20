@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
+import { IdentityModule } from '../identity/identity.module.js';
 import { AllowanceRepository } from './allowance.repository.js';
 import { AllowanceService } from './allowance.service.js';
 import { TrialController } from './trial.controller.js';
@@ -9,7 +10,7 @@ import { TrialController } from './trial.controller.js';
  * wallet, orders and refunds record and read through AllowanceService.
  */
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, IdentityModule],
   controllers: [TrialController],
   providers: [AllowanceRepository, AllowanceService],
   exports: [AllowanceService],

@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { okrwToAokrw } from '@sikyeoyong/shared';
+import { okrwToAokrw, zTrialResult } from '@sikyeoyong/shared';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
@@ -11,7 +11,7 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { ownerAllowanceEntries } from '../../db/schema/index.js';
+import { identityChecks, ownerAllowanceEntries } from '../../db/schema/index.js';
 import { insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
 import { AllowanceModule } from './allowance.module.js';
@@ -47,7 +47,7 @@ describe('POST /api/signup/trial (user-flow 5)', () => {
     const { claim, allowance } = await setup();
     const first = await claim();
     expect(first.status).toBe(200);
-    expect(first.body).toEqual({ granted: true });
+    expect(zTrialResult.parse(first.body)).toEqual({ granted: true });
     // By hand: 100,000 won = 100000 * 10^18 aokrw (policy default).
     expect(allowance.balanceAokrw('u1')).toBe(okrwToAokrw(100_000n));
   });
@@ -60,6 +60,13 @@ describe('POST /api/signup/trial (user-flow 5)', () => {
     expect((await claim()).body).toEqual({ granted: false });
     expect(h.db.select().from(ownerAllowanceEntries).all()).toHaveLength(1);
     expect(allowance.balanceAokrw('u1')).toBe(okrwToAokrw(100_000n));
+  });
+
+  it('an owner without the identity check gets 403 and nothing', async () => {
+    const { h, claim, allowance } = await setup();
+    h.db.delete(identityChecks).run();
+    expect((await claim()).status).toBe(403);
+    expect(allowance.balanceAokrw('u1')).toBe(0n);
   });
 
   it('needs a session and the fetch header', async () => {

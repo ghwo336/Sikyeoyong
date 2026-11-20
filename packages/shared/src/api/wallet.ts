@@ -54,3 +54,7 @@ export const zRefundResult = z
   })
   .strict();
 export type RefundResult = z.infer<typeof zRefundResult>;
+
+/** POST /signup/trial (Budget.dc.html "체험용 용돈 받기"): false when it was already given. */
+export const zTrialResult = z.object({ granted: z.boolean() }).strict();
+export type TrialResult = z.infer<typeof zTrialResult>;

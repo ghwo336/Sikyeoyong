@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { zFreezeResult, zIdCardView, zRefundResult, zWalletView } from './wallet.js';
+import { zFreezeResult, zIdCardView, zRefundResult, zTrialResult, zWalletView } from './wallet.js';
 
 describe('zWalletView', () => {
   it('reads aokrw strings only', () => {
@@ -46,5 +46,13 @@ describe('zRefundResult', () => {
     });
     expect(zRefundResult.safeParse({ ...v, refunded: 20000 }).success).toBe(false);
     expect(zRefundResult.safeParse({ ...v, refunded: '1.5' }).success).toBe(false);
+  });
+});
+
+describe('zTrialResult', () => {
+  it('is granted true or false, nothing else', () => {
+    expect(zTrialResult.parse({ granted: true })).toEqual({ granted: true });
+    expect(zTrialResult.safeParse({ granted: 'yes' }).success).toBe(false);
+    expect(zTrialResult.safeParse({ granted: true, amount: '1' }).success).toBe(false);
   });
 });
