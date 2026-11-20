@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { zPouchiBindBody, zPouchiCompleteBody, zPouchiLoginConfig } from './auth.js';
+import {
+  zIdentityStatus,
+  zPouchiBindBody,
+  zPouchiCompleteBody,
+  zPouchiLoginConfig,
+} from './auth.js';
 
 const T = 'A'.repeat(42) + '_';
 
@@ -37,5 +42,12 @@ describe('Pouchi login schemas (D-29, the Pouchi BFF example shapes)', () => {
     ).toBe(false);
     expect(zPouchiCompleteBody.safeParse({ ...ok, state: 's' }).success).toBe(false);
     expect(zPouchiCompleteBody.safeParse({ ...ok, userId: 'u1' }).success).toBe(false);
+  });
+});
+
+describe('zIdentityStatus', () => {
+  it('is a boolean only', () => {
+    expect(zIdentityStatus.parse({ verified: false })).toEqual({ verified: false });
+    expect(zIdentityStatus.safeParse({ verified: 'yes' }).success).toBe(false);
   });
 });

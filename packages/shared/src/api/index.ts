@@ -107,6 +107,8 @@ export {
   type WalletView,
 } from './wallet.js';
 export {
+  zIdentityStatus,
+  type IdentityStatus,
   zPouchiBindBody,
   zPouchiCompleteBody,
   zPouchiLoginConfig,

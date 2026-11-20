@@ -30,3 +30,7 @@ export const zPouchiCompleteBody = z
   })
   .strict();
 export type PouchiCompleteBody = z.infer<typeof zPouchiCompleteBody>;
+
+/** GET /identity: whether the session owner passed the identity check (D-16). The front door uses it. */
+export const zIdentityStatus = z.object({ verified: z.boolean() }).strict();
+export type IdentityStatus = z.infer<typeof zIdentityStatus>;

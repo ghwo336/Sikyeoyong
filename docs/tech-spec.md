@@ -225,6 +225,7 @@ apps/api/src/
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/auth/pouchi/config` | 공개 | | `PouchiLoginConfig` (`api/auth.ts`, D-29): 금고 주소, 앱 ID, 콜백. 파우치 로그인이 꺼져 있으면 404 |
+| GET | `/identity` | user | | `IdentityStatus` (`{ verified }`, `api/auth.ts`). 본인 인증을 마쳤는지. 입구(EntryGate)가 용이 없는 사용자를 Verify와 Name 중 어디로 보낼지 정한다. 2026-11-20 추가 |
 | POST | `/auth/pouchi/bind` | 공개(`X-Requested-With`) | `{ requestId, codeChallenge, flow: signup }` (둘 다 base64url 43자) | 204. 금고를 열기 전 요청과 PKCE challenge를 서버에 묶는다 (10분, 한 번, 같은 요청 다시 묶기 409, IP당 1분 10회) |
 | POST | `/auth/pouchi/complete` | 공개(`X-Requested-With`) | `{ requestId, envelope, codeVerifier }` (정확히 셋) | 204와 세션 쿠키(이전 sid는 폐기). 묶은 요청으로만 한 번, verifier가 challenge와 맞아야 하고, SDK로 결과 서명과 기기 확인. 실패는 401, IP당 1분 10회. 2026-11-20 구현 |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |

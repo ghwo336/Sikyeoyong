@@ -81,3 +81,14 @@ describe('POST /api/identity/verify (D-16)', () => {
     expect(h.db.select().from(identityChecks).all()).toHaveLength(0);
   });
 });
+
+describe('GET /api/identity (the front door)', () => {
+  it('says false before the check and true after, for the session user only; 401 without a session', async () => {
+    const { http, verify, token } = await setup({ VERIFY_MODE: 'mock' });
+    const get = () => http().get('/api/identity').set('Cookie', `sid=${token}`);
+    expect((await get()).body).toEqual({ verified: false });
+    await verify();
+    expect((await get()).body).toEqual({ verified: true });
+    expect((await http().get('/api/identity')).status).toBe(401);
+  });
+});
