@@ -549,3 +549,55 @@ describe('screenText (CLAUDE.md 1)', () => {
     expect(screenText('되돌릴게용')).toBe('되돌릴게용');
   });
 });
+
+describe('a named menu is never swapped silently (browser QA 3)', () => {
+  const MENUS = {
+    merchantId: 'm-bam',
+    menus: [
+      { menuId: 'menu-soup', menu: '국물떡볶이', price: '7,000원' },
+      { menuId: 'menu-fry', menu: '튀김세트', price: '5,000원' },
+    ],
+  };
+  const swap = [
+    { blocks: [tool('get_menu', { merchantId: 'm-bam' })] },
+    {
+      blocks: [
+        tool('place_order', { merchantId: 'm-bam', items: [{ menuId: 'menu-fry', qty: 1 }] }),
+      ],
+    },
+    {
+      blocks: [
+        tool('place_order', { merchantId: 'm-bam', items: [{ menuId: 'menu-soup', qty: 1 }] }),
+      ],
+    },
+    { blocks: [{ text: '그 메뉴는 승인이 필요해용.' }] },
+  ];
+
+  it('refuses a place_order that leaves out the menu the user named', async () => {
+    const h = handlers({ get_menu: vi.fn(() => Promise.resolve(MENUS)) });
+    const { provider, h: used } = await run(swap, '밤떡 국물 떡볶이 시켜 줘', h);
+    // The swap never ran; the named menu then did.
+    expect(used.place_order).toHaveBeenCalledExactlyOnceWith(ME, {
+      merchantId: 'm-bam',
+      items: [{ menuId: 'menu-soup', qty: 1 }],
+    });
+    const [blocked] = provider.resultsAfter(2);
+    expect(blocked?.is_error).toBe(true);
+    expect(JSON.stringify(blocked?.content)).toContain('국물떡볶이');
+  });
+
+  it('lets a different menu through when the user named none', async () => {
+    const h = handlers({ get_menu: vi.fn(() => Promise.resolve(MENUS)) });
+    const { h: used } = await run(
+      [...swap.slice(0, 2), { blocks: [{ text: '됐어용.' }] }],
+      '저녁 시켜 줘',
+      h,
+    );
+    expect(used.place_order).toHaveBeenCalledTimes(1);
+  });
+
+  it('tells the model never to substitute without asking', () => {
+    expect(SYSTEM_PROMPT).toContain('몰래');
+    expect(SYSTEM_PROMPT).toContain('사용자가 고르게');
+  });
+});

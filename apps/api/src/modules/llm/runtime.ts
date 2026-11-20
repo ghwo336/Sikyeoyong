@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { AppError, hasLimitIntent } from '@sikyeoyong/shared';
 import type { ApprovalReason } from '../approvals/approvals.service.js';
+import { MenuCatalog } from './chosen-menu.js';
 import type { LlmProvider } from './llm-provider.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
 import {
@@ -107,6 +108,26 @@ function errorResult(id: string, message: string): Anthropic.ToolResultBlockPara
   return { type: 'tool_result', tool_use_id: id, is_error: true, content: message };
 }
 
+/** A place_order that leaves out the menu the user named is refused (see chosen-menu.ts). */
+function swapRefusal(
+  call: Anthropic.ToolUseBlock,
+  userText: string,
+  catalog: MenuCatalog,
+): Anthropic.ToolResultBlockParam | null {
+  if (call.name !== 'place_order') return null;
+  const parsed = TOOL_INPUTS.place_order.safeParse(call.input);
+  if (!parsed.success) return null;
+  const swapped = catalog.swappedAway(
+    userText,
+    parsed.data.items.map((i) => i.menuId),
+  );
+  if (swapped === null) return null;
+  return errorResult(
+    call.id,
+    `사용자가 말한 메뉴(${swapped.join(', ')})가 주문에 없다. 사용자가 고른 메뉴를 몰래 바꾸지 않는다. 그 메뉴로 다시 place_order를 부르면 한도는 서버가 가린다. 더 싼 걸 권하고 싶으면 recommend_merchants로 카드를 띄우고 사용자가 고르게 한다.`,
+  );
+}
+
 /**
  * Runs one user message: model turn, whitelisted tools, repeat (tech-spec 3.3).
  * The guards here hold even if the model is fooled by injected text.
@@ -129,6 +150,7 @@ export class AgentRuntime {
       { role: 'user', content: input.userText },
     ];
     const intent = hasLimitIntent(input.userText);
+    const catalog = new MenuCatalog();
     let toolCalls = 0;
     const used: Record<LimitedKind, number> = { order: 0, approval: 0, card: 0 };
     /**
@@ -192,7 +214,13 @@ export class AgentRuntime {
           results.push(errorResult(call.id, '이번 메시지에서 도구를 더 부를 수 없다.'));
           continue;
         }
-        results.push(await this.runTool(call, input, intent, used, wait, emit));
+        const swap = swapRefusal(call, input.userText, catalog);
+        if (swap !== null) {
+          // Refused before it ran, so it does not use up the one order of this message.
+          results.push(swap);
+          continue;
+        }
+        results.push(await this.runTool(call, input, intent, used, wait, catalog, emit));
         if (isToolName(call.name)) {
           const kind = TOOL_KIND[call.name];
           if (kind !== 'read') used[kind] += 1;
@@ -214,6 +242,7 @@ export class AgentRuntime {
     intent: boolean,
     used: Readonly<Record<LimitedKind, number>>,
     wait: { reason: ApprovalReason | null },
+    catalog: MenuCatalog,
     emit: (event: RuntimeEvent) => void,
   ): Promise<Anthropic.ToolResultBlockParam> {
     if (!isToolName(call.name)) {
@@ -257,6 +286,7 @@ export class AgentRuntime {
       if (output instanceof ApprovalWait) wait.reason = output.reason;
       const forModel =
         output instanceof ToolReply || output instanceof ApprovalWait ? output.forModel : output;
+      catalog.learn(forModel);
       emit(
         output instanceof ToolReply
           ? { type: 'tool_output', tool: name, output: forModel, card: output.card }
