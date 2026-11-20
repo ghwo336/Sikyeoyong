@@ -135,6 +135,12 @@ interface PaymentProvider {
 - 다른 지갑(파우치 등)은 `PaymentProvider` 구현 추가로.
 - VP 비공개 주문(2단계)은 `PrivatePaymentProvider`로 따로 두고, 감사 공개 범위를 설정으로.
 
+## 소유자 서명 포트 (D-24)
+- 소유자만 할 수 있는 일(TransferLimit 기록, `bindAgent`, `setAgentPaused` 멈춤과 해제, 회수, 충전)은 `OwnerAuthority`(가칭) 포트 하나로만 부른다. 결제 경로(A, B, C)와는 따로다.
+- 구현 두 개: `CustodialOwner`(지금, 운영자 키로 서버가 서명, 수탁)와 `PouchOwner`(나중, 사용자 파우치 지갑에 서명을 요청, 비수탁). `OWNER_MODE=custodial|pouch`로 고른다.
+- `PouchOwner`에서는 서버가 서명하지 못한다. 서버는 트랜잭션을 만들어 웹에 넘기고, 웹이 파우치 SDK로 사용자 재인증 후 서명한다. 그래서 소유자 일을 하는 API는 지금부터 "준비(prepare)"와 "결과 반영(confirm)" 두 단계로 나눠 둔다. custodial에서는 서버가 두 단계를 바로 이어서 한다.
+- 주문, 대화, 화면 코드는 어느 구현인지 몰라야 한다.
+
 ## 테스트 기준
 - 경로별 통합 테스트(테스트넷): 정상 주문, 건당 초과, 30일 초과(데모 프로필), 미등록 가게, 동결된 에이전트, 같은 orderRef 두 번.
 - 즉시 충전: 잔액 부족 시 충전 후 결제, 충전액이 float 상한을 넘지 않음.

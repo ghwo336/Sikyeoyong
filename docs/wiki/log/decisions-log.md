@@ -98,3 +98,10 @@ children: []
 - 이유: 호재 님 결정
 - 누가: 호재 님
 - 영향: design/README, tokens.json, user-flow, ui/dragon, ui/onboarding, tech-spec(agents.dragon_species, POST /agents)
+
+### 2026-11-20 D-24 추가: 테스트넷은 수탁, 파우치 출시 후 비수탁으로 교체
+- 이전: 1단계 운영자 소유, 2단계 사용자별 MAWS 소유자 계정(Q-02 결과에 따라)
+- 이후: 지금은 운영자 소유(수탁)로 가되 `OwnerAuthority` 포트 뒤에 두고, 파우치 임베디드 SDK가 나오면 사용자 파우치 지갑이 소유자(비수탁)
+- 이유: 파우치 SDK 미배포. 레퍼런스가 수탁 구조를 굳히지 않게 교체 자리를 미리 만든다
+- 누가: 호재 님
+- 영향: auth.md, security.md, payment.md, infra.md, open-questions Q-30
