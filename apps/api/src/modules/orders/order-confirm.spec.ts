@@ -124,6 +124,7 @@ async function setup(
   const row = (id: string) => h.db.select().from(orders).where(eq(orders.id, id)).get();
   return {
     h,
+    post,
     view,
     payment,
     wallet,
@@ -544,5 +545,45 @@ describe('GET /api/orders/:id (status screens)', () => {
     expect((await view(id, 'u2')).status).toBe(404);
     expect((await view('nope')).status).toBe(404);
     expect(row(id)?.status).toBe('quoted');
+  });
+});
+
+describe('requote then confirm (user-flow 12): the other rules still hold', () => {
+  it('over the limit at a new store: after the raise and requote, confirm asks for the new store and pays nothing', async () => {
+    const { h, post, payment, confirm } = await setup();
+    insertMerchant(h.db, 'm2', { name: '처음국수' });
+    insertMenu(h.db, 'x-guksu', 'm2', 7_000n, { name: '잔치국수' });
+    const pay = vi.spyOn(payment, 'pay');
+    // 14,000 at a store never seen: the per-order rule matches first (OVER_LEVEL_LIMIT).
+    const first = zCreateOrderResult.parse(
+      (
+        await post('u1', '/api/orders', {
+          merchantId: 'm2',
+          items: [{ menuId: 'x-guksu', qty: 2 }],
+          clientOrderId: 'c-new-over',
+        })
+      ).body,
+    );
+    expect(first.order.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()?.reason).toBe('OVER_LEVEL_LIMIT');
+    // The owner raised the limit (PUT /agents/me/limits, done by hand here) and the order is quoted again.
+    h.db
+      .update(agents)
+      .set({ perOrderLimitAokrw: W('15000') })
+      .where(eq(agents.id, 'a-u1'))
+      .run();
+    const requoted = zCreateOrderResult.parse(
+      (await post('u1', `/api/orders/${first.order.id}/requote`)).body,
+    );
+    expect(requoted.order.status).toBe('quoted');
+    // The press checks every rule again: now the new store asks the owner. Nothing is paid.
+    const res = zOrderResult.parse((await confirm(first.order.id)).body);
+    expect(res.order.status).toBe('pending_approval');
+    expect(pay).not.toHaveBeenCalled();
+    const rows = h.db.select().from(approvals).all();
+    expect(rows.map((r) => [r.reason, r.status])).toEqual([
+      ['OVER_LEVEL_LIMIT', 'approved'],
+      ['NEW_MERCHANT', 'pending'],
+    ]);
   });
 });

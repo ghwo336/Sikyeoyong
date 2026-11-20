@@ -547,6 +547,55 @@ describe('POST /api/orders/:id/requote: the waiting order after a per-order rais
     expect(h.db.select().from(approvals).all()).toHaveLength(1);
   });
 
+  it('exactly the new limit is enough: quoted', async () => {
+    const { h, id, requote } = await overOrder();
+    raiseTo(h, '18000');
+    expect(zCreateOrderResult.parse((await requote()).body).order).toEqual({
+      id,
+      status: 'quoted',
+    });
+  });
+
+  it('a wait for a new store stays pending_approval with its approval pending, even within the limit', async () => {
+    const { h, as, tokens, http } = await setup();
+    const res = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2', 'c-new'))).body,
+    );
+    expect(res.order.status).toBe('pending_approval');
+    raiseTo(h, '50000');
+    const again = await http()
+      .post(`/api/orders/${res.order.id}/requote`)
+      .set('Cookie', `sid=${tokens.u1}`)
+      .set('X-Requested-With', 'fetch');
+    expect(zCreateOrderResult.parse(again.body)).toEqual({
+      order: { id: res.order.id, status: 'pending_approval' },
+    });
+    expect(h.db.select().from(approvals).get()).toMatchObject({
+      reason: 'NEW_MERCHANT',
+      status: 'pending',
+    });
+  });
+
+  it('a wait for the 30-day limit stays pending_approval with its approval pending', async () => {
+    const { h, as, tokens, http } = await setup({
+      usedAokrw: BigInt(W('295000')),
+      resetAtSec: null,
+    });
+    const res = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c-month'))).body,
+    );
+    expect(res.order.status).toBe('pending_approval');
+    const again = await http()
+      .post(`/api/orders/${res.order.id}/requote`)
+      .set('Cookie', `sid=${tokens.u1}`)
+      .set('X-Requested-With', 'fetch');
+    expect(zCreateOrderResult.parse(again.body).order.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()).toMatchObject({
+      reason: 'OVER_PERSONAL_BUDGET',
+      status: 'pending',
+    });
+  });
+
   it('an expired approval is not reopened', async () => {
     const { h, id, requote } = await overOrder();
     raiseTo(h, '20000');
