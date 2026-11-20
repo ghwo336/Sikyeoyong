@@ -5,6 +5,8 @@ import { runMigrations } from '../../db/migrate.js';
 import { agents, users } from '../../db/schema/index.js';
 import { AgentsRepository } from './agents.repository.js';
 import { AgentsService } from './agents.service.js';
+import type { AgentSetupService } from './agent-setup.service.js';
+import type { PaymentProvider } from '@sikyeoyong/shared';
 
 const handles: DbHandle[] = [];
 afterEach(() => {
@@ -35,7 +37,10 @@ function setup() {
       createdAt: 1,
     })
     .run();
-  return { h, s: new AgentsService(new AgentsRepository(h)) };
+  // Reads only here: setup and payment are not reached by getForUser.
+  const noSetup = { run: () => Promise.resolve() } as unknown as AgentSetupService;
+  const noPayment = { path: 'mock' } as unknown as PaymentProvider;
+  return { h, s: new AgentsService(new AgentsRepository(h), noSetup, noPayment) };
 }
 
 describe('AgentsService', () => {

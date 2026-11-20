@@ -114,6 +114,7 @@ const ENUM_COLUMNS = [
   ['agents', 'status', 'LOST'],
   ['agents', 'payment_path', 'D'],
   ['agents', 'level', 4],
+  ['agents', 'setup_step', 'hatched'],
   ['agent_limit_history', 'level', 0],
   ['orders', 'status', 'done'],
   ['order_events', 'source', 'llm'],

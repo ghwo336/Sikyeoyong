@@ -229,6 +229,7 @@ apps/api/src/
 | PATCH | `/me` | user | `{ nickname?, address?, monthlyBudgetOkrw? }` | `{ user }` |
 | POST | `/agents` | user | `{ dragonName, dragonSpecies }` | `{ agent: { id, status: 'PENDING' } }` |
 | GET | `/agents/me` | user | | `AgentSetupView` (`{ status: PENDING \| ACTIVE \| FAILED, steps: [wallet, identity, limit] }`, `api/me.ts`). 지갑 화면용 상세(8004 agentId, 지갑, 체인 상태)는 그 화면을 만들 때 선택 칸으로 더한다 |
+| POST | `/agents/me/setup/retry` | user | | `AgentSetupView`. 부화가 실패했을 때만 멈춘 단계부터 다시 한다 ("다시 깨우기", 2026-11-20 추가) |
 | POST | `/agents/me/level` | user | `{ level: 1 \| 2 \| 3, approvalId? }` | `{ agent, txHash }` |
 | POST | `/agents/me/freeze` | user | | `{ agent, txHashes }` |
 | POST | `/agents/me/unfreeze` | user | | `{ agent, txHashes }` |

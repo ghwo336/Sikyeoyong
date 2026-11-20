@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module.js';
+import { PaymentModule } from '../payment/payment.module.js';
+import { AgentSetupService } from './agent-setup.service.js';
+import { AgentsController } from './agents.controller.js';
 import { AgentsRepository } from './agents.repository.js';
 import { AgentsService } from './agents.service.js';
 
 @Module({
-  providers: [AgentsRepository, AgentsService],
+  imports: [AuthModule, PaymentModule],
+  controllers: [AgentsController],
+  providers: [AgentsRepository, AgentsService, AgentSetupService],
   exports: [AgentsService],
 })
 export class AgentsModule {}
