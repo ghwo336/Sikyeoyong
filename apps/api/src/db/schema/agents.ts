@@ -1,5 +1,5 @@
 import { DRAGON_SPECIES } from '@sikyeoyong/shared';
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { aokrwCheck, enumCheck } from './checks.js';
 import { users } from './users.js';
 
@@ -59,4 +59,30 @@ export const agentLimitHistory = sqliteTable(
     index('agent_limit_history_agent_idx').on(t.agentId, t.createdAt),
     aokrwCheck('agent_limit_history_transfer_limit_check', t.transferLimitAokrw),
   ],
+);
+
+/**
+ * Path B only (tech-spec 4, payment.md): one encrypted EOA private key per agent wallet. The key
+ * is AES-256-GCM sealed with AGENT_KEY_ENCRYPTION_KEY; the address is bound in as AAD so a row's
+ * ciphertext cannot be moved under another address. agent_id is filled when the agents row links
+ * the wallet (the key is saved first, before anything on chain, so a crash never loses a key whose
+ * address may hold money). Nothing here is ever logged or sent to the web.
+ */
+export const agentKeys = sqliteTable(
+  'agent_keys',
+  {
+    /** Lowercase 0x address of the agent wallet. */
+    address: text('address').primaryKey(),
+    agentId: text('agent_id').references(() => agents.id),
+    /** AES-256-GCM ciphertext, hex. */
+    ciphertext: text('ciphertext').notNull(),
+    /** 12 byte nonce, hex. */
+    iv: text('iv').notNull(),
+    /** 16 byte auth tag, hex. */
+    tag: text('tag').notNull(),
+    /** Which master key sealed it (rotation, 2단계 KMS). */
+    keyVersion: integer('key_version').notNull().default(1),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [uniqueIndex('agent_keys_agent_id_unique').on(t.agentId)],
 );

@@ -71,6 +71,13 @@
       "when": 1795169792461,
       "tag": "0009_limit_amounts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1795188608222,
+      "tag": "0010_agent_keys",
+      "breakpoints": true
     }
   ]
 }

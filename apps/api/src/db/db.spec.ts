@@ -66,6 +66,7 @@ describe('migrations (data.md: apply to an empty DB from scratch)', () => {
       )
       .all() as { name: string }[];
     expect(tables.map((t) => t.name)).toEqual([
+      'agent_keys',
       'agent_limit_history',
       'agents',
       'allowed_merchants',
