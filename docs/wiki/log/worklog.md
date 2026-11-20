@@ -242,3 +242,17 @@ children: []
 - 한 일: D-24에 문구와 자리 기록(bfb39d6), `GET /me`의 `custodial`(975d84a), ui/wallet `CustodyNote`(ff57b66), README 문구(cb185fc).
 - 실수 기록: 975d84a 커밋 제목 범위에 쉼표(`feat(shared,api/users)`)를 넣어 형식(git-and-review.md "커밋 메시지")을 어겼다. 히스토리는 고치지 않는다 (dev-loop.md). 앞으로 여러 단위를 건드려도 범위는 하나로 쓴다.
 - 남은 것: 지갑 화면 조립 때 `custodial`이 true일 때만 `CustodyNote`를 맨 아래에 넣고 자세히 보기 스위치를 `detailed`로 넘긴다 (false면 그리지 않는 테스트 포함). 시안 `Wallet.dc.html`에 이 한 줄을 넣는 것은 다음 디자인 갱신 때.
+
+### 2026-11-20 주문: 승인 기반, 견적, confirm 결제
+- 한 일:
+  - approvals `openWithOrder`: 주문 쓰기와 승인 행을 한 트랜잭션에 (14708f7, PASS).
+  - 견적 `POST /orders` (75a48da, 수정 f389eb1, 2라운드 PASS): 서버 가격, 30일 상한, 승인 사유, `clientOrderId` 멱등, `orderRef = keccak256(주문 ID)`.
+  - confirm `POST /orders/:id/confirm` (207fc32, 검증 중): 상태로 멱등, 조건부 전이, findPaid 뒤 같은 orderRef 재시도, 부족분 즉시 충전, 제출 표시 뒤 pay, 실패 분류.
+  - OwnerAuthority 부화 bind 테스트 (c0866e0, 13b32a1, PASS), 수탁 안내 (D-24, PASS).
+- 막힌 것: Q-35 (처음 보는 가게 승인이 데모 첫 주문을 막음) 호재 님 결정 대기.
+- 다음 할 일:
+  - `GET /orders/:id`, 승인과 거절 API(`POST /approvals/:id/approve|reject`, 조치 뒤 `quoted`로), 만료 주기 작업.
+  - LLM `place_order`, `request_owner_approval`을 `OrderQuoteService`에 연결 (금액 입력 없음, 확인 카드만).
+  - payment.md "confirm 코드" 절의 "아직" 목록 (TransferLimit 재기록 1회, float 상한, 시작 시 submitting 재확인, 인덱서, 데모 우회, 영수증).
+  - 추천 `needsApproval`에 `NEW_MERCHANT` 반영, 최근 주문 읽기 포트.
+  - 웹 목을 실제 API로, 지갑 화면 조립(`CustodyNote`), UX 다듬기(D-23 토스급).
