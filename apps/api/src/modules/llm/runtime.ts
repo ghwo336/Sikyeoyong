@@ -20,10 +20,12 @@ type LimitedKind = Exclude<ToolKind, 'read'>;
 
 /**
  * CLAUDE.md 1: no em dash or en dash on screen, whatever a model writes. Replaced as the words
- * stream, so the saved turn and its replay show the same text.
+ * stream, so the saved turn and its replay show the same text. Also "되용" to "돼용": 되+요
+ * is always written 돼요, so the dragon's 용 ending is always 돼용 (browser QA 2: "적용되용").
+ * Per streamed piece, so a "되" and "용" split across two pieces stays as written.
  */
 export function screenText(text: string): string {
-  return text.replace(/\s*[\u2013\u2014]\s*/g, ', ');
+  return text.replace(/\s*[\u2013\u2014]\s*/g, ', ').replace(/되용/g, '돼용');
 }
 
 /** Who is talking: always from the login session, never from model output (D-21). */

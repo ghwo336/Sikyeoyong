@@ -542,4 +542,10 @@ describe('screenText (CLAUDE.md 1)', () => {
     expect(screenText(`9,000${en}9,500원`)).toBe('9,000, 9,500원');
     expect(screenText('그대로예용.')).toBe('그대로예용.');
   });
+
+  it('writes the 되+요 ending as 돼용 (browser QA 2: "적용되용")', () => {
+    expect(screenText('버튼을 눌러야 적용되용.')).toBe('버튼을 눌러야 적용돼용.');
+    expect(screenText('안 되용? 돼용!')).toBe('안 돼용? 돼용!');
+    expect(screenText('되돌릴게용')).toBe('되돌릴게용');
+  });
 });

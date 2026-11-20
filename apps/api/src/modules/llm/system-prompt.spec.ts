@@ -11,6 +11,7 @@ describe('SYSTEM_PROMPT (agent-runtime.md)', () => {
     expect(SYSTEM_PROMPT).toContain('해요체');
     expect(SYSTEM_PROMPT).toContain('반말은 한 번도 쓰지 않는다');
     expect(SYSTEM_PROMPT).toContain('한 번에 한두 문장');
+    expect(SYSTEM_PROMPT).toContain('"적용돼용"');
   });
 
   it('says weather, time and open stores only from tool results, and recommends with the tool', () => {
