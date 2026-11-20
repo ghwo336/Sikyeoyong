@@ -12,6 +12,11 @@ export interface ChatThreadProps {
   readonly stamp?: string;
   /** While the dragon is still writing its answer. */
   readonly streaming?: boolean;
+  /**
+   * Changes when the user sends a message (its id). The thread then jumps to the bottom and
+   * follows again even if the user had scrolled up to read, like a messenger.
+   */
+  readonly followKey?: string;
 }
 
 /** Within this many px of the bottom still counts as "at the bottom". */
@@ -27,13 +32,20 @@ export function ChatThread({
   autoScroll = true,
   stamp,
   streaming = false,
+  followKey,
 }: ChatThreadProps) {
   const box = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  const followed = useRef(followKey);
 
   // Runs after every render, so streamed text growing a message also follows.
   useLayoutEffect(() => {
     const el = box.current;
+    if (followKey !== followed.current) {
+      // The user just sent something: their own message is what they want to see.
+      followed.current = followKey;
+      pinned.current = true;
+    }
     if (!el || !autoScroll || !pinned.current) return;
     el.scrollTop = el.scrollHeight;
   });

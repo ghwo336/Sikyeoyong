@@ -53,6 +53,30 @@ describe('ChatThread (ChatThread.md 테스트 기준)', () => {
     expect(log.scrollTop).toBe(1200);
   });
 
+  it('jumps back to the bottom when the user sends, even after scrolling up to read', () => {
+    function Sent({ count, last }: { count: number; last: string }) {
+      return (
+        <ChatThread followKey={last}>
+          {Array.from({ length: count }, (_, i) => (
+            <p key={i}>메시지 {i}</p>
+          ))}
+        </ChatThread>
+      );
+    }
+    const { rerender } = render(<Sent count={10} last="m1" />);
+    const log = screen.getByRole('log');
+    fakeLayout(log);
+    rerender(<Sent count={10} last="m1" />);
+    log.scrollTop = 100; // reading something far up
+    fireEvent.scroll(log);
+    rerender(<Sent count={11} last="m1" />); // the dragon's line: stay where the user reads
+    expect(log.scrollTop).toBe(100);
+    rerender(<Sent count={12} last="m2" />); // the user sends: down to it
+    expect(log.scrollTop).toBe(1200);
+    rerender(<Sent count={13} last="m2" />); // and the answer is followed again
+    expect(log.scrollTop).toBe(1300);
+  });
+
   it('follows streamed text that grows the last message', () => {
     function Stream({ text }: { text: string }) {
       return (

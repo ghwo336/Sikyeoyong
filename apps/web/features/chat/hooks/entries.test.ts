@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OrderQuote, RecommendationCard } from '../../../lib/api';
-import { type ChatEntry, dragonTurn, historyEntries, threadRows } from './entries';
+import { type ChatEntry, dragonTurn, historyEntries, lastSent, threadRows } from './entries';
 
 const rec = { id: 'r1', menu: '돼지국밥' } as RecommendationCard;
 const quote = { orderId: 'o1' } as OrderQuote;
@@ -96,5 +96,21 @@ describe('threadRows', () => {
 
   it('is empty for an empty thread', () => {
     expect(threadRows([])).toEqual([]);
+  });
+});
+
+describe('lastSent', () => {
+  it("is the user's newest message id, past any dragon lines after it", () => {
+    const entries: ChatEntry[] = [
+      { kind: 'user', id: 'u1', text: '안녕', status: 'sent' },
+      { kind: 'dragon', id: 'd1', text: '안녕하세용' },
+      { kind: 'user', id: 'u2', text: '국밥', status: 'sending' },
+      { kind: 'dragon', id: 'd2', text: '찾아볼게용' },
+    ];
+    expect(lastSent(entries)).toBe('u2');
+  });
+
+  it('is undefined before the user says anything', () => {
+    expect(lastSent([{ kind: 'dragon', id: 'd1', text: '안녕하세용' }])).toBeUndefined();
   });
 });

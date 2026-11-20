@@ -131,3 +131,12 @@ export function threadRows(entries: readonly ChatEntry[]): ThreadRow[] {
   }
   return rows;
 }
+
+/** The id of the user's newest message: when it changes, the thread follows to the bottom. */
+export function lastSent(entries: readonly ChatEntry[]): string | undefined {
+  for (let i = entries.length - 1; i >= 0; i -= 1) {
+    const e = entries[i];
+    if (e?.kind === 'user') return e.id;
+  }
+  return undefined;
+}

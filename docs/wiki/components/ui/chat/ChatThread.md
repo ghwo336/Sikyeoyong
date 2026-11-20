@@ -15,7 +15,7 @@ children: []
 메시지 종류별 그림 (자식 컴포넌트가 그림)
 
 ## props
-`children: ReactNode`, `autoScroll?: boolean` (기본 true), `stamp?: string` (맨 위 시각 "오늘 오후 12:28"), `streaming?: boolean` (용이가 답을 쓰는 중, aria-busy)
+`children: ReactNode`, `autoScroll?: boolean` (기본 true), `stamp?: string` (맨 위 시각 "오늘 오후 12:28"), `streaming?: boolean` (용이가 답을 쓰는 중, aria-busy), `followKey?: string` (사용자가 보낸 마지막 메시지 id. 바뀌면 맨 아래로)
 
 ## 하네스 상태
 `ChatThread.stories.tsx`에 아래를 전부 만든다.
@@ -30,6 +30,7 @@ Main, LimitChat
 - 옆에 회색 스크롤바가 보이지 않는다 (`scrollbar-width: none`과 webkit 스크롤바 숨김, D-23 앱처럼)
 - 스크롤하는 줄 안의 메시지는 줄어들지 않는다 (`.thread > *` flex-shrink 0. 카드는 넘침을 숨겨 줄어들면 잘린다, 2026-11-20 실기기에서 발견)
 - 새 메시지에 자동 스크롤, 사용자가 위로 올렸으면 멈춤, 맨 아래 24px 안으로 돌아오면 다시 따라감 (`isNearBottom`)
+- 위로 올려 읽다가 사용자가 메시지를 보내면(`followKey`가 바뀜) 맨 아래로 바로 내려가고 다시 따라감. 메신저처럼 부드러운 스크롤 대신 즉시 이동 (부드러운 스크롤 도중 스크롤 이벤트가 따라가기를 끊지 않게)
 - 스트리밍으로 마지막 메시지가 길어져도 따라감
 - autoScroll이 꺼지면 스크롤하지 않음
 - role log, aria-live polite, 스트리밍 중에만 aria-busy

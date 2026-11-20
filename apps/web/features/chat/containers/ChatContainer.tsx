@@ -18,7 +18,7 @@ import { LimitChangeContainer } from '../../limits/containers/LimitChangeContain
 import { useMe } from '../../me/hooks/useMe';
 import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
-import { type ChatEntry, threadRows } from '../hooks/entries';
+import { type ChatEntry, lastSent, threadRows } from '../hooks/entries';
 import { useChat } from '../hooks/useChat';
 
 type RecommendationsEntry = Extract<ChatEntry, { kind: 'recommendations' }>;
@@ -103,7 +103,11 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
           />
         }
       >
-        <ChatThread stamp={chat.thread?.stamp} streaming={chat.sending}>
+        <ChatThread
+          stamp={chat.thread?.stamp}
+          streaming={chat.sending}
+          followKey={lastSent(entries)}
+        >
           {threadRows(entries).map(({ entry: e, cards, last }) => {
             switch (e.kind) {
               case 'user':
