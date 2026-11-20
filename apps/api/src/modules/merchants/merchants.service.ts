@@ -119,6 +119,20 @@ export class MerchantsService {
     return m === null ? null : clipText(m.category, CATEGORY_MAX);
   }
 
+  /**
+   * For an order already made (any merchant, visible or not): its name and arrival
+   * minutes for the status screen, and its on-chain id for paying (null until registered, Q-34).
+   */
+  orderInfoOf(id: string): { name: string; etaMin: number; onchainId: bigint | null } | null {
+    const m = this.source.get(id);
+    if (m === null) return null;
+    return {
+      name: clipText(m.name, MERCHANT_NAME_MAX),
+      etaMin: m.etaMin,
+      onchainId: m.onchainId === null ? null : BigInt(m.onchainId),
+    };
+  }
+
   /** For the orders module: can this merchant take an order now, and its menu prices. */
   lookupForOrder(merchantId: string, nowMs: number = Date.now()): OrderLookup {
     const m = this.source.get(merchantId);

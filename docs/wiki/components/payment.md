@@ -88,6 +88,13 @@ interface PaymentProvider {
 - 주인이 승인하면 서버는 필요한 조치(레벨 상향, 가게 허용)를 한다. 레벨 상향이면 TransferLimit 갱신 트랜잭션이 **확정된 뒤에** 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 다시 보낸다 (먼저 되돌리면 다시 revert되고 가스가 든다). `POST /api/approvals/:id/approve`는 결제하지 않는다. **결제는 다시 confirm에서만** 한다.
 - 거절, 또는 만료(approvals 모듈의 주기 작업이 1분마다 `expires_at`이 지난 대기 승인을 `expired`로 바꾼다)면 묶인 주문은 재시도 불가 `failed` (`error_code`는 원래 사유).
 
+### confirm 코드 (2026-11-20)
+- `modules/orders/order-confirm.service.ts`의 `OrderConfirmService.confirm`. 상태 전이는 모두 `OrdersRepository.transition(id, from, set)`(조건부 UPDATE 하나, 이겼는지 돌려줌)로만 한다. 실패 분류 표는 `modules/orders/failure-class.ts`(이 절의 표와 같다). 서버 규칙(30일 상한, 레벨, 처음 보는 가게, 예산)은 견적과 confirm이 `OrderRules` 하나를 같이 쓴다.
+- 이긴 요청만 이 순서로 간다: 사전 검사(부화, 멈춤, 가게, 지금 가격 다시 계산, 30일 상한, 승인 사유. 이 주문 금액 그대로 승인된 예산 초과는 건너뜀) → 부족분만 즉시 충전(`OwnerAuthority`의 `fund`, 사용자 서명을 기다리면 표시 전 `INTERNAL`로 재시도 가능 실패) → `preflight` → 제출 표시(`submit_started_at`) 커밋 → `pay`. 표시 전에 난 오류는 아무것도 나가지 않았으니 재시도 가능 `failed`, 표시 뒤의 던짐이나 `INTERNAL`은 `submitting` 유지.
+- 응답은 `{ order: OrderView }`(`zOrderResult`). 실패면 `errorCode`, 결제되면 `txHash`가 붙는다. 도착 시각은 결제를 시작한 때(`submit_started_at`)부터 센다. 상태별 용이 대사와 표정은 `modules/orders/order-view.ts`(Done, Tracking, Arrived 시안 문구). 실패한 주문의 대사는 그 코드의 대사이고, 값(`{max}`, `{resetAt}`)이 필요한 대사는 값을 저장하지 않으므로 사람 문장(`message`)으로 대신한다.
+- 경로 C는 실패 주문을 다시 결제하지 않는다 (Q-24). 가게의 `onchain_id`가 없으면(Q-34) 흉내 체인 밖에서는 `CHAIN_MERCHANT_INACTIVE`.
+- 아직: `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(레벨 한도 × `AGENT_FLOAT_MULTIPLIER`) 유지, 서버 시작 때 표시 없는 `submitting` 재확인, 인덱서로 `submitting`을 `paid`로 끝내기, `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
+
 ### 견적 (`POST /orders`, `place_order`, 2026-11-20 코드)
 - `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 아래 순서로 본다.
   1. 부화 전(ACTIVE도 FROZEN도 아님)이면 `CHAIN_AGENT_LIMIT_UNSET`, 멈췄으면 `SERVER_FROZEN`. 그다음 가게(없으면 `NOT_FOUND`, 미인증·비활성·영업 외면 `CHAIN_MERCHANT_INACTIVE`)와 메뉴(같은 메뉴 두 번은 400, 없거나 품절이면 `NOT_FOUND`)를 서버 값으로 매긴다. 여기서 거절되면 주문을 만들지 않는다.

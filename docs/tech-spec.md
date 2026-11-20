@@ -242,7 +242,7 @@ apps/api/src/
 | GET | `/merchants/:id` | user | | `{ merchant, menus }` (`menus`: `{ id, name, price(aokrw), tags, description, available }[]`). 숨긴 가게는 404 `NOT_FOUND` |
 | POST | `/orders/quote` | user | `{ merchantId, items: [{ menuId, qty }] }` | `{ amount, checks: RuleCheck[] }` |
 | POST | `/orders` | user | `{ merchantId, items, clientOrderId }` | `{ order: { status: 'quoted' }, quote }` (앱에서 직접 주문하는 버튼용, LLM `place_order`와 같은 서비스 함수. 결제는 하지 않음) |
-| POST | `/orders/:id/confirm` | user | | `{ order, receipt }` 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 상태별 동작은 payment.md "confirm 상태 규칙"(D-19): `quoted`와 재시도 가능한 `failed`(체인 조회 뒤 같은 orderRef)만 결제, 그 밖은 결제 없이 현재 `{ order, receipt }`. 409로 답하지 않는다 |
+| POST | `/orders/:id/confirm` | user | | `{ order }` (`OrderView`, `zOrderResult`. 실패면 `errorCode`, 결제되면 `txHash`) 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 상태별 동작은 payment.md "confirm 상태 규칙"(D-19): `quoted`와 재시도 가능한 `failed`(체인 조회 뒤 같은 orderRef)만 결제, 그 밖은 결제 없이 현재 `{ order }`. 409로 답하지 않는다 |
 | GET | `/orders` | user | `?cursor` | `{ orders, nextCursor }` |
 | GET | `/orders/:id` | user | | `{ order, events, receipt }` |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |

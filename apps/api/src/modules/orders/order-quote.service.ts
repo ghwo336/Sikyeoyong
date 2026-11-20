@@ -1,11 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   AppError,
-  type AppErrorCode,
   aokrwToString,
   type CreateOrderResult,
-  formatKstDateTime,
-  kstMonthOf,
   type MerchantCard,
   type OrderQuote,
   parseAokrw,
@@ -28,7 +25,7 @@ import {
 } from './order-lines.js';
 import { orderRefOf } from './order-ref.js';
 import { OrdersRepository, type OrderRow } from './orders.repository.js';
-import { OrdersService, SPENT_STATUSES } from './orders.service.js';
+import { OrderRules } from './order-rules.service.js';
 
 export interface QuoteRequest {
   readonly merchantId: string;
@@ -49,7 +46,7 @@ export class OrderQuoteService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(CHAIN_READER) private readonly chain: ChainReader,
     private readonly repo: OrdersRepository,
-    private readonly orders: OrdersService,
+    private readonly rules: OrderRules,
     private readonly agents: AgentsService,
     private readonly users: UsersService,
     private readonly merchants: MerchantsService,
@@ -70,8 +67,8 @@ export class OrderQuoteService {
     if (agent.frozen) throw new AppError('SERVER_FROZEN', { reason: 'agent is frozen' });
     const merchant = this.orderableMerchant(req.merchantId, nowMs);
     const { lines, total } = priceLines(req.items, merchant.menus);
-    const periodUsed = await this.periodUsedOrRefuse(agent, total, nowMs);
-    const refusal = this.approvalNeeded(userId, agent, req.merchantId, total, nowMs);
+    const periodUsed = await this.rules.periodUsedOrRefuse(agent, total, nowMs);
+    const refusal = this.rules.approvalNeeded(userId, agent, req.merchantId, total, nowMs);
 
     const orderId = uuidv7(nowMs);
     const row = {
@@ -132,50 +129,6 @@ export class OrderQuoteService {
       throw new AppError('CHAIN_MERCHANT_INACTIVE', { reason: found.reason });
     }
     return { card: found.merchant, menus: found.menus };
-  }
-
-  /** The chain's 30-day cap cannot be approved away: refuse now, with when it opens again. */
-  private async periodUsedOrRefuse(
-    agent: AgentSummary,
-    amount: bigint,
-    nowMs: number,
-  ): Promise<bigint> {
-    const policy = this.config.policy;
-    const volume = await this.chain.periodicVolume(agent.wallet);
-    if (volume.usedAokrw + amount > policy.periodicCapAokrw) {
-      const resetMs =
-        volume.resetAtSec === null
-          ? nowMs + policy.periodicPeriodSec * 1000
-          : volume.resetAtSec * 1000;
-      throw new AppError('CHAIN_PERIODIC_LIMIT', {
-        reason: '30-day cap',
-        dragonParams: { resetAt: formatKstDateTime(resetMs) },
-      });
-    }
-    return volume.usedAokrw;
-  }
-
-  /**
-   * Server rules that ask the owner (tech-spec 1.4 flow 3), first match wins:
-   * over the level's per-order limit, a store the owner has not allowed and never
-   * paid at (D-07), then over the personal monthly budget with this order.
-   */
-  private approvalNeeded(
-    userId: string,
-    agent: AgentSummary,
-    merchantId: string,
-    amount: bigint,
-    nowMs: number,
-  ): AppErrorCode | null {
-    const policy = this.config.policy;
-    if (amount > policy.perOrderLimitAokrw[agent.level]) return 'SERVER_OVER_LEVEL';
-    const seen =
-      this.approvals.isMerchantAllowed(userId, merchantId) ||
-      this.repo.hasOrderAt(userId, merchantId, SPENT_STATUSES);
-    if (!seen) return 'SERVER_NEW_MERCHANT';
-    const spent = this.orders.spentInMonthAokrw(userId, kstMonthOf(nowMs));
-    if (spent + amount > this.users.getMonthlyBudgetAokrw(userId)) return 'SERVER_BUDGET_OVER';
-    return null;
   }
 
   private quoteView(

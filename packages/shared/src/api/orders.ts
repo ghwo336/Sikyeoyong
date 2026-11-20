@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { zAokrwString } from '../money/money.js';
 import { zDragonMood } from '../domain/dragon-mood.js';
+import { APP_ERROR_CODES } from '../errors/app-error-code.js';
 
 /** orders.status (payment.md "confirm 상태 규칙", D-19). */
 export const ORDER_STATUSES = [
@@ -87,9 +88,26 @@ export const zOrderView = z
     remainingMin: minutes,
     dragonLine: z.string().min(1),
     dragonMood: zDragonMood,
+    /** Why a failed order stopped (payment.md "실패 분류"); only on failed. */
+    errorCode: z.enum(APP_ERROR_CODES).optional(),
+    /** Chain transaction of the payment, once paid (영수증 자세히 보기). */
+    txHash: z
+      .string()
+      .regex(/^0x[0-9a-f]{64}$/)
+      .optional(),
   })
   .strict();
 export type OrderView = z.infer<typeof zOrderView>;
+
+/**
+ * POST /orders/:id/confirm and GET /orders/:id (tech-spec 3.2). Confirm answers
+ * the order as it is after this call, never 409 for its state (D-19).
+ */
+export const zOrderResult = z.object({ order: zOrderView }).strict();
+export type OrderResult = z.infer<typeof zOrderResult>;
+
+/** :id of /orders/:id routes. */
+export const zOrderIdParam = id;
 
 /** POST /orders body. The client sends ids and quantities only, never a price. */
 export const zCreateOrderBody = z

@@ -68,6 +68,21 @@ export class ApprovalsService {
     return { approvalId, expiresAt };
   }
 
+  /**
+   * Whether the owner approved going over the budget for exactly this amount on
+   * this order. A different amount (the price changed, a new quote) does not count
+   * (payment.md "승인된 사유는 그 주문의 confirm에서 다시 막지 않는다").
+   */
+  budgetApprovedFor(orderId: string, amountAokrw: string): boolean {
+    return this.repo.approvedPayloads(orderId, 'OVER_PERSONAL_BUDGET').some((json) => {
+      try {
+        return (JSON.parse(json) as { amount?: unknown }).amount === amountAokrw;
+      } catch {
+        return false;
+      }
+    });
+  }
+
   /** Whether the owner has allowed this store (D-07 "처음 보는 가게", server only). */
   isMerchantAllowed(userId: string, merchantId: string): boolean {
     return this.repo.isMerchantAllowed(userId, merchantId);

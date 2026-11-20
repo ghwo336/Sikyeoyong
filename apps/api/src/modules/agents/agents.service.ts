@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   AppError,
   type AgentLevel,
+  type AgentWallet,
   type AgentSetupView,
   type CreateAgentBody,
   type DragonSpecies,
@@ -53,6 +54,26 @@ export class AgentsService {
       wallet: asWallet(row.walletAddress),
       dragonName: row.dragonName,
       dragonSpecies: row.dragonSpecies,
+    };
+  }
+
+  /**
+   * The wallet the payment path pays from. Before hatching wrote the wallet and
+   * its owner, ordering is CHAIN_AGENT_LIMIT_UNSET (user-flow 4).
+   */
+  walletForPayment(userId: string): AgentWallet {
+    const row = this.repo.findByUserId(userId);
+    if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'agent not found' });
+    const address = asWallet(row.walletAddress);
+    const owner = asWallet(row.ownerAddress);
+    if (address === null || owner === null) {
+      throw new AppError('CHAIN_AGENT_LIMIT_UNSET', { reason: 'agent wallet not ready' });
+    }
+    return {
+      agentRowId: row.id,
+      address,
+      ownerAddress: owner,
+      ...(row.onchainAgentId === null ? {} : { onchainAgentId: BigInt(row.onchainAgentId) }),
     };
   }
 

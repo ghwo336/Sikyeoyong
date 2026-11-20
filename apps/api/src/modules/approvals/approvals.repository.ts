@@ -33,6 +33,22 @@ export class ApprovalsRepository {
       .run();
   }
 
+  /** Payloads of the approved rows of this order with this reason. */
+  approvedPayloads(orderId: string, reason: ApprovalReason): string[] {
+    return this.handle.db
+      .select({ payload: approvals.payloadJson })
+      .from(approvals)
+      .where(
+        and(
+          eq(approvals.orderId, orderId),
+          eq(approvals.reason, reason),
+          eq(approvals.status, 'approved'),
+        ),
+      )
+      .all()
+      .map((r) => r.payload);
+  }
+
   isMerchantAllowed(userId: string, merchantId: string): boolean {
     return (
       this.handle.db

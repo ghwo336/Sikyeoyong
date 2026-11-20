@@ -7,6 +7,8 @@ import {
   zCreateOrderBody,
   zCreateOrderResult,
   zOrderQuote,
+  zOrderIdParam,
+  zOrderResult,
   zOrderView,
 } from './orders.js';
 
@@ -195,6 +197,16 @@ describe('order schemas (tech-spec 3.2)', () => {
     expect(zOrderView.safeParse({ ...view, dragonMood: 'angry' }).success).toBe(false);
     expect(zOrderView.safeParse({ ...view, status: 'done' }).success).toBe(false);
     expect(DRAGON_MOODS).toContain('cooking');
+    const failed = { ...view, status: 'failed', errorCode: 'CHAIN_INSUFFICIENT_FUNDS' };
+    expect(zOrderView.parse(failed)).toEqual(failed);
+    expect(zOrderView.safeParse({ ...view, errorCode: 'NOPE' }).success).toBe(false);
+    const paid = { ...view, status: 'paid', txHash: `0x${'ab'.repeat(32)}` };
+    expect(zOrderResult.parse({ order: paid })).toEqual({ order: paid });
+    expect(zOrderView.safeParse({ ...view, txHash: '0x1234' }).success).toBe(false);
+    expect(zOrderResult.safeParse({ order: paid, receipt: {} }).success).toBe(false);
+    expect(zOrderIdParam.safeParse('').success).toBe(false);
+    expect(zOrderIdParam.safeParse('x'.repeat(65)).success).toBe(false);
+    expect(zOrderIdParam.parse('o1')).toBe('o1');
   });
 });
 

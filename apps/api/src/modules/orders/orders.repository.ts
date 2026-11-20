@@ -72,6 +72,33 @@ export class OrdersRepository {
       .get();
   }
 
+  findForUser(id: string, userId: string): OrderRow | undefined {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, id), eq(orders.userId, userId)))
+      .get();
+  }
+
+  /**
+   * The one way an order changes state: a conditional UPDATE on (id, status), so of
+   * requests racing on the same order exactly one wins (payment.md "confirm 상태 규칙").
+   * Returns whether this call won.
+   */
+  transition(
+    id: string,
+    from: OrderStatus,
+    set: Partial<Pick<OrderRow, 'status' | 'attempt' | 'errorCode' | 'txHash' | 'submitStartedAt'>>,
+    nowMs: number,
+  ): boolean {
+    const r = this.handle.db
+      .update(orders)
+      .set({ ...set, updatedAt: nowMs })
+      .where(and(eq(orders.id, id), eq(orders.status, from)))
+      .run();
+    return r.changes === 1;
+  }
+
   /** Throws on a used (user, clientOrderId) or orderRef (unique indexes). */
   insert(row: NewOrder): void {
     this.handle.db
