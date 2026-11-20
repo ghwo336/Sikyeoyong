@@ -66,12 +66,25 @@ describe('createPaymentProvider for path B', () => {
   it('builds the managed EOA provider on the demo deployment (no network at construction)', () => {
     const p = createPaymentProvider(loadConfig(ENV), store);
     expect(p.path).toBe('B');
-    expect(p.gasReserveAokrw).toBe(okrwToAokrw(2_000n));
+    expect(p.gasReserveAokrw).toBe(okrwToAokrw(100n));
   });
 
   it('AGENT_GAS_SHARE_OKRW sets the gas reserve', () => {
     const p = createPaymentProvider(loadConfig({ ...ENV, AGENT_GAS_SHARE_OKRW: '10' }), store);
     expect(p.gasReserveAokrw).toBe(okrwToAokrw(10n));
+  });
+
+  it('accepts the gas share bounds 0 and 1,000 OKRW and refuses outside them', () => {
+    expect(
+      createPaymentProvider(loadConfig({ ...ENV, AGENT_GAS_SHARE_OKRW: '0' }), store)
+        .gasReserveAokrw,
+    ).toBe(0n);
+    expect(
+      createPaymentProvider(loadConfig({ ...ENV, AGENT_GAS_SHARE_OKRW: '1000' }), store)
+        .gasReserveAokrw,
+    ).toBe(okrwToAokrw(1_000n));
+    expect(() => loadConfig({ ...ENV, AGENT_GAS_SHARE_OKRW: '1001' })).toThrow();
+    expect(() => loadConfig({ ...ENV, AGENT_GAS_SHARE_OKRW: '-1' })).toThrow();
   });
 
   it('outside production a missing piece leaves a provider that pays nothing', async () => {

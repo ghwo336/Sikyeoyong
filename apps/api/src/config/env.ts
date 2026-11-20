@@ -94,8 +94,8 @@ const schema = z.object({
   WAAS_AUTH_TOKEN: optionalText,
   AGENT_KEY_ENCRYPTION_KEY: optionalText,
   AGENT_FLOAT_MULTIPLIER: int(1).default(2),
-  /** Path B: OKRW kept in each agent wallet for gas on top of the float (D-25, tech-spec 3.4). */
-  AGENT_GAS_SHARE_OKRW: int(0).default(2000),
+  /** Path B: OKRW kept in each agent wallet for gas on top of the float (D-25, tech-spec 3.4). Default 100, at most 1,000. */
+  AGENT_GAS_SHARE_OKRW: int(0, 1000).default(100),
   SUBMITTING_ALERT_MS: int(1000).default(600_000),
 });
 

@@ -42,7 +42,7 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
       path: 'B',
       ownerMode: 'custodial',
       floatMultiplier: 2n,
-      gasShareAokrw: okrwToAokrw(2_000n),
+      gasShareAokrw: okrwToAokrw(100n),
       submittingAlertMs: 600_000,
       confirmations: 1,
     });

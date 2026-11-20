@@ -149,7 +149,7 @@ function setup(opts: { balance?: bigint } = {}) {
       registry: REGISTRY,
       proxy: PROXY,
       deployBlock: 23_000_000n,
-      gasShareAokrw: W(2_000n),
+      gasShareAokrw: W(100n),
       confirmations: 1,
       receiptTimeoutMs: 1_000,
     },
@@ -672,6 +672,6 @@ describe('shape', () => {
   it('is path B and reports the gas share the orders top-up must add', () => {
     const t = setup();
     expect(t.provider.path).toBe('B');
-    expect(t.provider.gasReserveAokrw).toBe(W(2_000n));
+    expect(t.provider.gasReserveAokrw).toBe(W(100n));
   });
 });
