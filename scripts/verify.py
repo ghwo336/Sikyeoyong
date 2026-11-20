@@ -649,7 +649,8 @@ def pkg_of(p):
     if parts[0] in ("apps", "packages") and len(parts) > 2:
         return "/".join(parts[:2])
     if parts[0] == "contracts":
-        return "contracts"
+        # contracts/lib holds vendored libraries copied verbatim (contracts/lib/VENDOR.txt), not our source.
+        return None if len(parts) > 1 and parts[1] == "lib" else "contracts"
     return None
 
 
