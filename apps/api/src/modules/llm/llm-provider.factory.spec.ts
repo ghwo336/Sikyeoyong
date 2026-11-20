@@ -10,7 +10,7 @@ import { loadConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { DailyCapProvider } from './daily-cap-provider.js';
 import { createLlmProvider, defaultMessagesClient } from './llm-provider.factory.js';
-import { ReplayProvider } from './replay-provider.js';
+import { ReplayProvider, TIRED_LINE } from './replay-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
 
@@ -31,6 +31,30 @@ describe('createLlmProvider (D-22)', () => {
     // D-26: the Claude adapter sits behind the daily token cap.
     if (!(p instanceof DailyCapProvider)) throw new Error('not capped');
     expect(p.live).toBeInstanceOf(AnthropicProvider);
+  });
+
+  it('live at the day cap: the next turn says the tired line and does not call the API (D-26)', async () => {
+    const stream = vi.fn((_params: unknown) => ({
+      on: () => undefined,
+      finalMessage: () =>
+        Promise.resolve({
+          content: [],
+          stop_reason: 'end_turn',
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }),
+    }));
+    const p = createLlmProvider(
+      loadConfig({ LLM_MODEL: 'm', ANTHROPIC_API_KEY: 'k', LLM_DAILY_TOKEN_CAP: '1' }),
+      () => ({ messages: { stream } }) as unknown as MessagesClient,
+    );
+    await p.turn(request, () => undefined);
+    let said = '';
+    const second = await p.turn(request, (t) => {
+      said += t;
+    });
+    expect(said).toBe(TIRED_LINE);
+    expect(second.content.every((b) => b.type === 'text')).toBe(true);
+    expect(stream).toHaveBeenCalledTimes(1);
   });
 
   it('LLM_MODE=replay replays fixed turns and builds no client, key or not (D-26)', () => {

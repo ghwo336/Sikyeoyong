@@ -94,7 +94,7 @@ export class ReplayProvider implements LlmProvider {
 }
 
 /** tech-spec 9.5: past the day's token cap the dragon says it is tired, then plain words only. */
-export const TIRED_LINE = '오늘은 많이 말해서 피곤해용. 추천은 화면에서 눌러 고를 수 있어용.';
+export const TIRED_LINE = '오늘은 많이 말해서 피곤해용. 내일 다시 이야기해용.';
 
 /** D-26: the answer for the rest of the day once the live cap is reached: one fixed line, no tool. */
 export class TiredProvider implements LlmProvider {
