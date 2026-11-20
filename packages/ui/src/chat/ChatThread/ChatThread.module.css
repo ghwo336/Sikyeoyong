@@ -10,6 +10,11 @@
   overscroll-behavior: contain;
 }
 
+/* The thread scrolls; its messages never shrink to fit (a card would be cut, it hides overflow). */
+.thread > * {
+  flex-shrink: 0;
+}
+
 .stamp {
   align-self: center;
   margin: 0;

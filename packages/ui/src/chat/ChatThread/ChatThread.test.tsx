@@ -118,4 +118,8 @@ describe('ChatThread (ChatThread.md 테스트 기준)', () => {
     expect(rule('.stamp')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.stamp')).toMatch(/align-self:\s*center/);
   });
+
+  it('never shrinks a message to fit the scrolling thread (a card would be cut)', () => {
+    expect(css).toMatch(/\.thread > \* \{\s*flex-shrink: 0;\s*\}/);
+  });
 });
