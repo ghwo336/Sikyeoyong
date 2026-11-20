@@ -116,6 +116,68 @@ describe('createHttpApi', () => {
   });
 });
 
+describe('createHttpApi: what the server and proxies require', () => {
+  const headersOf = (f: ReturnType<typeof fakeFetch>, i = 0) =>
+    f.mock.calls[i]?.[1]?.headers as Record<string, string>;
+  const VIEW = {
+    id: 'o1',
+    status: 'paid',
+    store: '마루국밥',
+    destination: '역삼동',
+    items: [{ name: '돼지국밥', quantity: 1, price: '9000000000000000000000' }],
+    amount: '9000000000000000000000',
+    etaAt: 1,
+    remainingMin: 3,
+    dragonLine: '주문 넣었어용.',
+    dragonMood: 'happy',
+  };
+
+  it('every cookie write carries X-Requested-With and the same-origin cookie (else 403)', async () => {
+    const f = fakeFetch({
+      'POST /api/orders/o1/confirm': { body: JSON.stringify({ order: VIEW }) },
+      'PATCH /api/me': { body: '{"user":{"nickname":"n","monthlyBudget":"1"}}' },
+      'POST /api/chat/messages': { body: 'data: {"type":"done","messageId":"m1"}\n\n' },
+    });
+    const api = createHttpApi(f);
+    await api.confirmOrder('o1');
+    await api.setMonthlyBudget('1');
+    await api.sendChatMessage({ text: '점심', clientMessageId: 'c1' });
+    for (const i of [0, 1, 2]) {
+      expect(headersOf(f, i)['X-Requested-With']).toBe('fetch');
+      expect(f.mock.calls[i]?.[1]?.credentials).toBe('same-origin');
+    }
+  });
+
+  it.each([
+    [502, '<html>Bad Gateway</html>'],
+    [504, 'upstream timeout'],
+  ])(
+    'a %s with a body that is not JSON is an INTERNAL AppError with the status',
+    async (status, body) => {
+      const f = fakeFetch({
+        'POST /api/orders/o1/confirm': { status, body },
+        'POST /api/chat/messages': { status, body },
+      });
+      const api = createHttpApi(f);
+      for (const call of [
+        () => api.confirmOrder('o1'),
+        () => api.sendChatMessage({ text: '점심', clientMessageId: 'c1' }),
+      ]) {
+        const err = await call().catch((e: unknown) => e);
+        expect(err).toBeInstanceOf(AppError);
+        expect(err).toMatchObject({ code: 'INTERNAL', detail: { status } });
+      }
+    },
+  );
+
+  it('refuses a confirm answer whose amount is a number (money stays a string)', async () => {
+    const f = fakeFetch({
+      'POST /api/orders/o1/confirm': { body: JSON.stringify({ order: { ...VIEW, amount: 9000 } }) },
+    });
+    await expect(createHttpApi(f).confirmOrder('o1')).rejects.toThrow();
+  });
+});
+
 describe('parseSseEvents', () => {
   it('skips comments and blank frames, refuses an event outside the shared schema', () => {
     expect(parseSseEvents(': ping\n\ndata: {"type":"token","text":"a"}\n\n\n')).toEqual([

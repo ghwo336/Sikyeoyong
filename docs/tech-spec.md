@@ -866,6 +866,7 @@ DEMO_BYPASS_SERVER_LIMIT=false
 
 # 웹 (개발 때만, next dev의 /api 전달 대상. 비우면 http://localhost:<PORT>. 운영은 Caddy)
 API_DEV_ORIGIN=
+NEXT_PUBLIC_API_MODE=     # 화면이 쓰는 API: 비우거나 mock이면 서버 없이 도는 흉내, http면 /api 실제 서버
 
 # 로그인
 KAKAO_REST_API_KEY=

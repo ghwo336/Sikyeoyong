@@ -68,6 +68,16 @@ function toAppError(status: number, body: unknown): AppError {
   return new AppError(known, detail);
 }
 
+/** An error body we can read, or undefined (a proxy's HTML 502, a plain-text 504, nothing). */
+async function errorBody(res: Response): Promise<unknown> {
+  try {
+    const text = await res.text();
+    return text === '' ? undefined : (JSON.parse(text) as unknown);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Not on the server yet: refuse plainly instead of pretending (no fake success). */
 function notReady(what: string): Promise<never> {
   return Promise.reject(new AppError('INTERNAL', { status: 0, message: `${what} is not ready` }));
@@ -95,10 +105,9 @@ export function createHttpApi(fetchImpl: typeof fetch = fetch, base = '/api'): A
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
+    if (!res.ok) throw toAppError(res.status, await errorBody(res));
     const text = await res.text();
-    const json: unknown = text === '' ? undefined : JSON.parse(text);
-    if (!res.ok) throw toAppError(res.status, json);
-    return json;
+    return text === '' ? undefined : (JSON.parse(text) as unknown);
   }
 
   return {
@@ -116,10 +125,7 @@ export function createHttpApi(fetchImpl: typeof fetch = fetch, base = '/api'): A
         },
         body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        const text = await res.text();
-        throw toAppError(res.status, text === '' ? undefined : JSON.parse(text));
-      }
+      if (!res.ok) throw toAppError(res.status, await errorBody(res));
       return parseSseEvents(await res.text());
     },
     createOrder: async (body) => zCreateOrderResult.parse(await call('POST', '/orders', body)),
