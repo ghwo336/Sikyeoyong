@@ -277,3 +277,12 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - D-24와의 관계: 파우치 지갑이 가입 때 생기므로 D-24의 "나중"(사용자 지갑이 소유자)의 지갑은 이 로그인 지갑이다. 소유자 일을 그 지갑 서명으로 옮기는 것(`OWNER_MODE=pouch`, `PouchOwner`)은 S14와 pouchi-questions 5번 결과 뒤다. 그때까지 소유자 일은 수탁(운영자)이고 수탁 안내 문구도 그대로다.
 - 남은 것: Start 시안(`design/screens/Start.dc.html`)의 두 버튼(카카오, 구글)을 "이메일로 시작하기" 하나로 고치는 시안 갱신. 이메일과 패스키 화면은 파우치 금고가 그리므로 시켜용 시안이 없다.
 - 영향: auth.md, design/user-flow.md(전체 흐름, 1단계 행), web.md(세션 입구), tech-spec 2.3 인증 흐름과 3.2, D-24 문구, S14.
+
+## D-30 대화 모델 공급자는 설정으로 고른다: Anthropic 또는 OpenAI (2026-11-20, 호재 님 결정)
+- 배경: 데모 대화를 실제 모델로 돌려야 하는데, 회사 Anthropic 계정 키는 쓰기 어렵고 Claude 구독을 제품에 쓰는 것은 D-26대로 하지 않는다. 호재 님 개인 OpenAI 계정(선불 크레딧, 프로젝트 월 한도 10달러 hard limit, 자동 충전 끔)이 있다.
+- 결정:
+  - `LLM_PROVIDER=anthropic|openai`(기본 anthropic). openai면 `OPENAI_API_KEY`(비밀, 서버에만)와 `LLM_MODEL`(OpenAI 모델 이름)을 쓴다.
+  - D-22의 "모델은 Claude 하나"를 "공급자는 설정, 기본은 Claude"로 바꾼다. 공급자는 `LlmProvider` 뒤의 어댑터 하나(`llm/openai-provider.ts`, Chat Completions 스트리밍과 도구 호출)이고 런타임, 도구 8개, 결제 경계(규칙 3)는 그대로다.
+  - 생각 깊이(`LLM_EFFORT`)는 OpenAI의 `reasoning_effort`로 넘긴다. 하루 토큰 상한(D-26)은 OpenAI 사용량(prompt, completion, cached)으로 같이 센다.
+  - 도구 스키마는 OpenAI 쪽에서 strict로 보내지 않는다(스키마 규칙이 공급자마다 달라 거절될 수 있어서). 서버가 도구 입력을 zod로 다시 검사하므로 안전은 그대로다.
+- 영향: agent-runtime.md, tech-spec 3.3과 8.3, .env.example, llm-provider 팩토리. 시스템 프롬프트와 용이 말투는 Claude 기준으로 다듬어 왔으므로 OpenAI에서 대화 품질을 다시 본다(후속).
