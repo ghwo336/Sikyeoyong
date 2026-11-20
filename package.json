@@ -9,6 +9,8 @@
     "dev": "turbo run dev --filter=@sikyeoyong/api --filter=@sikyeoyong/web",
     "dev:api": "turbo run dev --filter=@sikyeoyong/api",
     "dev:web": "turbo run dev --filter=@sikyeoyong/web",
+    "dev:certs": "sh scripts/dev-certs.sh",
+    "dev:web:https": "pnpm --filter @sikyeoyong/web dev:https",
     "ui:harness": "pnpm --filter @sikyeoyong/ui storybook",
     "build": "turbo run build",
     "test": "turbo run test",

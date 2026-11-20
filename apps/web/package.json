@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3000",
+    "dev:https": "next dev --port 3000 --experimental-https --experimental-https-key ../../.certs/localhost-key.pem --experimental-https-cert ../../.certs/localhost.pem",
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",

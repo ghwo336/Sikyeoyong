@@ -56,3 +56,6 @@ seed/.keys/
 
 # spike vendor tarballs (downloaded and hash-checked, never committed)
 spikes/**/vendor/
+
+# local dev HTTPS certificates (scripts/dev-certs.sh), never committed
+.certs/
