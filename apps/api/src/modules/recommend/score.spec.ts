@@ -131,14 +131,48 @@ describe('rank (tech-spec 3.8, hand-computed)', () => {
     ]);
   });
 
-  it('puts within-limit matches before over-limit ones', () => {
-    // "국물": a1 and b2 match by menu tag (100), a2 matches only by A's tags (50), over limit.
-    // a1: 8000 + 10*100 = 9000, b2: 6500 + 1000 = 7500, a2 15,000: affordability 50,
-    //   35*50 + 20*50(A tag 국물) + 20*50 + 15*100 + 10*50 = 5750 (over limit, still last).
+  it('puts within-limit matches before an over-limit one even when it scores higher', () => {
+    // craving "국밥", no history (habit 0, novelty 100), 10,000 a day, level 1 limit 10,000.
+    // q1 순대국밥 9,000 (in limit): 35*100 + 0 + 0 + 15*100 + 10*100 = 6000
+    // r2 공기밥 1,000 at 국밥집 (merchant name only, craving 50): 3500 + 0 + 0 + 1500 + 500 = 5500
+    // p1 특국밥 10,500 (over limit): affordability (100*(20,000-10,500))/10,000 = 95
+    //   35*95 + 20*100(국물) + 0 + 1500 + 1000 = 7825, higher than both, still last.
+    // r1 수육 15,000 at 국밥집 matches only by merchant name: over limit, so left out.
+    const catalog: CatalogEntry[] = [
+      { merchant: card('P', '한식', []), menus: [item('p1', '특국밥', 10_500n, ['국물'])] },
+      { merchant: card('Q', '한식', []), menus: [item('q1', '순대국밥', 9_000n, [])] },
+      {
+        merchant: { ...card('R', '한식', []), name: '국밥집' },
+        menus: [item('r1', '수육', 15_000n, []), item('r2', '공기밥', 1_000n, [])],
+      },
+    ];
+    expect(picks({ ...BASE, catalog, recentOrders: [], craving: '국밥' })).toEqual([
+      ['q1', 6000, null],
+      ['r2', 5500, null],
+      ['p1', 7825, 'OVER_LEVEL_LIMIT'],
+    ]);
+  });
+
+  it('lets an over-limit menu in only when the craving names the menu itself', () => {
+    // "한식" matches only the category of A and D (craving 50): a1 is in limit and stays,
+    // a2, d1, d2 are over limit and matched only by category, so they stay out.
+    // a1: 8000 + 10*50 = 8500
+    expect(picks({ ...BASE, craving: '한식' })).toEqual([['a1', 8500, null]]);
+    // "국물": a1, b2 match by menu tag; a2 수육 matches only by A's tags and is over limit.
     expect(picks({ ...BASE, craving: '국물' })).toEqual([
       ['a1', 9000, null],
       ['b2', 7500, null],
-      ['a2', 5750, 'OVER_LEVEL_LIMIT'],
+    ]);
+  });
+
+  it('per-order limit boundary: exactly the limit is fine, 1 aokrw more needs approval', () => {
+    const at = { ...item('k1', '만원국밥', 10_000n, []) };
+    const over = { ...item('k2', '만원국밥 곱빼기', 10_000n, []), priceAokrw: w(10_000n) + 1n };
+    const catalog: CatalogEntry[] = [{ merchant: card('K', '한식', []), menus: [over, at] }];
+    const r = rank({ ...BASE, catalog, recentOrders: [], craving: '만원국밥' });
+    expect(r.items.map((x) => [x.menu.id, x.approvalReason])).toEqual([
+      ['k1', null],
+      ['k2', 'OVER_LEVEL_LIMIT'],
     ]);
   });
 
@@ -192,6 +226,32 @@ describe('rank (tech-spec 3.8, hand-computed)', () => {
     const input = { ...BASE, catalog: twins, recentOrders: [] };
     expect(picks(input)).toEqual(picks(input));
     expect(picks(input).map((p) => p[0])).toEqual(['y1', 'x1']);
+  });
+
+  it('same score and price: the merchant id decides', () => {
+    // Listed Y first so only the sort can put X first. Both: 3500 + 0 + 0 + 1500 = 5000.
+    const twins: CatalogEntry[] = [
+      { merchant: card('Y', '기타', []), menus: [item('y1', '가', 5_000n, [])] },
+      { merchant: card('X', '기타', []), menus: [item('x1', '나', 5_000n, [])] },
+    ];
+    expect(picks({ ...BASE, catalog: twins, recentOrders: [] })).toEqual([
+      ['x1', 5000, null],
+      ['y1', 5000, null],
+    ]);
+  });
+
+  it('same merchant, score and price under a craving: the menu id decides', () => {
+    // "김밥" matches both menu names: 3500 + 0 + 0 + 1500 + 1000 = 6000 each. z2 listed first.
+    const one: CatalogEntry[] = [
+      {
+        merchant: card('Z', '분식', []),
+        menus: [item('z2', '참치김밥', 3_000n, []), item('z1', '야채김밥', 3_000n, [])],
+      },
+    ];
+    expect(picks({ ...BASE, catalog: one, recentOrders: [], craving: '김밥' })).toEqual([
+      ['z1', 6000, null],
+      ['z2', 6000, null],
+    ]);
   });
 });
 

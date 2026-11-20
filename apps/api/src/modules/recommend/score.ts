@@ -171,6 +171,9 @@ function wordHits(words: readonly string[], name: string, tags: readonly string[
   );
 }
 
+/** Craving points for a word in the menu's own name or tags. */
+const MENU_MATCH = 100;
+
 /** A word in the menu name or tags 100, only in the merchant name, category or tags 50, else 0. */
 export function cravingFit(
   words: readonly string[],
@@ -178,7 +181,7 @@ export function cravingFit(
   menu: MenuItem,
 ): number {
   if (words.length === 0) return 0;
-  if (wordHits(words, menu.name, menu.tags)) return 100;
+  if (wordHits(words, menu.name, menu.tags)) return MENU_MATCH;
   if (wordHits(words, merchant.name, [merchant.category, ...merchant.tags])) return 50;
   return 0;
 }
@@ -191,8 +194,9 @@ interface Candidate extends Recommendation {
  * Up to three menus to suggest (tech-spec 3.8, recommend-and-nag.md).
  * Left out: closed merchants, unavailable menus, menus over maxPrice, menus the
  * 30-day chain cap would refuse, and everything while the dragon is frozen.
- * Menus over the per-order limit only come in when the user asked for them
- * (the craving matched) and then carry needsApproval; menus within the limit
+ * Menus over the per-order limit only come in when the user asked for that
+ * menu itself (the craving matched its name or tags, not just the merchant
+ * or category) and then carry needsApproval; menus within the limit
  * always rank first. With a matching craving only matching menus are ranked
  * and one merchant may fill several slots; without one each merchant gets its
  * best menu only. Ties go to the cheaper menu, then by id.
@@ -240,7 +244,7 @@ export function rank(input: RankInput): RankResult {
 
   const cravingMatched = all.some((c) => c.fits.craving > 0);
   const pool = cravingMatched
-    ? all.filter((c) => c.fits.craving > 0)
+    ? all.filter((c) => (c.overLimit ? c.fits.craving === MENU_MATCH : c.fits.craving > 0))
     : all.filter((c) => !c.overLimit);
   pool.sort(compare);
 
