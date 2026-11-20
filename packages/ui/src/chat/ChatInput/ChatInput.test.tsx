@@ -162,12 +162,12 @@ describe('ChatInput (ChatInput.md 테스트 기준)', () => {
     expect(input).toMatch(/font-size:\s*var\(--type-body-size\)/);
     const send = rule('.send');
     expect(send).toMatch(/width:\s*var\(--size-chat-input\)/);
-    expect(send).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(send).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(send).toMatch(/color:\s*var\(--color-surface\)/);
     expect(rule('.icon')).toMatch(/width:\s*var\(--size-send-icon\)/);
     expect(rule('.row')).toMatch(/gap:\s*var\(--space-2\)/);
     expect(rule('.send:disabled')).toMatch(/background:\s*var\(--color-line-strong\)/);
-    expect(rule('.input:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
-    expect(rule('.send:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.input:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
+    expect(rule('.send:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
   });
 });

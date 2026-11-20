@@ -15,7 +15,7 @@ children: []
 시트 안 내용 (children)
 
 ## props
-`open: boolean`, `onClose: () => void`, `label: string` (대화상자 이름, Confirm은 "주문 확인"), `children: ReactNode`, `snap?: 'content' | 'full'` (기본 `content`: 내용만큼, 위 48을 남기고 넘치면 안에서 스크롤. `full`: 늘 그 높이), `initialFocus?: 'first' | 'panel'` (기본 `first`: 첫 버튼. `panel`: 시트 자체. 첫 버튼이 되돌릴 수 없는 일을 하는 시트용)
+`open: boolean`, `onClose: () => void`, `label: string` (대화상자 이름, Confirm은 "주문 확인"), `children: ReactNode`, `snap?: 'content' | 'full'` (기본 `content`: 내용만큼, 위 48을 남기고 넘치면 안에서 스크롤. `full`: 늘 그 높이), `initialFocus?: 'first' | 'panel'` (기본 `first`: 첫 버튼. `panel`: 시트 자체. 첫 버튼이 되돌릴 수 없는 일을 하는 시트용), `fixedTheme?: boolean` (기본 false. true면 패널에 `data-theme="fixed"`를 달아 종별 테마 대신 기본 색으로 그린다. 금액과 Face ID 확인 시트용, D-32)
 
 ## 하네스 상태
 `Sheet.stories.tsx`에 아래를 전부 만든다.
@@ -27,6 +27,7 @@ children: []
 Confirm
 
 ## 테스트 기준
+- 기본은 종 테마를 따르고(`data-theme` 없음), `fixedTheme`이면 `data-theme="fixed"`
 - Esc와 바깥(어두운 막) 누르면 onClose, 안을 누르면 아님. Esc는 시트 밖으로 퍼지지 않는다
 - 포커스 가두기: 열면 첫 버튼으로(initialFocus panel이면 시트 자체로, Enter가 아무것도 누르지 않는다), Tab과 Shift+Tab이 안에서 돈다. 닫으면 연 버튼으로 돌아간다. 누를 것이 없으면 시트 자체에 머문다
 - role dialog, aria-modal, label 이름

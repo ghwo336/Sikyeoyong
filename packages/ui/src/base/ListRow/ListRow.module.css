@@ -21,7 +21,7 @@
 }
 
 .pressable:focus-visible {
-  outline: 2px solid var(--color-leaf);
+  outline: 2px solid var(--theme-accent);
   outline-offset: 2px;
 }
 
@@ -37,7 +37,7 @@
 
 .value[data-tone='accent'] {
   font-weight: var(--type-row-weight);
-  color: var(--color-leaf);
+  color: var(--theme-accent);
 }
 
 .icon {

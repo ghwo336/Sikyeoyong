@@ -55,8 +55,8 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     expect(rule('.sm')).toMatch(/font-size:\s*var\(--type-chip-size\)/);
     expect(rule('.lg')).toMatch(/min-height:\s*var\(--size-input\)/);
     expect(rule('.lg')).toMatch(/border-radius:\s*var\(--radius-input\)/);
-    expect(rule('.chip[data-selected]')).toMatch(/border:\s*2px solid var\(--color-leaf\)/);
-    expect(rule('.chip[data-selected]')).toMatch(/background:\s*var\(--color-leaf-tint\)/);
+    expect(rule('.chip[data-selected]')).toMatch(/border:\s*2px solid var\(--theme-accent\)/);
+    expect(rule('.chip[data-selected]')).toMatch(/background:\s*var\(--theme-tint\)/);
   });
 
   it.each(['sm', 'lg', 'tile'] as const)('puts the %s class on the chip', (size) => {
@@ -85,8 +85,8 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     expect(rule('.tile')).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(rule('.tile')).toMatch(/font-weight:\s*var\(--type-body-weight\)/);
     // selected text and focus ring
-    expect(rule('.chip[data-selected]')).toMatch(/color:\s*var\(--color-leaf-pressed\)/);
-    expect(rule('.chip:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.chip[data-selected]')).toMatch(/color:\s*var\(--theme-dark\)/);
+    expect(rule('.chip:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
   });
 
   it('keeps a 44px touch target for the 36px pill', () => {

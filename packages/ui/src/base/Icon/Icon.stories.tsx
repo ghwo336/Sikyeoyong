@@ -38,7 +38,7 @@ export const All: Story = {
 /** 부르는 쪽이 크기와 색을 정함 (잎색 32px) */
 export const SizedByCaller: Story = {
   render: () => (
-    <span style={{ display: 'inline-flex', width: 32, height: 32, color: 'var(--color-leaf)' }}>
+    <span style={{ display: 'inline-flex', width: 32, height: 32, color: 'var(--theme-accent)' }}>
       <Icon name="arrow-up" />
     </span>
   ),

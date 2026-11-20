@@ -65,7 +65,7 @@ describe('UserBubble (UserBubble.md 테스트 기준)', () => {
     expect(b).toMatch(
       /border-radius:\s*var\(--radius-bubble\) var\(--radius-bubble\) var\(--radius-bubble-tail\)\s+var\(--radius-bubble\)/,
     );
-    expect(b).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(b).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(b).toMatch(/color:\s*var\(--color-surface\)/);
     expect(b).toMatch(/font-size:\s*var\(--type-bubble-size\)/);
     expect(b).toMatch(/line-height:\s*var\(--type-bubble-line-height\)/);
@@ -77,9 +77,11 @@ describe('UserBubble (UserBubble.md 테스트 기준)', () => {
     render(<UserBubble text="안녕" status="failed" onRetry={() => undefined} />);
     const retry = screen.getByRole('button', { name: '다시 보내기' });
     expect([...retry.classList]).toEqual(expect.arrayContaining(['link', 'sm']));
-    expect(buttonRule('.link')).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(buttonRule('.link')).toMatch(/color:\s*var\(--theme-accent\)/);
     expect(buttonRule('.sm')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
     expect(buttonCss).not.toMatch(/::after/);
-    expect(buttonRule('.button:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(buttonRule('.button:focus-visible')).toMatch(
+      /outline:\s*2px solid var\(--theme-accent\)/,
+    );
   });
 });

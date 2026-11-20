@@ -13,7 +13,7 @@
   padding: var(--size-bubble-pad-y) var(--space-4);
   border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail)
     var(--radius-bubble);
-  background: var(--color-leaf);
+  background: var(--theme-accent);
   color: var(--color-surface);
   font-size: var(--type-bubble-size);
   font-weight: var(--type-bubble-weight);

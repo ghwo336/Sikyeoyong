@@ -116,7 +116,7 @@ describe('DeliveryMap (DeliveryMap.md 테스트 기준)', () => {
     expect(rule('.ground')).toMatch(/fill:\s*var\(--color-map-ground\)/);
     expect(rule('.block')).toMatch(/fill:\s*var\(--color-map-block\)/);
     expect(rule('.park')).toMatch(/fill:\s*var\(--color-map-park\)/);
-    expect(rule('.riderDot')).toMatch(/fill:\s*var\(--color-leaf\)/);
+    expect(rule('.riderDot')).toMatch(/fill:\s*var\(--theme-accent\)/);
     expect(rule('.bowl')).toMatch(/fill:\s*var\(--color-yolk\)/);
     expect(rule('.pin')).toMatch(/fill:\s*var\(--color-ink\)/);
   });

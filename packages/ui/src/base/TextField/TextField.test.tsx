@@ -130,7 +130,7 @@ describe('TextField (TextField.md 테스트 기준)', () => {
     expect(input).toMatch(/font-size:\s*var\(--type-input-size\)/);
     expect(input).toMatch(/font-weight:\s*var\(--type-input-weight\)/);
     expect(input).toMatch(/color:\s*var\(--color-ink\)/);
-    expect(rule('.input:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.input:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
     expect(rule('.input[data-error]')).toMatch(/border-color:\s*var\(--color-over\)/);
     expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
     // Name.dc.html: the hint is 14px secondary, 10 under the field (6 gap and 4).

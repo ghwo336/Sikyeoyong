@@ -25,7 +25,7 @@
 .ahead,
 .behind {
   fill: none;
-  stroke: var(--color-leaf);
+  stroke: var(--theme-accent);
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -56,12 +56,12 @@
 }
 
 .halo {
-  fill: var(--color-leaf);
+  fill: var(--theme-accent);
   opacity: 0.18;
 }
 
 .riderDot {
-  fill: var(--color-leaf);
+  fill: var(--theme-accent);
   stroke: var(--color-surface);
   stroke-width: 3;
 }

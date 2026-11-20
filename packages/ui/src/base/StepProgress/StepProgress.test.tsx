@@ -105,7 +105,7 @@ describe('StepProgress (StepProgress.md 테스트 기준)', () => {
     expect(rule('.cell')).toMatch(/height:\s*var\(--step-height\)/);
     expect(rule('.cell')).toMatch(/border-radius:\s*calc\(var\(--step-height\) \/ 2\)/);
     expect(rule('.cell')).toMatch(/background:\s*var\(--color-line\)/);
-    expect(rule('.cell[data-done]')).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(rule('.cell[data-done]')).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(rule('.cells')).toMatch(/gap:\s*var\(--space-1\)/);
     expect(rule('.progress')).toMatch(/gap:\s*var\(--size-step-label-gap\)/);
     expect(rule('.labels')).toMatch(/font-size:\s*var\(--type-caption-size\)/);

@@ -18,7 +18,7 @@
 }
 
 .cell[data-done] {
-  background: var(--color-leaf);
+  background: var(--theme-accent);
 }
 
 .sm {

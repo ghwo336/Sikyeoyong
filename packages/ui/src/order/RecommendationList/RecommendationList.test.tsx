@@ -133,7 +133,7 @@ describe('RecommendationList (RecommendationList.md 테스트 기준)', () => {
     expect(badge).toMatch(/color:\s*var\(--color-yolk-ink\)/);
     expect(badge).toMatch(/font-size:\s*var\(--type-badge-size\)/);
     expect(badge).toMatch(/padding:\s*var\(--size-badge-pad-y\) var\(--size-badge-pad-x\)/);
-    expect(rule('.row:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.row:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
     // Inside the overflow-hidden card the ring must sit inside the row, or it is cut off.
     expect(rule('.row:focus-visible')).toMatch(/outline-offset:\s*-2px/);
     expect(css).not.toMatch(/@keyframes|animation/);

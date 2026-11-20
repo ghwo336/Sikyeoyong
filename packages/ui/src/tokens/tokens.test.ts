@@ -20,7 +20,10 @@ const tokens = JSON.parse(json) as {
   motion: Record<string, string>;
   dragonSpecies: Record<string, unknown>;
 };
+type Theme = Record<'accent' | 'bg' | 'tint' | 'dark' | 'body', string>;
 const css = readFileSync(resolve(__dirname, 'tokens.css'), 'utf8');
+// The first block is :root with the design tokens; the species theme blocks follow (D-32).
+const rootBlock = css.slice(0, css.indexOf('}') + 1);
 const base = readFileSync(resolve(__dirname, 'base.css'), 'utf8');
 
 // Expected variables built here, independently of the generator.
@@ -57,7 +60,7 @@ function cssVars(text: string): Map<string, string> {
 
 describe('tokens.css', () => {
   it('has exactly one variable per design token, with the same value', () => {
-    expect(cssVars(css)).toEqual(expectedVars());
+    expect(cssVars(rootBlock)).toEqual(expectedVars());
   });
 
   it('is what the generator writes now (run `pnpm --filter @sikyeoyong/ui tokens` after editing tokens.json)', () => {
@@ -122,5 +125,36 @@ describe('dragonSpecies in tokens.json (D-20)', () => {
       const color = (tokens.dragonSpecies[s] as { color: string }).color;
       expect(dragonColors[color], `${s} color ${color}`).toBeDefined();
     }
+  });
+});
+
+describe('species themes in tokens.css (D-32)', () => {
+  const themeOf = (s: string) => (tokens.dragonSpecies[s] as { theme: Theme }).theme;
+  const block = (selector: string) => {
+    const at = css.indexOf(selector);
+    expect(at, selector).toBeGreaterThan(-1);
+    return cssVars(css.slice(at, css.indexOf('}', at) + 1));
+  };
+  const expected = (t: Theme) =>
+    new Map(Object.entries(t).map(([k, v]) => [`theme-${k}`, v] as [string, string]));
+
+  it.each([...DRAGON_SPECIES])('%s has its five theme colors under data-species', (s) => {
+    expect(block(`[data-species='${s}']`)).toEqual(expected(themeOf(s)));
+  });
+
+  it('forest is the default and the fixed theme, and equals the app leaf colors', () => {
+    expect(css).toContain(":root,\n[data-species='forest'],\n[data-theme='fixed'] {");
+    const leaf = themeOf('forest');
+    expect(leaf.accent).toBe(tokens.color.leaf);
+    expect(leaf.dark).toBe(tokens.color.leafPressed);
+    expect(leaf.tint).toBe(tokens.color.leafTint);
+    expect(leaf.bg).toBe(tokens.color.ground);
+  });
+
+  it('refuses a theme without all five colors', () => {
+    const minimal = { color: {}, type: {}, space: [], radius: {}, size: {} };
+    expect(() =>
+      render({ ...minimal, dragonSpecies: { forest: { theme: { accent: '#000' } } } }),
+    ).toThrow(/exactly/);
   });
 });

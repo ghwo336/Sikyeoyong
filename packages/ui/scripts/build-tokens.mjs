@@ -51,8 +51,42 @@ export function renderTokens(tokens) {
     ':root {',
     ...lines,
     '}',
+    ...renderThemes(tokens.dragonSpecies),
     '',
   ].join('\n');
+}
+
+// Species themes (D-32): dragonSpecies.<species>.theme becomes --theme-* switched by
+// data-species (on <html> in the app). The first species is the default (:root), and
+// data-theme="fixed" keeps money and warning screens in the default colors whatever the species.
+const THEME_KEYS = ['accent', 'bg', 'tint', 'dark', 'body'];
+
+function renderThemes(species) {
+  if (species === undefined) return [];
+  if (species === null || typeof species !== 'object') fail('dragonSpecies must be an object');
+  const names = Object.keys(species).filter((k) => !k.startsWith('_'));
+  if (names.length === 0) fail('dragonSpecies has no species');
+  const out = [];
+  names.forEach((name, i) => {
+    if (!/^[a-z]+$/.test(name)) fail(`dragonSpecies.${name}: lowercase letters only`);
+    const theme = species[name]?.theme;
+    if (theme === null || typeof theme !== 'object') fail(`dragonSpecies.${name}.theme is missing`);
+    if (Object.keys(theme).join() !== THEME_KEYS.join()) {
+      fail(`dragonSpecies.${name}.theme must have exactly ${THEME_KEYS.join(', ')}`);
+    }
+    const selectors =
+      i === 0
+        ? [':root,', `[data-species='${name}'],`, "[data-theme='fixed'] {"]
+        : [`[data-species='${name}'] {`];
+    out.push('', ...selectors);
+    for (const key of THEME_KEYS) {
+      if (typeof theme[key] !== 'string')
+        fail(`dragonSpecies.${name}.theme.${key} must be a string`);
+      out.push(`  --theme-${key}: ${theme[key]};`);
+    }
+    out.push('}');
+  });
+  return out;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

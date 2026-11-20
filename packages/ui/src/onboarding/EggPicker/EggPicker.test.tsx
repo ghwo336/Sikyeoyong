@@ -102,7 +102,7 @@ describe('EggPicker (EggPicker.md 테스트 기준)', () => {
     expect(rule('.option')).toMatch(/width:\s*var\(--size-egg-option\)/);
     expect(rule('.option')).toMatch(/border-radius:\s*calc\(var\(--size-egg-option\) \/ 2\)/);
     expect(rule('.option')).toMatch(/border:\s*2px solid transparent/);
-    expect(rule('.option[data-selected]')).toMatch(/border-color:\s*var\(--color-leaf\)/);
+    expect(rule('.option[data-selected]')).toMatch(/border-color:\s*var\(--theme-accent\)/);
     expect(rule('.option[data-selected]')).toMatch(/background:\s*var\(--color-surface\)/);
     expect(groupCss).toMatch(/\.row\s*\{[^}]*gap:\s*var\(--size-summary-gap\)/);
     {
@@ -118,6 +118,6 @@ describe('EggPicker (EggPicker.md 테스트 기준)', () => {
     expect(rule('.caption')).toMatch(/min-height:\s*var\(--size-egg-caption\)/);
     expect(rule('.line')).toMatch(/font-family:\s*var\(--font-dragon\)/);
     expect(rule('.line')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.option:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.option:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
   });
 });

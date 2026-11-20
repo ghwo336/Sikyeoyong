@@ -25,7 +25,7 @@ export interface LimitBlockedProps {
 export function LimitBlocked({ attempted, limit, raiseTo, onRaise, onRepick }: LimitBlockedProps) {
   const limitText = formatOkrw(limit);
   return (
-    <div className={styles.blocked}>
+    <div className={styles.blocked} data-theme="fixed">
       <p className={styles.compare}>
         <AmountRatio value={attempted} max={limit} size="blocked" suffix="까지" />
       </p>

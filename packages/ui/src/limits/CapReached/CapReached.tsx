@@ -30,7 +30,7 @@ export function CapReached({ resetAt, cap, onNotify, onDismiss, now }: CapReache
   const resetMs = Math.ceil((resetAt * 1000) / 60_000) * 60_000;
   const days = kstDaysBetween(now, resetMs);
   return (
-    <div className={styles.cap}>
+    <div className={styles.cap} data-theme="fixed">
       <div className={styles.when}>
         <p className={styles.date}>{formatKstDateTime(resetMs)}</p>
         <p className={styles.note}>

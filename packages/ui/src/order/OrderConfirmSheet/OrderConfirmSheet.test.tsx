@@ -54,6 +54,14 @@ const base: OrderConfirmSheetProps = {
 const orderButton = () => screen.getByRole('button', { name: /시키기$/ });
 
 describe('OrderConfirmSheet (OrderConfirmSheet.md 테스트 기준)', () => {
+  it('keeps the app colors whatever the dragon species (D-32 fixed theme)', () => {
+    render(<OrderConfirmSheet {...base} />);
+    expect(screen.getByRole('dialog', { name: '주문 확인' })).toHaveAttribute(
+      'data-theme',
+      'fixed',
+    );
+  });
+
   it('calls onConfirm once even on a fast double tap', () => {
     const onConfirm = vi.fn();
     render(<OrderConfirmSheet {...base} onConfirm={onConfirm} />);

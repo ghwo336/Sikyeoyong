@@ -18,7 +18,7 @@ const noop = () => undefined;
 function Harness({ initial, long = false }: { initial: boolean; long?: boolean }) {
   const [open, setOpen] = useState(initial);
   return (
-    <div style={{ height: 844, background: 'var(--color-ground)', padding: 20 }}>
+    <div style={{ height: 844, background: 'var(--theme-bg)', padding: 20 }}>
       <Button
         variant="primary"
         onPress={() => {

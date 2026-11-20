@@ -43,7 +43,7 @@
 
 .step[data-status='doing'] .state {
   font-weight: var(--type-label-weight);
-  color: var(--color-leaf);
+  color: var(--theme-accent);
 }
 
 .step[data-status='failed'] .state {
@@ -57,7 +57,7 @@
 }
 
 .doneDot {
-  fill: var(--color-leaf);
+  fill: var(--theme-accent);
 }
 
 .check {
@@ -76,7 +76,7 @@
 
 .arc {
   fill: none;
-  stroke: var(--color-leaf);
+  stroke: var(--theme-accent);
   stroke-width: 3;
   stroke-linecap: round;
   transform-origin: 12px 12px;

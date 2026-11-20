@@ -28,6 +28,7 @@ children: []
 Confirm
 
 ## 테스트 기준
+- 종 테마와 상관없이 고정 색: 대화상자에 `data-theme="fixed"` (`Sheet fixedTheme`, D-32)
 - 열렸을 때 포커스는 시키기 버튼이 아니라 시트에 있고, Enter나 Space 한 번으로 onConfirm이 불리지 않는다 (절대 규칙 3)
 - onConfirm 한 번만 (다시 그리기 전에 두 번 눌러도 한 번)
 - confirming 중 버튼 잠금 (aria-busy)
@@ -39,6 +40,7 @@ Confirm
 - Confirm 시안 값 (주문 간격 10, 품목 사이도 10, 줄 16px, 결제할 금액 24/700, 한도 간격 14, 버튼 사이 4)
 
 ## 메모
+- 금액 확인 시트라 종별 테마(D-32)를 따르지 않는다 (`Sheet fixedTheme`). Confirm 시안은 버튼과 막대에 종 색을 쓰지만 D-32 결정(돈과 Face ID 확인 시트는 고정)을 따른다.
 - 가격 변경 줄은 base `ErrorLine`, 두 버튼 묶음은 base `ActionPair` xs(4)다.
 - 메뉴 줄과 요청은 같은 영역의 `OrderLines` `size="row"`(16px, 간격 10)다. 예전에는 OrderSummary 마크업을 복사했었다.
 - 틀은 base `Sheet`, 위 말은 `DragonLine` sheet 배치, 막대는 `Meter` limit, 버튼은 `Button` primary와 text다.

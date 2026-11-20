@@ -68,7 +68,7 @@ describe('Switch (Switch.md 테스트 기준)', () => {
     expect(rule('.track')).toMatch(/width:\s*var\(--size-switch-width\)/);
     expect(rule('.track')).toMatch(/height:\s*var\(--size-switch-height\)/);
     expect(rule('.track')).toMatch(/background:\s*var\(--color-line-strong\)/);
-    expect(rule(".track[aria-checked='true']")).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(rule(".track[aria-checked='true']")).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(rule('.knob')).toMatch(/width:\s*var\(--size-switch-knob\)/);
     expect(rule('.knob')).toMatch(/background:\s*var\(--color-surface\)/);
     // 3px padding: (32 - 26) / 2

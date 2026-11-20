@@ -22,5 +22,5 @@
 .footer {
   flex-shrink: 0;
   padding: var(--size-input-band-top) var(--space-4) var(--space-6);
-  background: var(--color-ground);
+  background: var(--theme-bg);
 }

@@ -47,7 +47,7 @@ describe('IconButton (IconButton.md 테스트 기준)', () => {
     expect(button).toMatch(/background:\s*transparent/);
     expect(button).toMatch(/color:\s*var\(--color-ink\)/);
     expect(rule(".button[data-edge='start']")).toMatch(/margin-left:\s*-10px/);
-    expect(rule('.button:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.button:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
     expect(rule('.icon')).toMatch(/width:\s*var\(--size-back-icon\)/);
     expect(rule('.icon')).toMatch(/height:\s*var\(--size-back-icon\)/);
   });

@@ -64,7 +64,7 @@
 }
 
 .limit .fill {
-  background: var(--color-leaf);
+  background: var(--theme-accent);
 }
 
 /* Near the line is yolk, over it is amber, never red (D-17). Same for both kinds. */

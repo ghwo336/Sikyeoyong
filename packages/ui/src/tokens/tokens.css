@@ -214,3 +214,37 @@
   --size-trial-top: 18px;
   --size-input-band-top: 10px;
 }
+
+:root,
+[data-species='forest'],
+[data-theme='fixed'] {
+  --theme-accent: #2E7D4F;
+  --theme-bg: #F6F8F4;
+  --theme-tint: #E4F4E6;
+  --theme-dark: #1F5C3A;
+  --theme-body: #8FD694;
+}
+
+[data-species='water'] {
+  --theme-accent: #1F6A93;
+  --theme-bg: #F3F7FA;
+  --theme-tint: #E3F1F9;
+  --theme-dark: #154A68;
+  --theme-body: #9AD3F0;
+}
+
+[data-species='flower'] {
+  --theme-accent: #B03A64;
+  --theme-bg: #FAF4F6;
+  --theme-tint: #FBE6EE;
+  --theme-dark: #7D2846;
+  --theme-body: #F7B7C8;
+}
+
+[data-species='star'] {
+  --theme-accent: #5F47A8;
+  --theme-bg: #F6F4FA;
+  --theme-tint: #ECE6FA;
+  --theme-dark: #43317A;
+  --theme-body: #C9B8F2;
+}

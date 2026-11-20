@@ -96,7 +96,9 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(button).toHaveFocus();
     await userEvent.keyboard('{Enter}');
     expect(onPress).toHaveBeenCalledTimes(1);
-    expect(css).toMatch(/\.button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-leaf\)/);
+    expect(css).toMatch(
+      /\.button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--theme-accent\)/,
+    );
   });
 
   it('keeps the touch target at least 44px for every size', () => {
@@ -153,10 +155,10 @@ describe('Button (Button.md 테스트 기준)', () => {
     // Wallet "채우기" and Frozen "돌려받기" are 0 18px pills.
     expect(css).toMatch(/\.md\s*\{[^}]*padding:\s*0 var\(--size-pill-pad-x\)/);
     expect(css).toMatch(/\.outline\s*\{[^}]*border:\s*1px solid var\(--color-ink\)/);
-    expect(css).toMatch(/\.link\s*\{[^}]*color:\s*var\(--color-leaf\)/);
+    expect(css).toMatch(/\.link\s*\{[^}]*color:\s*var\(--theme-accent\)/);
     // Budget "받기": leaf line and leaf words on white.
-    expect(css).toMatch(/\.accent\s*\{[^}]*border:\s*1px solid var\(--color-leaf\)/);
-    expect(css).toMatch(/\.accent\s*\{[^}]*color:\s*var\(--color-leaf\)/);
+    expect(css).toMatch(/\.accent\s*\{[^}]*border:\s*1px solid var\(--theme-accent\)/);
+    expect(css).toMatch(/\.accent\s*\{[^}]*color:\s*var\(--theme-accent\)/);
     expect(css).toMatch(/\.accent\s*\{[^}]*background:\s*var\(--color-surface\)/);
   });
 

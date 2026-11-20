@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: var(--size-limits-gap);
   padding: var(--space-4);
-  border: 2px solid var(--color-leaf);
+  border: 2px solid var(--theme-accent);
   border-radius: var(--radius-card);
   background: var(--color-surface);
 }
@@ -13,7 +13,7 @@
   margin: 0;
   font-size: var(--type-caption-size);
   font-weight: var(--type-label-weight);
-  color: var(--color-leaf);
+  color: var(--theme-accent);
 }
 
 .change {

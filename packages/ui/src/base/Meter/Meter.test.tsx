@@ -88,7 +88,7 @@ describe('Meter (Meter.md 테스트 기준)', () => {
     expect(rule('.budget .track')).toMatch(/background:\s*var\(--color-track\)/);
     expect(rule('.budget .fill')).toMatch(/background:\s*var\(--color-yolk\)/);
     expect(rule('.limit .track')).toMatch(/background:\s*var\(--color-line\)/);
-    expect(rule('.limit .fill')).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(rule('.limit .fill')).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(rule('.meter.limit')).toMatch(/gap:\s*var\(--size-meter-limit-gap\)/);
     // warn and over win over both kinds (higher specificity than .kind .fill)
     expect(rule(".meter .fill[data-tone='warn']")).toMatch(/background:\s*var\(--color-yolk\)/);

@@ -32,6 +32,13 @@ children:
 3. 이 위키에 문서를 만들고 영역 `_index.md`의 children과 표, ROOT 트리 지도를 같은 커밋에서 고친다.
 4. 하네스에서 문서의 상태가 전부 보이는지 확인한다.
 
+## 종별 테마 (D-32)
+- 강조색은 `--theme-accent`, `--theme-dark`(누름), `--theme-tint`, `--theme-bg`(화면 바탕), `--theme-body` 다섯 변수다. `pnpm --filter @sikyeoyong/ui tokens`가 `design/tokens.json`의 `dragonSpecies.<종>.theme`에서 `tokens.css`로 만든다 (`:root`과 `[data-species='forest']`가 기본, `[data-species='water' | 'flower' | 'star']`가 종별). 앱은 `<html data-species>` 하나로 바꾼다.
+- 테마를 따르는 것: 주요 버튼, 내 말풍선, 진행 막대(StepProgress, Meter limit), 선택 테두리(Chip, EggPicker), 스위치, 초점 테두리, 지도 경로, 로딩 배경, 화면 바탕. 컴포넌트 CSS는 이 변수를 쓴다.
+- 고정(테마를 따르지 않음): 경고 노랑(`yolk`, `over` 계열, 30일 배달비 막대와 허락 필요 배지)은 원래 고정 색이다. 한도 초과(`LimitBlocked`), 30일 한도 다 씀(`CapReached`), 금액 확인 시트(`OrderConfirmSheet`, `Sheet fixedTheme`)는 뿌리에 `data-theme="fixed"`를 달아 기본(숲) 색으로 되돌린다. 돈과 경고는 종이 바뀌어도 같은 색이어야 알아본다.
+- `--color-leaf`, `--color-ground` 같은 고정 토큰은 그대로 있다 (값은 숲 테마와 같다, 테스트가 맞춘다). 새 컴포넌트가 강조색을 쓰면 `--theme-*`를, 종과 상관없이 늘 같은 색이어야 하면 고정 토큰을 쓴다.
+- 하네스 툴바의 "테마"로 모든 스토리를 네 종으로 볼 수 있다.
+
 | 영역 | 내용 |
 | --- | --- |
 | [base/_index.md](base/_index.md) | 기초: 다른 영역이 가져다 쓰는 기초 부품. 토큰만 쓰고 도메인을 모른다 |

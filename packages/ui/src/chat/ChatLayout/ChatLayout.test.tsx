@@ -49,6 +49,6 @@ describe('ChatLayout (ChatLayout.md 테스트 기준)', () => {
     expect(rule('.footer')).toMatch(
       /padding:\s*var\(--size-input-band-top\) var\(--space-4\) var\(--space-6\)/,
     );
-    expect(rule('.footer')).toMatch(/background:\s*var\(--color-ground\)/);
+    expect(rule('.footer')).toMatch(/background:\s*var\(--theme-bg\)/);
   });
 });

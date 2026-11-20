@@ -123,6 +123,6 @@ describe('ReceiptDetails (ReceiptDetails.md 테스트 기준)', () => {
     expect(rule('.ruleList')).toMatch(/font-size:\s*var\(--type-code-size\)/);
     expect(rule('.ruleList')).toMatch(/color:\s*var\(--color-ink-code\)/);
     expect(rule('.link')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
-    expect(rule('.link')).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(rule('.link')).toMatch(/color:\s*var\(--theme-accent\)/);
   });
 });

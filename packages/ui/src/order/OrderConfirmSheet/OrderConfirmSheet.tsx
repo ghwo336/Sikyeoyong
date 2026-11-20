@@ -71,7 +71,8 @@ export function OrderConfirmSheet({
   return (
     // Focus starts on the sheet, never on the pay button: an Enter left over from the
     // chat must not pay before the user has read the order (CLAUDE.md rule 3).
-    <Sheet open={open} onClose={onCancel} label="주문 확인" initialFocus="panel">
+    // Fixed colors: the amount looks the same whatever the dragon species (D-32).
+    <Sheet open={open} onClose={onCancel} label="주문 확인" initialFocus="panel" fixedTheme>
       <DragonLine text={line} layout="sheet" species={species} />
 
       <section className={styles.order} aria-label="주문 내용">

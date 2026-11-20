@@ -78,6 +78,6 @@ describe('TrialAllowance (TrialAllowance.md 테스트 기준)', () => {
     expect(rule('.amount')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(rule('.amount')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.amount')).toMatch(/tabular-nums/);
-    expect(rule('.done')).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(rule('.done')).toMatch(/color:\s*var\(--theme-accent\)/);
   });
 });

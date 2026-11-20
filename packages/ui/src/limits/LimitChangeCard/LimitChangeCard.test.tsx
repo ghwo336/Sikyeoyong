@@ -187,11 +187,11 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
   // LimitChat.dc.html 36-50.
   it('matches the design values', () => {
     const card = rule('.card');
-    expect(card).toMatch(/border:\s*2px solid var\(--color-leaf\)/);
+    expect(card).toMatch(/border:\s*2px solid var\(--theme-accent\)/);
     expect(card).toMatch(/border-radius:\s*var\(--radius-card\)/);
     expect(card).toMatch(/padding:\s*var\(--space-4\)/);
     expect(card).toMatch(/gap:\s*var\(--size-limits-gap\)/);
-    expect(rule('.title')).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(rule('.title')).toMatch(/color:\s*var\(--theme-accent\)/);
     expect(changeRule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
     expect(changeRule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
     const { unmount } = render(<LimitChangeCard {...base} />);

@@ -94,9 +94,9 @@ describe('HatchProgress (HatchProgress.md 테스트 기준)', () => {
     expect(rule('.step')).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(rule(".step[data-status='doing']")).toMatch(/font-weight:\s*var\(--type-label-weight\)/);
     expect(rule(".step[data-status='waiting']")).toMatch(/color:\s*var\(--color-ink-muted\)/);
-    expect(rule(".step[data-status='doing'] .state")).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(rule(".step[data-status='doing'] .state")).toMatch(/color:\s*var\(--theme-accent\)/);
     expect(rule('.state')).toMatch(/font-size:\s*var\(--type-caption-size\)/);
-    expect(rule('.doneDot')).toMatch(/fill:\s*var\(--color-leaf\)/);
+    expect(rule('.doneDot')).toMatch(/fill:\s*var\(--theme-accent\)/);
     expect(rule('.waitRing')).toMatch(/stroke:\s*var\(--color-line-strong\)/);
     expect(rule('.failRing')).toMatch(/stroke:\s*var\(--color-over\)/);
     expect(rule(".step[data-status='failed'] .state")).toMatch(/color:\s*var\(--color-over-ink\)/);

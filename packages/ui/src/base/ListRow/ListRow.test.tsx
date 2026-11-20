@@ -112,11 +112,11 @@ describe('ListRow (ListRow.md 테스트 기준)', () => {
     expect(row).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(rule('.pressable')).toMatch(/background:\s*transparent/);
     expect(rule('.pressable')).toMatch(/text-align:\s*left/);
-    expect(rule('.pressable:focus-visible')).toMatch(/outline:\s*2px solid var\(--color-leaf\)/);
+    expect(rule('.pressable:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
     expect(rule('.label')).toMatch(/flex-grow:\s*1/);
     expect(rule('.value')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
     expect(rule('.value')).toMatch(/tabular-nums/);
-    expect(rule(".value[data-tone='accent']")).toMatch(/color:\s*var\(--color-leaf\)/);
+    expect(rule(".value[data-tone='accent']")).toMatch(/color:\s*var\(--theme-accent\)/);
     expect(rule(".value[data-tone='accent']")).toMatch(/font-weight:\s*var\(--type-row-weight\)/);
     expect(rule('.icon')).toMatch(/width:\s*var\(--size-row-icon\)/);
     expect(rule('.icon')).toMatch(/color:\s*var\(--color-ink-muted\)/);

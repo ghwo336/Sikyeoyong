@@ -27,7 +27,7 @@ const meta = {
   args: base,
   decorators: [
     (Story) => (
-      <div style={{ width: 390, height: 844, background: 'var(--color-ground)' }}>
+      <div style={{ width: 390, height: 844, background: 'var(--theme-bg)' }}>
         <Story />
       </div>
     ),

@@ -33,6 +33,11 @@ const base = {
 };
 
 describe('CapReached (CapReached.md 테스트 기준)', () => {
+  it('keeps the app colors whatever the dragon species (D-32 fixed theme)', () => {
+    const { container } = render(<CapReached {...base} now={RESET_MS - DAY} />);
+    expect(container.firstElementChild).toHaveAttribute('data-theme', 'fixed');
+  });
+
   it('uses the shared KST helpers, not a copy of its own', () => {
     expect(formatKstDateTime).toBe(shared.formatKstDateTime);
     expect(kstDaysBetween).toBe(shared.kstDaysBetween);

@@ -27,6 +27,21 @@ function Body() {
 }
 
 describe('Sheet (Sheet.md 테스트 기준)', () => {
+  it('follows the species theme unless fixedTheme keeps the app colors (D-32)', () => {
+    const { rerender } = render(
+      <Sheet open label="주문 확인" onClose={vi.fn()}>
+        <Body />
+      </Sheet>,
+    );
+    expect(screen.getByRole('dialog')).not.toHaveAttribute('data-theme');
+    rerender(
+      <Sheet open label="주문 확인" onClose={vi.fn()} fixedTheme>
+        <Body />
+      </Sheet>,
+    );
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-theme', 'fixed');
+  });
+
   it('is a modal dialog named by label when open, nothing when closed', () => {
     const { rerender } = render(
       <Sheet open label="주문 확인" onClose={vi.fn()}>

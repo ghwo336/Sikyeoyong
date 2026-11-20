@@ -43,6 +43,15 @@ const base = {
 };
 
 describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
+  it('keeps the app colors whatever the dragon species (D-32 fixed theme)', () => {
+    const { container } = render(
+      <div data-species="star">
+        <LimitBlocked {...base} raiseTo={won(45_000n)} />
+      </div>,
+    );
+    expect(container.querySelector('[data-species] > div')).toHaveAttribute('data-theme', 'fixed');
+  });
+
   it('has no explanation paragraph: only the numbers and the two choices (no slop)', () => {
     const { container } = render(<LimitBlocked {...base} raiseTo={won(45_000n)} />);
     expect(container.querySelectorAll('p')).toHaveLength(1);
@@ -114,7 +123,7 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
     const repick = screen.getByRole('button', { name: /다시 고르기/ });
     expect([...repick.classList]).toEqual(expect.arrayContaining(['secondary', 'choice']));
     expect(buttonRule('.tall')).toMatch(/min-height:\s*var\(--size-raise-button\)/);
-    expect(buttonRule('.primary')).toMatch(/background:\s*var\(--color-leaf\)/);
+    expect(buttonRule('.primary')).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(buttonRule('.choice')).toMatch(/min-height:\s*var\(--size-choice-button\)/);
     expect(buttonRule('.choice')).toMatch(/font-size:\s*var\(--type-body-size\)/);
     expect(buttonRule('.choice')).toMatch(/font-weight:\s*var\(--type-label-weight\)/);

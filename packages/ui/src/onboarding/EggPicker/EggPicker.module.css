@@ -43,11 +43,11 @@
 }
 
 .option[data-selected] {
-  border-color: var(--color-leaf);
+  border-color: var(--theme-accent);
   background: var(--color-surface);
 }
 
 .option:focus-visible {
-  outline: 2px solid var(--color-leaf);
+  outline: 2px solid var(--theme-accent);
   outline-offset: 2px;
 }

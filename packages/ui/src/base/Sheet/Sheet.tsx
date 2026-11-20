@@ -22,6 +22,11 @@ export interface SheetProps {
    * (OrderConfirmSheet: an Enter must never pay before the user has read it).
    */
   readonly initialFocus?: 'first' | 'panel';
+  /**
+   * Keeps the sheet in the app's own colors whatever dragon species themes the app (D-32):
+   * the amount and Face ID sheets, so money always looks the same.
+   */
+  readonly fixedTheme?: boolean;
 }
 
 // tokens.json motion.sheet: "spring damping 22, 300ms".
@@ -46,6 +51,7 @@ export function Sheet({
   children,
   snap = 'content',
   initialFocus = 'first',
+  fixedTheme = false,
 }: SheetProps) {
   const reduceMotion = useShouldReduceMotion();
   const panel = useRef<HTMLDivElement>(null);
@@ -116,6 +122,7 @@ export function Sheet({
             aria-label={label}
             tabIndex={-1}
             className={`${styles.panel} ${styles[snap]}`}
+            data-theme={fixedTheme ? 'fixed' : undefined}
             onKeyDown={onKeyDown}
             drag={reduceMotion ? false : 'y'}
             dragConstraints={{ top: 0, bottom: 0 }}
