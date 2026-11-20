@@ -1,8 +1,21 @@
 import { AppError, formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import type { ApprovalRequestOutcome, QuoteOutcome } from '../../orders/orders.service.js';
-import { ToolReply } from './tool-reply.js';
+import { ApprovalWait, ToolReply } from './tool-reply.js';
 
 const won = (aokrw: string) => formatOkrw(parseAokrw(aokrw));
+
+/**
+ * What the model hears about an order waiting for the owner, in plain data: nothing is
+ * paid or ordered, no card is up, and the owner has not decided. The runtime shows no
+ * model words after this; the server says the wait (agent-runtime.md "허락 대기").
+ */
+const WAITING = {
+  paid: false,
+  ordered: false,
+  confirmCardShown: false,
+  ownerDecision: 'NOT_DECIDED_YET',
+  next: '주인님은 아직 허락하지 않았다. 허락에 대한 말은 서버가 한다. 승인됐다, 허락받았다, 카드를 띄웠다고 말하지 않는다.',
+} as const;
 
 /**
  * place_order's two faces (agent-runtime.md "모델용과 화면용"). A quote goes to the
@@ -32,8 +45,11 @@ export function placeOrderReply(outcome: QuoteOutcome): unknown {
       { type: 'order_confirm', quote },
     );
   }
-  if (result.order.status === 'pending_approval') {
-    return { status: 'APPROVAL_REQUIRED', paid: false, reason: approvalReason };
+  if (result.order.status === 'pending_approval' && approvalReason !== null) {
+    return new ApprovalWait(
+      { status: 'APPROVAL_REQUIRED', ...WAITING, reason: approvalReason },
+      approvalReason,
+    );
   }
   // place_order sends no clientOrderId, so it never resends: any other state is a server bug.
   throw new AppError('INTERNAL', { reason: 'place_order quote in an unexpected state' });
@@ -48,5 +64,8 @@ export function approvalRequestReply(outcome: ApprovalRequestOutcome): unknown {
   if (outcome.kind === 'not_needed') {
     return { status: 'NO_APPROVAL_NEEDED', paid: false, next: 'place_order로 확인 카드를 띄운다' };
   }
-  return { status: 'APPROVAL_REQUESTED', paid: false, reason: outcome.reason };
+  return new ApprovalWait(
+    { status: 'APPROVAL_REQUESTED', ...WAITING, reason: outcome.reason },
+    outcome.reason,
+  );
 }

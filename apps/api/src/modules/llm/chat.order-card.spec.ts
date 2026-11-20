@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import type { Server } from 'node:http';
 import { Test } from '@nestjs/testing';
-import { type ChatEvent, zChatEvent } from '@sikyeoyong/shared';
+import { type ChatEvent, hasLimitIntent, zChatEvent } from '@sikyeoyong/shared';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { configureApp } from '../../app.setup.js';
@@ -17,6 +17,7 @@ import { CHAIN_READER } from '../chain/chain.service.js';
 import { ScriptedProvider } from './harness/scripted-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
+import { APPROVAL_WAIT } from './approval-wait.js';
 
 // Amounts by hand: 9,000원 = 9000 * 10^18 aokrw. Fixture: 10,000 per order (D-31).
 const W9000 = '9000000000000000000000';
@@ -151,6 +152,35 @@ describe('place_order in the chat stream: a confirm card, never a payment', () =
     expect(toolResult(provider)).toContain('OVER_LEVEL_LIMIT');
     expect(h.db.select().from(orders).get()?.status).toBe('pending_approval');
     expect(h.db.select().from(approvals).get()?.reason).toBe('OVER_LEVEL_LIMIT');
+  });
+
+  it('a waiting order: the screen gets the server line and chips, never a claimed approval', async () => {
+    // Browser QA pass 2: the model said the owner had approved, with no card and no decision.
+    const provider = new ScriptedProvider([
+      {
+        blocks: [
+          { text: '시켜 볼게용.' },
+          {
+            tool: 'place_order',
+            input: { merchantId: 'm-gukbap', items: [{ menuId: 'x-dwaeji', qty: 2 }] },
+          },
+        ],
+      },
+      { blocks: [{ text: '주인님, 승인해 주셨어용!' }] },
+    ]);
+    const { post } = await setup(provider);
+    const list = events((await post('u1', '두 그릇 시켜 줘', 'c1')).text);
+    const said = list.flatMap((e) => (e.type === 'token' ? [e.text] : [])).join('');
+    expect(said).toBe(`시켜 볼게용.\n${APPROVAL_WAIT.OVER_LEVEL_LIMIT.line}`);
+    expect(said).not.toContain('승인해 주셨');
+    expect(list.find((e) => e.type === 'quick_replies')).toEqual({
+      type: 'quick_replies',
+      items: APPROVAL_WAIT.OVER_LEVEL_LIMIT.replies,
+    });
+    expect(list.at(-1)?.type).toBe('done');
+    // The chip's words open the limit card only through the user's own message (D-21).
+    expect(hasLimitIntent(APPROVAL_WAIT.OVER_LEVEL_LIMIT.replies[0]?.label ?? '')).toBe(true);
+    expect(hasLimitIntent(APPROVAL_WAIT.OVER_PERSONAL_BUDGET.replies[0]?.label ?? '')).toBe(true);
   });
 
   it('orders for the session user only (the input has no user)', async () => {

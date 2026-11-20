@@ -1,8 +1,10 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { AppError, hasLimitIntent } from '@sikyeoyong/shared';
+import type { ApprovalReason } from '../approvals/approvals.service.js';
 import type { LlmProvider } from './llm-provider.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
 import {
+  ApprovalWait,
   isToolName,
   TOOL_DEFINITIONS,
   TOOL_INPUTS,
@@ -49,6 +51,11 @@ export type RuntimeEvent =
       /** The screen card from a ToolReply; the model never sees it. */
       readonly card?: ToolCard;
     }
+  /**
+   * An order waits for the owner, who has decided nothing yet. Sent once, just before
+   * 'stopped'; the caller says the wait in server words (agent-runtime.md "허락 대기").
+   */
+  | { readonly type: 'approval_wait'; readonly reason: ApprovalReason }
   | { readonly type: 'stopped'; readonly reason: 'end' | 'refusal' | 'limit' | 'aborted' };
 
 export interface RuntimeLimits {
@@ -122,29 +129,41 @@ export class AgentRuntime {
     const intent = hasLimitIntent(input.userText);
     let toolCalls = 0;
     const used: Record<LimitedKind, number> = { order: 0, approval: 0, card: 0 };
+    /**
+     * Set once an order waits for the owner. From then on the model's words are not shown
+     * (it has claimed approvals that never happened, browser QA) and only the approval
+     * request may still run; the wait is said by the caller in server words.
+     */
+    const wait: { reason: ApprovalReason | null } = { reason: null };
+    const stop = (reason: Extract<RuntimeEvent, { type: 'stopped' }>['reason']) => {
+      if (wait.reason !== null && reason !== 'aborted') {
+        emit({ type: 'approval_wait', reason: wait.reason });
+      }
+      emit({ type: 'stopped', reason });
+    };
 
     for (let turn = 0; turn < this.limits.maxTurns; turn += 1) {
       if (signal?.aborted) {
-        emit({ type: 'stopped', reason: 'aborted' });
+        stop('aborted');
         return messages;
       }
       const message = await this.provider.turn(
         { system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages },
         (text) => {
-          emit({ type: 'token', text: screenText(text) });
+          if (wait.reason === null) emit({ type: 'token', text: screenText(text) });
         },
         signal,
       );
       if (signal?.aborted) {
         // Gone while the model answered: run no tools for nobody.
-        emit({ type: 'stopped', reason: 'aborted' });
+        stop('aborted');
         return messages;
       }
       if (message.stop_reason === 'refusal') {
         // Keep no unanswered tool_use in the stored turn, so the next message starts clean.
         const content = message.content.filter((b) => b.type !== 'tool_use');
         if (content.length > 0) messages.push({ role: 'assistant', content });
-        emit({ type: 'stopped', reason: 'refusal' });
+        stop('refusal');
         return messages;
       }
       messages.push({ role: 'assistant', content: message.content });
@@ -154,7 +173,7 @@ export class AgentRuntime {
         (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
       );
       if (calls.length === 0) {
-        emit({ type: 'stopped', reason: 'end' });
+        stop('end');
         return messages;
       }
       if (message.stop_reason === 'max_tokens') {
@@ -171,7 +190,7 @@ export class AgentRuntime {
           results.push(errorResult(call.id, '이번 메시지에서 도구를 더 부를 수 없다.'));
           continue;
         }
-        results.push(await this.runTool(call, input, intent, used, emit));
+        results.push(await this.runTool(call, input, intent, used, wait, emit));
         if (isToolName(call.name)) {
           const kind = TOOL_KIND[call.name];
           if (kind !== 'read') used[kind] += 1;
@@ -179,11 +198,11 @@ export class AgentRuntime {
       }
       messages.push({ role: 'user', content: results });
       if (overLimit) {
-        emit({ type: 'stopped', reason: 'limit' });
+        stop('limit');
         return messages;
       }
     }
-    emit({ type: 'stopped', reason: 'limit' });
+    stop('limit');
     return messages;
   }
 
@@ -192,6 +211,7 @@ export class AgentRuntime {
     input: RunInput,
     intent: boolean,
     used: Readonly<Record<LimitedKind, number>>,
+    wait: { reason: ApprovalReason | null },
     emit: (event: RuntimeEvent) => void,
   ): Promise<Anthropic.ToolResultBlockParam> {
     if (!isToolName(call.name)) {
@@ -199,6 +219,12 @@ export class AgentRuntime {
     }
     const name = call.name;
     const kind = TOOL_KIND[name];
+    if (wait.reason !== null && kind !== 'approval') {
+      return errorResult(
+        call.id,
+        '주문이 주인님 허락을 기다린다. 주인님은 아직 정하지 않았다. 이번 메시지에서는 다른 일을 하지 않는다.',
+      );
+    }
     if (kind === 'order' && used.order >= this.limits.maxOrderCalls) {
       return errorResult(call.id, '이번 메시지에서 주문은 한 번만 할 수 있다.');
     }
@@ -226,7 +252,9 @@ export class AgentRuntime {
       const handler = this.handlers[name] as (ctx: SessionContext, i: unknown) => Promise<unknown>;
       const output = await handler(input.ctx, parsed.data);
       // A ToolReply splits into the model's text and the screen's card; only forModel is wrapped.
-      const forModel = output instanceof ToolReply ? output.forModel : output;
+      if (output instanceof ApprovalWait) wait.reason = output.reason;
+      const forModel =
+        output instanceof ToolReply || output instanceof ApprovalWait ? output.forModel : output;
       emit(
         output instanceof ToolReply
           ? { type: 'tool_output', tool: name, output: forModel, card: output.card }

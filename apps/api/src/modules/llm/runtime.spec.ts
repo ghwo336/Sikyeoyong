@@ -10,6 +10,7 @@ import {
 } from './runtime.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
 import { TOOL_DEFINITIONS, TOOL_INPUTS } from './tools/index.js';
+import { approvalRequestReply, placeOrderReply } from './tools/order-views.js';
 
 // Layer 1 harness (agent-runtime.md "테스트 기준", tech-spec 10 "LLM 회귀").
 // The scripted model may be fooled on purpose; the runtime guards must still hold.
@@ -433,6 +434,103 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     const { events, provider } = await run(loop, '날씨');
     expect(provider.requests).toHaveLength(10);
     expect(events.at(-1)).toEqual({ type: 'stopped', reason: 'limit' });
+  });
+});
+
+// Browser QA pass 2: after "바삭치킨 후라이드 시켜 줘" the model said "승인 요청은 보냈어용" and,
+// a turn later, "주인님, 승인해 주셨어용" with no decision and no card. A prompt rule did not
+// hold, so the runtime stops showing model words once an order waits for the owner.
+describe('an order waiting for the owner (agent-runtime.md "허락 대기")', () => {
+  const waiting = () =>
+    handlers({
+      place_order: vi.fn(() =>
+        Promise.resolve(
+          placeOrderReply({
+            result: { order: { id: 'o-1', status: 'pending_approval' } },
+            approvalReason: 'OVER_LEVEL_LIMIT',
+          }),
+        ),
+      ),
+      request_owner_approval: vi.fn(() =>
+        Promise.resolve(
+          approvalRequestReply({ kind: 'requested', orderId: 'o-1', reason: 'OVER_LEVEL_LIMIT' }),
+        ),
+      ),
+    });
+  const QA_TURNS: ScriptedTurn[] = [
+    { blocks: [{ text: '시켜 볼게용.' }, tool('place_order', ORDER)] },
+    {
+      blocks: [
+        { text: '승인 요청은 보냈어용.' },
+        tool('request_owner_approval', { reason: 'OVER_LEVEL_LIMIT', ...ORDER }),
+      ],
+    },
+    { blocks: [{ text: '주인님, 승인해 주셨어용!' }, tool('recommend_merchants', {})] },
+    { blocks: [{ text: '결제할게용.' }] },
+  ];
+
+  it('the tool results say in data that nothing is decided, paid or shown', async () => {
+    const { provider } = await run(QA_TURNS, '바삭치킨 후라이드 시켜 줘', waiting());
+    for (const turn of [1, 2]) {
+      const [result] = provider.resultsAfter(turn);
+      expect(result?.is_error ?? false).toBe(false);
+      const content = typeof result?.content === 'string' ? result.content : '';
+      const data = JSON.parse(content.slice(6, -7)) as Record<string, unknown>;
+      expect(data).toMatchObject({
+        paid: false,
+        ordered: false,
+        confirmCardShown: false,
+        ownerDecision: 'NOT_DECIDED_YET',
+        reason: 'OVER_LEVEL_LIMIT',
+      });
+    }
+  });
+
+  it('shows no model words after the wait; only the approval request may still run', async () => {
+    const h = waiting();
+    const { events, provider } = await run(QA_TURNS, '바삭치킨 후라이드 시켜 줘', h);
+    expect(events.filter((e) => e.type === 'token').map((e) => e.text)).toEqual(['시켜 볼게용.']);
+    expect(h.request_owner_approval).toHaveBeenCalledTimes(1);
+    // A later turn cannot do anything else in this message.
+    expect(h.recommend_merchants).not.toHaveBeenCalled();
+    expect(provider.resultsAfter(3)[0]?.is_error).toBe(true);
+    expect(events.slice(-2)).toEqual([
+      { type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT' },
+      { type: 'stopped', reason: 'end' },
+    ]);
+    expect(events.filter((e) => e.type === 'approval_wait')).toHaveLength(1);
+  });
+
+  it('request_owner_approval alone also starts the wait', async () => {
+    const h = waiting();
+    const { events } = await run(
+      [
+        { blocks: [tool('request_owner_approval', { reason: 'NEW_MERCHANT' })] },
+        { blocks: [{ text: '허락해 주셨어용.' }] },
+      ],
+      '허락받아 줘',
+      h,
+    );
+    expect(events.some((e) => e.type === 'token')).toBe(false);
+    expect(events.at(-2)).toEqual({ type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT' });
+  });
+
+  it('the wait is said even when the turn ends on the turn limit', async () => {
+    const turns: ScriptedTurn[] = [
+      { blocks: [tool('place_order', ORDER)] },
+      ...Array.from({ length: 9 }, () => ({
+        blocks: [
+          { text: '승인됐어용.' },
+          tool('request_owner_approval', { reason: 'NEW_MERCHANT' }),
+        ],
+      })),
+    ];
+    const { events } = await run(turns, '시켜 줘', waiting());
+    expect(events.some((e) => e.type === 'token')).toBe(false);
+    expect(events.slice(-2)).toEqual([
+      { type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT' },
+      { type: 'stopped', reason: 'limit' },
+    ]);
   });
 });
 

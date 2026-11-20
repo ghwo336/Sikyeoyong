@@ -11,6 +11,7 @@ import {
 import { z } from 'zod';
 import { uuidv7 } from '../../common/ids.js';
 import { RateLimiter } from '../../common/rate-limit/rate-limiter.js';
+import { approvalWaitEvents } from './approval-wait.js';
 import { ChatRepository } from './chat.repository.js';
 import { LLM_PROVIDER, type LlmProvider } from './llm-provider.js';
 import { AgentRuntime, type RuntimeEvent } from './runtime.js';
@@ -179,6 +180,13 @@ export class ChatService {
             const card = this.cardEvent(e.tool, e.card);
             if (card !== null) send(card);
           }
+          return;
+        case 'approval_wait':
+          // Server words for the wait, never the model's (agent-runtime.md "허락 대기").
+          approvalWaitEvents(
+            e.reason,
+            sent.some((s) => s.type === 'token' && s.text !== ''),
+          ).forEach(send);
           return;
         case 'stopped':
           if (e.reason === 'refusal') turn.refused = true;

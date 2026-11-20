@@ -1,4 +1,5 @@
 import type { ChatEvent } from '@sikyeoyong/shared';
+import type { ApprovalReason } from '../../approvals/approvals.service.js';
 
 /** Card events a tool may put on screen. */
 export type ToolCard = Extract<
@@ -18,5 +19,18 @@ export class ToolReply {
   constructor(
     readonly forModel: unknown,
     readonly card: ToolCard,
+  ) {}
+}
+
+/**
+ * An order now waits for the owner (place_order APPROVAL_REQUIRED, request_owner_approval
+ * APPROVAL_REQUESTED). The owner has decided nothing yet. From here the runtime shows no more
+ * model words in this message and the server says the wait itself (agent-runtime.md "허락
+ * 대기"), so no model turn can claim an approval that never happened (browser QA).
+ */
+export class ApprovalWait {
+  constructor(
+    readonly forModel: unknown,
+    readonly reason: ApprovalReason,
   ) {}
 }
