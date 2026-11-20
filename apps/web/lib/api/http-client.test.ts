@@ -241,6 +241,28 @@ describe('createHttpApi', () => {
     });
   });
 
+  it('hands each chat event over as it arrives, even when a frame is split across chunks', async () => {
+    const parts = [
+      'data: {"type":"token","text":"비 "}\n\ndata: {"type":"tok',
+      'en","text":"와용"}\n\n',
+      'data: {"type":"done","messageId":"m1"}\n\n',
+    ];
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const p of parts) controller.enqueue(new TextEncoder().encode(p));
+        controller.close();
+      },
+    });
+    const f = vi.fn(() => Promise.resolve(new Response(body, { status: 200 })));
+    const seen: string[] = [];
+    const all = await createHttpApi(f).sendChatMessage(
+      { text: '점심', clientMessageId: 'c1' },
+      (e) => seen.push(e.type === 'token' ? e.text : e.type),
+    );
+    expect(seen).toEqual(['비 ', '와용', 'done']);
+    expect(all).toHaveLength(3);
+  });
+
   it('collects the chat SSE stream into events', async () => {
     const stream =
       'data: {"type":"token","text":"찾아볼게용."}\n\n' +

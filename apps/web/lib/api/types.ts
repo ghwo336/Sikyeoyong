@@ -54,11 +54,14 @@ export interface ApiClient {
   getMe(): Promise<MeView>;
   getBudget(): Promise<BudgetView>;
   getChatHistory(): Promise<ChatHistory>;
-  /** POST /chat/messages. The real one is an SSE stream; the mock returns all events at once. */
-  sendChatMessage(body: {
-    readonly text: string;
-    readonly clientMessageId: string;
-  }): Promise<readonly ChatEvent[]>;
+  /**
+   * POST /chat/messages. onEvent gets each event as it arrives (the SSE stream), so the screen
+   * shows the words while the dragon is still writing; the promise resolves with all of them.
+   */
+  sendChatMessage(
+    body: { readonly text: string; readonly clientMessageId: string },
+    onEvent?: (event: ChatEvent) => void,
+  ): Promise<readonly ChatEvent[]>;
   createOrder(body: CreateOrderBody): Promise<CreateOrderResult>;
   /** POST /orders/:id/confirm. The only call that pays (CLAUDE.md rule 3). */
   confirmOrder(orderId: string): Promise<{ readonly order: OrderView }>;

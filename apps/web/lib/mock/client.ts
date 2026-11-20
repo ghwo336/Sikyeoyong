@@ -356,8 +356,13 @@ export const mockApi: ApiClient = {
   getMe: () => later(null).then(currentMe),
   getBudget: () => later(null).then(currentBudget),
   getChatHistory: () => later(chatHistory(Date.now())),
-  sendChatMessage: ({ text, clientMessageId }) =>
-    later([...reply(text), { type: 'done', messageId: `reply-${clientMessageId}` }]),
+  sendChatMessage: ({ text, clientMessageId }, onEvent) =>
+    later([...reply(text), { type: 'done' as const, messageId: `reply-${clientMessageId}` }]).then(
+      (events) => {
+        for (const e of events) onEvent?.(e);
+        return events;
+      },
+    ),
   // Refusals come back as a rejected promise, like the HTTP client, never a sync throw.
   createOrder: (body) => later(null).then(() => createOrder(body)),
   confirmOrder: (orderId) => {

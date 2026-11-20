@@ -130,7 +130,7 @@ export function createHttpApi(
     getMe: async () => zMeView.parse(await call('GET', '/me')),
     getBudget: async () => zBudgetView.parse(await call('GET', '/budget')),
     getChatHistory: async () => zChatHistory.parse(await call('GET', '/chat/history')),
-    sendChatMessage: async (body) => {
+    sendChatMessage: async (body, onEvent) => {
       const res = await fetchImpl(`${base}/chat/messages`, {
         method: 'POST',
         credentials: 'same-origin',
@@ -142,7 +142,33 @@ export function createHttpApi(
         body: JSON.stringify(body),
       });
       if (!res.ok) throw toAppError(res.status, await errorBody(res));
-      return parseSseEvents(await res.text());
+      // Read frames as they come (D-23: words appear while the dragon writes).
+      const events: ChatEvent[] = [];
+      const take = (frames: string) => {
+        for (const e of parseSseEvents(frames)) {
+          events.push(e);
+          onEvent?.(e);
+        }
+      };
+      if (res.body === null) {
+        take(await res.text());
+        return events;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+        const cut = buffer.lastIndexOf('\n\n');
+        if (cut >= 0) {
+          take(buffer.slice(0, cut + 2));
+          buffer = buffer.slice(cut + 2);
+        }
+        if (done) break;
+      }
+      take(buffer);
+      return events;
     },
     createOrder: async (body) => zCreateOrderResult.parse(await call('POST', '/orders', body)),
     confirmOrder: async (orderId) =>

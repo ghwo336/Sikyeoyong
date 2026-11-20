@@ -7,6 +7,7 @@ import {
   ChatThread,
   DragonLine,
   QuickReplies,
+  TypingIndicator,
   RecommendationList,
   UserBubble,
 } from '@sikyeoyong/ui';
@@ -143,6 +144,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
               }
             }
           })}
+          {/* Until the first words or card arrive, the dragon is visibly writing (D-23). */}
+          {chat.typing ? <TypingIndicator species={me.dragonSpecies} /> : null}
         </ChatThread>
       </ChatLayout>
       <OrderConfirmContainer

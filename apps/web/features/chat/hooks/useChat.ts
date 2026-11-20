@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { ChatEvent } from '@sikyeoyong/shared';
 import { api, type OrderQuote } from '../../../lib/api';
 import { chatStamp } from '../../../lib/format';
 import { type ChatEntry, dragonTurn, historyEntries } from './entries';
@@ -49,17 +50,40 @@ export function useChat() {
     update((es) => es.map((e) => (e.kind === 'user' && e.id === id ? { ...e, status } : e)));
   };
 
+  // The reply being written: its entries replace themselves as events arrive (D-23).
+  const [writing, setWriting] = useState<{ id: string; shown: boolean } | undefined>(undefined);
+  // Which entries each reply drew so far: the next draw replaces exactly those (a card keeps
+  // its own id, so a prefix would miss it).
+  const drawn = useRef(new Map<string, ReadonlySet<string>>());
+  const showTurn = (id: string, events: readonly ChatEvent[]) => {
+    const turn = dragonTurn(`reply-${id}`, events);
+    const before = drawn.current.get(id) ?? new Set<string>();
+    drawn.current.set(id, new Set(turn.entries.map((e) => e.id)));
+    update((es) => [...es.filter((e) => !before.has(e.id)), ...turn.entries]);
+    return turn;
+  };
+
   const send = useMutation({
-    mutationFn: ({ id, text }: { id: string; text: string }) =>
-      api.sendChatMessage({ text, clientMessageId: id }),
+    mutationFn: ({ id, text }: { id: string; text: string }) => {
+      const sofar: ChatEvent[] = [];
+      setWriting({ id, shown: false });
+      return api.sendChatMessage({ text, clientMessageId: id }, (e) => {
+        sofar.push(e);
+        const turn = showTurn(id, sofar);
+        if (turn.entries.length > 0) setWriting({ id, shown: true });
+      });
+    },
     onSuccess: (events, { id }) => {
       setStatus(id, 'sent');
-      const turn = dragonTurn(`reply-${id}`, events);
-      update((es) => [...es, ...turn.entries]);
+      const turn = showTurn(id, events);
       if (turn.quote) showQuote(turn.quote);
     },
     onError: (_err, { id }) => {
       setStatus(id, 'failed');
+    },
+    onSettled: (_r, _e, { id }) => {
+      drawn.current.delete(id);
+      setWriting(undefined);
     },
   });
 
@@ -67,6 +91,8 @@ export function useChat() {
     thread: thread.data,
     loading: thread.isPending,
     sending: send.isPending,
+    /** Sent and nothing of the answer on screen yet: the dragon is writing (typing dots). */
+    typing: send.isPending && writing?.shown !== true,
     send: (text: string) => {
       const id = crypto.randomUUID();
       update((es) => [...es, { kind: 'user', id, text, status: 'sending' }]);
