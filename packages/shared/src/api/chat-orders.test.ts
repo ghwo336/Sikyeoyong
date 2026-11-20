@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DRAGON_MOODS } from '../domain/dragon-mood.js';
 import { zChatEvent, zChatHistory, zChatHistoryQuery, zSendChatMessageBody } from './chat.js';
+import { zSetLevelBody, zSetLevelResult } from './level.js';
 import { zAgentSetupView, zCreateAgentBody, zMeView, zPatchMeBody, zSignupConfig } from './me.js';
 import {
   ORDER_STATUSES,
@@ -286,5 +287,17 @@ describe('me and sign-up schemas', () => {
     expect(zSignupConfig.safeParse({ verifyMode: 'sms', trialAllowance: W10000 }).success).toBe(
       false,
     );
+  });
+});
+
+describe('level change schemas (D-21, D-28)', () => {
+  it('takes a level 1 to 3 only, and answers the limit and the chain write', () => {
+    expect(zSetLevelBody.parse({ level: 3 })).toEqual({ level: 3 });
+    expect(zSetLevelBody.safeParse({ level: 4 }).success).toBe(false);
+    expect(zSetLevelBody.safeParse({ level: 3, approvalId: 'a' }).success).toBe(false);
+    const ok = { level: 3, perOrderLimit: W10000, txHash: `0x${'ab'.repeat(32)}` };
+    expect(zSetLevelResult.parse(ok)).toEqual(ok);
+    expect(zSetLevelResult.parse({ ...ok, txHash: null }).txHash).toBeNull();
+    expect(zSetLevelResult.safeParse({ ...ok, txHash: '0x1' }).success).toBe(false);
   });
 });

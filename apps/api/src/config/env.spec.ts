@@ -7,6 +7,7 @@ const OKRW = 10n ** 18n;
 
 const PROD: RawEnv = {
   NODE_ENV: 'production',
+  REAUTH_MODE: 'pouch',
   SESSION_SECRET: 'x'.repeat(32),
   ANTHROPIC_API_KEY: 'test-key',
   LLM_MODEL: 'test-model',
@@ -193,5 +194,11 @@ describe('loadConfig in production', () => {
     const r = codeAndVars(() => loadConfig({ ...PROD, DEV_LOGIN: 'true' }));
     expect(r.variables).toEqual(['DEV_LOGIN (production에서 금지)']);
     expect(loadConfig({ ...PROD, DEV_LOGIN: 'false' }).devLogin).toBe(false);
+  });
+
+  it('refuses REAUTH_MODE=none, the testnet-demo button-only raise (D-28)', () => {
+    const r = codeAndVars(() => loadConfig({ ...PROD, REAUTH_MODE: 'none' }));
+    expect(r.variables).toEqual(['REAUTH_MODE=none (production에서 금지)']);
+    expect(loadConfig(PROD).reauthMode).toBe('pouch');
   });
 });

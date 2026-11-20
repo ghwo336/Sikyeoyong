@@ -44,6 +44,7 @@ children: []
 ## 하지 말 것 (MUST NOT)
 - 디버그용 "관리자 송금" 기능을 만들지 않는다.
 - 사용자 입력이나 외부 데이터를 정책값·주소로 쓰지 않는다.
+- 레벨 올리기 재인증 없음(`REAUTH_MODE=none`, D-28)을 production에서 쓰지 않는다. 세션만 훔치면 한 번에 쓸 수 있는 돈을 올릴 수 있다. 그래서 production 설정 검사가 `none`이면 서버를 띄우지 않는다.
 - 개발용 로그인(`DEV_LOGIN`, auth.md)을 production에서 켜지 않는다. 켜면 누구나 키 하나로 세션을 얻는다. 그래서 production 설정 검사가 `DEV_LOGIN=true`면 서버를 띄우지 않는다.
 
 ## 출시(데모) 전 체크리스트

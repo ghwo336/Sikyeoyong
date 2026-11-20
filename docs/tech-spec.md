@@ -231,7 +231,7 @@ apps/api/src/
 | POST | `/agents` | user | `{ dragonName, dragonSpecies }` | `{ agent: { id, status: 'PENDING' } }` |
 | GET | `/agents/me` | user | | `AgentSetupView` (`{ status: PENDING \| ACTIVE \| FAILED, steps: [wallet, identity, limit] }`, `api/me.ts`). 지갑 화면용 상세(8004 agentId, 지갑, 체인 상태)는 그 화면을 만들 때 선택 칸으로 더한다 |
 | POST | `/agents/me/setup/retry` | user | | `AgentSetupView`. 부화가 실패했을 때만 멈춘 단계부터 다시 한다 ("다시 깨우기", 2026-11-20 추가) |
-| POST | `/agents/me/level` | user | `{ level: 1 \| 2 \| 3, approvalId? }` | `{ agent, txHash }` |
+| POST | `/agents/me/level` | user | `{ level: 1 \| 2 \| 3 }` (`zSetLevelBody`) | `{ level, perOrderLimit, txHash }` (`zSetLevelResult`, 같은 레벨이면 `txHash` null). TransferLimit을 `OwnerAuthority`로 먼저 쓰고 그다음 레벨과 한도 이력. 내리기는 바로, 올리기는 재인증(D-28: `REAUTH_MODE=none`이면 버튼만, `pouch`는 Q-30 전까지 거절). 멈춘 용이는 `SERVER_FROZEN`. 레벨 초과 승인을 묶는 `approvalId`는 승인 API 쪽 후속 (2026-11-20) |
 | POST | `/agents/me/freeze` | user | | `{ agent, txHashes }` |
 | POST | `/agents/me/unfreeze` | user | | `{ agent, txHashes }` |
 | POST | `/agents/me/fund` | user | `{ amount }` (aokrw 문자열) | `{ txHash }` |
@@ -866,6 +866,7 @@ DATABASE_URL=file:/data/sikyeoyong.db
 DEMO_MODE=false
 DEMO_BYPASS_SERVER_LIMIT=false
 DEV_LOGIN=false           # 개발 때만 POST /api/auth/dev-login (production이면 부팅 거절)
+REAUTH_MODE=none          # 레벨 올리기 재인증: none(테스트넷 데모, 버튼만, production 거절) | pouch(파우치 서명, Q-30) (D-28)
 
 # 웹 (개발 때만, next dev의 /api 전달 대상. 비우면 http://localhost:<PORT>. 운영은 Caddy)
 API_DEV_ORIGIN=

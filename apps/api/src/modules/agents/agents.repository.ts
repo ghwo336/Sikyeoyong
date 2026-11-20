@@ -92,4 +92,25 @@ export class AgentsRepository {
         .run();
     })();
   }
+
+  /** A level change after its TransferLimit was written: the level and its history in one transaction. */
+  changeLevel(
+    id: string,
+    limit: { id: string; level: AgentLevel; aokrw: string; txHash: string | null; at: number },
+  ): void {
+    this.handle.sqlite.transaction(() => {
+      this.handle.db
+        .insert(agentLimitHistory)
+        .values({
+          id: limit.id,
+          agentId: id,
+          level: limit.level,
+          transferLimitAokrw: limit.aokrw,
+          txHash: limit.txHash,
+          createdAt: limit.at,
+        })
+        .run();
+      this.handle.db.update(agents).set({ level: limit.level }).where(eq(agents.id, id)).run();
+    })();
+  }
 }

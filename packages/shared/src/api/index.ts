@@ -53,7 +53,13 @@ export {
   type OrderView,
   type RecommendationCard,
 } from './orders.js';
-export { zAgentLevel } from './level.js';
+export {
+  zAgentLevel,
+  zSetLevelBody,
+  zSetLevelResult,
+  type SetLevelBody,
+  type SetLevelResult,
+} from './level.js';
 export {
   MENU_DESCRIPTION_MAX,
   MENU_NAME_MAX,

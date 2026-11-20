@@ -5,6 +5,7 @@ import { createChainReader } from './chain-reader.factory.js';
 
 const PROD = {
   NODE_ENV: 'production',
+  REAUTH_MODE: 'pouch',
   SESSION_SECRET: 'x'.repeat(32),
   ANTHROPIC_API_KEY: 'k',
   LLM_MODEL: 'm',

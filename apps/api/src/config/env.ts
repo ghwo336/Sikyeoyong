@@ -38,6 +38,8 @@ const schema = z.object({
   DEMO_BYPASS_SERVER_LIMIT: bool.default(false),
   /** Local development only: POST /api/auth/dev-login without OAuth. Refused in production. */
   DEV_LOGIN: bool.default(false),
+  /** D-28: none = testnet demo, a level raise by the button alone (refused in production); pouch = the owner's wallet signs (Q-30). */
+  REAUTH_MODE: z.enum(['none', 'pouch']).default('none'),
   KAKAO_REST_API_KEY: optionalText,
   KAKAO_CLIENT_SECRET: optionalText,
   GOOGLE_CLIENT_ID_WEB: optionalText,
@@ -84,6 +86,8 @@ export interface AppConfig {
   readonly verifyMode: 'kakao' | 'mock';
   /** POST /api/auth/dev-login is open (never in production, auth.md). */
   readonly devLogin: boolean;
+  /** D-28: how a level raise is re-authenticated. */
+  readonly reauthMode: 'none' | 'pouch';
   readonly chain: ChainConfig;
   readonly policy: PolicyConfig;
   readonly payment: {
@@ -137,6 +141,7 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
   if (env.PAYMENT_PATH === 'mock') missing.push('PAYMENT_PATH=mock (production에서 금지)');
   if (env.DEMO_BYPASS_SERVER_LIMIT) missing.push('DEMO_BYPASS_SERVER_LIMIT (production에서 금지)');
   if (env.DEV_LOGIN) missing.push('DEV_LOGIN (production에서 금지)');
+  if (env.REAUTH_MODE === 'none') missing.push('REAUTH_MODE=none (production에서 금지)');
   return missing;
 }
 
@@ -184,6 +189,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
     }),
     verifyMode: env.VERIFY_MODE,
     devLogin: env.DEV_LOGIN,
+    reauthMode: env.REAUTH_MODE,
     policy: getPolicy(env.POLICY_PROFILE),
     payment: {
       path: env.PAYMENT_PATH,
