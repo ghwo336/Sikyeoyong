@@ -3,6 +3,7 @@
 // origin /api); anything else keeps the in-memory mock, so screens work without a server.
 import { mockApi } from '../mock/client';
 import { createHttpApi } from './http-client';
+import { loginKindFor } from './login-kind';
 import type { ApiClient } from './types';
 
 // NEXT_PUBLIC_DEV_LOGIN_KEY (development only): sign in through the API's dev login instead of the vault.
@@ -16,5 +17,5 @@ export const api: ApiClient = http ? createHttpApi(fetch, '/api', devLoginKey) :
  * How "이메일로 시작하기" logs in (D-29): the Pouchi vault against the real API, or the direct
  * login (the mock's, or the dev login with a key). lib/session/entry.ts reads this.
  */
-export const loginKind: 'vault' | 'direct' = http && devLoginKey === undefined ? 'vault' : 'direct';
+export const loginKind = loginKindFor(process.env.NEXT_PUBLIC_API_MODE, devLoginKey);
 export type * from './types';

@@ -9,8 +9,13 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace }
 
 const getMe = vi.fn();
 const getAgentSetup = vi.fn();
+const getIdentity = vi.fn();
 vi.mock('../../../lib/api', () => ({
-  api: { getMe: () => getMe() as unknown, getAgentSetup: () => getAgentSetup() as unknown },
+  api: {
+    getMe: () => getMe() as unknown,
+    getAgentSetup: () => getAgentSetup() as unknown,
+    getIdentity: () => getIdentity() as unknown,
+  },
 }));
 
 const { EntryGate } = await import('./EntryGate');
@@ -41,6 +46,27 @@ describe('EntryGate', () => {
     replace.mockReset();
     getMe.mockReset();
     getAgentSetup.mockReset();
+    getIdentity.mockReset();
+    getIdentity.mockResolvedValue({ verified: true });
+  });
+
+  it('a signed-in owner without a dragon who has not passed the identity check goes to Verify', async () => {
+    getMe.mockRejectedValue(new AppError('NOT_FOUND'));
+    getIdentity.mockResolvedValue({ verified: false });
+    draw();
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/verify');
+    });
+    expect(replace).not.toHaveBeenCalledWith('/name');
+  });
+
+  it('when the identity answer fails, it still moves on, to Verify (never a blank screen)', async () => {
+    getMe.mockRejectedValue(new AppError('NOT_FOUND'));
+    getIdentity.mockRejectedValue(new AppError('INTERNAL'));
+    draw();
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/verify');
+    });
   });
 
   it('shows nothing while it does not know yet', () => {

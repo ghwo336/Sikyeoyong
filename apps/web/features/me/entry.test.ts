@@ -5,7 +5,10 @@ import { entryRoute, retryMe } from './entry';
 describe('entryRoute (user-flow 1 to 4)', () => {
   it('sends someone not signed in to Start, and someone without a dragon to Name', () => {
     expect(entryRoute({ meError: 'UNAUTHENTICATED', hasMe: false })).toBe('/start');
-    expect(entryRoute({ meError: 'NOT_FOUND', hasMe: false })).toBe('/name');
+    expect(entryRoute({ meError: 'NOT_FOUND', hasMe: false, verified: true })).toBe('/name');
+    expect(entryRoute({ meError: 'NOT_FOUND', hasMe: false, verified: false })).toBe('/verify');
+    // No dragon and the identity answer not in yet: wait.
+    expect(entryRoute({ meError: 'NOT_FOUND', hasMe: false })).toBeUndefined();
   });
 
   it('sends a dragon still hatching, or failed, to Hatch; a hatched one stays', () => {

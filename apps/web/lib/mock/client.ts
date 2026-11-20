@@ -47,6 +47,8 @@ const HATCH_STEP_MS = 1_500;
  */
 interface MockSession {
   signedIn: boolean;
+  /** Passed the identity check (Verify). */
+  verified?: boolean;
   /** The dragon's level (1 until raised). */
   level?: AgentLevel;
   dragon: { name: string; species: MeView['dragonSpecies']; hatchStartedAt: number } | null;
@@ -89,6 +91,7 @@ export function resetMockSession(next: 'first-visit' | 'hatched'): void {
     next === 'hatched'
       ? {
           signedIn: true,
+          verified: true,
           dragon: { name: ME.dragonName, species: ME.dragonSpecies, hatchStartedAt: 0 },
         }
       : { signedIn: false, dragon: null };
@@ -411,7 +414,16 @@ export const mockApi: ApiClient = {
     Promise.reject(new AppError('INTERNAL', { reason: 'mock: no vault' })),
   pouchiBind: () => Promise.reject(new AppError('INTERNAL', { reason: 'mock: no vault' })),
   pouchiComplete: () => Promise.reject(new AppError('INTERNAL', { reason: 'mock: no vault' })),
-  verifyIdentity: () => later({ verified: true }),
+  verifyIdentity: () => {
+    session = { ...session, verified: true };
+    saveSession();
+    return later({ verified: true as const });
+  },
+  getIdentity: () =>
+    later(null).then(() => {
+      if (!session.signedIn) throw new AppError('UNAUTHENTICATED', { reason: 'mock: signed out' });
+      return { verified: session.verified === true };
+    }),
   createAgent: ({ dragonName, dragonSpecies }) => {
     session = {
       ...session,

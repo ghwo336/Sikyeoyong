@@ -1,20 +1,27 @@
 import { AppError, type AppErrorCode } from '@sikyeoyong/shared';
 import type { AgentSetupView } from '../../lib/api';
 
-export type EntryRoute = '/start' | '/name' | '/hatch' | null;
+export type EntryRoute = '/start' | '/verify' | '/name' | '/hatch' | null;
 
 /**
  * Where someone opening the app belongs (user-flow 1 to 4): not signed in goes to Start,
- * signed in without a dragon to Name, a dragon still hatching (or failed) to Hatch, and
- * a hatched dragon stays (null). undefined means still loading.
+ * signed in without a dragon to Verify (identity check not passed) or Name, a dragon still
+ * hatching (or failed) to Hatch, and a hatched dragon stays (null). undefined means still
+ * loading. The Pouchi vault is the same for sign-up and sign-in (D-29), so every login comes
+ * through here and this decides the step.
  */
 export function entryRoute(input: {
   readonly meError?: AppErrorCode;
   readonly hasMe: boolean;
   readonly setupStatus?: AgentSetupView['status'];
+  /** GET /identity, asked only when there is no dragon. */
+  readonly verified?: boolean;
 }): EntryRoute | undefined {
   if (input.meError === 'UNAUTHENTICATED') return '/start';
-  if (input.meError === 'NOT_FOUND') return '/name';
+  if (input.meError === 'NOT_FOUND') {
+    if (input.verified === undefined) return undefined;
+    return input.verified ? '/name' : '/verify';
+  }
   // Any other failure (5xx, offline): stay and let the screen show its own error, never a blank page.
   if (input.meError !== undefined) return null;
   if (!input.hasMe) return undefined;

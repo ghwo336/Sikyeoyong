@@ -189,7 +189,7 @@ describe('StartContainer', () => {
     await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
     expect(login).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/verify');
+      expect(push).toHaveBeenCalledWith('/');
     });
   });
 });
@@ -202,7 +202,7 @@ describe('StartContainer and the me cache', () => {
     wrap(<StartContainer />, qc);
     await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/verify');
+      expect(push).toHaveBeenCalledWith('/');
     });
     expect(qc.getQueryState(['me'])).toBeUndefined();
   });

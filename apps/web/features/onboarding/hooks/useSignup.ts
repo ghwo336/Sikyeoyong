@@ -11,7 +11,7 @@ export function useSignupConfig() {
   return useQuery({ queryKey: ['signup-config'], queryFn: () => api.getSignupConfig() });
 }
 
-/** Start: Kakao or Google login. */
+/** Start: "이메일로 시작하기" (D-29, the one session entry). */
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
@@ -20,13 +20,21 @@ export function useLogin() {
     // A 401 kept from before the login must not send the front door back to Start.
     onSuccess: () => {
       qc.removeQueries({ queryKey: ['me'] });
+      qc.removeQueries({ queryKey: ['identity'] });
     },
   });
 }
 
 /** Verify: the Kakao identity check. */
 export function useVerifyIdentity() {
-  return useMutation({ mutationFn: () => api.verifyIdentity() });
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.verifyIdentity(),
+    // The front door must not send a verified owner back to Verify on an old answer.
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: ['identity'] });
+    },
+  });
 }
 
 /** Name: hatch a dragon with this name and species (POST /agents). */

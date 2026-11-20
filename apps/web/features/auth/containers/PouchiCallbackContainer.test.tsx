@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
+import { type ReactNode, StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const resumeSession = vi.fn();
@@ -11,8 +11,14 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 
 const { PouchiCallbackContainer } = await import('./PouchiCallbackContainer');
 
+// StrictMode at the root, as the app runs (next.config reactStrictMode): effects run twice in
+// development, and the result must still be redeemed once.
 const wrap = (ui: ReactNode, qc = new QueryClient()) =>
-  render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  render(
+    <StrictMode>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </StrictMode>,
+  );
 
 beforeEach(() => {
   resumeSession.mockReset();
@@ -39,5 +45,14 @@ describe('PouchiCallbackContainer (/pouchi/callback)', () => {
     expect(replace).not.toHaveBeenCalledWith('/');
     await userEvent.click(screen.getByRole('button', { name: '처음으로' }));
     expect(replace).toHaveBeenCalledWith('/start');
+  });
+
+  it('with nothing to finish, it still goes to the front door, which decides (no session, no login)', async () => {
+    resumeSession.mockResolvedValue(false);
+    wrap(<PouchiCallbackContainer />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/');
+    });
+    expect(resumeSession).toHaveBeenCalledTimes(1);
   });
 });

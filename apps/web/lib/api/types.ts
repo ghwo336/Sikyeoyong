@@ -74,6 +74,8 @@ export interface ApiClient {
    * lib/session/entry.ts, which uses the three calls below.
    */
   login(): Promise<void>;
+  /** GET /identity: whether the owner passed the identity check (the front door asks). */
+  getIdentity(): Promise<{ verified: boolean }>;
   /** D-29 Pouchi login: the public vault config (GET /auth/pouchi/config). */
   getPouchiLoginConfig(): Promise<PouchiLoginConfig>;
   /** Binds one vault request on the server before the vault opens. */

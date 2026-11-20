@@ -24,8 +24,10 @@ export function StartContainer() {
       <EmailStart
         onStart={() => {
           login.mutate(undefined, {
+            // The vault is the same for sign-up and sign-in: the front door (EntryGate) decides
+            // whether this owner still needs the identity check or already has a dragon.
             onSuccess: () => {
-              router.push('/verify');
+              router.push('/');
             },
           });
         }}

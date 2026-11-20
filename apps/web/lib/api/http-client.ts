@@ -18,6 +18,7 @@ import {
   zTrialResult,
   zWalletView,
   zMeView,
+  zIdentityStatus,
   zOrderResult,
   zPouchiLoginConfig,
   zSetLevelResult,
@@ -157,6 +158,7 @@ export function createHttpApi(
       if (devLoginKey === undefined) return notReady('direct login');
       await call('POST', '/auth/dev-login', { key: devLoginKey });
     },
+    getIdentity: async () => zIdentityStatus.parse(await call('GET', '/identity')),
     getPouchiLoginConfig: async () =>
       zPouchiLoginConfig.parse(await call('GET', '/auth/pouchi/config')),
     pouchiBind: async (body) => {
