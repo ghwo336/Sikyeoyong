@@ -188,6 +188,63 @@ contract SikyeoyongOrdersVaultTest is OrdersFixture {
         assertEq(address(orders).balance, 6_000 ether);
     }
 
+    /// 악성 가게를 Active로 두고 선불 100,000 OKRW를 넣는다.
+    function _reentrantVaultMerchant(uint8 mode, bool bubble) internal returns (Reentrant r, uint64 id) {
+        r = new Reentrant();
+        r.configure(orders, mode, bubble, REF, 0, agent);
+        id = r.register();
+        vm.prank(operator);
+        orders.setMerchantStatus(id, SikyeoyongOrders.MerchantStatus.Active);
+        _deposit(100_000 ether);
+    }
+
+    function test_Vault_Reentrancy_PayoutRefundDuringPayment() public {
+        (Reentrant r, uint64 id) = _reentrantVaultMerchant(1, false);
+        uint256 ownerBefore = operator.balance;
+
+        vm.prank(agent);
+        orders.placeOrderFromVault(id, 45_000 ether, REF);
+
+        assertTrue(r.attempted());
+        assertFalse(r.reentered());
+        assertEq(r.lastError(), abi.encodeWithSelector(ReentrancyGuard.ReentrancyGuardReentrantCall.selector));
+        assertEq(operator.balance, ownerBefore); // 지급 중 환불이 소유자에게 가지 않았다
+        assertEq(address(r).balance, 45_000 ether);
+        assertEq(orders.vaultBalance(agent), 55_000 ether);
+        assertEq(address(orders).balance, 55_000 ether);
+        (,,,, SikyeoyongOrders.OrderStatus st) = _order(REF);
+        assertEq(uint8(st), uint8(SikyeoyongOrders.OrderStatus.Paid));
+    }
+
+    function test_Vault_Reentrancy_BubbledFailureRevertsEverything() public {
+        (Reentrant r, uint64 id) = _reentrantVaultMerchant(1, true);
+
+        vm.prank(agent);
+        vm.expectRevert(SikyeoyongOrders.TransferFailed.selector);
+        orders.placeOrderFromVault(id, 45_000 ether, REF);
+
+        assertEq(address(r).balance, 0);
+        assertEq(orders.vaultBalance(agent), 100_000 ether);
+        assertEq(address(orders).balance, 100_000 ether);
+        (address a,, uint128 amt,, SikyeoyongOrders.OrderStatus st) = _order(REF);
+        assertEq(a, address(0));
+        assertEq(amt, 0);
+        assertEq(uint8(st), uint8(SikyeoyongOrders.OrderStatus.None));
+    }
+
+    function test_Vault_Reentrancy_PayoutDepositDuringPayment() public {
+        (Reentrant r, uint64 id) = _reentrantVaultMerchant(4, false);
+
+        vm.prank(agent);
+        orders.placeOrderFromVault(id, 45_000 ether, REF);
+
+        assertFalse(r.reentered());
+        assertEq(r.lastError(), abi.encodeWithSelector(ReentrancyGuard.ReentrancyGuardReentrantCall.selector));
+        assertEq(address(r).balance, 45_000 ether);
+        assertEq(orders.vaultBalance(agent), 55_000 ether); // 지급 중에 다시 채워지지 않았다
+        assertEq(address(orders).balance, 55_000 ether);
+    }
+
     function testFuzz_Vault_BalanceMatches(uint256 dep, uint256 spend, uint256 out) public {
         dep = bound(dep, 1, 1_000_000 ether);
         spend = bound(spend, 1, dep);

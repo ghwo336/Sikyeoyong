@@ -15,7 +15,7 @@ contract RejectingReceiver {
 }
 
 /// 돈을 받는 순간 주문 컨트랙트로 다시 들어가 보는 악성 주소.
-/// mode 1: refund 재진입, 2: placeOrder 재진입, 3: withdraw 재진입.
+/// mode 1: refund 재진입, 2: placeOrder 재진입, 3: withdraw 재진입, 4: deposit 재진입.
 /// bubble이 true면 재진입 실패를 그대로 올려 지급이 실패하게 하고, false면 삼키고 결과만 기록한다.
 contract Reentrant {
     SikyeoyongOrders public orders;
@@ -76,6 +76,8 @@ contract Reentrant {
                 address(orders).call{value: msg.value}(abi.encodeCall(SikyeoyongOrders.placeOrder, (merchantId, ref)));
         } else if (mode == 3) {
             (ok, err) = address(orders).call(abi.encodeCall(SikyeoyongOrders.withdraw, (agent, msg.value)));
+        } else if (mode == 4) {
+            (ok, err) = address(orders).call{value: msg.value}(abi.encodeCall(SikyeoyongOrders.deposit, (agent)));
         }
         reentered = ok;
         lastError = err;
