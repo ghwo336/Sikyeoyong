@@ -141,6 +141,26 @@ describe('BudgetSetupContainer', () => {
     });
   });
 
+  it('keeps 30 days at or above one order: raising one order carries it up (D-31)', async () => {
+    setLimits.mockResolvedValue(undefined);
+    wrap(<BudgetSetupContainer />);
+    const less = await screen.findByRole('button', { name: '30일에 쓸 돈 10,000원 내리기' });
+    // Down to the floor: 10,000, the same as one order now (pressing at the end does nothing).
+    for (let i = 0; i < 8; i += 1) await userEvent.click(less);
+    if (!(less as HTMLButtonElement).disabled) await userEvent.click(less);
+    expect(less).toHaveAttribute('aria-disabled', 'true');
+    const more = screen.getByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' });
+    await userEvent.click(more);
+    await userEvent.click(more);
+    // One order is 20,000 now, so 30 days became 20,000 and still cannot go lower.
+    expect(less).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(screen.getByRole('button', { name: '용이랑 시작하기' }));
+    expect(setLimits).toHaveBeenCalledWith({
+      perOrderLimit: won(20_000n),
+      myPeriodicLimit: won(20_000n),
+    });
+  });
+
   it('sends only what changed, and nothing when nothing did', async () => {
     setLimits.mockResolvedValue(undefined);
     wrap(<BudgetSetupContainer />);

@@ -21,7 +21,8 @@ const FIELD_WORDS: Record<LimitField, string> = {
  * the user said; the server checks it and makes the card's before and after and its rows from
  * the owner's current limits. Nothing changes here: the card's button does that
  * (PUT /agents/me/limits, CLAUDE.md rule 3). No card when the amount is not one the owner may
- * pick (range and step) or equals the current one; the model then hears why, in display words.
+ * pick (range and step), equals the current one, or would put the per-order limit above the
+ * 30-day limit; the model then hears why, in display words.
  * The intent gate (the user's own words) runs before this, in the runtime.
  */
 export function limitCardReply(
@@ -49,6 +50,18 @@ export function limitCardReply(
   }
   const other: LimitField = input.field === 'perOrder' ? 'myPeriodic' : 'perOrder';
   const otherNow = parseAokrw(other === 'perOrder' ? view.perOrderLimit : view.myPeriodicLimit);
+  // D-31: one order never more than the 30 days allow (PUT /agents/me/limits refuses it too).
+  const perOrderAfter = input.field === 'perOrder' ? input.amountAokrw : otherNow;
+  const mineAfter = input.field === 'perOrder' ? otherNow : input.amountAokrw;
+  if (perOrderAfter > mineAfter) {
+    return {
+      status: 'NO_CARD',
+      reason: 'PER_ORDER_OVER_THIRTY_DAYS',
+      field: label,
+      perOrderAfter: formatOkrw(perOrderAfter),
+      thirtyDaysAfter: formatOkrw(mineAfter),
+    };
+  }
   const raise = input.amountAokrw > from;
   return new ToolReply(
     {

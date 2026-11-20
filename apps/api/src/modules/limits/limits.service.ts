@@ -24,6 +24,7 @@ import { UsersService } from '../users/users.service.js';
  * Lowering is immediate. Raising either needs re-auth: with REAUTH_MODE=none (testnet demo,
  * refused in production) the button is enough; with pouch the owner's wallet must sign, not
  * wired before the Pouch SDK (Q-30), so a raise is refused before anything is written.
+ * The per-order limit may not exceed the 30-day limit after the change (VALIDATION_FAILED).
  * A value equal to the current one is a no-op. The per-order write goes first, so a failed
  * chain call leaves both limits as they were. One owner action per dragon at a time (AgentLock).
  */
@@ -49,6 +50,17 @@ export class LimitsService {
       const currentMine = this.users.getMyPeriodicLimitAokrw(userId);
       const changePerOrder = perOrder !== null && perOrder !== agent.perOrderLimitAokrw;
       const changeMine = myPeriodic !== null && myPeriodic !== currentMine;
+      // D-31 (2026-11-20): one order can never be more than the 30 days allow, checked on the
+      // values after this change, before anything is written.
+      const nextPerOrder = changePerOrder ? perOrder : agent.perOrderLimitAokrw;
+      const nextMine = changeMine ? myPeriodic : currentMine;
+      if (nextPerOrder > nextMine) {
+        throw new AppError('VALIDATION_FAILED', {
+          public: {
+            issues: [{ path: 'perOrderLimit', message: 'per-order limit above the 30-day limit' }],
+          },
+        });
+      }
       const raises =
         (changePerOrder && perOrder > agent.perOrderLimitAokrw) ||
         (changeMine && myPeriodic > currentMine);

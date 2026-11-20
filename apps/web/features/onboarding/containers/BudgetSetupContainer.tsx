@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBudget } from '../../budget/hooks/useBudget';
+import { thirtyDayFloor } from '../../limits/fit';
 import { useSetLimits } from '../../limits/hooks/useSetLimits';
 import { useMe } from '../../me/hooks/useMe';
 import { useClaimTrialAllowance, useSignupConfig } from '../hooks/useSignup';
@@ -37,8 +38,17 @@ export function BudgetSetupContainer() {
   const savedPerOrder = parseAokrw(budget.perOrderLimit);
   const savedMyPeriodic = parseAokrw(budget.myPeriodicLimit);
   const perOrderNow = perOrder ?? savedPerOrder;
-  const myPeriodicNow = myPeriodic ?? savedMyPeriodic;
   const ranges = budget.limitRanges;
+  const periodicRange = {
+    min: parseAokrw(ranges.myPeriodic.min),
+    max: parseAokrw(ranges.myPeriodic.max),
+    step: parseAokrw(ranges.myPeriodic.step),
+  };
+  // D-31: the 30-day amount never sits under the per-order one. Raising per-order above it
+  // carries it up, and its stepper cannot go below it.
+  const periodicFloor = thirtyDayFloor(perOrderNow, periodicRange);
+  const picked = myPeriodic ?? savedMyPeriodic;
+  const myPeriodicNow = picked < periodicFloor ? periodicFloor : picked;
   const start = () => {
     const body = {
       ...(perOrderNow === savedPerOrder ? {} : { perOrderLimit: perOrderNow.toString() }),
@@ -74,9 +84,9 @@ export function BudgetSetupContainer() {
       <AmountStepper
         label="30일에 쓸 돈"
         value={myPeriodicNow}
-        min={parseAokrw(ranges.myPeriodic.min)}
-        max={parseAokrw(ranges.myPeriodic.max)}
-        step={parseAokrw(ranges.myPeriodic.step)}
+        min={periodicFloor}
+        max={periodicRange.max}
+        step={periodicRange.step}
         onChange={setMyPeriodic}
       />
       <TrialAllowance

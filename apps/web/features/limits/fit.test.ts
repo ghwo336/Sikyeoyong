@@ -1,6 +1,6 @@
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
-import { limitToFit, needsApprovalNow } from './fit';
+import { limitToFit, needsApprovalNow, thirtyDayFloor } from './fit';
 
 const won = okrwToAokrw;
 
@@ -36,5 +36,19 @@ describe('needsApprovalNow (the recommendation rule, recommend/score.ts)', () =>
     expect(needsApprovalNow(won(6_000n), mine)).toBe(true);
     expect(needsApprovalNow(won(5_000n), mine)).toBe(false);
     expect(needsApprovalNow(won(6_000n), { ...limits, chainUsed: s(495_000n) })).toBe(false);
+  });
+});
+
+describe('thirtyDayFloor (D-31: the 30-day limit is never under the per-order one)', () => {
+  const demo = { min: won(10_000n), max: won(500_000n), step: won(10_000n) };
+  it('is the smallest 30-day step at or above the per-order limit', () => {
+    expect(thirtyDayFloor(won(5_000n), demo)).toBe(won(10_000n));
+    expect(thirtyDayFloor(won(10_000n), demo)).toBe(won(10_000n));
+    expect(thirtyDayFloor(won(15_000n), demo)).toBe(won(20_000n));
+    expect(thirtyDayFloor(won(50_000n), demo)).toBe(won(50_000n));
+  });
+
+  it('never goes over the top of the range', () => {
+    expect(thirtyDayFloor(won(600_000n), demo)).toBe(won(500_000n));
   });
 });

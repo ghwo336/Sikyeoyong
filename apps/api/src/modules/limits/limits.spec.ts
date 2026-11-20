@@ -129,6 +129,28 @@ describe('PUT /api/agents/me/limits (D-31, D-28)', () => {
     expect([perOrder(), mine()]).toEqual([W('10000'), W('300000')]);
   });
 
+  it('refuses a per-order limit above the 30-day limit after the change (D-31), nothing written', async () => {
+    // demo profile: 30-day range 10,000..500,000 by 10,000.
+    const { put, perOrder, mine, payment } = await setup({ POLICY_PROFILE: 'demo' });
+    const both = await put({ perOrderLimit: W('50000'), myPeriodicLimit: W('10000') });
+    expect(both.status).toBe(400);
+    expect(code(both)).toBe('VALIDATION_FAILED');
+    expect([perOrder(), mine()]).toEqual([W('10000'), W('300000')]);
+    // Equal is fine.
+    expect((await put({ perOrderLimit: W('20000'), myPeriodicLimit: W('20000') })).status).toBe(
+      200,
+    );
+    const write = vi.spyOn(payment, 'setTransferLimit');
+    // Either alone is checked against the other's stored value.
+    for (const body of [{ perOrderLimit: W('25000') }, { myPeriodicLimit: W('10000') }]) {
+      const res = await put(body);
+      expect(res.status).toBe(400);
+      expect(code(res)).toBe('VALIDATION_FAILED');
+    }
+    expect(write).not.toHaveBeenCalled();
+    expect([perOrder(), mine()]).toEqual([W('20000'), W('20000')]);
+  });
+
   it('in pouch mode a raise of either waits for the owner wallet (Q-30): refused, nothing written', async () => {
     const { put, perOrder, mine, payment } = await setup({ REAUTH_MODE: 'pouch' });
     const write = vi.spyOn(payment, 'setTransferLimit');

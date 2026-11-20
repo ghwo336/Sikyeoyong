@@ -28,3 +28,21 @@ export function needsApprovalNow(price: bigint, limits: LimitsNow): boolean {
   const mine = parseAokrw(limits.myPeriodicLimit);
   return mine < parseAokrw(limits.chainCap) && parseAokrw(limits.chainUsed) + price > mine;
 }
+
+/** A limit range as aokrw (BudgetView limitRanges, parsed). */
+export interface Range {
+  readonly min: bigint;
+  readonly max: bigint;
+  readonly step: bigint;
+}
+
+/**
+ * The lowest 30-day limit the owner may pick with this per-order limit (D-31: one order never
+ * more than the 30 days allow): the smallest step of the range at or above it, at most the top.
+ */
+export function thirtyDayFloor(perOrder: bigint, range: Range): bigint {
+  if (perOrder <= range.min) return range.min;
+  const steps = (perOrder - range.min + range.step - 1n) / range.step;
+  const floor = range.min + steps * range.step;
+  return floor > range.max ? range.max : floor;
+}
