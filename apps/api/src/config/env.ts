@@ -50,7 +50,7 @@ const schema = z.object({
   LLM_EFFORT: z.enum(LLM_EFFORTS).default('low'),
   /** D-26: replay plays fixed dragon turns with the real tools, no API call; live calls Claude. */
   LLM_MODE: z.enum(['live', 'replay']).default('live'),
-  /** D-26: live tokens (input + output) per KST day; past it the day falls back to replay. 0 = no cap. */
+  /** D-26: live tokens (input, output and cache) per KST day; at it the dragon says it is tired for the rest of the day. 0 = no cap. */
   LLM_DAILY_TOKEN_CAP: int(0).default(1_000_000),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
   /** D-16: kakao now; mock when Maroo switches to Mock KYC. */
@@ -103,7 +103,7 @@ export interface AppConfig {
     readonly effort: LlmEffort;
     /** D-26: live Claude, or replayed dragon turns (no API call). */
     readonly mode: 'live' | 'replay';
-    /** D-26: live tokens per KST day before falling back to replay; 0 = no cap. */
+    /** D-26: live tokens per KST day before the tired line; 0 = no cap. */
     readonly dailyTokenCap: number;
     readonly weatherProvider: 'static' | 'openmeteo';
   };

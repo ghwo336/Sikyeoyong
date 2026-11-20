@@ -74,4 +74,14 @@ describe('LLM_MODE=replay through the real chat stream (D-26)', () => {
     expect(list.map((e) => e.type)).toEqual(['token', 'done']);
     expect(h.db.select().from(orders).all()).toHaveLength(0);
   });
+
+  it('budget words: the real get_budget runs, then the fixed line', async () => {
+    const { post } = await setup();
+    const list = events((await post('이번 달 얼마 남았어?', 'c1')).text);
+    expect(
+      list.some((e) => e.type === 'tool_status' && e.tool === 'get_budget' && e.state === 'done'),
+    ).toBe(true);
+    const words = list.flatMap((e) => (e.type === 'token' ? [e.text] : [])).join('');
+    expect(words).toBe('이번 달 쓴 돈은 위 막대에 있어용. 아껴 볼게용.');
+  });
 });

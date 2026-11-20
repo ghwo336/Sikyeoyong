@@ -2,6 +2,20 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { kstDaysBetween } from '@sikyeoyong/shared';
 import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
 
+/**
+ * Every token the turn was billed for: plain input, output, and the cached prompt both
+ * written and read (the adapter caches the system prompt and the conversation, so most of a
+ * long chat's input arrives as cache tokens, not input_tokens).
+ */
+export function tokensOf(usage: Anthropic.Usage): number {
+  return (
+    usage.input_tokens +
+    usage.output_tokens +
+    (usage.cache_creation_input_tokens ?? 0) +
+    (usage.cache_read_input_tokens ?? 0)
+  );
+}
+
 /** The KST calendar day of a time, as a day number (shared KST helper, server-api.md). */
 function kstDay(nowMs: number): number {
   return kstDaysBetween(0, nowMs);
@@ -39,7 +53,7 @@ export class DailyCapProvider implements LlmProvider {
     this.roll();
     if (this.cap > 0 && this.used >= this.cap) return this.fallback.turn(request, onText, signal);
     const message = await this.live.turn(request, onText, signal);
-    this.used += message.usage.input_tokens + message.usage.output_tokens;
+    this.used += tokensOf(message.usage);
     return message;
   }
 

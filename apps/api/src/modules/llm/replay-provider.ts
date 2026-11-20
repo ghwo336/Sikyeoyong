@@ -15,7 +15,8 @@ type Step =
   | { readonly kind: 'tool'; readonly tool: string }
   | { readonly kind: 'line'; readonly line: string };
 
-function plan(words: string): readonly Step[] {
+/** Exported for tests: every tool a replay plan may call (they must all be read tools). */
+export function plan(words: string): readonly Step[] {
   if (FOOD_WORDS.some((w) => words.includes(w))) {
     return [
       { kind: 'tool', tool: 'recommend_merchants' },
@@ -86,6 +87,31 @@ export class ReplayProvider implements LlmProvider {
       model: 'replay',
       content,
       stop_reason: stop,
+      stop_sequence: null,
+      usage: { input_tokens: 0, output_tokens: 0 },
+    } as unknown as Anthropic.Message);
+  }
+}
+
+/** tech-spec 9.5: past the day's token cap the dragon says it is tired, then plain words only. */
+export const TIRED_LINE = '오늘은 많이 말해서 피곤해용. 추천은 화면에서 눌러 고를 수 있어용.';
+
+/** D-26: the answer for the rest of the day once the live cap is reached: one fixed line, no tool. */
+export class TiredProvider implements LlmProvider {
+  turn(
+    _request: LlmTurnRequest,
+    onText: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<Anthropic.Message> {
+    if (signal?.aborted) return Promise.reject(new Error('aborted'));
+    onText(TIRED_LINE);
+    return Promise.resolve({
+      id: 'msg_tired',
+      type: 'message',
+      role: 'assistant',
+      model: 'tired',
+      content: [{ type: 'text', text: TIRED_LINE, citations: null }],
+      stop_reason: 'end_turn',
       stop_sequence: null,
       usage: { input_tokens: 0, output_tokens: 0 },
     } as unknown as Anthropic.Message);

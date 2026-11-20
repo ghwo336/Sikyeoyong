@@ -4,7 +4,7 @@ import type { AppConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { DailyCapProvider } from './daily-cap-provider.js';
 import type { LlmProvider } from './llm-provider.js';
-import { ReplayProvider } from './replay-provider.js';
+import { ReplayProvider, TiredProvider } from './replay-provider.js';
 
 /** The production client. Exported so a test can check the key reaches the SDK. */
 export function defaultMessagesClient(apiKey: string): MessagesClient {
@@ -37,6 +37,6 @@ export function createLlmProvider(
     };
   }
   const live = new AnthropicProvider(makeClient(apiKey), { model, effort: config.llm.effort });
-  // D-26: past the day's token cap the dragon replays instead of calling the API.
-  return new DailyCapProvider(live, new ReplayProvider(), config.llm.dailyTokenCap);
+  // D-26: past the day's token cap the dragon says it is tired instead of calling the API.
+  return new DailyCapProvider(live, new TiredProvider(), config.llm.dailyTokenCap);
 }

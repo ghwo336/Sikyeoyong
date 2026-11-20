@@ -413,6 +413,10 @@ export interface LlmProvider {
 // 1단계: AnthropicProvider (apps/api/src/modules/llm/anthropic-provider.ts,
 //        모델은 LLM_MODEL, 생각 깊이는 LLM_EFFORT, D-22)
 // 테스트: ScriptedProvider (llm/harness/, 녹화 응답 재생, LLM 하네스 1층)
+// D-26 고르기(llm-provider.factory.ts): LLM_MODE=replay면 ReplayProvider(정해 둔 용이 턴,
+//        읽기 도구만, API 호출 없음). live면 DailyCapProvider가 AnthropicProvider를 감싸
+//        KST 하루 토큰(입력, 출력, 캐시 합)을 세고 LLM_DAILY_TOKEN_CAP에 닿으면
+//        TiredProvider(고정 한 줄 "오늘은 많이 말해서 피곤해용...", 도구 없음)로 답한다.
 ```
 
 ### 3.6 에러 코드와 드래곤 대사
@@ -886,7 +890,7 @@ ANTHROPIC_API_KEY=
 LLM_MODEL=claude-opus-5-5             # 설정값, 코드에 하드코딩 금지 (D-22)
 LLM_EFFORT=low                        # low | medium | high | xhigh | max (D-22, 데모 기본 low D-26)
 LLM_MODE=live                         # live: Claude API / replay: 정해 둔 용이 턴 재생, API 호출 없음 (D-26)
-LLM_DAILY_TOKEN_CAP=                  # 비우면 1000000. live 토큰 하루(KST) 상한, 넘으면 그날은 replay. 0이면 상한 없음 (D-26)
+LLM_DAILY_TOKEN_CAP=                  # 비우면 1000000. live 토큰(캐시 포함) 하루(KST) 상한, 닿으면 그날은 용이가 피곤하다는 한 줄만. 0이면 상한 없음 (D-26)
 WEATHER_PROVIDER=static               # static | openmeteo
 VERIFY_MODE=kakao                     # kakao | mock (D-16, 가입 본인 인증 방식)
 
