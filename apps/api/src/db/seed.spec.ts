@@ -44,8 +44,8 @@ function freshDb(): DbHandle {
 }
 
 describe('seed/merchants.json (tech-spec 7.1 table)', () => {
-  it('has the eight merchants, seven verified and the fake one unverified', () => {
-    expect(seed.merchants.map((m) => m.key)).toEqual([
+  it('starts with the eight tech-spec merchants; every merchant but the fake one is verified', () => {
+    expect(seed.merchants.slice(0, 8).map((m) => m.key)).toEqual([
       'gukbap-01',
       'chicken-01',
       'bunsik-01',
@@ -55,7 +55,9 @@ describe('seed/merchants.json (tech-spec 7.1 table)', () => {
       'bossam-01',
       'fake-01',
     ]);
-    expect(seed.merchants.filter((m) => m.verified)).toHaveLength(7);
+    expect(seed.merchants.filter((m) => !m.verified).map((m) => m.key)).toEqual(['fake-01']);
+    // A wide mock market (2026-11-21): enough stores that recommendations are never empty.
+    expect(seed.merchants.length).toBeGreaterThanOrEqual(60);
     expect(seed.merchants.find((m) => m.key === 'fake-01')?.verified).toBe(false);
   });
 
@@ -210,11 +212,11 @@ describe('seedMerchants', () => {
   it('loads merchants and menus with aokrw prices and metadata uris', () => {
     const { db } = freshDb();
     expect(seedMerchants(db, seed, payouts(seed), 'http://localhost:3000/', 1_000)).toEqual({
-      inserted: 8,
+      inserted: seed.merchants.length,
       skipped: 0,
     });
     const rows = db.select().from(merchants).all();
-    expect(rows).toHaveLength(8);
+    expect(rows).toHaveLength(seed.merchants.length);
     const fake = rows.find((r) => r.name === '초특가 아무거나');
     expect(fake?.verified).toBe(false);
     expect(fake?.onchainId).toBeNull();
@@ -254,7 +256,10 @@ describe('seedMerchants', () => {
     const { db } = freshDb();
     seedMerchants(db, seed, payouts(seed), 'http://x');
     const menuCount = db.select().from(menus).all().length;
-    expect(seedMerchants(db, seed, payouts(seed), 'http://x')).toEqual({ inserted: 0, skipped: 8 });
+    expect(seedMerchants(db, seed, payouts(seed), 'http://x')).toEqual({
+      inserted: 0,
+      skipped: seed.merchants.length,
+    });
     expect(db.select().from(menus).all()).toHaveLength(menuCount);
   });
 

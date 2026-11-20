@@ -7,11 +7,28 @@
       "category": "한식",
       "tags": ["국물", "따뜻한", "가성비"],
       "verified": true,
-      "openHours": { "mon-sun": "10:00-22:00" },
+      "openHours": {
+        "mon-sun": "10:00-22:00"
+      },
       "menus": [
-        { "key": "dwaeji", "name": "돼지국밥", "price": 9000, "tags": ["국물"] },
-        { "key": "sundae", "name": "순대국밥", "price": 9500, "tags": ["국물"] },
-        { "key": "suyuk", "name": "수육 한 접시", "price": 15000, "tags": ["고기"] }
+        {
+          "key": "dwaeji",
+          "name": "돼지국밥",
+          "price": 9000,
+          "tags": ["국물"]
+        },
+        {
+          "key": "sundae",
+          "name": "순대국밥",
+          "price": 9500,
+          "tags": ["국물"]
+        },
+        {
+          "key": "suyuk",
+          "name": "수육 한 접시",
+          "price": 15000,
+          "tags": ["고기"]
+        }
       ]
     },
     {
@@ -20,10 +37,22 @@
       "category": "치킨",
       "tags": ["바삭", "야식"],
       "verified": true,
-      "openHours": { "mon-sun": "15:00-02:00" },
+      "openHours": {
+        "mon-sun": "15:00-02:00"
+      },
       "menus": [
-        { "key": "fried", "name": "후라이드", "price": 20000, "tags": ["튀김"] },
-        { "key": "half", "name": "반반", "price": 22000, "tags": ["튀김", "양념"] }
+        {
+          "key": "fried",
+          "name": "후라이드",
+          "price": 20000,
+          "tags": ["튀김"]
+        },
+        {
+          "key": "half",
+          "name": "반반",
+          "price": 22000,
+          "tags": ["튀김", "양념"]
+        }
       ]
     },
     {
@@ -32,11 +61,28 @@
       "category": "분식",
       "tags": ["가성비", "간단"],
       "verified": true,
-      "openHours": { "mon-sat": "09:00-21:00" },
+      "openHours": {
+        "mon-sat": "09:00-21:00"
+      },
       "menus": [
-        { "key": "tteokbokki", "name": "떡볶이", "price": 5000, "tags": ["매운"] },
-        { "key": "gimbap", "name": "김밥", "price": 3500, "tags": ["간단"] },
-        { "key": "ramyeon", "name": "라면", "price": 4500, "tags": ["국물"] }
+        {
+          "key": "tteokbokki",
+          "name": "떡볶이",
+          "price": 5000,
+          "tags": ["매운"]
+        },
+        {
+          "key": "gimbap",
+          "name": "김밥",
+          "price": 3500,
+          "tags": ["간단"]
+        },
+        {
+          "key": "ramyeon",
+          "name": "라면",
+          "price": 4500,
+          "tags": ["국물"]
+        }
       ]
     },
     {
@@ -45,11 +91,28 @@
       "category": "중식",
       "tags": ["면", "든든한"],
       "verified": true,
-      "openHours": { "mon-sun": "11:00-21:30" },
+      "openHours": {
+        "mon-sun": "11:00-21:30"
+      },
       "menus": [
-        { "key": "jjajangmyeon", "name": "짜장면", "price": 7000, "tags": ["면"] },
-        { "key": "jjamppong", "name": "짬뽕", "price": 8500, "tags": ["면", "매운"] },
-        { "key": "tangsuyuk", "name": "탕수육", "price": 18000, "tags": ["튀김"] }
+        {
+          "key": "jjajangmyeon",
+          "name": "짜장면",
+          "price": 7000,
+          "tags": ["면"]
+        },
+        {
+          "key": "jjamppong",
+          "name": "짬뽕",
+          "price": 8500,
+          "tags": ["면", "매운"]
+        },
+        {
+          "key": "tangsuyuk",
+          "name": "탕수육",
+          "price": 18000,
+          "tags": ["튀김"]
+        }
       ]
     },
     {
@@ -58,10 +121,22 @@
       "category": "양식",
       "tags": ["나눠먹기"],
       "verified": true,
-      "openHours": { "mon-sun": "11:30-22:00" },
+      "openHours": {
+        "mon-sun": "11:30-22:00"
+      },
       "menus": [
-        { "key": "margherita", "name": "마르게리타", "price": 18000, "tags": ["치즈"] },
-        { "key": "pepperoni", "name": "페퍼로니", "price": 20000, "tags": ["치즈"] }
+        {
+          "key": "margherita",
+          "name": "마르게리타",
+          "price": 18000,
+          "tags": ["치즈"]
+        },
+        {
+          "key": "pepperoni",
+          "name": "페퍼로니",
+          "price": 20000,
+          "tags": ["치즈"]
+        }
       ]
     },
     {
@@ -70,10 +145,22 @@
       "category": "샐러드",
       "tags": ["가벼운", "건강"],
       "verified": true,
-      "openHours": { "mon-fri": "08:00-20:00" },
+      "openHours": {
+        "mon-fri": "08:00-20:00"
+      },
       "menus": [
-        { "key": "chicken-salad", "name": "닭가슴살 샐러드", "price": 9900, "tags": ["가벼운"] },
-        { "key": "grain-bowl", "name": "곡물 볼", "price": 8900, "tags": ["가벼운"] }
+        {
+          "key": "chicken-salad",
+          "name": "닭가슴살 샐러드",
+          "price": 9900,
+          "tags": ["가벼운"]
+        },
+        {
+          "key": "grain-bowl",
+          "name": "곡물 볼",
+          "price": 8900,
+          "tags": ["가벼운"]
+        }
       ]
     },
     {
@@ -82,10 +169,22 @@
       "category": "한식",
       "tags": ["고기", "회식"],
       "verified": true,
-      "openHours": { "mon-sun": "11:00-23:00" },
+      "openHours": {
+        "mon-sun": "11:00-23:00"
+      },
       "menus": [
-        { "key": "bossam-set", "name": "보쌈 정식", "price": 12000, "tags": ["고기"] },
-        { "key": "bossam-large", "name": "보쌈 대(大)", "price": 45000, "tags": ["고기", "회식"] }
+        {
+          "key": "bossam-set",
+          "name": "보쌈 정식",
+          "price": 12000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "bossam-large",
+          "name": "보쌈 대(大)",
+          "price": 45000,
+          "tags": ["고기", "회식"]
+        }
       ]
     },
     {
@@ -94,8 +193,1583 @@
       "category": "기타",
       "tags": [],
       "verified": false,
-      "openHours": { "mon-sun": "00:00-24:00" },
-      "menus": [{ "key": "anything", "name": "무엇이든", "price": 1000, "tags": [] }]
+      "openHours": {
+        "mon-sun": "00:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "anything",
+          "name": "무엇이든",
+          "price": 1000,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "key": "gimbap-24",
+      "name": "골목김밥 24시",
+      "category": "분식",
+      "tags": ["가성비", "간단", "24시"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "00:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "tuna",
+          "name": "참치김밥",
+          "price": 4500,
+          "tags": ["김밥"]
+        },
+        {
+          "key": "rabokki",
+          "name": "라볶이",
+          "price": 6500,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "donkatsu",
+          "name": "돈가스",
+          "price": 8500,
+          "tags": ["튀김"]
+        },
+        {
+          "key": "jeyuk-bap",
+          "name": "제육덮밥",
+          "price": 8000,
+          "tags": ["매콤", "고기"]
+        }
+      ]
+    },
+    {
+      "key": "gukbap-24",
+      "name": "밤새국밥",
+      "category": "한식",
+      "tags": ["국물", "따뜻한", "24시", "해장"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "00:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "beef",
+          "name": "소고기국밥",
+          "price": 9500,
+          "tags": ["국물"]
+        },
+        {
+          "key": "kongnamul",
+          "name": "콩나물국밥",
+          "price": 7000,
+          "tags": ["국물", "해장"]
+        },
+        {
+          "key": "haejang",
+          "name": "해장국",
+          "price": 9000,
+          "tags": ["국물", "해장"]
+        }
+      ]
+    },
+    {
+      "key": "jokbal-night",
+      "name": "새벽족발",
+      "category": "한식",
+      "tags": ["고기", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "17:00-04:00"
+      },
+      "menus": [
+        {
+          "key": "mini",
+          "name": "미니족발",
+          "price": 12000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "makguksu",
+          "name": "막국수",
+          "price": 8000,
+          "tags": ["면"]
+        },
+        {
+          "key": "jumeokbap",
+          "name": "주먹밥",
+          "price": 3000,
+          "tags": ["간단"]
+        }
+      ]
+    },
+    {
+      "key": "burger-01",
+      "name": "두툼버거",
+      "category": "양식",
+      "tags": ["든든한", "간단"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "10:30-01:00"
+      },
+      "menus": [
+        {
+          "key": "cheese",
+          "name": "치즈버거",
+          "price": 7500,
+          "tags": ["고기"]
+        },
+        {
+          "key": "double",
+          "name": "더블버거",
+          "price": 9800,
+          "tags": ["고기", "든든한"]
+        },
+        {
+          "key": "fries",
+          "name": "감자튀김",
+          "price": 3000,
+          "tags": ["튀김"]
+        }
+      ]
+    },
+    {
+      "key": "sushi-01",
+      "name": "오늘의초밥",
+      "category": "일식",
+      "tags": ["깔끔한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "salmon-don",
+          "name": "연어덮밥",
+          "price": 11000,
+          "tags": ["밥"]
+        },
+        {
+          "key": "udon",
+          "name": "우동",
+          "price": 7500,
+          "tags": ["국물", "면"]
+        },
+        {
+          "key": "moduem",
+          "name": "모둠초밥",
+          "price": 15000,
+          "tags": ["나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "katsu-01",
+      "name": "바삭돈까스",
+      "category": "일식",
+      "tags": ["튀김", "든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "deungsim",
+          "name": "등심돈가스",
+          "price": 9500,
+          "tags": ["튀김"]
+        },
+        {
+          "key": "cheese-katsu",
+          "name": "치즈돈가스",
+          "price": 10500,
+          "tags": ["튀김", "치즈"]
+        }
+      ]
+    },
+    {
+      "key": "pho-01",
+      "name": "포베트남",
+      "category": "아시안",
+      "tags": ["국물", "면"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "yangji",
+          "name": "양지쌀국수",
+          "price": 9500,
+          "tags": ["국물", "면"]
+        },
+        {
+          "key": "bunja",
+          "name": "분짜",
+          "price": 11000,
+          "tags": ["면"]
+        },
+        {
+          "key": "banhmi",
+          "name": "반미",
+          "price": 6500,
+          "tags": ["간단"]
+        }
+      ]
+    },
+    {
+      "key": "curry-01",
+      "name": "카레공방",
+      "category": "아시안",
+      "tags": ["든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sat": "11:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "butter",
+          "name": "버터치킨카레",
+          "price": 9900,
+          "tags": ["밥"]
+        },
+        {
+          "key": "katsu-curry",
+          "name": "돈가스카레",
+          "price": 10900,
+          "tags": ["밥", "튀김"]
+        }
+      ]
+    },
+    {
+      "key": "jjimdak-01",
+      "name": "안동찜닭집",
+      "category": "한식",
+      "tags": ["나눠먹기", "달짝"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-23:00"
+      },
+      "menus": [
+        {
+          "key": "half",
+          "name": "찜닭 반마리",
+          "price": 15000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "whole",
+          "name": "찜닭 한마리",
+          "price": 26000,
+          "tags": ["고기", "나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "mala-01",
+      "name": "마라마라",
+      "category": "중식",
+      "tags": ["매콤", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-02:00"
+      },
+      "menus": [
+        {
+          "key": "malatang",
+          "name": "마라탕 1인",
+          "price": 9000,
+          "tags": ["매콤", "국물"]
+        },
+        {
+          "key": "xiangguo",
+          "name": "마라샹궈",
+          "price": 18000,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "guobaorou",
+          "name": "꿔바로우",
+          "price": 15000,
+          "tags": ["튀김"]
+        }
+      ]
+    },
+    {
+      "key": "juk-01",
+      "name": "든든죽",
+      "category": "한식",
+      "tags": ["따뜻한", "가벼운"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "08:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "jeonbok",
+          "name": "전복죽",
+          "price": 12000,
+          "tags": ["따뜻한"]
+        },
+        {
+          "key": "yachae",
+          "name": "야채죽",
+          "price": 8000,
+          "tags": ["가벼운"]
+        },
+        {
+          "key": "sogogi",
+          "name": "소고기죽",
+          "price": 9500,
+          "tags": ["따뜻한"]
+        }
+      ]
+    },
+    {
+      "key": "dosirak-01",
+      "name": "엄마도시락",
+      "category": "한식",
+      "tags": ["가성비", "집밥"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "07:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "jeyuk",
+          "name": "제육도시락",
+          "price": 7500,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "bulgogi",
+          "name": "불고기도시락",
+          "price": 8500,
+          "tags": ["고기"]
+        },
+        {
+          "key": "kimchi-fried",
+          "name": "김치볶음밥",
+          "price": 7000,
+          "tags": ["밥"]
+        }
+      ]
+    },
+    {
+      "key": "tteok-night",
+      "name": "밤떡",
+      "category": "분식",
+      "tags": ["매콤", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "16:00-03:00"
+      },
+      "menus": [
+        {
+          "key": "rose",
+          "name": "로제떡볶이",
+          "price": 13000,
+          "tags": ["나눠먹기"]
+        },
+        {
+          "key": "gukmul",
+          "name": "국물떡볶이",
+          "price": 7000,
+          "tags": ["매콤", "국물"]
+        },
+        {
+          "key": "twigim",
+          "name": "튀김세트",
+          "price": 5000,
+          "tags": ["튀김"]
+        }
+      ]
+    },
+    {
+      "key": "sandwich-01",
+      "name": "아침샌드",
+      "category": "카페",
+      "tags": ["간단", "아침"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "06:00-15:00"
+      },
+      "menus": [
+        {
+          "key": "egg",
+          "name": "에그샌드위치",
+          "price": 4900,
+          "tags": ["간단"]
+        },
+        {
+          "key": "club",
+          "name": "클럽샌드위치",
+          "price": 6900,
+          "tags": ["든든한"]
+        },
+        {
+          "key": "americano",
+          "name": "아메리카노",
+          "price": 2500,
+          "tags": ["커피"]
+        }
+      ]
+    },
+    {
+      "key": "naengmyeon-01",
+      "name": "평양면옥",
+      "category": "한식",
+      "tags": ["면", "시원한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "mul",
+          "name": "물냉면",
+          "price": 11000,
+          "tags": ["시원한", "면"]
+        },
+        {
+          "key": "bibim",
+          "name": "비빔냉면",
+          "price": 11000,
+          "tags": ["매콤", "면"]
+        },
+        {
+          "key": "mandu",
+          "name": "만두",
+          "price": 7000,
+          "tags": ["간단"]
+        }
+      ]
+    },
+    {
+      "key": "bingsu-01",
+      "name": "달콤빙수",
+      "category": "디저트",
+      "tags": ["달달한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "12:00-23:00"
+      },
+      "menus": [
+        {
+          "key": "injeolmi",
+          "name": "인절미빙수",
+          "price": 9000,
+          "tags": ["달달한"]
+        },
+        {
+          "key": "croffle",
+          "name": "크로플",
+          "price": 5500,
+          "tags": ["달달한"]
+        }
+      ]
+    },
+    {
+      "key": "baekban-01",
+      "name": "집밥백반",
+      "category": "한식",
+      "tags": ["집밥", "가성비"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "07:00-20:00"
+      },
+      "menus": [
+        {
+          "key": "kimchi-jjigae",
+          "name": "김치찌개",
+          "price": 8000,
+          "tags": ["국물", "매콤"]
+        },
+        {
+          "key": "doenjang",
+          "name": "된장찌개",
+          "price": 8000,
+          "tags": ["국물"]
+        },
+        {
+          "key": "jeyuk-bokkeum",
+          "name": "제육볶음",
+          "price": 9000,
+          "tags": ["매콤", "고기"]
+        }
+      ]
+    },
+    {
+      "key": "chicken-02",
+      "name": "닭강정공장",
+      "category": "치킨",
+      "tags": ["달짝", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "14:00-01:00"
+      },
+      "menus": [
+        {
+          "key": "small",
+          "name": "닭강정 소",
+          "price": 9900,
+          "tags": ["튀김"]
+        },
+        {
+          "key": "large",
+          "name": "닭강정 대",
+          "price": 18000,
+          "tags": ["나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "chicken-03",
+      "name": "숯불닭구이",
+      "category": "치킨",
+      "tags": ["고기", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "16:00-03:00"
+      },
+      "menus": [
+        {
+          "key": "half",
+          "name": "숯불구이 반마리",
+          "price": 11000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "whole",
+          "name": "숯불구이 한마리",
+          "price": 19000,
+          "tags": ["고기", "나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "jjajang-02",
+      "name": "홍콩반점24",
+      "category": "중식",
+      "tags": ["면", "24시"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "00:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "jjajang",
+          "name": "짜장면",
+          "price": 6500,
+          "tags": ["면"]
+        },
+        {
+          "key": "jjamppong",
+          "name": "짬뽕",
+          "price": 8000,
+          "tags": ["매콤", "국물"]
+        },
+        {
+          "key": "bokkeumbap",
+          "name": "볶음밥",
+          "price": 7500,
+          "tags": ["밥"]
+        }
+      ]
+    },
+    {
+      "key": "pizza-02",
+      "name": "1인피자",
+      "category": "양식",
+      "tags": ["간단", "가성비"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "cheese",
+          "name": "치즈피자 1인",
+          "price": 6900,
+          "tags": ["치즈"]
+        },
+        {
+          "key": "bulgogi",
+          "name": "불고기피자 1인",
+          "price": 7900,
+          "tags": ["고기"]
+        }
+      ]
+    },
+    {
+      "key": "pasta-01",
+      "name": "파스타하우스",
+      "category": "양식",
+      "tags": ["깔끔한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "carbonara",
+          "name": "까르보나라",
+          "price": 12000,
+          "tags": ["면", "치즈"]
+        },
+        {
+          "key": "aglio",
+          "name": "알리오올리오",
+          "price": 10000,
+          "tags": ["면"]
+        },
+        {
+          "key": "tomato",
+          "name": "토마토파스타",
+          "price": 11000,
+          "tags": ["면"]
+        }
+      ]
+    },
+    {
+      "key": "taco-01",
+      "name": "타코타코",
+      "category": "양식",
+      "tags": ["간단"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:30-23:00"
+      },
+      "menus": [
+        {
+          "key": "taco",
+          "name": "타코 2개",
+          "price": 8500,
+          "tags": ["간단"]
+        },
+        {
+          "key": "burrito",
+          "name": "부리또",
+          "price": 9500,
+          "tags": ["든든한"]
+        }
+      ]
+    },
+    {
+      "key": "salad-02",
+      "name": "포케올데이",
+      "category": "샐러드",
+      "tags": ["가벼운", "건강"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "09:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "salmon",
+          "name": "연어포케",
+          "price": 12500,
+          "tags": ["건강"]
+        },
+        {
+          "key": "chicken",
+          "name": "닭가슴살포케",
+          "price": 10500,
+          "tags": ["건강"]
+        },
+        {
+          "key": "tofu",
+          "name": "두부포케",
+          "price": 9500,
+          "tags": ["가벼운"]
+        }
+      ]
+    },
+    {
+      "key": "gopchang-01",
+      "name": "곱창이야기",
+      "category": "한식",
+      "tags": ["고기", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "17:00-02:00"
+      },
+      "menus": [
+        {
+          "key": "gopchang",
+          "name": "곱창볶음 1인",
+          "price": 14000,
+          "tags": ["고기", "매콤"]
+        },
+        {
+          "key": "makchang",
+          "name": "막창구이",
+          "price": 16000,
+          "tags": ["고기"]
+        }
+      ]
+    },
+    {
+      "key": "samgyeopsal-01",
+      "name": "혼삼",
+      "category": "한식",
+      "tags": ["고기", "든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-23:00"
+      },
+      "menus": [
+        {
+          "key": "set",
+          "name": "삼겹살 1인 세트",
+          "price": 12900,
+          "tags": ["고기"]
+        },
+        {
+          "key": "naengmyeon",
+          "name": "비빔냉면",
+          "price": 7000,
+          "tags": ["면"]
+        }
+      ]
+    },
+    {
+      "key": "sundubu-01",
+      "name": "순두부명가",
+      "category": "한식",
+      "tags": ["국물", "따뜻한", "매콤"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "08:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "haemul",
+          "name": "해물순두부",
+          "price": 9000,
+          "tags": ["국물", "매콤"]
+        },
+        {
+          "key": "cheese",
+          "name": "치즈순두부",
+          "price": 9500,
+          "tags": ["국물", "치즈"]
+        }
+      ]
+    },
+    {
+      "key": "budae-01",
+      "name": "부대찌개집",
+      "category": "한식",
+      "tags": ["국물", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "10:00-23:00"
+      },
+      "menus": [
+        {
+          "key": "one",
+          "name": "부대찌개 1인",
+          "price": 9500,
+          "tags": ["국물", "매콤"]
+        },
+        {
+          "key": "two",
+          "name": "부대찌개 2인",
+          "price": 18000,
+          "tags": ["나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "kalguksu-01",
+      "name": "칼국수마당",
+      "category": "한식",
+      "tags": ["면", "국물"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "10:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "bajirak",
+          "name": "바지락칼국수",
+          "price": 8500,
+          "tags": ["국물", "면"]
+        },
+        {
+          "key": "sujebi",
+          "name": "수제비",
+          "price": 8000,
+          "tags": ["국물"]
+        },
+        {
+          "key": "kongguksu",
+          "name": "콩국수",
+          "price": 9000,
+          "tags": ["시원한", "면"]
+        }
+      ]
+    },
+    {
+      "key": "dumpling-01",
+      "name": "만두가게",
+      "category": "분식",
+      "tags": ["간단", "가성비"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "09:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "gogi",
+          "name": "고기만두",
+          "price": 5500,
+          "tags": ["간단"]
+        },
+        {
+          "key": "kimchi",
+          "name": "김치만두",
+          "price": 5500,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "manduguk",
+          "name": "만둣국",
+          "price": 8000,
+          "tags": ["국물"]
+        }
+      ]
+    },
+    {
+      "key": "hotdog-01",
+      "name": "핫도그반점",
+      "category": "분식",
+      "tags": ["간단", "달달한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "10:00-23:00"
+      },
+      "menus": [
+        {
+          "key": "cheese",
+          "name": "치즈핫도그",
+          "price": 3500,
+          "tags": ["치즈"]
+        },
+        {
+          "key": "potato",
+          "name": "감자핫도그",
+          "price": 3800,
+          "tags": ["튀김"]
+        }
+      ]
+    },
+    {
+      "key": "bakery-01",
+      "name": "아침빵집",
+      "category": "카페",
+      "tags": ["아침", "달달한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "07:00-20:00"
+      },
+      "menus": [
+        {
+          "key": "croissant",
+          "name": "크루아상",
+          "price": 3500,
+          "tags": ["간단"]
+        },
+        {
+          "key": "saltbread",
+          "name": "소금빵 2개",
+          "price": 5000,
+          "tags": ["간단"]
+        },
+        {
+          "key": "latte",
+          "name": "카페라떼",
+          "price": 4000,
+          "tags": ["커피"]
+        }
+      ]
+    },
+    {
+      "key": "coffee-01",
+      "name": "밤샘커피",
+      "category": "카페",
+      "tags": ["커피", "24시"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "00:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "americano",
+          "name": "아메리카노",
+          "price": 2000,
+          "tags": ["커피"]
+        },
+        {
+          "key": "cake",
+          "name": "치즈케이크",
+          "price": 5500,
+          "tags": ["달달한"]
+        },
+        {
+          "key": "bagel",
+          "name": "크림치즈 베이글",
+          "price": 4500,
+          "tags": ["간단"]
+        }
+      ]
+    },
+    {
+      "key": "thai-01",
+      "name": "방콕키친",
+      "category": "아시안",
+      "tags": ["매콤", "이국적"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "padthai",
+          "name": "팟타이",
+          "price": 11000,
+          "tags": ["면"]
+        },
+        {
+          "key": "pineapple",
+          "name": "파인애플볶음밥",
+          "price": 11500,
+          "tags": ["밥"]
+        },
+        {
+          "key": "tomyum",
+          "name": "똠얌꿍",
+          "price": 13000,
+          "tags": ["국물", "매콤"]
+        }
+      ]
+    },
+    {
+      "key": "indian-01",
+      "name": "델리커리",
+      "category": "아시안",
+      "tags": ["이국적"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "makhani",
+          "name": "마크니커리와 난",
+          "price": 12500,
+          "tags": ["든든한"]
+        },
+        {
+          "key": "lassi",
+          "name": "망고라씨",
+          "price": 4500,
+          "tags": ["달달한"]
+        }
+      ]
+    },
+    {
+      "key": "donburi-01",
+      "name": "덮밥연구소",
+      "category": "일식",
+      "tags": ["밥", "든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "10:30-21:30"
+      },
+      "menus": [
+        {
+          "key": "gyudon",
+          "name": "규동",
+          "price": 8500,
+          "tags": ["고기", "밥"]
+        },
+        {
+          "key": "oyakodon",
+          "name": "오야코동",
+          "price": 8500,
+          "tags": ["밥"]
+        },
+        {
+          "key": "katsudon",
+          "name": "가츠동",
+          "price": 9500,
+          "tags": ["튀김", "밥"]
+        }
+      ]
+    },
+    {
+      "key": "ramen-01",
+      "name": "라멘야",
+      "category": "일식",
+      "tags": ["국물", "면"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-01:00"
+      },
+      "menus": [
+        {
+          "key": "tonkotsu",
+          "name": "돈코츠라멘",
+          "price": 10000,
+          "tags": ["국물", "면"]
+        },
+        {
+          "key": "miso",
+          "name": "미소라멘",
+          "price": 10000,
+          "tags": ["국물", "면"]
+        },
+        {
+          "key": "gyoza",
+          "name": "교자 5개",
+          "price": 5000,
+          "tags": ["간단"]
+        }
+      ]
+    },
+    {
+      "key": "bossam-02",
+      "name": "야식보쌈",
+      "category": "한식",
+      "tags": ["고기", "야식", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "16:00-04:00"
+      },
+      "menus": [
+        {
+          "key": "small",
+          "name": "보쌈 소",
+          "price": 19000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "mini",
+          "name": "보쌈 정식 1인",
+          "price": 11000,
+          "tags": ["고기"]
+        }
+      ]
+    },
+    {
+      "key": "jeon-01",
+      "name": "비오는날 전집",
+      "category": "한식",
+      "tags": ["비오는날", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "15:00-02:00"
+      },
+      "menus": [
+        {
+          "key": "pajeon",
+          "name": "해물파전",
+          "price": 15000,
+          "tags": ["나눠먹기"]
+        },
+        {
+          "key": "kimchijeon",
+          "name": "김치전",
+          "price": 9000,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "makgeolli",
+          "name": "막걸리 1병",
+          "price": 4000,
+          "tags": ["술안주"]
+        }
+      ]
+    },
+    {
+      "key": "yukgaejang-01",
+      "name": "얼큰육개장",
+      "category": "한식",
+      "tags": ["국물", "매콤", "해장"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "07:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "yukgaejang",
+          "name": "육개장",
+          "price": 9500,
+          "tags": ["국물", "매콤"]
+        },
+        {
+          "key": "galbitang",
+          "name": "갈비탕",
+          "price": 13000,
+          "tags": ["국물"]
+        }
+      ]
+    },
+    {
+      "key": "chicken-04",
+      "name": "반마리치킨",
+      "category": "치킨",
+      "tags": ["가성비", "야식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "12:00-02:00"
+      },
+      "menus": [
+        {
+          "key": "fried-half",
+          "name": "후라이드 반마리",
+          "price": 9900,
+          "tags": ["튀김"]
+        },
+        {
+          "key": "yangnyeom-half",
+          "name": "양념 반마리",
+          "price": 10900,
+          "tags": ["달짝"]
+        }
+      ]
+    },
+    {
+      "key": "wings-01",
+      "name": "날개집",
+      "category": "치킨",
+      "tags": ["야식", "매콤"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "17:00-03:00"
+      },
+      "menus": [
+        {
+          "key": "hot",
+          "name": "매운 날개 10조각",
+          "price": 9000,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "soy",
+          "name": "간장 날개 10조각",
+          "price": 9000,
+          "tags": ["달짝"]
+        }
+      ]
+    },
+    {
+      "key": "vegan-01",
+      "name": "초록식탁",
+      "category": "샐러드",
+      "tags": ["건강", "채식"],
+      "verified": true,
+      "openHours": {
+        "mon-sat": "10:00-20:00"
+      },
+      "menus": [
+        {
+          "key": "bibimbap",
+          "name": "두부 비빔밥",
+          "price": 9000,
+          "tags": ["건강"]
+        },
+        {
+          "key": "wrap",
+          "name": "채소 랩",
+          "price": 7500,
+          "tags": ["가벼운"]
+        }
+      ]
+    },
+    {
+      "key": "fruit-01",
+      "name": "과일가게",
+      "category": "디저트",
+      "tags": ["건강", "가벼운"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "09:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "cup",
+          "name": "과일컵",
+          "price": 5000,
+          "tags": ["가벼운"]
+        },
+        {
+          "key": "juice",
+          "name": "생과일주스",
+          "price": 4500,
+          "tags": ["시원한"]
+        }
+      ]
+    },
+    {
+      "key": "icecream-01",
+      "name": "젤라또랩",
+      "category": "디저트",
+      "tags": ["달달한", "시원한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "12:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "double",
+          "name": "젤라또 두 가지 맛",
+          "price": 6500,
+          "tags": ["달달한"]
+        },
+        {
+          "key": "affogato",
+          "name": "아포가토",
+          "price": 5500,
+          "tags": ["커피"]
+        }
+      ]
+    },
+    {
+      "key": "steak-01",
+      "name": "한끼스테이크",
+      "category": "양식",
+      "tags": ["고기", "든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "sirloin",
+          "name": "등심 스테이크 덮밥",
+          "price": 13900,
+          "tags": ["고기", "밥"]
+        },
+        {
+          "key": "hamburg",
+          "name": "함박스테이크",
+          "price": 10900,
+          "tags": ["고기"]
+        }
+      ]
+    },
+    {
+      "key": "hoe-01",
+      "name": "동네횟집",
+      "category": "일식",
+      "tags": ["회", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "15:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "hoedeopbap",
+          "name": "회덮밥",
+          "price": 12000,
+          "tags": ["밥"]
+        },
+        {
+          "key": "moduemhoe",
+          "name": "모둠회 소",
+          "price": 25000,
+          "tags": ["나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "toast-01",
+      "name": "아침토스트",
+      "category": "분식",
+      "tags": ["아침", "간단", "가성비"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "06:00-14:00"
+      },
+      "menus": [
+        {
+          "key": "ham-cheese",
+          "name": "햄치즈토스트",
+          "price": 3800,
+          "tags": ["간단"]
+        },
+        {
+          "key": "bacon",
+          "name": "베이컨토스트",
+          "price": 4300,
+          "tags": ["간단"]
+        }
+      ]
+    },
+    {
+      "key": "galbi-01",
+      "name": "갈비탕명가",
+      "category": "한식",
+      "tags": ["국물", "든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "09:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "galbitang",
+          "name": "갈비탕",
+          "price": 13000,
+          "tags": ["국물"]
+        },
+        {
+          "key": "yukhoe-bap",
+          "name": "육회비빔밥",
+          "price": 12000,
+          "tags": ["밥"]
+        }
+      ]
+    },
+    {
+      "key": "omurice-01",
+      "name": "오므라이스집",
+      "category": "양식",
+      "tags": ["밥", "든든한"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "classic",
+          "name": "오므라이스",
+          "price": 8500,
+          "tags": ["밥"]
+        },
+        {
+          "key": "cream",
+          "name": "크림 오므라이스",
+          "price": 9500,
+          "tags": ["밥", "치즈"]
+        }
+      ]
+    },
+    {
+      "key": "night-bunsik",
+      "name": "새벽분식",
+      "category": "분식",
+      "tags": ["야식", "가성비", "24시"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "00:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "tteokbokki",
+          "name": "떡볶이",
+          "price": 5000,
+          "tags": ["매콤"]
+        },
+        {
+          "key": "sundae",
+          "name": "순대",
+          "price": 5000,
+          "tags": ["간단"]
+        },
+        {
+          "key": "eomuk",
+          "name": "어묵탕",
+          "price": 6000,
+          "tags": ["국물"]
+        }
+      ]
+    },
+    {
+      "key": "hanwoo-01",
+      "name": "한우명가",
+      "category": "한식",
+      "tags": ["고기", "회식", "특별한날"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:30-22:00"
+      },
+      "menus": [
+        {
+          "key": "deungsim",
+          "name": "한우 등심 200g",
+          "price": 52000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "set",
+          "name": "한우 모둠 세트 2인",
+          "price": 98000,
+          "tags": ["고기", "나눠먹기"]
+        },
+        {
+          "key": "yukhoe",
+          "name": "한우 육회",
+          "price": 35000,
+          "tags": ["고기"]
+        }
+      ]
+    },
+    {
+      "key": "crab-01",
+      "name": "대게나라",
+      "category": "해산물",
+      "tags": ["회식", "특별한날", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "12:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "crab",
+          "name": "대게 1kg",
+          "price": 89000,
+          "tags": ["해산물"]
+        },
+        {
+          "key": "kingcrab",
+          "name": "킹크랩 반마리",
+          "price": 150000,
+          "tags": ["해산물", "나눠먹기"]
+        },
+        {
+          "key": "crab-bap",
+          "name": "게딱지 볶음밥",
+          "price": 8000,
+          "tags": ["밥"]
+        }
+      ]
+    },
+    {
+      "key": "omakase-01",
+      "name": "스시오마카세 도시락",
+      "category": "일식",
+      "tags": ["특별한날", "회"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:00-21:00"
+      },
+      "menus": [
+        {
+          "key": "premium",
+          "name": "프리미엄 초밥 도시락",
+          "price": 45000,
+          "tags": ["회"]
+        },
+        {
+          "key": "chef",
+          "name": "셰프 특선 초밥 20피스",
+          "price": 78000,
+          "tags": ["회", "나눠먹기"]
+        }
+      ]
+    },
+    {
+      "key": "lamb-01",
+      "name": "양갈비 하우스",
+      "category": "양식",
+      "tags": ["고기", "회식"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "16:00-24:00"
+      },
+      "menus": [
+        {
+          "key": "rack",
+          "name": "양갈비 2인 세트",
+          "price": 68000,
+          "tags": ["고기", "나눠먹기"]
+        },
+        {
+          "key": "skewer",
+          "name": "양꼬치 20개",
+          "price": 32000,
+          "tags": ["고기", "야식"]
+        }
+      ]
+    },
+    {
+      "key": "lobster-01",
+      "name": "랍스터키친",
+      "category": "해산물",
+      "tags": ["특별한날"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "12:00-22:00"
+      },
+      "menus": [
+        {
+          "key": "lobster-roll",
+          "name": "랍스터롤",
+          "price": 29000,
+          "tags": ["해산물"]
+        },
+        {
+          "key": "whole",
+          "name": "랍스터 한 마리 버터구이",
+          "price": 85000,
+          "tags": ["해산물"]
+        }
+      ]
+    },
+    {
+      "key": "chinese-course",
+      "name": "홍연 중식코스",
+      "category": "중식",
+      "tags": ["회식", "특별한날", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "11:30-21:30"
+      },
+      "menus": [
+        {
+          "key": "course-a",
+          "name": "코스 A 2인",
+          "price": 88000,
+          "tags": ["나눠먹기"]
+        },
+        {
+          "key": "peking",
+          "name": "북경오리 반마리",
+          "price": 65000,
+          "tags": ["고기"]
+        },
+        {
+          "key": "jjajang-premium",
+          "name": "삼선짜장",
+          "price": 13000,
+          "tags": ["면"]
+        }
+      ]
+    },
+    {
+      "key": "party-01",
+      "name": "파티케이터링",
+      "category": "양식",
+      "tags": ["회식", "나눠먹기"],
+      "verified": true,
+      "openHours": {
+        "mon-sun": "10:00-20:00"
+      },
+      "menus": [
+        {
+          "key": "platter",
+          "name": "파티 플래터 4인",
+          "price": 120000,
+          "tags": ["나눠먹기"]
+        },
+        {
+          "key": "cake",
+          "name": "홀케이크",
+          "price": 38000,
+          "tags": ["달달한"]
+        }
+      ]
     }
   ]
 }
