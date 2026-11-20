@@ -42,10 +42,17 @@ export interface DragonTurn {
   readonly quote: OrderQuote | undefined;
 }
 
-/** One dragon message: tokens join into one line, then cards in the order they came. */
+/**
+ * One dragon message: tokens join into one line, then cards in the order they came. A limit
+ * change card goes after the turn's words (before its reply chips): the model often explains
+ * the card after the tool call, and once the card is pressed it becomes the "바꿨어용!" line,
+ * which must read as the newest thing, not sit above "아직 바뀌지 않았어용" (browser QA 2).
+ */
 export function dragonTurn(messageId: string, events: readonly ChatEvent[]): DragonTurn {
   const entries: ChatEntry[] = [];
+  const limitCards: ChatEntry[] = [];
   let text = '';
+  let cardBreak = false;
   let quote: OrderQuote | undefined;
   const flushText = () => {
     if (text === '') return;
@@ -55,6 +62,9 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
   for (const e of events) {
     switch (e.type) {
       case 'token':
+        // Words on both sides of a limit card stay one line, broken where the card was.
+        if (cardBreak && text !== '' && e.text !== '') text += '\n';
+        cardBreak = false;
         text += e.text;
         break;
       case 'recommendations':
@@ -77,14 +87,17 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
         quote = e.quote;
         break;
       case 'limit_change_card':
-        flushText();
-        entries.push({ kind: 'limit_change', id: e.card.cardId, card: e.card });
+        cardBreak = true;
+        limitCards.push({ kind: 'limit_change', id: e.card.cardId, card: e.card });
         break;
       case 'done':
         break;
     }
   }
   flushText();
+  let at = entries.length;
+  while (at > 0 && entries[at - 1]?.kind === 'quick_replies') at -= 1;
+  entries.splice(at, 0, ...limitCards);
   return { entries, quote };
 }
 

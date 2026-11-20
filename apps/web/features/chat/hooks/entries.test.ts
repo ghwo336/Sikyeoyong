@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OrderQuote, RecommendationCard } from '../../../lib/api';
+import type { LimitChangeCardView, OrderQuote, RecommendationCard } from '../../../lib/api';
 import { type ChatEntry, dragonTurn, historyEntries, lastSent, threadRows } from './entries';
 
 const rec = { id: 'r1', menu: '돼지국밥' } as RecommendationCard;
@@ -23,6 +23,27 @@ describe('dragonTurn', () => {
     const turn = dragonTurn('m', [{ type: 'order_confirm', quote }]);
     expect(turn.entries).toEqual([]);
     expect(turn.quote).toBe(quote);
+  });
+
+  it('puts a limit change card after the words of its turn, before the chips', () => {
+    // Browser QA 2: the card (later "바꿨어용!") sat above "아직 바뀌지 않았어용".
+    const card = {
+      cardId: 'c1',
+      field: 'perOrder' as const,
+      from: '1',
+      to: '2',
+      needsReauth: true,
+      rows: [],
+    } satisfies LimitChangeCardView;
+    const turn = dragonTurn('m', [
+      { type: 'token', text: '바꿀까용?' },
+      { type: 'limit_change_card', card },
+      { type: 'token', text: '버튼을 눌러야 바뀌어용.' },
+      { type: 'quick_replies', items: [{ id: 'q', label: '그만' }] },
+      { type: 'done', messageId: 'm' },
+    ]);
+    expect(turn.entries.map((e) => e.kind)).toEqual(['dragon', 'limit_change', 'quick_replies']);
+    expect(turn.entries[0]).toMatchObject({ text: '바꿀까용?\n버튼을 눌러야 바뀌어용.' });
   });
 
   it('gives every item its own id even when a card kind repeats', () => {
