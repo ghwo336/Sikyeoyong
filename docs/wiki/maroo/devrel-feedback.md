@@ -120,3 +120,31 @@ children: []
 - 발견: 2026-11-20. `transfer.send` 도구 설명은 "m-aws MCP 서버가 정책을 검사하고 WaaS는 강제하지 않는다"고 쓴다. agent-policy-semantics는 "오프체인 검사를 우회해도 합의 단계에서 차단"이라고 쓴다 (maroo-facts 1의 문서 불일치 행과 같은 주제).
 - 영향: 디앱이 "MAWS 한도가 지켜 준다"고 과장할 위험. 시켜용은 컨트랙트 범위 PCL 기준으로만 말한다.
 - 제안: 정책 강제 위치(MCP 서버, WaaS, 체인)를 표 하나로 정리.
+
+### F-15 파우치 웹 SDK 버전이 문서마다 다름 (beta.5와 beta.8)
+- 상태: 열림
+- 종류: 문서 불일치
+- 발견: 2026-11-20 (spikes/S14). sdk/embedded-start는 `@nc-waas/sdk` `0.1.0-beta.5` tarball과 해시를, quickstart와 `auth.pouchi.io/downloads/manifest.json`은 `0.1.0-beta.8`을 안내한다.
+- 영향: 개발자가 낡은 SDK와 해시로 설치하고 README beta.8의 서명 동작(승인 창 없이 서명)과 다르게 본다.
+- 제안: 버전과 해시는 manifest 한 곳만 가리키게.
+
+### F-16 세션 키(useSessionApproval)가 현재 웹 SDK에 없고 React SDK에만 있음
+- 상태: 열림
+- 종류: 문서 누락, 기능 위치
+- 발견: 2026-11-20 (spikes/S14). delegation 문서의 "브라우저 세션 키"는 `@shard-lab/nc-waas-react`(GitHub Packages)의 훅이다. 현재 권장 SDK `@nc-waas/sdk/browser`(`pouchiEmbedded`)에는 세션 키가 없다. 두 SDK를 함께 쓰는지, 어느 쪽이 앞으로의 길인지 문서에 없다.
+- 영향: 임베디드 로그인과 세션 키 위임을 한 앱에서 같이 쓰려는 디앱(에이전트 결제)이 길을 고르지 못한다.
+- 제안: SDK별 기능 표, 세션 키의 웹 SDK 지원 일정.
+
+### F-17 파우치 지갑 종류와 컨트랙트 호출의 msg.sender가 문서에 직접 없음
+- 상태: 열림
+- 종류: 문서 누락
+- 발견: 2026-11-20 (spikes/S14). 지갑이 ERC-4337 WaaSWallet이고 호출의 sender가 지갑 컨트랙트라는 점은 embedded-start의 영수증 검증 절(EntryPoint, `UserOperationEvent`, `OwnerCallExecuted`)에서만 드러난다. 마루 PCL(직접 sender 귀속)과 8004 에이전트와의 관계는 어디에도 없다.
+- 영향: 마루 디앱은 PCL 한도가 누구에게 걸리는지 알아야 결제 경로를 정할 수 있다 (S12와 같은 질문).
+- 제안: "파우치 지갑으로 PCL 정책이 걸린 컨트랙트 부르기" 절, 8004 에이전트 등록 가능 여부.
+
+### F-18 공개 manifest.json에 개발자 PC 로컬 경로가 들어 있음
+- 상태: 열림
+- 종류: 배포물 위생
+- 발견: 2026-11-20 (spikes/S14). `auth.pouchi.io/downloads/manifest.json`의 provenance에 개발자 PC의 절대 경로(사용자 이름 포함)가 있다.
+- 영향: 내부 정보 노출 (작지만 공개 배포물).
+- 제안: manifest 생성 시 로컬 경로를 빼거나 상대 경로로.
