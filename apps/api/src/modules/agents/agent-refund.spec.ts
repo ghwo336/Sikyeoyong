@@ -83,6 +83,22 @@ describe('POST /api/agents/me/drain (user-flow 17, 돌려받기)', () => {
     expect(allowance.balanceAokrw('u1')).toBe(W(20_000n));
   });
 
+  it('records what actually moved, not what was there: a drain that leaves 1,000 won records 19,000', async () => {
+    const { press, payment, wallet, allowance } = await setup();
+    await payment.fund(wallet, W(20_000n));
+    await press('freeze');
+    const realDrain = payment.drain.bind(payment);
+    const realFund = payment.fund.bind(payment);
+    vi.spyOn(payment, 'drain').mockImplementationOnce(async (a) => {
+      const hashes = await realDrain(a);
+      await realFund(a, W(1_000n)); // the pocket did not empty all the way
+      return hashes;
+    });
+    const body = zRefundResult.parse((await press('drain')).body);
+    expect(body.refunded).toBe(W(19_000n).toString());
+    expect(allowance.balanceAokrw('u1')).toBe(W(19_000n));
+  });
+
   it('an active dragon is refused (409) and nothing moves', async () => {
     const { press, payment, wallet, allowance } = await setup();
     await payment.fund(wallet, W(5_000n));
