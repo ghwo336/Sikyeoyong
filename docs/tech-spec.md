@@ -1032,7 +1032,7 @@ BIZNO_HMAC_KEY=
 
 | ID | 질문 (D-11) | 절차 | 기대 결과 | 실패 시 |
 | --- | --- | --- | --- | --- |
-| S1 | MAWS가 컨트랙트 함수를 호출하나 (D-11-1) | 1) MAWS MCP 도구 목록에서 `transfer_send` 입력 스키마에 `data`/`calldata` 필드가 있는지 확인 2) 없으면 MAWS 담당에게 질의 3) 있으면 `faucet_drip` → `agent_create` → `agent_detail` 폴링(ACTIVE) → `agent_fund` → 테스트 컨트랙트(`Echo.ping(bytes32)`)에 calldata 전송 → Explorer에서 input 확인 | calldata가 실린 호출 성공 | 경로 B 채택, MAWS 팀 피드백 결과 (2026-11-20): MCP 스키마에 calldata 없음, 경로 B (D-25, spikes/S1.md) |
+| S1 | MAWS가 컨트랙트 함수를 호출하나 (D-11-1) | 1) MAWS MCP 도구 목록에서 `transfer_send` 입력 스키마에 `data`/`calldata` 필드가 있는지 확인 2) 없으면 MAWS 담당에게 질의 3) 있으면 `faucet_drip` → `agent_create` → `agent_detail` 폴링(ACTIVE) → `agent_fund` → 테스트 컨트랙트(`Echo.ping(bytes32)`)에 calldata 전송 → Explorer에서 input 확인 | calldata가 실린 호출 성공 | 경로 B 채택, MAWS 팀 피드백. 결과 (2026-11-20): MCP 스키마에 calldata 없음, 경로 B (D-25, spikes/S1.md) |
 | S2 | 서버 하나로 여러 사용자 MAWS 계정 (D-11-2) | `WAAS_AUTH_TOKEN` 두 개(계정 2개)로 MCP 서버 두 번 기동 또는 한 프로세스에서 토큰 전환이 되는지 확인, `agent_list` 결과 분리 확인 | 계정별 분리 | 1단계는 운영자 계정 단일 소유 |
 | S3 | 테스트넷 PAYMASTER (D-11-3) | `agent_create` → `agent_set_gas_source`(PAYMASTER) → 잔액 0 상태에서 `agent_fund` 소액 → `transfer_send` 소액 → `agent_balance`로 가스 차감 여부 | 보낸 금액만 줄고 가스 차감 없음 | SELF 모드, float에 가스 포함 |
 | S4 | `changeContractPolicies` 인자·권한·셀렉터 (D-11-4) | 테스트 컨트랙트 + `deployPclProxy` → 즉시 `changeContractPolicies`(admin=운영자, `VOLUME_POLICY` 셀렉터 지정) → `contractPolicies` 조회 → 다른 키로 변경 시도 | 운영자만 변경, 셀렉터별 적용 | `IPcl.sol` 원본 확인, PCL 담당 질의 |
