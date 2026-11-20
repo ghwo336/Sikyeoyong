@@ -53,6 +53,9 @@ const schema = z.object({
   GOOGLE_CLIENT_ID_WEB: optionalText,
   GOOGLE_CLIENT_SECRET: optionalText,
   ANTHROPIC_API_KEY: optionalText,
+  /** D-30: which company's model answers the chat. */
+  LLM_PROVIDER: z.enum(['anthropic', 'openai']).default('anthropic'),
+  OPENAI_API_KEY: optionalText,
   LLM_MODEL: optionalText,
   /** D-26: low by default for the demo (cost); raise it per run when a scene needs it. */
   LLM_EFFORT: z.enum(LLM_EFFORTS).default('low'),
@@ -124,6 +127,8 @@ export interface AppConfig {
     /** Claude effort for the chat agent (D-26: default low). */
     readonly effort: LlmEffort;
     /** D-26: live Claude, or replayed dragon turns (no API call). */
+    /** D-30: anthropic (default) or openai. */
+    readonly provider: 'anthropic' | 'openai';
     readonly mode: 'live' | 'replay';
     /** D-26: live tokens per KST day before the tired line; 0 = no cap. */
     readonly dailyTokenCap: number;
@@ -133,6 +138,7 @@ export interface AppConfig {
   readonly secrets: {
     readonly sessionSecret: string | undefined;
     readonly anthropicApiKey: string | undefined;
+    readonly openaiApiKey: string | undefined;
     readonly pouchiAppKey: string | undefined;
     readonly operatorKey: string | undefined;
     readonly waasAuthToken: string | undefined;
@@ -151,7 +157,8 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
     if (!ok) missing.push(name);
   };
   need('SESSION_SECRET', (env.SESSION_SECRET?.length ?? 0) >= 32);
-  need('ANTHROPIC_API_KEY', env.ANTHROPIC_API_KEY !== undefined);
+  if (env.LLM_PROVIDER === 'openai') need('OPENAI_API_KEY', env.OPENAI_API_KEY !== undefined);
+  else need('ANTHROPIC_API_KEY', env.ANTHROPIC_API_KEY !== undefined);
   need('LLM_MODEL', env.LLM_MODEL !== undefined);
   need('OPERATOR_KEY', env.OPERATOR_KEY !== undefined);
   // Required now so a production boot cannot start without a deployed orders proxy; the chain
@@ -247,6 +254,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
     llm: {
       model: env.LLM_MODEL,
       effort: env.LLM_EFFORT,
+      provider: env.LLM_PROVIDER,
       mode: env.LLM_MODE,
       dailyTokenCap: env.LLM_DAILY_TOKEN_CAP,
       weatherProvider: env.WEATHER_PROVIDER,
@@ -254,6 +262,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
     secrets: {
       sessionSecret: env.SESSION_SECRET,
       anthropicApiKey: env.ANTHROPIC_API_KEY,
+      openaiApiKey: env.OPENAI_API_KEY,
       pouchiAppKey: env.POUCHI_APP_KEY,
       operatorKey: env.OPERATOR_KEY,
       waasAuthToken: env.WAAS_AUTH_TOKEN,

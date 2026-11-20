@@ -425,6 +425,7 @@ export interface LlmProvider {
 //        읽기 도구만, API 호출 없음). live면 DailyCapProvider가 AnthropicProvider를 감싸
 //        KST 하루 토큰(입력, 출력, 캐시 합)을 세고 LLM_DAILY_TOKEN_CAP에 닿으면
 //        TiredProvider(고정 한 줄 "오늘은 많이 말해서 피곤해용...", 도구 없음)로 답한다.
+// D-30: LLM_PROVIDER=openai면 live 자리에 OpenAiProvider(llm/openai-provider.ts, OPENAI_API_KEY).
 ```
 
 ### 3.6 에러 코드와 드래곤 대사
@@ -906,6 +907,8 @@ APPLE_SERVICE_ID=                     # 2단계
 
 # AI
 ANTHROPIC_API_KEY=
+LLM_PROVIDER=anthropic                # anthropic | openai (D-30). openai면 OPENAI_API_KEY와 OpenAI 모델 이름의 LLM_MODEL
+OPENAI_API_KEY=                       # 비밀. 서버에만 (D-30)
 LLM_MODEL=claude-opus-5-5             # 설정값, 코드에 하드코딩 금지 (D-22)
 LLM_EFFORT=low                        # low | medium | high | xhigh | max (D-22, 데모 기본 low D-26)
 LLM_MODE=live                         # live: Claude API / replay: 정해 둔 용이 턴 재생, API 호출 없음 (D-26)

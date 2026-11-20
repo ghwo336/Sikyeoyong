@@ -245,3 +245,21 @@ describe('Pouchi login config (D-29)', () => {
     expect(() => loadConfig(rest)).toThrow();
   });
 });
+
+describe('LLM_PROVIDER (D-30)', () => {
+  it('defaults to anthropic; openai keeps its key in secrets only', () => {
+    expect(loadConfig({}).llm.provider).toBe('anthropic');
+    const c = loadConfig({ LLM_PROVIDER: 'openai', OPENAI_API_KEY: 'sk-secret' });
+    expect(c.llm.provider).toBe('openai');
+    expect(c.secrets.openaiApiKey).toBe('sk-secret');
+    expect(JSON.stringify(c.llm)).not.toContain('sk-secret');
+  });
+
+  it('production with openai needs OPENAI_API_KEY, not ANTHROPIC_API_KEY', () => {
+    const { ANTHROPIC_API_KEY: _a, ...rest } = PROD;
+    expect(() => loadConfig({ ...rest, LLM_PROVIDER: 'openai' })).toThrow();
+    expect(() =>
+      loadConfig({ ...rest, LLM_PROVIDER: 'openai', OPENAI_API_KEY: 'sk-x' }),
+    ).not.toThrow();
+  });
+});

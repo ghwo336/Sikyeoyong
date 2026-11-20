@@ -9,6 +9,7 @@ import { DB } from '../../db/db.module.js';
 import { loadConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { DailyCapProvider } from './daily-cap-provider.js';
+import { OpenAiProvider } from './openai-provider.js';
 import { createLlmProvider, defaultMessagesClient } from './llm-provider.factory.js';
 import { ReplayProvider, TIRED_LINE } from './replay-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
@@ -150,5 +151,35 @@ describe('createLlmProvider (D-22)', () => {
     if (!(p instanceof AnthropicProvider)) throw new Error('not the Claude adapter');
     expect(p.options).toEqual({ model: 'test-model-nest', effort: 'low' });
     expect(apiKeyOf(p)).toBe('test-key-nest');
+  });
+});
+
+describe('createLlmProvider with LLM_PROVIDER=openai (D-30)', () => {
+  it('uses the OpenAI adapter behind the daily cap, with the OpenAI key, model and effort', () => {
+    const makeChatClient = vi.fn((_key: string) => ({
+      chat: { completions: { create: vi.fn() } },
+    }));
+    const makeClient = vi.fn();
+    const p = createLlmProvider(
+      loadConfig({ LLM_PROVIDER: 'openai', LLM_MODEL: 'gpt-test', OPENAI_API_KEY: 'sk-test' }),
+      makeClient as never,
+      makeChatClient,
+    );
+    if (!(p instanceof DailyCapProvider)) throw new Error('not capped');
+    const live = p.live;
+    if (!(live instanceof OpenAiProvider)) throw new Error('not the OpenAI adapter');
+    expect(makeChatClient).toHaveBeenCalledWith('sk-test');
+    expect(makeClient).not.toHaveBeenCalled();
+    expect(live.options).toEqual({ model: 'gpt-test', effort: 'low' });
+  });
+
+  it('without OPENAI_API_KEY a turn fails naming that variable (an Anthropic key does not count)', async () => {
+    const p = createLlmProvider(
+      loadConfig({ LLM_PROVIDER: 'openai', LLM_MODEL: 'gpt-test', ANTHROPIC_API_KEY: 'k' }),
+    );
+    await expect(p.turn(request, () => undefined)).rejects.toMatchObject({
+      code: 'INTERNAL',
+      detail: { variables: ['OPENAI_API_KEY'] },
+    });
   });
 });
