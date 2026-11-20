@@ -9,6 +9,23 @@ import type { Request } from 'express';
 import { AuthService, type SessionUser } from '../../modules/auth/auth.service.js';
 
 export const SESSION_COOKIE = 'sid';
+
+/** Session lifetime, the same as AuthService issues (30 days). */
+const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * The one way every login route sets `sid` (auth.md): HttpOnly, SameSite=Lax, Path=/ only,
+ * and Secure everywhere but local http development.
+ */
+export function sessionCookieOptions(nodeEnv: 'development' | 'test' | 'production') {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: nodeEnv === 'production',
+    path: '/',
+    maxAge: COOKIE_MAX_AGE_MS,
+  };
+}
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 type SessionRequest = Request & { sessionUser?: SessionUser };

@@ -22,6 +22,7 @@ children: []
 ## 반드시 지킬 규칙 (MUST)
 - 비밀(`WAAS_AUTH_TOKEN`, Anthropic 키, OAuth 시크릿, 경로 B 에이전트 키 암호화 키, 운영자 키)은 VM의 `.env`(권한 600) 또는 비밀 관리자에만. 저장소, 이미지, 로그에 넣지 않는다.
 - `maws-mcp`와 DB는 외부 포트를 열지 않는다. 외부에는 Caddy 443만.
+- API는 `X-Forwarded-For`를 loopback과 사설 망(Caddy 컨테이너)에서 온 것만 믿는다 (`app.setup.ts` trust proxy, IP당 제한 tech-spec 9.5). Caddy를 다른 망으로 옮기면 이 값을 함께 고친다.
 - SQLite 파일은 볼륨에 두고 하루 1회 이상 백업 (백업 파일도 VM 밖으로).
 - 배포는 스크립트 하나(`infra/deploy.sh`)로 재현 가능해야 한다. 손으로 고친 설정을 남기지 않는다.
 - 헬스 체크 엔드포인트와 컨테이너 재시작 정책.

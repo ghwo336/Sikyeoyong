@@ -19,11 +19,13 @@ children: []
 ## 의존과 인터페이스 경계
 - 로그인은 파우치 로그인 하나다 (D-29, 2026-11-20 구현). 흐름:
   1. 웹은 `GET /api/auth/pouchi/config`(공개, `zPouchiLoginConfig`: 금고 주소, 앱 ID, 콜백)를 받는다. 앱 키는 웹에 오지 않는다.
-  2. 웹이 `pouchiEmbedded.login`(@nc-waas/sdk/browser beta.8)으로 파우치 금고(이메일 코드, 패스키, 가입이면 지갑 생성)를 연다. 금고가 열리기 전 `beforeOpen`에서 `POST /api/auth/pouchi/bind { requestId, codeChallenge, flow }`로 요청을 서버에 묶는다.
-  3. 금고의 서명된 결과를 `POST /api/auth/pouchi/complete { envelope, codeVerifier, requestId }`로 보낸다. 서버(`modules/pouchi`의 `PouchiService`)는 묶어 둔 요청을 한 번만, 10분 안에만 쓰고, 기대 앱 ID와 흐름은 콜백 본문이 아니라 서버 설정과 묶은 기록에서 가져와 SDK `completeBridgeResult`(결과 서명 검증, PKCE)로 확인한다. 기기 확인(`ownerVerified`)까지 통과해야 한다.
+  2. 웹이 `pouchiEmbedded.login`(@nc-waas/sdk/browser beta.8)으로 파우치 금고(이메일 코드, 패스키, 가입이면 지갑 생성)를 연다. 금고가 열리기 전 `beforeOpen`에서 `POST /api/auth/pouchi/bind { requestId, codeChallenge, flow: signup }`로 요청과 PKCE challenge를 서버에 묶는다 (모양은 파우치 BFF 예제대로 requestId, challenge, verifier 모두 base64url 43자).
+  3. 금고의 서명된 결과를 `POST /api/auth/pouchi/complete { envelope, codeVerifier, requestId }`로 보낸다. 서버(`modules/pouchi`의 `PouchiService`)는 묶어 둔 요청을 한 번만(먼저 지우고 시작), 10분 안에만 쓰고, `base64url(SHA-256(verifier))`가 묶은 challenge와 같을 때만(상수 시간 비교) 넘어가며, 기대 앱 ID와 흐름은 콜백 본문이 아니라 서버 설정과 묶은 기록에서 가져와 SDK `completeBridgeResult`(결과 서명 검증, PKCE)로 확인한다. 기기 확인(`ownerVerified`)까지 통과해야 한다.
   4. 통과하면 `users` 모듈 `PouchiLoginService`가 파우치 지갑 ID로 사용자를 찾거나 만들고(`pouchi_accounts`, 첫 로그인은 닉네임 "주인님"과 정책 기본 예산) `AuthService.rotate`로 세션 쿠키를 발급한다.
   - Safari 패스키는 같은 탭으로 금고에 갔다 `/pouchi/callback`으로 돌아올 수 있다. 웹은 시작할 때와 콜백에서 먼저 `pouchiBridge.handleCallback()`을 부르고 같은 요청으로 `complete`한다.
-  - 묶어 둔 요청은 프로세스 메모리(1,000개까지, 만료 먼저 버림, D-03 한 프로세스). 서버를 다시 띄우면 진행 중인 로그인은 다시 해야 한다.
+  - bind와 complete는 IP당 1분 10회(tech-spec 9.5, `RateLimiter`)이고, 묶어 둔 요청은 프로세스 메모리(1,000개 바닥, 만료 먼저 버림, D-03 한 프로세스). 서버를 다시 띄우면 진행 중인 로그인은 다시 해야 한다. IP는 Caddy(사설 망)와 개발 프록시(loopback)에서 온 `X-Forwarded-For`만 믿는다(`app.setup.ts` trust proxy).
+  - SDK가 위조, 만료, 다른 맥락의 결과에 던지는 `ServerBridgeError`는 실패한 로그인(401)으로 바꾸고, 네트워크와 설정 오류만 500으로 둔다.
+  - 후속(검증 MINOR): 파우치 BFF 예제의 로그인 전 세션 범위 pending과 Origin 검사. 지금은 `X-Requested-With`와 CORS 미허용으로 로그인 CSRF를 막는다.
   - `POUCHI_API_URL`이 비면 로그인이 꺼진다(config와 bind가 404). production은 필수.
   - 나중에 파우치 Browser SDK에 카카오가 들어오면(pouchi-questions 3번) 시작 화면의 첫 버튼과 웹 세션 입구 안쪽만 바꾼다.
 - 예전 계획(D-29로 대체): Passport 카카오·구글 OAuth. 흐름은 tech-spec "2.3 인증 흐름"의 옛 내용.
@@ -48,7 +50,8 @@ children: []
 - MAWS 멀티테넌트가 확인되면 "사용자별 MAWS 계정 연결" 단계를 온보딩에 넣는다. 확인 전에는 운영자 계정 하나가 모든 에이전트를 소유하는 방식(데모 한정)을 쓴다. 이 경우 화면과 README에 정직하게 밝힌다.
 
 ## 테스트 기준
-- 묶지 않은 요청, 이미 쓴 요청, 만료된 요청, 거절되거나 취소된 결과, 기기 확인 전 결과는 401이고 세션도 사용자도 생기지 않는다 (`users/pouchi-login.spec.ts`).
+- 묶지 않은 요청, 이미 쓴 요청, 만료된 요청, challenge와 다른 verifier, 거절되거나 취소된 결과, 기기 확인 전 결과는 401이고 세션도 사용자도 생기지 않는다 (`users/pouchi-login.spec.ts`, `pouchi/sdk-pouchi-bridge.spec.ts`).
+- 같은 요청 두 번 묶기는 409, 같은 IP 11번째는 429, 로그인하면 이전 sid는 무효(세션 고정 방지), production 쿠키는 Secure.
 - 같은 파우치 지갑으로 다시 로그인하면 같은 사용자다.
 - 역할 없는 세션으로 operator API 호출 시 403.
 - 로그아웃 후 세션이 무효.

@@ -225,8 +225,8 @@ apps/api/src/
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/auth/pouchi/config` | 공개 | | `PouchiLoginConfig` (`api/auth.ts`, D-29): 금고 주소, 앱 ID, 콜백. 파우치 로그인이 꺼져 있으면 404 |
-| POST | `/auth/pouchi/bind` | 공개(`X-Requested-With`) | `{ requestId, codeChallenge, flow: signup \| login }` | 204. 금고를 열기 전 요청을 서버에 묶는다 (10분, 한 번) |
-| POST | `/auth/pouchi/complete` | 공개(`X-Requested-With`) | `{ envelope, codeVerifier, requestId, state? }` | 204와 세션 쿠키. 묶은 요청으로만 한 번, SDK로 결과 서명과 기기 확인. 실패는 401. 2026-11-20 구현 |
+| POST | `/auth/pouchi/bind` | 공개(`X-Requested-With`) | `{ requestId, codeChallenge, flow: signup }` (둘 다 base64url 43자) | 204. 금고를 열기 전 요청과 PKCE challenge를 서버에 묶는다 (10분, 한 번, 같은 요청 다시 묶기 409, IP당 1분 10회) |
+| POST | `/auth/pouchi/complete` | 공개(`X-Requested-With`) | `{ requestId, envelope, codeVerifier }` (정확히 셋) | 204와 세션 쿠키(이전 sid는 폐기). 묶은 요청으로만 한 번, verifier가 challenge와 맞아야 하고, SDK로 결과 서명과 기기 확인. 실패는 401, IP당 1분 10회. 2026-11-20 구현 |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |
 | POST | `/signup/trial` | user | | `TrialResult` (`{ granted }`, `api/wallet.ts`). 본인 인증을 마친 주인만(아니면 403). 체험용 용돈(정책 `trialAllowanceAokrw`, 기본 100,000원)을 주인 용돈 장부에 한 번만 넣는다. 두 번째부터는 200 `granted: false`(동시에 와도 하나만, 부분 유일 색인). 수탁(D-24) 동안은 장부만 쓰고 체인에서는 아무것도 옮기지 않는다. 2026-11-20 추가 (allowance 모듈) |
 | POST | `/identity/verify` | user | | `{ verified: true }`. 본인 인증(D-16). `VERIFY_MODE=mock`이면 통과를 기록, `kakao`는 Q-19가 풀릴 때까지 500 `INTERNAL`. 통과한 사실, 방법, 시각만 남긴다. 인증 전의 `POST /agents`는 403 (2026-11-20) |

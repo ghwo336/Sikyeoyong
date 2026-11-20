@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppError } from '@sikyeoyong/shared';
+import { RateLimitModule } from '../../common/rate-limit/rate-limit.module.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
 import { POUCHI_BRIDGE, type PouchiBridge } from './pouchi-bridge.js';
@@ -13,6 +14,7 @@ const off: PouchiBridge = {
 
 /** The Pouchi login bridge (D-29). Users import this module to log people in. */
 @Module({
+  imports: [RateLimitModule],
   providers: [
     {
       provide: POUCHI_BRIDGE,

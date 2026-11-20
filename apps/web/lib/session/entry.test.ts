@@ -17,7 +17,14 @@ const CONFIG = {
   appId: 'sikyeoyong',
   callbackUrl: 'http://localhost:3000/pouchi/callback',
 };
-const RESULT = { envelope: 'e', codeVerifier: 'v'.repeat(43), requestId: 'r1', state: 's' };
+const RESULT = {
+  envelope: 'e',
+  codeVerifier: 'V'.repeat(43),
+  requestId: 'R'.repeat(43),
+  state: 's',
+};
+// Exactly these three go to the server; state stays in the browser.
+const SENT = { requestId: RESULT.requestId, envelope: 'e', codeVerifier: RESULT.codeVerifier };
 
 function client() {
   return {
@@ -52,7 +59,7 @@ describe('the session entry (D-29)', () => {
       codeChallenge: 'ch',
       flow: 'signup',
     });
-    expect(c.pouchiComplete).toHaveBeenCalledWith(RESULT);
+    expect(c.pouchiComplete).toHaveBeenCalledWith(SENT);
     expect(c.login).not.toHaveBeenCalled();
     // bind came before complete
     expect(c.pouchiBind.mock.invocationCallOrder[0]).toBeLessThan(
@@ -71,7 +78,7 @@ describe('the session entry (D-29)', () => {
     const c = client();
     handleCallback.mockResolvedValueOnce(RESULT);
     expect(await resumeSession(asApi(c))).toBe(true);
-    expect(c.pouchiComplete).toHaveBeenCalledWith(RESULT);
+    expect(c.pouchiComplete).toHaveBeenCalledWith(SENT);
     handleCallback.mockResolvedValueOnce(null);
     expect(await resumeSession(asApi(c))).toBe(false);
     expect(c.pouchiComplete).toHaveBeenCalledTimes(1);

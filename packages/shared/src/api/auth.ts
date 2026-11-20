@@ -9,29 +9,24 @@ export const zPouchiLoginConfig = z
   .strict();
 export type PouchiLoginConfig = z.infer<typeof zPouchiLoginConfig>;
 
-const requestId = z
-  .string()
-  .min(1)
-  .max(200)
-  .regex(/^[A-Za-z0-9._:-]+$/);
+/**
+ * Request ids, PKCE challenges and verifiers are 43 base64url characters (32 random bytes),
+ * exactly as the Pouchi BFF example checks them (pouchi.io llms-full "최소 BFF 로그인").
+ */
+const token43 = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 
-/** POST /auth/pouchi/bind: before the vault opens, the server records this request (PKCE challenge). */
+/** POST /auth/pouchi/bind: before the vault opens, the server records this request and its challenge. */
 export const zPouchiBindBody = z
-  .object({
-    requestId,
-    codeChallenge: z.string().min(1).max(200),
-    flow: z.enum(['signup', 'login']),
-  })
+  .object({ requestId: token43, codeChallenge: token43, flow: z.literal('signup') })
   .strict();
 export type PouchiBindBody = z.infer<typeof zPouchiBindBody>;
 
 /** POST /auth/pouchi/complete: the vault's signed result for a bound request; redeemed once. */
 export const zPouchiCompleteBody = z
   .object({
+    requestId: token43,
     envelope: z.string().min(1).max(16_384),
-    codeVerifier: z.string().min(43).max(128),
-    requestId,
-    state: z.string().max(512).optional(),
+    codeVerifier: token43,
   })
   .strict();
 export type PouchiCompleteBody = z.infer<typeof zPouchiCompleteBody>;

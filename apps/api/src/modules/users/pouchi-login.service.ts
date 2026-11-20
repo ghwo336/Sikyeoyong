@@ -17,12 +17,15 @@ export class PouchiLoginService {
     private readonly auth: AuthService,
   ) {}
 
-  async complete(body: PouchiCompleteBody, previousSid: string | null): Promise<string> {
-    const wallet = await this.pouchi.complete({
-      envelope: body.envelope,
-      codeVerifier: body.codeVerifier,
-      requestId: body.requestId,
-    });
+  async complete(
+    body: PouchiCompleteBody,
+    previousSid: string | null,
+    ip: string,
+  ): Promise<string> {
+    const wallet = await this.pouchi.complete(
+      { envelope: body.envelope, codeVerifier: body.codeVerifier, requestId: body.requestId },
+      ip,
+    );
     const userId = this.users.ensurePouchiUser(wallet.walletId, wallet.walletAddress);
     return this.auth.rotate(previousSid, userId, 'web');
   }

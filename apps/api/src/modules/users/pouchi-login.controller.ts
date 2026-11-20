@@ -9,10 +9,13 @@ import {
 import type { Request, Response } from 'express';
 import { Inject } from '@nestjs/common';
 import { CsrfHeaderGuard } from '../../common/guards/csrf-header.guard.js';
-import { SESSION_COOKIE, sessionCookieFrom } from '../../common/guards/session.guard.js';
+import {
+  SESSION_COOKIE,
+  sessionCookieFrom,
+  sessionCookieOptions,
+} from '../../common/guards/session.guard.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
-import { SESSION_TTL_MS } from '../auth/auth.service.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { PouchiService } from '../pouchi/pouchi.service.js';
 import { PouchiLoginService } from './pouchi-login.service.js';
@@ -38,8 +41,11 @@ export class PouchiLoginController {
   @Post('bind')
   @UseGuards(CsrfHeaderGuard)
   @HttpCode(204)
-  bind(@Body(new ZodValidationPipe(zPouchiBindBody)) body: PouchiBindBody): void {
-    this.pouchi.bind(body.requestId, body.flow);
+  bind(
+    @Body(new ZodValidationPipe(zPouchiBindBody)) body: PouchiBindBody,
+    @Req() req: Request,
+  ): void {
+    this.pouchi.bind(body.requestId, body.codeChallenge, req.ip ?? 'unknown');
   }
 
   @Post('complete')
@@ -50,15 +56,8 @@ export class PouchiLoginController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    return this.login.complete(body, sessionCookieFrom(req)).then((token) => {
-      // One sid cookie on Path=/ only (auth.md); Secure outside local http development.
-      res.cookie(SESSION_COOKIE, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: this.appConfig.nodeEnv === 'production',
-        path: '/',
-        maxAge: SESSION_TTL_MS,
-      });
+    return this.login.complete(body, sessionCookieFrom(req), req.ip ?? 'unknown').then((token) => {
+      res.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.appConfig.nodeEnv));
     });
   }
 }

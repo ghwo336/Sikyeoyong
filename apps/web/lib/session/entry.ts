@@ -10,15 +10,14 @@ interface BridgeResult {
   readonly envelope: string;
   readonly codeVerifier: string;
   readonly requestId: string;
-  readonly state?: string;
 }
 
+// Exactly these three go back (the Pouchi BFF example); the result's state stays in the browser.
 const complete = (client: ApiClient, r: BridgeResult) =>
   client.pouchiComplete({
+    requestId: r.requestId,
     envelope: r.envelope,
     codeVerifier: r.codeVerifier,
-    requestId: r.requestId,
-    ...(r.state === undefined ? {} : { state: r.state }),
   });
 
 /** "이메일로 시작하기": open the vault and turn its result into a session. */
@@ -38,7 +37,8 @@ export async function startSession(
       client.pouchiBind({
         requestId: request.requestId,
         codeChallenge: request.codeChallenge,
-        flow: request.flow === 'signup' ? 'signup' : 'login',
+        // A login opens the sign-up flow (sign-in or sign-up, the vault decides).
+        flow: 'signup',
       }),
   });
   await complete(client, result);

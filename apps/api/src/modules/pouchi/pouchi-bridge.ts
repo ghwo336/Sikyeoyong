@@ -6,7 +6,7 @@ export interface PouchiBridgeInput {
   readonly envelope: string;
   readonly codeVerifier: string;
   readonly requestId: string;
-  readonly flow: 'signup' | 'login';
+  readonly flow: 'signup';
 }
 
 export type PouchiBridgeOutcome =

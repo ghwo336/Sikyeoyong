@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { zPouchiBindBody, zPouchiCompleteBody, zPouchiLoginConfig } from './auth.js';
 
-describe('Pouchi login schemas (D-29)', () => {
+const T = 'A'.repeat(42) + '_';
+
+describe('Pouchi login schemas (D-29, the Pouchi BFF example shapes)', () => {
   it('the public config has no key field', () => {
     const v = {
       vaultUrl: 'https://auth.pouchi.io',
@@ -12,22 +14,28 @@ describe('Pouchi login schemas (D-29)', () => {
     expect(zPouchiLoginConfig.safeParse({ ...v, appKey: 'x' }).success).toBe(false);
   });
 
-  it('bind takes a request id, a challenge and signup or login', () => {
+  it('bind: 43-character base64url request id and challenge, flow signup only', () => {
     expect(
-      zPouchiBindBody.safeParse({ requestId: 'r-1', codeChallenge: 'c', flow: 'signup' }).success,
+      zPouchiBindBody.safeParse({ requestId: T, codeChallenge: T, flow: 'signup' }).success,
     ).toBe(true);
     expect(
-      zPouchiBindBody.safeParse({ requestId: 'r 1', codeChallenge: 'c', flow: 'signup' }).success,
+      zPouchiBindBody.safeParse({ requestId: 'r-1', codeChallenge: T, flow: 'signup' }).success,
     ).toBe(false);
     expect(
-      zPouchiBindBody.safeParse({ requestId: 'r-1', codeChallenge: 'c', flow: 'sign' }).success,
+      zPouchiBindBody.safeParse({ requestId: `${T}A`, codeChallenge: T, flow: 'signup' }).success,
+    ).toBe(false);
+    expect(
+      zPouchiBindBody.safeParse({ requestId: T, codeChallenge: T, flow: 'sign' }).success,
     ).toBe(false);
   });
 
-  it('complete needs a PKCE-length verifier (43 to 128)', () => {
-    const ok = { envelope: 'e', codeVerifier: 'v'.repeat(43), requestId: 'r-1' };
+  it('complete: exactly request id, envelope and a 43-character verifier', () => {
+    const ok = { requestId: T, envelope: 'e', codeVerifier: T };
     expect(zPouchiCompleteBody.safeParse(ok).success).toBe(true);
-    expect(zPouchiCompleteBody.safeParse({ ...ok, codeVerifier: 'short' }).success).toBe(false);
+    expect(
+      zPouchiCompleteBody.safeParse({ ...ok, codeVerifier: 'v'.repeat(43) + '!' }).success,
+    ).toBe(false);
+    expect(zPouchiCompleteBody.safeParse({ ...ok, state: 's' }).success).toBe(false);
     expect(zPouchiCompleteBody.safeParse({ ...ok, userId: 'u1' }).success).toBe(false);
   });
 });

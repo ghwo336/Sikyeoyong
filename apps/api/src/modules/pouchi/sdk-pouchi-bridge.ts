@@ -1,4 +1,8 @@
-import { createVerifiedServerWaasClient, type ServerWaasBridgeClient } from '@nc-waas/sdk/server';
+import {
+  createVerifiedServerWaasClient,
+  ServerBridgeError,
+  type ServerWaasBridgeClient,
+} from '@nc-waas/sdk/server';
 import type { PouchiBridge, PouchiBridgeInput, PouchiBridgeOutcome } from './pouchi-bridge.js';
 
 export interface SdkPouchiConfig {
@@ -23,15 +27,22 @@ export class SdkPouchiBridge implements PouchiBridge {
   constructor(private readonly config: SdkPouchiConfig) {}
 
   async complete(input: PouchiBridgeInput): Promise<PouchiBridgeOutcome> {
-    const result = await (
-      await this.waas()
-    ).completeBridgeResult({
-      envelope: input.envelope,
-      codeVerifier: input.codeVerifier,
-      appId: this.config.appId,
-      requestId: input.requestId,
-      flow: input.flow,
-    });
+    const waas = await this.waas();
+    let result: Awaited<ReturnType<ServerWaasBridgeClient['completeBridgeResult']>>;
+    try {
+      result = await waas.completeBridgeResult({
+        envelope: input.envelope,
+        codeVerifier: input.codeVerifier,
+        appId: this.config.appId,
+        requestId: input.requestId,
+        flow: input.flow,
+      });
+    } catch (e) {
+      // A forged, expired or foreign envelope is a refused login (the SDK throws for these),
+      // not a server fault. Anything else (network, client setup) stays an error.
+      if (e instanceof ServerBridgeError) return { ok: false, outcome: 'failed', error: e.code };
+      throw e;
+    }
     if (!result.ok) {
       return { ok: false, outcome: result.claims.outcome, error: result.claims.error };
     }
