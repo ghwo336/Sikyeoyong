@@ -11,7 +11,14 @@
 import { pclProxyKinds, deployPclProxy, isPclProxy } from '@maroo-chain/viem';
 import { explorerTxUrl, okrwToAokrw, type DeploymentRecord } from '@sikyeoyong/shared';
 import { encodeDeployData, encodeFunctionData, formatEther, getAddress, type Hex } from 'viem';
-import { confirm, loadOrdersArtifact, preflight, readCurrentPolicies } from '../src/chain-steps.ts';
+import {
+  assertChainId,
+  assertNoRecord,
+  confirm,
+  loadOrdersArtifact,
+  preflight,
+  readCurrentPolicies,
+} from '../src/chain-steps.ts';
 import { parseArgs } from '../src/cli.ts';
 import { SpendGuard, connect } from '../src/connect.ts';
 import {
@@ -20,7 +27,7 @@ import {
   policyHash,
   summarizePolicies,
 } from '../src/policies.ts';
-import { recordExists, recordPath, writeRecord } from '../src/record.ts';
+import { writeRecord } from '../src/record.ts';
 
 const log = (line: string): void => {
   process.stdout.write(`${line}\n`);
@@ -31,17 +38,8 @@ async function main(): Promise<void> {
   const c = connect(args.network, process.env);
   const { chainConfig, account, publicClient, walletClient } = c;
 
-  if (recordExists(chainConfig.chainId, args.profile) && !args.force) {
-    throw new Error(
-      `record exists: ${recordPath(chainConfig.chainId, args.profile)} (use --force to redeploy)`,
-    );
-  }
-  const rpcChainId = await publicClient.getChainId();
-  if (rpcChainId !== chainConfig.chainId) {
-    throw new Error(
-      `RPC chain id ${rpcChainId} differs from config ${chainConfig.chainId}; nothing sent`,
-    );
-  }
+  assertNoRecord(chainConfig.chainId, args.profile, args.force);
+  await assertChainId(publicClient, chainConfig.chainId);
 
   // KYB policy input only matters for the default profile (D-33: the demo profile has none).
   let kyb;

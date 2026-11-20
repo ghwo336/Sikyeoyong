@@ -25,7 +25,8 @@ export function readOperatorKey(env: NodeJS.ProcessEnv): Hex {
   return hex as Hex;
 }
 
-export function connect(network: NetworkKey, env: NodeJS.ProcessEnv) {
+/** Read-only clients: no key needed (CLI --check and other reads). */
+export function connectReadOnly(network: NetworkKey, env: NodeJS.ProcessEnv) {
   const chainConfig: ChainConfig = resolveChainConfig(network, {
     rpcUrl: env['MAROO_RPC_URL'] || undefined,
     chainId: env['CHAIN_ID'] ? Number(env['CHAIN_ID']) : undefined,
@@ -36,16 +37,28 @@ export function connect(network: NetworkKey, env: NodeJS.ProcessEnv) {
     id: chainConfig.chainId,
     rpcUrls: { default: { http: [chainConfig.rpcUrl] } },
   } as unknown as Chain;
-  const account = privateKeyToAccount(readOperatorKey(env));
   const publicClient = createPublicClient({ chain, transport: http(chainConfig.rpcUrl) }).extend(
     marooPublicActions(),
   );
+  return { chainConfig, chain, publicClient };
+}
+
+/** Read-only clients plus the operator account and wallet client. Needs OPERATOR_KEY. */
+export function connect(network: NetworkKey, env: NodeJS.ProcessEnv) {
+  const base = connectReadOnly(network, env);
+  const account = privateKeyToAccount(readOperatorKey(env));
   const walletClient = createWalletClient({
     account,
-    chain,
-    transport: http(chainConfig.rpcUrl),
+    chain: base.chain,
+    transport: http(base.chainConfig.rpcUrl),
   }).extend(marooWalletActions());
-  return { chainConfig, chain, account, publicClient, walletClient };
+  return { ...base, account, walletClient };
+}
+
+/** Worst case gas for a write: Maroo charges half of the limit even when unused (maroo-facts 4),
+ * so the estimate is doubled to cover a limit chosen above it. */
+export function worstCaseGas(estimate: bigint): bigint {
+  return estimate * 2n;
 }
 
 /**

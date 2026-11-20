@@ -3,10 +3,30 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RawPolicySet } from '@maroo-chain/viem';
 import { formatEther, type Abi, type Hash, type Hex, type TransactionReceipt } from 'viem';
-import { SpendGuard, type connect } from './connect.ts';
-import { REPO_ROOT } from './record.ts';
+import { SpendGuard, worstCaseGas, type connect, type connectReadOnly } from './connect.ts';
+import { REPO_ROOT, recordExists, recordPath } from './record.ts';
+import type { PolicyProfile } from '@sikyeoyong/shared';
 
 export type Connection = ReturnType<typeof connect>;
+export type ReadConnection = Pick<ReturnType<typeof connectReadOnly>, 'publicClient'>;
+
+/** Refuses to overwrite an existing deployment record unless force is set. */
+export function assertNoRecord(chainId: number, profile: PolicyProfile, force: boolean): void {
+  if (recordExists(chainId, profile) && !force) {
+    throw new Error(`record exists: ${recordPath(chainId, profile)} (use --force to redeploy)`);
+  }
+}
+
+/** Stops before any write when the RPC serves a different chain than the config. */
+export async function assertChainId(
+  client: { getChainId(): Promise<number> },
+  expected: number,
+): Promise<void> {
+  const rpcChainId = await client.getChainId();
+  if (rpcChainId !== expected) {
+    throw new Error(`RPC chain id ${rpcChainId} differs from config ${expected}; nothing sent`);
+  }
+}
 
 export interface Artifact {
   readonly abi: Abi;
@@ -49,9 +69,7 @@ export async function preflight(
   const gas = await c.publicClient.estimateGas({ account, to: tx.to, data: tx.data });
   const price = await c.publicClient.getGasPrice();
   const balance = await c.publicClient.getBalance({ address: account });
-  // Maroo charges half of the gas limit even when unused; a 2x margin on the estimate covers a
-  // limit chosen above the estimate.
-  guard.assertCanSpend(balance, gas * 2n, price);
+  guard.assertCanSpend(balance, worstCaseGas(gas), price);
   log(`  simulated ${label}: gas estimate ${gas}, gas price ${price} aokrw`);
   return gas;
 }
@@ -71,7 +89,7 @@ export async function spentSoFar(c: Connection, guard: SpendGuard): Promise<stri
 }
 
 export async function readCurrentPolicies(
-  c: Connection,
+  c: ReadConnection,
   contract: `0x${string}`,
 ): Promise<RawPolicySet[]> {
   const out = (await c.publicClient.pcl.contractPolicies({ contract })) as unknown;

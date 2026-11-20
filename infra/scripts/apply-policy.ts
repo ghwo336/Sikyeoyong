@@ -8,9 +8,9 @@
  */
 import { explorerTxUrl, okrwToAokrw } from '@sikyeoyong/shared';
 import { formatEther, type Hex } from 'viem';
-import { confirm, preflight, readCurrentPolicies } from '../src/chain-steps.ts';
+import { assertChainId, confirm, preflight, readCurrentPolicies } from '../src/chain-steps.ts';
 import { parseArgs } from '../src/cli.ts';
-import { SpendGuard, connect } from '../src/connect.ts';
+import { SpendGuard, connect, connectReadOnly } from '../src/connect.ts';
 import {
   buildOrdersPolicies,
   diffPolicies,
@@ -25,8 +25,11 @@ const log = (line: string): void => {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const c = connect(args.network, process.env);
-  const { chainConfig, account, publicClient, walletClient } = c;
+  // --check only reads, so it works without OPERATOR_KEY; writes need the key.
+  const writer = args.check ? undefined : connect(args.network, process.env);
+  const c = writer ?? connectReadOnly(args.network, process.env);
+  const { chainConfig, publicClient } = c;
+  await assertChainId(publicClient, chainConfig.chainId);
   const record = readRecord(chainConfig.chainId, args.profile);
   const proxy = record.proxy as `0x${string}`;
 
@@ -58,6 +61,8 @@ async function main(): Promise<void> {
     );
   }
 
+  if (writer === undefined) throw new Error('write needs the operator key');
+  const { account, walletClient } = writer;
   const startBalance = await publicClient.getBalance({ address: account.address });
   const guard = new SpendGuard(startBalance, okrwToAokrw(args.maxSpendOkrw));
   const call = walletClient.pcl.changeContractPolicies.call({
@@ -65,13 +70,13 @@ async function main(): Promise<void> {
     admin: account.address,
     policies: wanted,
   });
-  await preflight(c, guard, { to: call.to, data: call.data }, 'policies', log);
+  await preflight(writer, guard, { to: call.to, data: call.data }, 'policies', log);
   const hash = await walletClient.pcl.changeContractPolicies({
     contract: proxy,
     admin: account.address,
     policies: wanted,
   });
-  const tx = await confirm(c, hash, 'policies', log);
+  const tx = await confirm(writer, hash, 'policies', log);
 
   const after = await readCurrentPolicies(c, proxy);
   if (!diffPolicies(after, wanted).same) throw new Error('policies on chain differ after apply');
