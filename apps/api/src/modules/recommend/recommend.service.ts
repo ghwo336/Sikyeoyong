@@ -8,7 +8,7 @@ import { WeatherService } from './weather.service.js';
 
 export type { ApprovalReason, Recommendation } from './score.js';
 // Other modules import only <module>.service (architecture.md), so the weather source is re-exported here.
-export { STATIC_WEATHER, WeatherService } from './weather.service.js';
+export { WeatherService } from './weather.service.js';
 
 /** The ranked menus plus the weather they were ranked for. */
 export type RecommendResult = RankResult & { readonly weather: string };

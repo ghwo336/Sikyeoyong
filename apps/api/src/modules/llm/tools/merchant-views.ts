@@ -26,7 +26,7 @@ function reasons(r: Recommendation): string[] {
   return out;
 }
 
-export function recommendationsForModel(result: RecommendResult) {
+function recommendationsForModel(result: RecommendResult) {
   return {
     weather: result.weather,
     frozen: result.frozen,
@@ -48,7 +48,7 @@ export function recommendationsForModel(result: RecommendResult) {
 }
 
 /** ChatEvent recommendations: aokrw strings and ids for the screen (zRecommendationCard). */
-export function recommendationCards(result: RecommendResult): RecommendationCard[] {
+function recommendationCards(result: RecommendResult): RecommendationCard[] {
   return result.items.map((r) => ({
     id: r.menu.id,
     merchantId: r.merchant.id,

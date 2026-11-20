@@ -32,6 +32,7 @@ async function setup() {
   runMigrations(h.db);
   handles.push(h);
   insertUser(h.db, 'u1', { level: 1, dong: '역삼동' });
+  insertUser(h.db, 'u3', { level: 3 });
   insertMerchant(h.db, 'm-gukbap', { name: '마루국밥 본점', category: '한식', tags: ['국물'] });
   insertMerchant(h.db, 'm-bossam', { name: '한상보쌈', category: '한식', tags: ['고기'] });
   insertMerchant(h.db, 'm-fake', { name: '초특가 아무거나', verified: false });
@@ -107,6 +108,18 @@ describe('recommend_merchants handler', () => {
       ],
     });
     expect(reply.card.items).toMatchObject([{ menuId: 'x-bossam-l', needsApproval: true }]);
+  });
+  it('decides needsApproval for the session user: the same menu differs by level', async () => {
+    const handlers = await setup();
+    const asked = { craving: '보쌈' };
+    const l1 = (await handlers.recommend_merchants({ userId: 'u1' }, asked)) as ToolReply;
+    const l3 = (await handlers.recommend_merchants({ userId: 'u3' }, asked)) as ToolReply;
+    // 45,000원: over level 1 (10,000), within level 3 (50,000).
+    expect(l1.card.items.map((c) => [c.menuId, c.needsApproval])).toEqual([['x-bossam-l', true]]);
+    expect(l3.card.items.map((c) => [c.menuId, c.needsApproval])).toEqual([['x-bossam-l', false]]);
+    expect(l3.forModel).toMatchObject({
+      candidates: [{ needsApproval: false, approvalReason: null }],
+    });
   });
 });
 

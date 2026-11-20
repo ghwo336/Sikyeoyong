@@ -26,7 +26,7 @@ children: []
 - MUST: 도구 결과에 금액이나 시각을 넣을 때는 서버가 표시 글자로 바꿔서 준다. aokrw 정수나 unix 시각을 모델에게 주지 않는다 (모델이 단위를 바꾸면 그게 곧 금액을 만들어 내는 일이다).
 - 도구 핸들러는 `llm/tools/handlers.ts`의 `LlmToolHandlers.build()`가 만든다. 사용자는 세션 컨텍스트에서만 받는다. 지금 붙은 것은 `get_budget`(BudgetService), `get_context`(KST 날짜와 24시간 시각, 기본 주소 동네, 날씨), `recommend_merchants`(RecommendService), `get_menu`(MerchantsService)다. 나머지 도구는 모듈이 생길 때까지 `INTERNAL` 오류 결과를 모델에 돌려준다 (용이가 지어내지 않고 아직 못 한다고 말하게). 날씨는 recommend 모듈의 `WeatherService` 하나가 get_context와 추천에 같이 준다 (`WEATHER_PROVIDER=static`이면 "비", 그 밖은 지어내지 않고 오류).
 - 모델용과 화면용 (`llm/tools/tool-reply.ts`의 `ToolReply`): 화면 카드가 있는 도구는 핸들러가 `new ToolReply(forModel, card)`를 돌려준다. 런타임은 `forModel`만 `<data>`로 감싸 모델에게 주고, `card`는 `tool_output` 이벤트의 `card` 칸에만 싣는다 (모델 메시지에 들어가지 않는다). `forModel`은 표시 글자만(금액 "9,000원", KST 글자), `card`는 화면 스키마 그대로(aokrw 문자열, id)다. 둘을 핸들러 한 곳에서 같은 결과로 만들어 서로 어긋나지 않게 한다. 평범한 값을 돌려주는 핸들러는 카드가 없고 그 값이 곧 모델용이다. `ToolCard` 타입은 카드 이벤트(`recommendations`, 이후 `order_confirm`, `limit_change_card`)만 허용한다. 모양 변환은 `llm/tools/merchant-views.ts`(`recommendationsForModel`, `recommendationCards`, `menuForModel`).
-- `<data>` 감싸기(`wrapData`)는 JSON 안의 `<`, `>`를 `<`, `>`로 바꾼다. 메뉴 설명에 `</data>` 같은 글이 있어도 블록을 닫거나 새로 열 수 없다 (JSON으로 다시 읽으면 원래 글자).
+- `<data>` 감싸기(`wrapData`)는 JSON 안의 `<`, `>`를 `\u003c`, `\u003e`로 바꾼다. 메뉴 설명에 `</data>` 같은 글이 있어도 블록을 닫거나 새로 열 수 없다 (JSON으로 다시 읽으면 원래 글자).
 - Nest 바인딩은 `llm/llm.module.ts`가 `LLM_PROVIDER`를 `llm/llm-provider.factory.ts`로 만든다. `LLM_MODEL`과 `ANTHROPIC_API_KEY`가 있으면 Claude 어댑터를 쓴다. 없으면(개발, 테스트) 서버는 뜨고, 대화 턴만 `INTERNAL`(빠진 변수 이름만, 값은 없음)로 실패한다. production은 env.ts가 둘 다 요구한다.
 - 결제는 `PaymentProvider`, 추천은 `recommend`, 예산은 `budget`, 승인은 `approvals` 모듈. 모듈끼리는 각 모듈의 `service.ts`로만 부른다.
 
