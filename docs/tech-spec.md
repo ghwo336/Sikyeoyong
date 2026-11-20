@@ -225,7 +225,7 @@ apps/api/src/
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |
-| GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, level, perOrderLimit }`, `api/me.ts`). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
+| GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, level, perOrderLimit, custodial }`, `api/me.ts`. `custodial`은 `OWNER_MODE=custodial`일 때만 true, 지갑 화면의 체험판 한 줄용, D-24). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
 | PATCH | `/me` | user | `{ nickname?, address?, monthlyBudgetOkrw? }` | `{ user }` |
 | POST | `/agents` | user | `{ dragonName, dragonSpecies }` | `{ agent: { id, status: 'PENDING' } }` |
 | GET | `/agents/me` | user | | `AgentSetupView` (`{ status: PENDING \| ACTIVE \| FAILED, steps: [wallet, identity, limit] }`, `api/me.ts`). 지갑 화면용 상세(8004 agentId, 지갑, 체인 상태)는 그 화면을 만들 때 선택 칸으로 더한다 |

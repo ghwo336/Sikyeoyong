@@ -14,6 +14,11 @@ export const zMeView = z
     dragonSpecies: zDragonSpecies,
     level: zAgentLevel,
     perOrderLimit: zAokrwString,
+    /**
+     * True while the operator holds the owner rights (OWNER_MODE=custodial, D-24).
+     * The wallet screen shows its trial line only then; the screen never sees the mode.
+     */
+    custodial: z.boolean(),
   })
   .strict();
 export type MeView = z.infer<typeof zMeView>;

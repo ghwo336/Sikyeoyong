@@ -19,6 +19,7 @@ export const ME: MeView = {
   dragonSpecies: 'forest',
   level: 1,
   perOrderLimit: aokrwToString(policy.perOrderLimitAokrw[1]),
+  custodial: true,
 };
 
 /** Main.dc.html: 210,000 / 300,000원 this month, 70% nag already sent. */

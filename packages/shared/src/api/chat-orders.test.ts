@@ -200,8 +200,16 @@ describe('order schemas (tech-spec 3.2)', () => {
 
 describe('me and sign-up schemas', () => {
   it('reads the dragon, level and per-order limit', () => {
-    const me = { dragonName: '용이', dragonSpecies: 'forest', level: 1, perOrderLimit: W10000 };
+    const me = {
+      dragonName: '용이',
+      dragonSpecies: 'forest',
+      level: 1,
+      perOrderLimit: W10000,
+      custodial: true,
+    };
     expect(zMeView.parse(me)).toEqual(me);
+    expect(zMeView.safeParse({ ...me, custodial: undefined }).success).toBe(false);
+    expect(zMeView.safeParse({ ...me, custodial: 'yes' }).success).toBe(false);
     expect(zMeView.safeParse({ ...me, level: 4 }).success).toBe(false);
     expect(zMeView.safeParse({ ...me, dragonSpecies: 'fire' }).success).toBe(false);
   });

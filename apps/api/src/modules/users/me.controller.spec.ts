@@ -81,7 +81,15 @@ describe('GET /api/me', () => {
       dragonSpecies: 'star',
       level: 3,
       perOrderLimit: W('50000'),
+      custodial: true,
     });
+  });
+
+  it('says custodial only while OWNER_MODE is custodial (D-24: the trial line goes away with pouch)', async () => {
+    const pouch = await setup({ OWNER_MODE: 'pouch' });
+    expect((await pouch.as('u1').get('/api/me')).body).toMatchObject({ custodial: false });
+    const custodial = await setup({ OWNER_MODE: 'custodial' });
+    expect((await custodial.as('u1').get('/api/me')).body).toMatchObject({ custodial: true });
   });
 
   it('is 404 before the dragon exists, 401 without a session', async () => {
