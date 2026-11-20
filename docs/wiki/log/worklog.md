@@ -237,3 +237,8 @@ children: []
   - approvals 모듈이 허용 가게 읽기를 내보내면 추천 `needsApproval`에 `NEW_MERCHANT`를 더한다.
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: 주문 견적(`place_order`)에서 `lookupForOrder` 쓰기(`not_orderable` → `CHAIN_MERCHANT_INACTIVE`), 웹 목을 실제 `/api/merchants`와 추천 카드로 바꾸기, `etaMin` 출처를 delivery 모듈로.
+
+### 2026-11-20 수탁 안내 (D-24 밝히는 문구)
+- 한 일: D-24에 문구와 자리 기록(bfb39d6), `GET /me`의 `custodial`(975d84a), ui/wallet `CustodyNote`(ff57b66), README 문구(cb185fc).
+- 실수 기록: 975d84a 커밋 제목 범위에 쉼표(`feat(shared,api/users)`)를 넣어 형식(git-and-review.md "커밋 메시지")을 어겼다. 히스토리는 고치지 않는다 (dev-loop.md). 앞으로 여러 단위를 건드려도 범위는 하나로 쓴다.
+- 남은 것: 지갑 화면 조립 때 `custodial`이 true일 때만 `CustodyNote`를 맨 아래에 넣고 자세히 보기 스위치를 `detailed`로 넘긴다 (false면 그리지 않는 테스트 포함). 시안 `Wallet.dc.html`에 이 한 줄을 넣는 것은 다음 디자인 갱신 때.
