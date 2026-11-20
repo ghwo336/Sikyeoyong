@@ -1,6 +1,6 @@
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockApi } from './client';
+import { mockApi, resetMockSession } from './client';
 
 const won = (n: bigint) => okrwToAokrw(n).toString();
 const T0 = Date.UTC(2026, 10, 19, 3, 0);
@@ -18,12 +18,23 @@ describe('mock sign-up', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(T0);
+    resetMockSession('first-visit');
   });
   afterEach(() => {
     vi.useRealTimers();
   });
 
+  it('a first visit is signed out; after login there is no dragon yet', async () => {
+    // Catch first: the rejection happens while settle runs the fake timers.
+    const out = mockApi.getMe().catch((e: unknown) => e);
+    expect(await settle(out)).toMatchObject({ code: 'UNAUTHENTICATED' });
+    await settle(mockApi.login('kakao'));
+    const noDragon = mockApi.getMe().catch((e: unknown) => e);
+    expect(await settle(noDragon)).toMatchObject({ code: 'NOT_FOUND' });
+  });
+
   it('hatches step by step: waiting, then doing to done, then ACTIVE', async () => {
+    await settle(mockApi.login('kakao'));
     const before = await settle(mockApi.getAgentSetup());
     expect(before.status).toBe('PENDING');
     expect(before.steps.map((s) => s.status)).toEqual(['waiting', 'waiting', 'waiting']);

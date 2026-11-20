@@ -34,9 +34,10 @@ export function useCreateAgent() {
 }
 
 /** Hatch: the three setup steps, asked again every second while setup is running. */
-export function useAgentSetup() {
+export function useAgentSetup(enabled = true) {
   return useQuery({
     queryKey: ['agent-setup'],
+    enabled,
     queryFn: () => api.getAgentSetup(),
     // The rule (including what a failed GET does) lives in hatchPollInterval.
     refetchInterval: (q) => hatchPollInterval(q.state.data?.status),

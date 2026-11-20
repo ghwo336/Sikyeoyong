@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '../../../lib/mock/client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockApi, resetMockSession } from '../../../lib/mock/client';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
 
@@ -24,6 +24,10 @@ function setup() {
 }
 
 describe('ChatContainer', () => {
+  beforeEach(() => {
+    resetMockSession('hatched');
+  });
+
   it('draws the Main conversation from history', async () => {
     setup();
     expect(await screen.findByText('점심 시켜 줘. 따뜻한 걸로')).toBeInTheDocument();

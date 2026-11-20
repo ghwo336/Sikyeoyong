@@ -2,7 +2,12 @@
 import { BudgetMeterContainer } from '../../features/budget/containers/BudgetMeterContainer';
 import { ChatContainer } from '../../features/chat/containers/ChatContainer';
 import { DragonHeaderContainer } from '../../features/me/containers/DragonHeaderContainer';
+import { EntryGate } from '../../features/me/containers/EntryGate';
 
 export default function MainPage() {
-  return <ChatContainer header={<DragonHeaderContainer />} top={<BudgetMeterContainer />} />;
+  return (
+    <EntryGate>
+      <ChatContainer header={<DragonHeaderContainer />} top={<BudgetMeterContainer />} />
+    </EntryGate>
+  );
 }

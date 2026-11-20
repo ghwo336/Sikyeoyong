@@ -27,10 +27,58 @@ const LATENCY_MS = 250;
 /** How long each hatch step takes in the mock (the real one is 1 to 3 minutes). */
 const HATCH_STEP_MS = 1_500;
 
+/**
+ * Who is signed in, kept for the tab (sessionStorage) so a reload stays on the same step.
+ * A new tab starts signed out, like a first visit: Start, Verify, Name, Hatch, Budget, Main.
+ */
+interface MockSession {
+  signedIn: boolean;
+  dragon: { name: string; species: MeView['dragonSpecies']; hatchStartedAt: number } | null;
+}
+const SESSION_KEY = 'sikyeoyong.mock.session';
+
+function loadSession(): MockSession {
+  try {
+    const raw = typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem(SESSION_KEY);
+    if (raw) return JSON.parse(raw) as MockSession;
+  } catch {
+    // Private mode or no storage: start signed out.
+  }
+  return { signedIn: false, dragon: null };
+}
+
+function saveSession(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    }
+  } catch {
+    // The mock still works for this page; a reload starts over.
+  }
+}
+
 // The fake server's memory. Sign-up changes the dragon and the budget Main then shows.
-let me: MeView = ME;
+let session: MockSession = loadSession();
 let budget: BudgetView = BUDGET;
-let hatchStartedAt: number | undefined;
+
+/** Tests set where the mock starts (signed in with a hatched dragon, or a first visit). */
+export function resetMockSession(next: 'first-visit' | 'hatched'): void {
+  session =
+    next === 'hatched'
+      ? {
+          signedIn: true,
+          dragon: { name: ME.dragonName, species: ME.dragonSpecies, hatchStartedAt: 0 },
+        }
+      : { signedIn: false, dragon: null };
+  budget = BUDGET;
+  saveSession();
+}
+
+function currentMe(): MeView {
+  if (!session.signedIn) throw new AppError('UNAUTHENTICATED', { reason: 'mock: signed out' });
+  if (session.dragon === null) throw new AppError('NOT_FOUND', { reason: 'mock: no dragon' });
+  return { ...ME, dragonName: session.dragon.name, dragonSpecies: session.dragon.species };
+}
 
 function later<T>(value: T): Promise<T> {
   return new Promise((resolve) => {
@@ -85,6 +133,7 @@ function preparingOrder(rec: RecommendationCard, now: number): OrderView {
 /** Steps finish one after another, HATCH_STEP_MS apart (Hatch.dc.html). */
 function agentSetup(now: number): AgentSetupView {
   const keys = ['wallet', 'identity', 'limit'] as const;
+  const hatchStartedAt = session.dragon?.hatchStartedAt;
   if (hatchStartedAt === undefined) {
     return { status: 'PENDING', steps: keys.map((key) => ({ key, status: 'waiting' })) };
   }
@@ -131,7 +180,7 @@ function reply(text: string): ChatEvent[] {
 }
 
 export const mockApi: ApiClient = {
-  getMe: () => later(me),
+  getMe: () => later(null).then(currentMe),
   getBudget: () => later(budget),
   getChatHistory: () => later(chatHistory(Date.now())),
   sendChatMessage: ({ text, clientMessageId }) =>
@@ -155,16 +204,26 @@ export const mockApi: ApiClient = {
     return later({ order: saved });
   },
   getSignupConfig: () => later(SIGNUP),
-  login: () => later(undefined),
+  login: () => {
+    session = { ...session, signedIn: true };
+    saveSession();
+    return later(undefined);
+  },
   verifyIdentity: () => later({ verified: true }),
   createAgent: ({ dragonName, dragonSpecies }) => {
-    me = { ...me, dragonName, dragonSpecies };
-    hatchStartedAt = Date.now();
+    session = {
+      ...session,
+      dragon: { name: dragonName, species: dragonSpecies, hatchStartedAt: Date.now() },
+    };
+    saveSession();
     return later({ agent: { id: 'agent-1', status: 'PENDING' as const } });
   },
   getAgentSetup: () => later(agentSetup(Date.now())),
   retryAgentSetup: () => {
-    hatchStartedAt = Date.now();
+    if (session.dragon !== null) {
+      session = { ...session, dragon: { ...session.dragon, hatchStartedAt: Date.now() } };
+      saveSession();
+    }
     return later(undefined);
   },
   setMonthlyBudget: (amount) => {

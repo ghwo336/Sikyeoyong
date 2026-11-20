@@ -7,12 +7,16 @@ import {
   zOrderView,
   zSignupConfig,
 } from '@sikyeoyong/shared';
-import { describe, expect, it } from 'vitest';
-import { mockApi } from './client';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { mockApi, resetMockSession } from './client';
 
 // The mock must speak exactly what the server will: the shared zod schemas (strict, aokrw strings).
 // A mock that drifts from them would let screens pass here and break against the real API.
 describe('mockApi answers match the shared API schemas', () => {
+  beforeEach(() => {
+    resetMockSession('hatched');
+  });
+
   it('me, budget, sign-up config and history', async () => {
     expect(zMeView.safeParse(await mockApi.getMe()).success).toBe(true);
     expect(zBudgetView.safeParse(await mockApi.getBudget()).success).toBe(true);
