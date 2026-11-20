@@ -111,9 +111,12 @@ async function setup(
       ).body,
     ).order.id;
   const confirm = (id: string, who: 'u1' | 'u2' = 'u1') => post(who, `/api/orders/${id}/confirm`);
+  const view = (id: string, who: 'u1' | 'u2' = 'u1') =>
+    http().get(`/api/orders/${id}`).set('Cookie', `sid=${tokens[who]}`);
   const row = (id: string) => h.db.select().from(orders).where(eq(orders.id, id)).get();
   return {
     h,
+    view,
     payment,
     wallet,
     quote,
@@ -465,5 +468,55 @@ describe('confirm: the personal budget and the owner approval', () => {
     expect(findPaid).not.toHaveBeenCalled();
     expect(pay).not.toHaveBeenCalled();
     expect(row(id)?.attempt).toBe(0);
+  });
+});
+
+describe('GET /api/orders/:id (status screens)', () => {
+  it('reads a quoted order, then the paid one counting down to arrival', async () => {
+    const { quote, confirm, view } = await setup();
+    const id = await quote();
+    expect(zOrderResult.parse((await view(id)).body).order).toMatchObject({
+      status: 'quoted',
+      dragonLine: '이대로 괜찮아용?',
+      dragonMood: 'default',
+      etaAt: NOW + 3 * 60_000,
+    });
+    await confirm(id);
+    vi.setSystemTime(NOW + 2 * 60_000 + 1);
+    expect(zOrderResult.parse((await view(id)).body).order).toMatchObject({
+      status: 'paid',
+      remainingMin: 1,
+      etaAt: NOW + 3 * 60_000,
+    });
+    vi.setSystemTime(NOW + 10 * 60_000);
+    expect(zOrderResult.parse((await view(id)).body).order.remainingMin).toBe(0);
+  });
+
+  it('a failed order speaks its error line; a line that needs a value falls back to the message', async () => {
+    const { h, quote, view } = await setup();
+    const id = await quote();
+    h.db
+      .update(orders)
+      .set({ status: 'failed', errorCode: 'SERVER_PRICE_CHANGED' })
+      .where(eq(orders.id, id))
+      .run();
+    expect(zOrderResult.parse((await view(id)).body).order).toMatchObject({
+      status: 'failed',
+      errorCode: 'SERVER_PRICE_CHANGED',
+      dragonLine: '가게 가격이 바뀌었어용. 새 금액을 다시 확인해 주세용',
+      dragonMood: 'worried',
+    });
+    h.db.update(orders).set({ errorCode: 'CHAIN_PERIODIC_LIMIT' }).where(eq(orders.id, id)).run();
+    expect(zOrderResult.parse((await view(id)).body).order.dragonLine).toBe(
+      '30일 상한에 도달했어요',
+    );
+  });
+
+  it('another user order is 404, and the read changes nothing', async () => {
+    const { quote, view, row } = await setup();
+    const id = await quote();
+    expect((await view(id, 'u2')).status).toBe(404);
+    expect((await view('nope')).status).toBe(404);
+    expect(row(id)?.status).toBe('quoted');
   });
 });

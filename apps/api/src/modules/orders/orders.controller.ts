@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import {
   type CreateOrderBody,
   type CreateOrderResult,
@@ -11,6 +11,7 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
 import { OrderQuoteService } from './order-quote.service.js';
+import { OrderViews } from './order-views.service.js';
 
 /** /api/orders (tech-spec 3.2). HTTP only: the user comes from the session. */
 @Controller('orders')
@@ -19,6 +20,7 @@ export class OrdersController {
   constructor(
     private readonly quotes: OrderQuoteService,
     private readonly confirms: OrderConfirmService,
+    private readonly views: OrderViews,
   ) {}
 
   /** A quote for the app's own order button. Never pays (CLAUDE.md rule 3). */
@@ -45,5 +47,14 @@ export class OrdersController {
     @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
   ): Promise<OrderResult> {
     return this.confirms.confirm(user.userId, id);
+  }
+
+  /** The status screens (Done, Tracking, Arrived). Reads only. */
+  @Get(':id')
+  get(
+    @CurrentUser() user: SessionUser,
+    @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
+  ): OrderResult {
+    return { order: this.views.viewFor(user.userId, id) };
   }
 }

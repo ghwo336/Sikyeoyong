@@ -13,11 +13,10 @@ import { AgentsService } from '../agents/agents.service.js';
 import { ApprovalsService, approvalReasonOf } from '../approvals/approvals.service.js';
 import { MerchantsService } from '../merchants/merchants.service.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
-import { UsersService } from '../users/users.service.js';
 import { classify, isRetryableFailure } from './failure-class.js';
 import { parseStoredLines, priceLines } from './order-lines.js';
 import { OrderRules } from './order-rules.service.js';
-import { toOrderView } from './order-view.js';
+import { OrderViews } from './order-views.service.js';
 import { type OrderRow, OrdersRepository } from './orders.repository.js';
 
 type Checked =
@@ -39,7 +38,7 @@ export class OrderConfirmService {
     private readonly repo: OrdersRepository,
     private readonly rules: OrderRules,
     private readonly agents: AgentsService,
-    private readonly users: UsersService,
+    private readonly views: OrderViews,
     private readonly merchants: MerchantsService,
     private readonly approvals: ApprovalsService,
   ) {}
@@ -71,7 +70,7 @@ export class OrderConfirmService {
         await this.payOnce(userId, row, nowMs);
       }
     }
-    return { order: this.view(userId, orderId, nowMs) };
+    return { order: this.views.viewFor(userId, orderId, nowMs) };
   }
 
   /** Path C has no proven same-orderRef guard yet, so a failed order is not paid again there (Q-24). */
@@ -230,21 +229,6 @@ export class OrderConfirmService {
           nowMs,
         );
         if (!moved) throw new AppError('INTERNAL', { reason: 'order left submitting' });
-      },
-      nowMs,
-    );
-  }
-
-  private view(userId: string, orderId: string, nowMs: number) {
-    const row = this.repo.findForUser(orderId, userId);
-    if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'order not found' });
-    const info = this.merchants.orderInfoOf(row.merchantId);
-    return toOrderView(
-      row,
-      {
-        store: info?.name ?? '가게',
-        destination: this.users.getDestination(userId),
-        etaMin: info?.etaMin ?? 0,
       },
       nowMs,
     );
