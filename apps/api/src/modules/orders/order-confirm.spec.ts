@@ -22,6 +22,7 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, allowedMerchants, approvals, menus, orders } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
+import { AllowanceService } from '../allowance/allowance.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER } from '../payment/payment.service.js';
@@ -124,12 +125,13 @@ async function setup(
     row,
     chainUsed,
     repo: moduleRef.get(OrdersRepository),
+    allowance: moduleRef.get(AllowanceService),
   };
 }
 
 describe('POST /api/orders/:id/confirm: pays once, only here', () => {
   it('pays a quoted order: tops up exactly the amount, pays it, answers the paid order', async () => {
-    const { payment, wallet, quote, confirm, row } = await setup();
+    const { payment, wallet, quote, confirm, row, allowance } = await setup();
     const fund = vi.spyOn(payment, 'fund');
     const pay = vi.spyOn(payment, 'pay');
     const id = await quote();
@@ -163,15 +165,31 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
       txHash: paid?.txHash,
     });
     expect(order.txHash).toBe(paid?.txHash);
+    // The top-up came out of the owner allowance ledger (wallet screen).
+    expect(allowance.balanceAokrw('u1')).toBe(-A('9000'));
   });
 
   it('tops up only the shortfall when the wallet already holds some', async () => {
-    const { payment, wallet, quote, confirm } = await setup();
+    const { payment, wallet, quote, confirm, allowance } = await setup();
     await payment.fund(wallet, A('5000'));
     const fund = vi.spyOn(payment, 'fund');
     await confirm(await quote());
     expect(fund.mock.calls.map((c) => c[1])).toEqual([A('4000')]);
+    expect(allowance.balanceAokrw('u1')).toBe(-A('4000'));
     expect(await payment.balanceOf(wallet.address)).toBe(0n);
+  });
+
+  it('a failed or unneeded top-up takes nothing from the owner allowance ledger', async () => {
+    const { payment, wallet, quote, confirm, allowance } = await setup();
+    vi.spyOn(payment, 'fund').mockRejectedValueOnce(new Error('rpc down'));
+    await confirm(await quote());
+    expect(allowance.balanceAokrw('u1')).toBe(0n);
+    await payment.fund(wallet, A('9000'));
+    const fund = vi.spyOn(payment, 'fund'); // the same spy as above
+    fund.mockClear();
+    await confirm(await quote());
+    expect(fund).not.toHaveBeenCalled();
+    expect(allowance.balanceAokrw('u1')).toBe(0n);
   });
 
   it('pays once however often or however fast the button is pressed', async () => {

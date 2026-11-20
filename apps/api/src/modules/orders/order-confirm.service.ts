@@ -9,6 +9,7 @@ import {
   type PaymentProvider,
   parseAokrw,
 } from '@sikyeoyong/shared';
+import { AllowanceService } from '../allowance/allowance.service.js';
 import { AgentsService } from '../agents/agents.service.js';
 import { ApprovalsService, approvalReasonOf } from '../approvals/approvals.service.js';
 import { MerchantsService } from '../merchants/merchants.service.js';
@@ -41,6 +42,7 @@ export class OrderConfirmService {
     private readonly views: OrderViews,
     private readonly merchants: MerchantsService,
     private readonly approvals: ApprovalsService,
+    private readonly allowance: AllowanceService,
   ) {}
 
   async confirm(userId: string, orderId: string, nowMs: number = Date.now()): Promise<OrderResult> {
@@ -93,7 +95,7 @@ export class OrderConfirmService {
         amount: parseAokrw(row.amountAokrw),
         orderRef: row.orderRef as Hex,
       };
-      await this.topUp(checked.wallet, req.amount);
+      await this.topUp(userId, checked.wallet, req.amount);
       const pre = await this.payment.preflight(req);
       if (!pre.ok) {
         this.settle(userId, row, pre.error.code, false, nowMs);
@@ -172,8 +174,11 @@ export class OrderConfirmService {
    * Mode P: the agent wallet must hold the amount. The server tops up only the
    * shortfall, just before paying (tech-spec 3.4), so the wallet never holds more
    * than this order. Server code only, never an LLM tool (payment.md).
+   * The moved shortfall comes out of the owner allowance ledger (D-24 custodial, wallet screen
+   * "주인님 용돈"): recorded only after the fund succeeded, so a failed or skipped top-up records
+   * nothing. Refusing an order when the ledger is short is open (open-questions Q-38).
    */
-  private async topUp(wallet: AgentWallet, amount: bigint): Promise<void> {
+  private async topUp(userId: string, wallet: AgentWallet, amount: bigint): Promise<void> {
     const balance = await this.payment.balanceOf(wallet.address);
     if (balance >= amount) return;
     const r = await runOwnerAction(this.owner, {
@@ -182,6 +187,7 @@ export class OrderConfirmService {
       amount: amount - balance,
     });
     if (!r.done) throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
+    this.allowance.record(userId, 'fund', amount - balance, r.txHashes[0] ?? null);
   }
 
   /** Moves the order out of submitting by the class of the refusal (payment.md "실패 분류"). */

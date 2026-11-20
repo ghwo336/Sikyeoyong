@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AllowanceModule } from '../allowance/allowance.module.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import { ApprovalsModule } from '../approvals/approvals.module.js';
 import { AuthModule } from '../auth/auth.module.js';
@@ -27,6 +28,7 @@ import { OrderSpend } from './order-spend.service.js';
     ChainModule,
     ApprovalsModule,
     PaymentModule,
+    AllowanceModule,
   ],
   controllers: [OrdersController],
   providers: [
