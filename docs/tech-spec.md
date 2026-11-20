@@ -249,6 +249,7 @@ apps/api/src/
 | POST | `/orders/:id/confirm` | user | | `{ order }` (`OrderView`, `zOrderResult`. 실패면 `errorCode`, 결제되면 `txHash`) 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 상태별 동작은 payment.md "confirm 상태 규칙"(D-19): `quoted`와 재시도 가능한 `failed`(체인 조회 뒤 같은 orderRef)만 결제, 그 밖은 결제 없이 현재 `{ order }`. 409로 답하지 않는다 |
 | GET | `/orders` | user | `?cursor` | `{ orders, nextCursor }` |
 | GET | `/orders/:id` | user | | `{ order }` (`OrderView`, `zOrderResult`, confirm과 같은 모양. 다른 사용자 주문은 404). `receipt`는 `zOrderReceipt`(2.5 모양 `{ id, label, layer, status }` 규칙, 서버가 영수증을 쓸 때 채운다, 선택 칸). `events`는 인덱서가 생기면 더한다 |
+| POST | `/orders/:id/rating` | user | `{ value: again \| okay \| meh }` (`zRateOrderBody`) | 204. 도착 화면 맛 평가. 결제된 주문(paid, preparing, delivering, delivered)만, 아니면 409. 남의 주문이나 없는 id는 404. 다시 보내면 바꾼다. 돈을 옮기지 않는다. 추천에 반영은 후속 (테이블 `order_ratings`, 마이그레이션 0007). 2026-11-20 추가 |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
 | GET | `/approvals` | user | `?status=pending` | `{ approvals }` |
 | POST | `/approvals/:id/approve` | user | | `{ approval, order, quote? }` (`zApprovalDecision`). 필요한 조치(가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌려 확인 카드를 다시 준다. 레벨 초과는 400이고 `POST /agents/me/level { approvalId }`로 올린다 (TransferLimit 기록과 재인증이 필요해서, payment.md). 만료된 승인은 `expired`와 실패한 주문을 답한다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
@@ -502,6 +503,7 @@ score(merchant, menu) =
 | --- | --- | --- |
 | `users` | id, nickname, address_text, address_dong, monthly_budget, role(`user`/`operator`/`merchant`), created_at | |
 | `identity_checks` | user_id(PK, users), method(`kakao`/`mock`), verified_at | 본인 인증 통과 기록만. 인증 원문은 저장하지 않는다 (마이그레이션 0005) |
+| `order_ratings` | order_id(PK, orders), user_id(users), value(`again`/`okay`/`meh`), rated_at | 맛 평가. 주문당 하나, 다시 평가하면 바꾼다 (마이그레이션 0007) |
 | `owner_allowance_entries` | id(uuidv7), user_id(users), kind(`trial`/`fund`/`refund`), amount_aokrw(0보다 큼), tx_hash, created_at. `trial`은 사용자당 하나(부분 유일 색인) | 주인 용돈 장부 (D-24 수탁 동안 운영자가 맡은 돈 중 이 사용자 몫 = trial + refund - fund). `OWNER_MODE=pouch`면 사용자 지갑의 체인 잔액으로 바뀐다 (마이그레이션 0006) |
 | `oauth_accounts` | id, user_id → users, provider(`kakao`/`google`/`apple`), provider_user_id, email?, created_at | 유니크(provider, provider_user_id) |
 | `sessions` | id(토큰 해시), user_id, platform(`web`/`native`), expires_at, revoked_at | 인덱스(user_id) |

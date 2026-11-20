@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
-import { ORDER_STATUSES, orders } from '../../db/schema/index.js';
+import { ORDER_STATUSES, orderRatings, orders } from '../../db/schema/index.js';
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type OrderRow = typeof orders.$inferSelect;
@@ -143,6 +143,15 @@ export class OrdersRepository {
   }
 
   /** Throws on a used (user, clientOrderId) or orderRef (unique indexes). */
+  /** The taste rating for one order: insert, or replace the earlier one. */
+  rate(orderId: string, userId: string, value: 'again' | 'okay' | 'meh', nowMs: number): void {
+    this.handle.db
+      .insert(orderRatings)
+      .values({ orderId, userId, value, ratedAt: nowMs })
+      .onConflictDoUpdate({ target: orderRatings.orderId, set: { value, ratedAt: nowMs } })
+      .run();
+  }
+
   insert(row: NewOrder): void {
     this.handle.db
       .insert(orders)

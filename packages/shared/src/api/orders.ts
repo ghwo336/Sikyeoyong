@@ -137,6 +137,14 @@ export type OrderResult = z.infer<typeof zOrderResult>;
 /** :id of /orders/:id routes. */
 export const zOrderIdParam = id;
 
+/** Arrived.dc.html taste rating: again (또 먹을래), okay (괜찮았어), meh (별로). */
+export const TASTE_RATINGS = ['again', 'okay', 'meh'] as const;
+export type TasteRating = (typeof TASTE_RATINGS)[number];
+
+/** POST /orders/:id/rating body. A second rating replaces the first. */
+export const zRateOrderBody = z.object({ value: z.enum(TASTE_RATINGS) }).strict();
+export type RateOrderBody = z.infer<typeof zRateOrderBody>;
+
 /** POST /orders body. The client sends ids and quantities only, never a price. */
 export const zCreateOrderBody = z
   .object({

@@ -145,3 +145,21 @@ export const allowedMerchants = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.merchantId] })],
 );
+
+/** Arrived screen taste rating (user-flow 10): one per order, a second replaces it. Feeds recommendations later. */
+export const TASTE_RATINGS = ['again', 'okay', 'meh'] as const;
+
+export const orderRatings = sqliteTable(
+  'order_ratings',
+  {
+    orderId: text('order_id')
+      .primaryKey()
+      .references(() => orders.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    value: text('value', { enum: TASTE_RATINGS }).notNull(),
+    ratedAt: integer('rated_at').notNull(),
+  },
+  (t) => [enumCheck('order_ratings_value_check', t.value, TASTE_RATINGS)],
+);

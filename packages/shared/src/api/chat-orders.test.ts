@@ -9,6 +9,7 @@ import {
   zCreateOrderResult,
   zOrderQuote,
   zOrderIdParam,
+  zRateOrderBody,
   zOrderResult,
   zOrderView,
 } from './orders.js';
@@ -299,5 +300,15 @@ describe('level change schemas (D-21, D-28)', () => {
     expect(zSetLevelResult.parse(ok)).toEqual(ok);
     expect(zSetLevelResult.parse({ ...ok, txHash: null }).txHash).toBeNull();
     expect(zSetLevelResult.safeParse({ ...ok, txHash: '0x1' }).success).toBe(false);
+  });
+});
+
+describe('zRateOrderBody', () => {
+  it('takes the three taste words only', () => {
+    for (const value of ['again', 'okay', 'meh'] as const) {
+      expect(zRateOrderBody.parse({ value })).toEqual({ value });
+    }
+    expect(zRateOrderBody.safeParse({ value: 'great' }).success).toBe(false);
+    expect(zRateOrderBody.safeParse({ value: 'again', stars: 5 }).success).toBe(false);
   });
 });

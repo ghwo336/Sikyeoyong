@@ -9,6 +9,7 @@ export {
   allowedMerchants,
   approvals,
   orderEvents,
+  orderRatings,
   orders,
 } from './orders.js';
 export { identityChecks, oauthAccounts, sessions, users } from './users.js';

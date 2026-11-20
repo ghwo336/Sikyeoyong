@@ -11,6 +11,7 @@ import { OrderApprovalRequests } from './order-approval-request.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
 import { OrderViews } from './order-views.service.js';
 import { OrderQuoteService } from './order-quote.service.js';
+import { OrderRatingService } from './order-rating.service.js';
 import { OrderRules } from './order-rules.service.js';
 import { OrdersController } from './orders.controller.js';
 import { OrdersRepository } from './orders.repository.js';
@@ -35,6 +36,7 @@ import { OrderSpend } from './order-spend.service.js';
     OrderQuoteService,
     OrderConfirmService,
     OrderViews,
+    OrderRatingService,
     OrderApprovalEffects,
     OrderApprovalRequests,
     OrdersService,

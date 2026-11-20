@@ -3,14 +3,17 @@ import {
   type CreateOrderBody,
   type CreateOrderResult,
   type OrderResult,
+  type RateOrderBody,
   zCreateOrderBody,
   zOrderIdParam,
+  zRateOrderBody,
 } from '@sikyeoyong/shared';
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
 import { OrderQuoteService } from './order-quote.service.js';
+import { OrderRatingService } from './order-rating.service.js';
 import { OrderViews } from './order-views.service.js';
 
 /** /api/orders (tech-spec 3.2). HTTP only: the user comes from the session. */
@@ -21,6 +24,7 @@ export class OrdersController {
     private readonly quotes: OrderQuoteService,
     private readonly confirms: OrderConfirmService,
     private readonly views: OrderViews,
+    private readonly ratings: OrderRatingService,
   ) {}
 
   /** A quote for the app's own order button. Never pays (CLAUDE.md rule 3). */
@@ -47,6 +51,17 @@ export class OrdersController {
     @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
   ): Promise<OrderResult> {
     return this.confirms.confirm(user.userId, id);
+  }
+
+  /** Arrived screen taste rating. Moves no money. */
+  @Post(':id/rating')
+  @HttpCode(204)
+  rate(
+    @CurrentUser() user: SessionUser,
+    @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
+    @Body(new ZodValidationPipe(zRateOrderBody)) body: RateOrderBody,
+  ): void {
+    this.ratings.rate(user.userId, id, body.value);
   }
 
   /** The status screens (Done, Tracking, Arrived). Reads only. */
