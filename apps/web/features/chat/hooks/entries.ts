@@ -151,11 +151,19 @@ export function threadRows(entries: readonly ChatEntry[]): ThreadRow[] {
   return rows;
 }
 
-/** The id of the user's newest message: when it changes, the thread follows to the bottom. */
+/** Id prefix of a line the dragon says on this screen only (a reply to the user's own tap). */
+export const LOCAL_LINE_PREFIX = 'local-';
+
+/**
+ * The id of the newest thing the user caused: their own message, or the dragon's on-screen
+ * answer to their tap. When it changes, the thread follows to the bottom like a sent message
+ * (browser QA 3: the reply to a tap while frozen stayed off screen).
+ */
 export function lastSent(entries: readonly ChatEntry[]): string | undefined {
   for (let i = entries.length - 1; i >= 0; i -= 1) {
     const e = entries[i];
     if (e?.kind === 'user') return e.id;
+    if (e?.kind === 'dragon' && e.id.startsWith(LOCAL_LINE_PREFIX)) return e.id;
   }
   return undefined;
 }

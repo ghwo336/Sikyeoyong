@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChatEvent } from '@sikyeoyong/shared';
 import { api, type OrderQuote } from '../../../lib/api';
 import { chatStamp } from '../../../lib/format';
-import { type ChatEntry, dragonTurn, historyEntries } from './entries';
+import { type ChatEntry, dragonTurn, historyEntries, LOCAL_LINE_PREFIX } from './entries';
 
 export interface ChatThreadData {
   /** "오늘 오후 12:28", made when the history arrives. */
@@ -118,7 +118,10 @@ export function useChat() {
      * server refused (a sleeping dragon). Not stored; the history does not have it.
      */
     say: (text: string) => {
-      update((es) => [...es, { kind: 'dragon', id: `local-${crypto.randomUUID()}`, text }]);
+      update((es) => [
+        ...es,
+        { kind: 'dragon', id: `${LOCAL_LINE_PREFIX}${crypto.randomUUID()}`, text },
+      ]);
     },
     /** Sends a failed message again with the same id (the server can tell it is a repeat). */
     retry: (id: string) => {

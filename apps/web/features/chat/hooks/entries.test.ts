@@ -150,3 +150,14 @@ describe('lastSent', () => {
     expect(lastSent([{ kind: 'dragon', id: 'd1', text: '안녕하세용' }])).toBeUndefined();
   });
 });
+
+describe('lastSent follows a local dragon line', () => {
+  it("moves the follow key when the dragon answers the user's tap", () => {
+    const user: ChatEntry = { kind: 'user', id: 'u1', text: '응', status: 'sent' };
+    const local: ChatEntry = { kind: 'dragon', id: 'local-1', text: '자고 있어용' };
+    expect(lastSent([user])).toBe('u1');
+    expect(lastSent([user, local])).toBe('local-1');
+    // An ordinary dragon reply does not move it: the thread is not yanked while it streams.
+    expect(lastSent([user, { kind: 'dragon', id: 'reply-x-t0', text: '안녕' }])).toBe('u1');
+  });
+});
