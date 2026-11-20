@@ -41,7 +41,9 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
       confirmations: 1,
     });
     expect(c.llm.weatherProvider).toBe('static');
-    expect(c.llm.effort).toBe('medium');
+    expect(c.llm.effort).toBe('low'); // D-26
+    expect(c.llm.mode).toBe('live');
+    expect(c.llm.dailyTokenCap).toBe(1_000_000);
     expect(c.verifyMode).toBe('kakao');
     expect(c.policy.trialAllowanceAokrw).toBe(100_000n * OKRW);
   });

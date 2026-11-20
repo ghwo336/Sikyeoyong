@@ -44,7 +44,12 @@ const schema = z.object({
   GOOGLE_CLIENT_SECRET: optionalText,
   ANTHROPIC_API_KEY: optionalText,
   LLM_MODEL: optionalText,
-  LLM_EFFORT: z.enum(LLM_EFFORTS).default('medium'),
+  /** D-26: low by default for the demo (cost); raise it per run when a scene needs it. */
+  LLM_EFFORT: z.enum(LLM_EFFORTS).default('low'),
+  /** D-26: replay plays fixed dragon turns with the real tools, no API call; live calls Claude. */
+  LLM_MODE: z.enum(['live', 'replay']).default('live'),
+  /** D-26: live tokens (input + output) per KST day; past it the day falls back to replay. 0 = no cap. */
+  LLM_DAILY_TOKEN_CAP: int(0).default(1_000_000),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
   /** D-16: kakao now; mock when Maroo switches to Mock KYC. */
   VERIFY_MODE: z.enum(['kakao', 'mock']).default('kakao'),
@@ -90,8 +95,12 @@ export interface AppConfig {
   };
   readonly llm: {
     readonly model: string | undefined;
-    /** Claude effort for the chat agent (Opus 5.5 default medium). */
+    /** Claude effort for the chat agent (D-26: default low). */
     readonly effort: LlmEffort;
+    /** D-26: live Claude, or replayed dragon turns (no API call). */
+    readonly mode: 'live' | 'replay';
+    /** D-26: live tokens per KST day before falling back to replay; 0 = no cap. */
+    readonly dailyTokenCap: number;
     readonly weatherProvider: 'static' | 'openmeteo';
   };
   /** Secrets stay here and are never logged (security.md). */
@@ -183,7 +192,13 @@ export function loadConfig(raw: RawEnv): AppConfig {
       submittingAlertMs: env.SUBMITTING_ALERT_MS,
       confirmations: env.CONFIRMATIONS,
     },
-    llm: { model: env.LLM_MODEL, effort: env.LLM_EFFORT, weatherProvider: env.WEATHER_PROVIDER },
+    llm: {
+      model: env.LLM_MODEL,
+      effort: env.LLM_EFFORT,
+      mode: env.LLM_MODE,
+      dailyTokenCap: env.LLM_DAILY_TOKEN_CAP,
+      weatherProvider: env.WEATHER_PROVIDER,
+    },
     secrets: {
       sessionSecret: env.SESSION_SECRET,
       anthropicApiKey: env.ANTHROPIC_API_KEY,

@@ -2,7 +2,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { AppError } from '@sikyeoyong/shared';
 import type { AppConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
+import { DailyCapProvider } from './daily-cap-provider.js';
 import type { LlmProvider } from './llm-provider.js';
+import { ReplayProvider } from './replay-provider.js';
 
 /** The production client. Exported so a test can check the key reaches the SDK. */
 export function defaultMessagesClient(apiKey: string): MessagesClient {
@@ -20,6 +22,8 @@ export function createLlmProvider(
   config: AppConfig,
   makeClient: (apiKey: string) => MessagesClient = defaultMessagesClient,
 ): LlmProvider {
+  // D-26: rehearsals and development replay fixed turns, no API call.
+  if (config.llm.mode === 'replay') return new ReplayProvider();
   const model = config.llm.model;
   const apiKey = config.secrets.anthropicApiKey;
   if (model === undefined || apiKey === undefined) {
@@ -32,5 +36,7 @@ export function createLlmProvider(
         Promise.reject(new AppError('INTERNAL', { reason: 'llm not configured', variables })),
     };
   }
-  return new AnthropicProvider(makeClient(apiKey), { model, effort: config.llm.effort });
+  const live = new AnthropicProvider(makeClient(apiKey), { model, effort: config.llm.effort });
+  // D-26: past the day's token cap the dragon replays instead of calling the API.
+  return new DailyCapProvider(live, new ReplayProvider(), config.llm.dailyTokenCap);
 }

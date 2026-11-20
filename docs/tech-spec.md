@@ -883,7 +883,9 @@ APPLE_SERVICE_ID=                     # 2단계
 # AI
 ANTHROPIC_API_KEY=
 LLM_MODEL=claude-opus-5-5             # 설정값, 코드에 하드코딩 금지 (D-22)
-LLM_EFFORT=medium                     # low | medium | high | xhigh | max (D-22)
+LLM_EFFORT=low                        # low | medium | high | xhigh | max (D-22, 데모 기본 low D-26)
+LLM_MODE=live                         # live: Claude API / replay: 정해 둔 용이 턴 재생, API 호출 없음 (D-26)
+LLM_DAILY_TOKEN_CAP=                  # 비우면 1000000. live 토큰 하루(KST) 상한, 넘으면 그날은 replay. 0이면 상한 없음 (D-26)
 WEATHER_PROVIDER=static               # static | openmeteo
 VERIFY_MODE=kakao                     # kakao | mock (D-16, 가입 본인 인증 방식)
 

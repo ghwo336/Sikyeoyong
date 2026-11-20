@@ -8,7 +8,9 @@ import { openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { loadConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
+import { DailyCapProvider } from './daily-cap-provider.js';
 import { createLlmProvider, defaultMessagesClient } from './llm-provider.factory.js';
+import { ReplayProvider } from './replay-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
 
@@ -26,14 +28,31 @@ describe('createLlmProvider (D-22)', () => {
     const p = createLlmProvider(
       loadConfig({ LLM_MODEL: 'test-model', ANTHROPIC_API_KEY: 'test-key' }),
     );
-    expect(p).toBeInstanceOf(AnthropicProvider);
+    // D-26: the Claude adapter sits behind the daily token cap.
+    if (!(p instanceof DailyCapProvider)) throw new Error('not capped');
+    expect(p.live).toBeInstanceOf(AnthropicProvider);
+  });
+
+  it('LLM_MODE=replay replays fixed turns and builds no client, key or not (D-26)', () => {
+    const makeClient = vi.fn((_apiKey: string) => ({}) as MessagesClient);
+    const p = createLlmProvider(
+      loadConfig({ LLM_MODE: 'replay', LLM_MODEL: 'm', ANTHROPIC_API_KEY: 'k' }),
+      makeClient,
+    );
+    expect(p).toBeInstanceOf(ReplayProvider);
+    expect(makeClient).not.toHaveBeenCalled();
   });
 
   // D-22: model, effort and key come from config, never from code.
   it('passes ANTHROPIC_API_KEY, LLM_MODEL and LLM_EFFORT through to the API call', async () => {
     const stream = vi.fn((_params: unknown) => ({
       on: () => undefined,
-      finalMessage: () => Promise.resolve({ content: [], stop_reason: 'end_turn' }),
+      finalMessage: () =>
+        Promise.resolve({
+          content: [],
+          stop_reason: 'end_turn',
+          usage: { input_tokens: 0, output_tokens: 0 },
+        }),
     }));
     const makeClient = vi.fn(
       (_apiKey: string) => ({ messages: { stream } }) as unknown as MessagesClient,
@@ -79,7 +98,8 @@ describe('createLlmProvider (D-22)', () => {
     const p = createLlmProvider(
       loadConfig({ LLM_MODEL: 'test-model', ANTHROPIC_API_KEY: 'test-key-default' }),
     );
-    expect(apiKeyOf(p)).toBe('test-key-default');
+    if (!(p instanceof DailyCapProvider)) throw new Error('not capped');
+    expect(apiKeyOf(p.live)).toBe('test-key-default');
     const direct = defaultMessagesClient('k2');
     expect(direct instanceof Anthropic && direct.apiKey).toBe('k2');
   });
@@ -100,8 +120,10 @@ describe('createLlmProvider (D-22)', () => {
         return undefined;
       })
       .compile();
-    const p = moduleRef.get<AnthropicProvider>(LLM_PROVIDER);
-    expect(p).toBeInstanceOf(AnthropicProvider);
+    const capped: unknown = moduleRef.get(LLM_PROVIDER);
+    if (!(capped instanceof DailyCapProvider)) throw new Error('not capped');
+    const p = capped.live;
+    if (!(p instanceof AnthropicProvider)) throw new Error('not the Claude adapter');
     expect(p.options).toEqual({ model: 'test-model-nest', effort: 'low' });
     expect(apiKeyOf(p)).toBe('test-key-nest');
   });
