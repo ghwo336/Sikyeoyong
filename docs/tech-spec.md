@@ -488,7 +488,7 @@ score(merchant, menu) =
 제외: 미인증 가게(verifiedOnly 기본), 영업 외 시간, 동결 상태
 ```
 
-- 날씨: 1단계는 `WEATHER_PROVIDER=static|openmeteo`. 데모는 `static`(시드 값 "비")으로 재현성 확보. 2단계에 k-skill `korea-weather`, `kakao-map` 연동 지점(`ContextProvider` 인터페이스).
+- 날씨: 1단계는 `WEATHER_PROVIDER=static|openmeteo`. 데모는 `static`으로 재현성을 확보하고 단어는 `WEATHER_STATIC`(기본 "맑음", 장면에서 "비"로 정함). `openmeteo`는 Open-Meteo(키 없음)의 현재 `weather_code`와 기온을 `WEATHER_LAT`/`WEATHER_LON`(기본 서울 강남)으로 읽어 비, 눈, 추움(5도 이하), 더움(28도 이상), 맑음, 흐림으로 옮긴다. 10분 캐시, 3초 타임아웃, 실패하면 `null`(모름)을 돌려주고 경고를 남긴다. 모름은 점수에서 날씨 신호 없음이고 `get_context`에는 `weather: null`로 나간다. 2단계에 k-skill `korea-weather`, `kakao-map` 연동 지점(`ContextProvider` 인터페이스).
 - 메뉴 태그는 시드 데이터에 넣는다 (`tags: ["국물", "따뜻한", "가성비"]`).
 - 코드(`apps/api/src/modules/recommend/score.ts`, 2026-11-20)는 위 식을 정수로 계산한다(요소 0~100점, 가중치 35·20·20·15·10, 금액 bigint). 위 식과 다른 곳: 한도를 넘는 메뉴는 craving이 그 메뉴의 이름이나 태그에 맞을 때만 "승인 필요"로 넣고 한도 안 메뉴 뒤에 둔다 (가게 이름이나 카테고리만 맞으면 넣지 않는다), craving이 맞으면 맞은 메뉴만 순위를 매긴다, craving이 없으면 가게마다 메뉴 하나, 개인 예산을 넘게 되는 메뉴는 "승인 필요", 30일 체인 상한을 넘게 되는 메뉴와 품절 메뉴는 제외, `warn70` 이상이면 예산 가중치 55. 요소별 정의와 이유는 `docs/wiki/components/recommend-and-nag.md` "추천 점수 규칙".
 

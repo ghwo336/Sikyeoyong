@@ -20,7 +20,7 @@ children: []
 - 기준: 내 30일 한도(주인이 금액으로 정함, 서버가 지킴, 기본 처음 값 300,000 OKRW, 범위는 `policy.myPeriodicLimit`)와 모두에게 같은 30일 상한(체인, 500,000 OKRW). 내 한도가 체인 상한과 같으면 주문 사전 검사는 서버가 하지 않고 체인 거절이 보인다(payment.md 견적 3번). 잔소리 70%, 90%는 두 경우 모두 내 한도 기준이다.
 - 코드: `modules/budget/budget.service.ts`의 `BudgetService.getView(userId)`가 `BudgetView`(shared `zBudgetView`)를 만든다. 내 30일 한도는 `UsersService.getMyPeriodicLimitAokrw`(저장 값이 범위 밖이면 범위와 단위로 맞춰 읽는다, 마이그레이션 0009), 한 번에 쓸 돈·동결·지갑은 `AgentsService`, 30일 사용량은 `ChainReader`로만 받는다. `limitRanges`는 정책 범위다 (다른 모듈 저장소를 직접 읽지 않는다). 체인 읽기가 실패하면 숫자를 지어내지 않고 오류를 그대로 낸다.
 - 추천 입력: 날씨, 시간대, 대략 위치(1단계는 고정 지역 또는 사용자 입력), 최근 주문, 선호 메모리, 내 30일 한도에서 남은 돈, 한 번에 쓸 돈.
-- 추천 코드: `modules/recommend`. `RecommendService.recommend(userId, { craving?, maxPriceAokrw? }, now)`가 입력을 모아 순수 함수 `score.ts`의 `rank()`에 넘긴다. 두 한도, 동결, 30일 사용량과 리셋 시각은 `BudgetService.getView`, 가게와 메뉴는 `MerchantsService.catalog`(보이는 가게만), 날씨는 `WeatherService`(get_context와 같은 출처, `static`이면 "비", 그 밖은 지어내지 않고 오류), 최근 주문은 `RECENT_ORDERS` 포트(`recent-orders.ts`)로 받는다. 주문 테이블은 orders 모듈 것이라 직접 읽지 않는다. 포트는 `OrdersService.recentOrdersSince`(그 사용자의 paid 이상 주문, 환불 제외)에 묶여 있다 (2026-11-20). 견적만 된 주문, 실패한 주문, 다른 사용자의 주문은 선호와 새로움에 들어가지 않는다. HTTP 경로는 없다 (LLM 도구 `recommend_merchants`만 쓴다).
+- 추천 코드: `modules/recommend`. `RecommendService.recommend(userId, { craving?, maxPriceAokrw? }, now)`가 입력을 모아 순수 함수 `score.ts`의 `rank()`에 넘긴다. 두 한도, 동결, 30일 사용량과 리셋 시각은 `BudgetService.getView`, 가게와 메뉴는 `MerchantsService.catalog`(보이는 가게만), 날씨는 `WeatherService`(get_context와 같은 출처, 비동기. `static`이면 `WEATHER_STATIC` 단어(기본 "맑음"), `openmeteo`면 현재 날씨를 10분 캐시로 읽고, 실패하면 지어내지 않고 `null`(모름, 날씨 신호 없음)), 최근 주문은 `RECENT_ORDERS` 포트(`recent-orders.ts`)로 받는다. 주문 테이블은 orders 모듈 것이라 직접 읽지 않는다. 포트는 `OrdersService.recentOrdersSince`(그 사용자의 paid 이상 주문, 환불 제외)에 묶여 있다 (2026-11-20). 견적만 된 주문, 실패한 주문, 다른 사용자의 주문은 선호와 새로움에 들어가지 않는다. HTTP 경로는 없다 (LLM 도구 `recommend_merchants`만 쓴다).
 
 ## 추천 점수 규칙 (코드 기준, tech-spec 3.8)
 점수는 정수로만 계산한다. 요소마다 0~100점, 가중치는 정수(35, 20, 20, 15, 10), 금액은 aokrw bigint. 같은 입력이면 어느 기계에서나 같은 순서다.
@@ -59,7 +59,7 @@ children: []
 - 잔소리 톤은 걱정이다. 비난, 비꼼 금지.
 - 같은 단계 잔소리는 한 달에 한 번 (`nag_events` 유니크). 예외: `over100` 이후 주문 직전 확인 카드에는 짧게 붙인다 (tech-spec "3.7 잔소리 계산").
 - 잔소리 문구의 숫자는 템플릿과 변수로 만든다. LLM이 숫자를 지어내게 하지 않는다.
-- 추천 점수는 서버가 결정적으로 계산하고 LLM은 설명만 한다 (tech-spec "3.8 추천 로직"). 데모는 `WEATHER_PROVIDER=static`으로 재현성을 확보한다.
+- 추천 점수는 서버가 결정적으로 계산하고 LLM은 설명만 한다 (tech-spec "3.8 추천 로직"). 데모는 `WEATHER_PROVIDER=static`과 `WEATHER_STATIC`으로 재현성을 확보한다.
 
 ## 하지 말 것 (MUST NOT)
 - 잔소리로 주문을 막지 않는다 (막는 건 체인, 이게 데모의 구분).
