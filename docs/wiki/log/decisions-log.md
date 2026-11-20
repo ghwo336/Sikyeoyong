@@ -105,3 +105,10 @@ children: []
 - 이유: 파우치 SDK 미배포. 레퍼런스가 수탁 구조를 굳히지 않게 교체 자리를 미리 만든다
 - 누가: 호재 님
 - 영향: auth.md, security.md, payment.md, infra.md, open-questions Q-30
+
+### 2026-11-20 D-25 추가: 결제 경로 B 확정 (스파이크 S1)
+- 이전: D-05 경로 A(MAWS가 placeOrder 호출) 기본, calldata 지원 미확인
+- 이후: MAWS MCP `transfer.send`에 calldata 칸이 없음을 확인, 1단계는 경로 B (서버가 에이전트 EOA 키를 암호화 보관하고 직접 placeOrder)
+- 이유: MCP로는 컨트랙트 함수를 부를 수 없다 (도구 스키마). WaaS API 직접 호출 가능 여부는 Q-01로 계속
+- 누가: 호재 님 동의
+- 영향: D-05 결과, Q-01, maroo-facts 1, devrel F-13, F-14, payment.md, tech-spec 3.4

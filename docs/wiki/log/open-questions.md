@@ -26,8 +26,8 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 배경: 결제 경로 A/B/C 결정 (D-05). 문서에 없음 (devrel-feedback F-01).
 - 확인 방법: MAWS 담당에게 질문. 테스트넷에서 `transfer.send`에 data 필드가 있는지 MCP 도구 스키마 확인 (`tools/list`).
 - 담당: 호재 님 → 재욱 님, MAWS 담당
-- 결론 (2026-11-20, 부분): MCP 도구로는 안 된다 (확인). `transfer.send` 스키마에 calldata 칸이 없다. WaaS API 직접 호출로 되는지는 (미확인)이라 MAWS 담당 답이 오면 다시 연다. 1단계는 경로 B (D-24).
-- 반영한 곳: maroo-facts 1, decisions D-24, devrel F-13
+- 결론 (2026-11-20, 부분): MCP 도구로는 안 된다 (확인). `transfer.send` 스키마에 calldata 칸이 없다. WaaS API 직접 호출로 되는지는 (미확인)이라 MAWS 담당 답이 오면 다시 연다. 1단계는 경로 B (D-25).
+- 반영한 곳: maroo-facts 1, decisions D-05와 D-25, devrel F-13
 
 ### Q-02 서버 하나로 여러 사용자의 MAWS 계정을 다룰 수 있나?
 - 상태: 열림

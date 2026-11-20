@@ -388,7 +388,7 @@ export interface PaymentProvider {
 
 **경로 C (최후)**: MAWS `transfer.send`로 `SikyeoyongOrders` 프록시 주소에 OKRW 전송, 컨트랙트 `receive()`가 서버가 미리 `registerIntent(agent, merchantId, amount, orderRef)`로 등록한 의도와 맞춰 지급. 셀렉터 없는 호출(receive)에 컨트랙트 범위 정책이 붙는지 (미확인). 빈 selector 정책은 모든 호출에 적용되므로(확인, [pcl-policy-structure](https://docs.maroo.io/concepts/compliance/pcl-policy-structure)) 빈 selector에 정책을 걸면 receive에도 적용될 것으로 (추론). 운영자 함수까지 같이 걸리는 부작용이 있어 설계가 복잡하다.
 
-경로 선택은 환경 변수 `PAYMENT_PATH=A|B|C|mock` (mock은 개발·테스트 전용, production 금지). 1단계는 B (D-24). 위쪽 코드(orders, llm)는 경로를 몰라야 한다. 단 영수증 규칙 계산(2.5)만 `provider.path`를 읽는다.
+경로 선택은 환경 변수 `PAYMENT_PATH=A|B|C|mock` (mock은 개발·테스트 전용, production 금지). 1단계는 B (D-25). 위쪽 코드(orders, llm)는 경로를 몰라야 한다. 단 영수증 규칙 계산(2.5)만 `provider.path`를 읽는다.
 
 ### 3.5 MerchantSource, LlmProvider
 
