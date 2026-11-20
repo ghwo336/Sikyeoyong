@@ -225,6 +225,7 @@ apps/api/src/
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |
+| POST | `/signup/trial` | user | | `{ granted }`. 체험용 용돈(정책 `trialAllowanceAokrw`, 기본 100,000원)을 주인 용돈 장부에 한 번만 넣는다. 두 번째부터는 200 `granted: false`(동시에 와도 하나만, 부분 유일 색인). 수탁(D-24) 동안은 장부만 쓰고 체인에서는 아무것도 옮기지 않는다. 2026-11-20 추가 (allowance 모듈) |
 | POST | `/identity/verify` | user | | `{ verified: true }`. 본인 인증(D-16). `VERIFY_MODE=mock`이면 통과를 기록, `kakao`는 Q-19가 풀릴 때까지 500 `INTERNAL`. 통과한 사실, 방법, 시각만 남긴다. 인증 전의 `POST /agents`는 403 (2026-11-20) |
 | GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, level, perOrderLimit, custodial }`, `api/me.ts`. `custodial`은 `OWNER_MODE=custodial`일 때만 true, 지갑 화면의 체험판 한 줄용, D-24). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
 | PATCH | `/me` | user | `{ nickname?, address?, monthlyBudgetOkrw? }` | `{ user }` |
