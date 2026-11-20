@@ -38,11 +38,13 @@ export class ChatController {
   ): Promise<void> {
     // Checks and records first: a bad resend is still a plain HTTP error (409).
     const stream = this.chat.begin(user.userId, body);
-    // A closed connection stops the model turns (each costs money) and keeps nothing.
-    const gone = new AbortController();
+    // A closed connection stops the writing, not the turn: the message is already saved and the
+    // server finishes the answer and stores it, so history shows it when the user comes back.
+    // The daily token cap still applies (daily-cap-provider), and maxTurns bounds the cost.
+    let gone = false;
     res.on('close', () => {
       // close also fires after a normal res.end(); only a close before that means the client left.
-      if (!res.writableEnded) gone.abort();
+      if (!res.writableEnded) gone = true;
     });
     res.status(200);
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -51,8 +53,8 @@ export class ChatController {
     res.flushHeaders();
     try {
       await stream((event) => {
-        if (!gone.signal.aborted) res.write(`data: ${JSON.stringify(event)}\n\n`);
-      }, gone.signal);
+        if (!gone) res.write(`data: ${JSON.stringify(event)}\n\n`);
+      });
     } finally {
       // Headers are sent, so the error filter cannot answer any more; always close the stream.
       res.end();

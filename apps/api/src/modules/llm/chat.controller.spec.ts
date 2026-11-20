@@ -248,24 +248,28 @@ describe('POST /api/chat/messages (SSE)', () => {
     expect(h.db.select().from(chatMessages).all()).toHaveLength(0);
   });
 
-  it('aborts the turn when the HTTP connection closes (real socket)', async () => {
-    let calls = 0;
-    let sawAbort: () => void = () => undefined;
-    const aborted = new Promise<void>((r) => {
-      sawAbort = r;
+  it('finishes and stores the turn when the HTTP connection closes (real socket)', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
     });
-    // A model that never answers on its own: only the client leaving can end the turn,
-    // so the test does not depend on timing.
+    // A model that answers only after the client has left, so the test does not depend on timing.
     const slow: LlmProvider = {
-      turn: (_req, onText, signal) =>
-        new Promise((_resolve, reject) => {
-          calls += 1;
-          onText('음');
-          signal?.addEventListener('abort', () => {
-            sawAbort();
-            reject(new Error('aborted'));
-          });
-        }),
+      turn: async (_req, onText) => {
+        onText('음');
+        await gate;
+        onText('피자 좋아용');
+        return {
+          id: 'm',
+          type: 'message',
+          role: 'assistant',
+          model: 'scripted',
+          content: [{ type: 'text', text: '음피자 좋아용', citations: null }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 0, output_tokens: 0 },
+        } as never;
+      },
     };
     const { app, token, h } = await setup(slow);
     await app.listen(0);
@@ -289,15 +293,23 @@ describe('POST /api/chat/messages (SSE)', () => {
           });
         },
       );
-      req.end(JSON.stringify({ text: '오늘 날씨', clientMessageId: 'sock' }));
+      req.end(JSON.stringify({ text: '피자 시켜 줘', clientMessageId: 'sock' }));
     });
-    await aborted;
-    // The service deletes the turn right after the rejection settles.
-    for (let i = 0; i < 50 && h.db.select().from(chatMessages).all().length > 0; i += 1) {
-      await new Promise((r) => setImmediate(r));
+    // The question is saved the moment it is accepted, even while the answer is still running.
+    expect(
+      h.db
+        .select()
+        .from(chatMessages)
+        .all()
+        .map((r) => r.role),
+    ).toEqual(['user']);
+    release();
+    for (let i = 0; i < 200 && h.db.select().from(chatMessages).all().length < 2; i += 1) {
+      await new Promise((r) => setTimeout(r, 5));
     }
-    expect(calls).toBe(1);
-    expect(h.db.select().from(chatMessages).all()).toHaveLength(0);
+    const rows = h.db.select().from(chatMessages).all();
+    expect(rows.map((r) => r.role)).toEqual(['user', 'assistant']);
+    expect(rows[1]?.contentJson).toContain('피자 좋아용');
   });
 
   describe('clientMessageId and history', () => {
