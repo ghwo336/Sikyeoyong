@@ -78,7 +78,7 @@ children: []
 
 ## 부화 다시 받기 (Hatch)
 - 규칙은 순수 함수 `features/onboarding/hatch.ts`의 `hatchPollInterval` 하나다. `useAgentSetup`은 이 값을 TanStack Query `refetchInterval`로 넘기기만 한다.
-- PENDING이거나 아직 모르면(첫 응답 전) 1초마다 다시 묻는다. ACTIVE면 멈추고 /budget으로 넘어간다. FAILED면 멈추고 "다시 깨우기"만 다시 시작한다.
+- PENDING이거나 아직 모르면(첫 응답 전) 1초마다 다시 묻는다. PENDING에서 ACTIVE로 바뀌는 것을 지켜본 사람만 가입 표시를 남기고 /budget으로 간다(이미 가입한 사람이 /hatch를 바로 열면 /로 간다). FAILED면 멈추고 "다시 깨우기"만 다시 시작한다.
 - 오류일 때는 계속 묻는다 (2026-11-19 판단). GET은 몇 번 불러도 안전하고, 부화는 1~3분이라 잠깐 끊긴 네트워크로 화면이 멈추면 안 되며, 부화 중에는 다시 시도 버튼도 없다. 실패한 GET은 마지막 상태를 그대로 두므로(TanStack Query는 오류에도 data를 지킨다) 오류만으로는 멈추지 않는다. 오류를 화면에 어떻게 보일지는 "남은 일 (가입)"의 실패 표시 자리와 같이 정한다.
 - 서버 부화 시한(PENDING에서 FAILED로 넘어가는 시간)이 아직 명세에 없다. 서버가 계속 PENDING이면 1초 조회가 끝없이 이어진다. 시한은 API agents 모듈을 만들 때 정하고, 정해지면 웹은 그대로 FAILED를 받아 멈춘다.
 

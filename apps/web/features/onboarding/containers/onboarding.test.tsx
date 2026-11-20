@@ -333,12 +333,29 @@ describe('HatchContainer', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('moves on to /budget once the dragon is up', async () => {
+  it('moves on to /budget once the dragon it watched hatching is up', async () => {
+    localStorage.clear();
+    getAgentSetup
+      .mockResolvedValueOnce({ status: 'PENDING', steps: steps(['done', 'doing', 'waiting']) })
+      .mockResolvedValue({ status: 'ACTIVE', steps: steps(['done', 'done', 'done']) });
+    wrap(<HatchContainer />);
+    await waitFor(
+      () => {
+        expect(replace).toHaveBeenCalledWith('/budget');
+      },
+      { timeout: 4000 },
+    );
+    expect(isBudgetStepPending()).toBe(true);
+  });
+
+  it('does not bring back the sign-up budget for an owner already set up', async () => {
+    localStorage.clear();
     getAgentSetup.mockResolvedValue({ status: 'ACTIVE', steps: steps(['done', 'done', 'done']) });
     wrap(<HatchContainer />);
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/budget');
+      expect(replace).toHaveBeenCalledWith('/');
     });
-    expect(isBudgetStepPending()).toBe(true);
+    expect(isBudgetStepPending()).toBe(false);
+    expect(replace).not.toHaveBeenCalledWith('/budget');
   });
 });

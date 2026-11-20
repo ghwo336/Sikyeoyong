@@ -2,7 +2,7 @@
 
 import { Egg, HatchProgress, Hero, ScreenTitle } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMe } from '../../me/hooks/useMe';
 import { markBudgetStepPending } from '../pending-budget';
 import { HATCH_LABEL } from '../steps';
@@ -14,12 +14,16 @@ export function HatchContainer() {
   const me = useMe().data;
   const setup = useAgentSetup().data;
   const retry = useRetryAgentSetup();
-  const active = setup?.status === 'ACTIVE';
+  // Only an owner who watched it hatch (PENDING, then ACTIVE) gets the sign-up budget step;
+  // one who opens /hatch already set up goes on without it.
+  const watched = useRef(false);
+  const status = setup?.status;
   useEffect(() => {
-    if (!active) return;
-    markBudgetStepPending();
-    router.replace('/budget');
-  }, [active, router]);
+    if (status === 'PENDING') watched.current = true;
+    if (status !== 'ACTIVE') return;
+    if (watched.current) markBudgetStepPending();
+    router.replace(watched.current ? '/budget' : '/');
+  }, [status, router]);
   if (!me || !setup) return null;
   return (
     <>
