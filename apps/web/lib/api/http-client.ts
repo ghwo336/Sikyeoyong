@@ -159,5 +159,10 @@ export function createHttpApi(
       await call('PATCH', '/me', { monthlyBudgetOkrw: amount });
     },
     claimTrialAllowance: () => notReady('trial allowance'),
+    // The API has no wallet, ID card, pause or refund routes yet (OwnerAuthority APIs, worklog).
+    getWallet: () => notReady('wallet'),
+    getIdCard: () => notReady('id card'),
+    setFrozen: () => notReady('pause'),
+    refundPocket: () => notReady('refund'),
   };
 }

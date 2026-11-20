@@ -19,6 +19,7 @@ import type {
   OrderQuote,
   OrderView,
   RecommendationCard,
+  WalletView,
 } from '../api/types';
 import {
   BUDGET,
@@ -26,8 +27,10 @@ import {
   DESTINATION,
   ME,
   MENU_EXTRA,
+  ID_CARD,
   RECOMMENDATIONS,
   SIGNUP,
+  WALLET,
 } from './fixtures';
 
 const LATENCY_MS = 250;
@@ -67,6 +70,7 @@ function saveSession(): void {
 // The fake server's memory. Sign-up changes the dragon and the budget Main then shows.
 let session: MockSession = loadSession();
 let budget: BudgetView = BUDGET;
+let wallet: WalletView = WALLET;
 
 /** Tests set where the mock starts (signed in with a hatched dragon, or a first visit). */
 export function resetMockSession(next: 'first-visit' | 'hatched'): void {
@@ -78,6 +82,7 @@ export function resetMockSession(next: 'first-visit' | 'hatched'): void {
         }
       : { signedIn: false, dragon: null };
   budget = BUDGET;
+  wallet = WALLET;
   saveSession();
 }
 
@@ -263,4 +268,16 @@ export const mockApi: ApiClient = {
     return later(undefined);
   },
   claimTrialAllowance: () => later(undefined),
+  getWallet: () => later(wallet),
+  getIdCard: () => later(ID_CARD),
+  setFrozen: (frozen) => {
+    budget = { ...budget, frozen };
+    return later(undefined);
+  },
+  refundPocket: () => {
+    // Like drain: everything in the pocket goes back to the owner, nothing is paid.
+    const owner = parseAokrw(wallet.owner) + parseAokrw(wallet.pocket);
+    wallet = { ...wallet, owner: owner.toString(), pocket: '0' };
+    return later(undefined);
+  },
 };

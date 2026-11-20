@@ -11,15 +11,19 @@ import type {
   CreateOrderResult,
   DragonMoodKey,
   DragonSpecies,
+  IdCardView,
   MeView,
   OrderView,
   QuickReply,
   SignupConfig,
+  WalletView,
 } from '@sikyeoyong/shared';
 import type { DragonMood } from '@sikyeoyong/ui';
 
 export type {
   AgentSetupView,
+  IdCardView,
+  WalletView,
   ChatEvent,
   ChatHistory,
   ChatHistoryMessage,
@@ -75,4 +79,13 @@ export interface ApiClient {
   setMonthlyBudget(amount: AokrwString): Promise<void>;
   /** Trial allowance into the owner's pocket (user-flow 5). Not a payment. */
   claimTrialAllowance(): Promise<void>;
+
+  /** Wallet.dc.html money: the owner's allowance, the dragon's pocket, saved this month. */
+  getWallet(): Promise<WalletView>;
+  /** IdCard.dc.html: who owns the dragon, the identity check, when it hatched. */
+  getIdCard(): Promise<IdCardView>;
+  /** 용이 멈추기 / 깨우기 (user-flow 17). The owner's switch; never an LLM tool. */
+  setFrozen(frozen: boolean): Promise<void>;
+  /** 돌려받기 on the Frozen screen: the pocket goes back to the owner's allowance. */
+  refundPocket(): Promise<void>;
 }

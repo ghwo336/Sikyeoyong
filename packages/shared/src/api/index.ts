@@ -82,3 +82,4 @@ export {
   type ApprovalList,
   type ApprovalView,
 } from './approvals.js';
+export { zIdCardView, zWalletView, type IdCardView, type WalletView } from './wallet.js';

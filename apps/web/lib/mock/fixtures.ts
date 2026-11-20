@@ -8,7 +8,14 @@ import {
   okrwToAokrw,
   zBudgetView,
 } from '@sikyeoyong/shared';
-import type { ChatHistory, MeView, RecommendationCard, SignupConfig } from '../api/types';
+import type {
+  ChatHistory,
+  IdCardView,
+  MeView,
+  RecommendationCard,
+  SignupConfig,
+  WalletView,
+} from '../api/types';
 
 export const won = (n: bigint): string => aokrwToString(okrwToAokrw(n));
 
@@ -133,3 +140,17 @@ export function chatHistory(now: number): ChatHistory {
     ],
   };
 }
+
+/** Wallet.dc.html: 81,000 for the owner, 20,000 in the pocket, 32,000 saved this month. */
+export const WALLET: WalletView = {
+  owner: won(81_000n),
+  pocket: won(20_000n),
+  savedThisMonth: won(32_000n),
+};
+
+/** IdCard.dc.html: 이호재님의 배달 비서, 실명 확인됨, 2026. 12. 1. */
+export const ID_CARD: IdCardView = {
+  ownerName: '이호재',
+  ownerVerified: true,
+  bornAt: Date.parse('2026-12-01T00:00:00+09:00'),
+};
