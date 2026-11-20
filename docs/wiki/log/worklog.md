@@ -286,3 +286,21 @@ children: []
   - 충전 멱등성(실제 경로 전 필수), 60초 쿨다운, 1분 승인 만료 작업, 영수증 시각, 목 30일 창 초기화, 결제 때 주머니 감소.
   - D-23 UX 다듬기: Skeleton, iOS 키보드(visualViewport), Next dev 표시.
 - 다음 할 일: 위 검증 결과 반영, 경로 B 실제 연결, OAuth.
+
+### 2026-11-20 파우치 스파이크 S14, http 모드 전환, 파우치 로그인 (D-29)
+- 한 일:
+  - S14 문서 조사와 파우치 앱 등록(tenant_369d04cfd8, localhost:3000, sandbox 키는 git 밖 .env.pouchi). 문의 모음 `docs/_research/pouchi-questions.md` (5개, S14 끝에 호재 님께 정리).
+  - D-29: 로그인은 파우치 로그인 하나, 시작 버튼 "이메일로 시작하기", 웹은 http 모드로.
+  - 서버 API 채움: GET /wallet와 주인 용돈 장부(allowance, 0006), POST /signup/trial, freeze/unfreeze/drain(AgentLock으로 한 줄), GET /me/id-card, POST /orders/:id/rating(0007), 즉시 충전을 장부 fund로, GET /identity.
+  - 파우치 로그인: 서버(pouchi 모듈, users의 config/bind/complete, pouchi_accounts 0008, PKCE challenge 비교, IP당 1분 10회, trust proxy), 웹(세션 입구 lib/session/entry.ts, EmailStart와 TermsLine, /pouchi/callback, 입구가 Verify와 Name을 가름).
+  - 홈 화면 추가용 manifest(주소창 없이), iOS 시뮬레이터(Xcode 27의 DeviceHub).
+  - 로컬 개발: 루트 .env(비밀 없음 + 파우치 키 복사, git 밖), 마이그레이션 0006~0008 적용, 시드.
+- 실수 기록: 커밋 제목이 게이트 상한(콜론 뒤 71자)을 넘은 것 둘. 24d48a9와 ee5c736. dev-loop.md대로 amend하지 않는다. `pnpm verify --precommit`은 메시지를 보지 않으므로 커밋 전에 제목 길이를 따로 센다.
+- 막힌 것: 실제 파우치 금고 로그인(이메일 코드, 패스키)은 사람이 해야 해서 아직 끝까지 돌려 보지 못했다. 테넌트 `pending-approval`이 풀렸는지 모른다.
+- 열린 질문: Q-37(이번 달 아낀 돈), Q-38(장부가 모자라면 주문을 막나).
+- 후속:
+  - Start 시안 갱신(한 버튼), 예산 화면 30일 사용액이 목 체인에서 0(개발 ChainReader가 목 결제를 읽지 않음).
+  - 체험 용돈 버튼 실패 표시, 파우치 BFF 예제의 로그인 전 세션 범위 pending과 Origin 검사, bind만 셀지(IP 제한).
+  - 장부 실체인 전 할 일(영수증 금액, txHash 유일 열쇠, 체인 멈춤 뒤 drain), REVOKED 오류 코드, 동결과 confirm 겹침.
+  - OWNER_MODE=pouch(PouchOwner)와 S14 2단계 실행(배포, 세션 키 실험은 React SDK spikes에서).
+- 다음 할 일: 호재 님 실제 로그인 결과를 보고 고치기, Start 시안, 30일 사용액, D-23 UX 다듬기.
