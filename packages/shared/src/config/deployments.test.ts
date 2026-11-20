@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors/index.js';
 import { findDeployment, parseDeployment, resolveOrdersContract } from './deployments.js';
+import { NETWORKS } from './chain.js';
 import { DEPLOYMENTS } from './deployments-data.js';
 
 const A = '0x' + 'a'.repeat(40);
@@ -81,5 +82,23 @@ describe('DEPLOYMENTS registry', () => {
   it('holds only valid records, one per chain and profile', () => {
     const keys = DEPLOYMENTS.map((d) => `${d.chainId}.${d.profile}`);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe('the recorded testnet demo deployment', () => {
+  const chainId = NETWORKS['maroo-testnet'].chainId;
+
+  it('resolves to the proxy, not the implementation', () => {
+    const rec = findDeployment(DEPLOYMENTS, chainId, 'demo');
+    expect(rec).not.toBeNull();
+    expect(resolveOrdersContract(DEPLOYMENTS, chainId, 'demo')).toBe(rec?.proxy);
+    expect(rec?.proxy).not.toBe(rec?.implementation);
+  });
+
+  it('has the demo policies: placeOrder only, no EAS (D-33)', () => {
+    const rec = findDeployment(DEPLOYMENTS, chainId, 'demo');
+    expect(rec?.policies.map((p) => p.signature)).toEqual(['placeOrder(uint64,bytes32)']);
+    const kids = rec?.policies[0]?.children.map((c) => c.template);
+    expect(kids).toEqual(['AGENT_OKRW_TRANSFER_LIMIT_POLICY', 'PERIODIC_VOLUME_POLICY']);
   });
 });

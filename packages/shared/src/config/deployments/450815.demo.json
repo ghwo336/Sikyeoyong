@@ -1,0 +1,40 @@
+{
+  "chainId": 450815,
+  "profile": "demo",
+  "deployedAt": "2026-11-20",
+  "operator": "0xBb71B672BC33745283842ce701F5b0FC28d023d3",
+  "implementation": "0xf3091258a7ecee5a1b71577a573690bcdf8914e6",
+  "proxy": "0x36713c60A8b4E54b56997553aD4b8b16d7C02Db8",
+  "deployBlock": 23814926,
+  "txs": {
+    "implementation": "0x7f148a4228723be4407354ba74916cec5c717d5ee114cb337efe77aa33bae323",
+    "proxy": "0x6d31a8deec965012e90e9bc20c342bca0d18e6e0ac06441d1ab0b02953527f8a",
+    "policies": "0xf76822583f5a11bce6aabb8066b7494443899eb7cf856ef1ebba33ca15767636"
+  },
+  "blocks": {
+    "implementation": 23814924,
+    "proxy": 23814926,
+    "policies": 23814928
+  },
+  "policyHash": "0x66dcc8b55abb47f3260c07d83c7e9e388f5734080621e0708fc9f6b01b657598",
+  "policies": [
+    {
+      "selector": "0x62dac134",
+      "signature": "placeOrder(uint64,bytes32)",
+      "root": "LOGICAL_POLICY",
+      "quantifier": "And",
+      "children": [
+        {
+          "template": "AGENT_OKRW_TRANSFER_LIMIT_POLICY",
+          "value": {}
+        },
+        {
+          "template": "PERIODIC_VOLUME_POLICY",
+          "value": {
+            "limits": "[{\"token\":\"atokrw\",\"maxAmount\":\"60000000000000000000000\",\"resetPeriodSeconds\":\"3600\"}]"
+          }
+        }
+      ]
+    }
+  ]
+}
