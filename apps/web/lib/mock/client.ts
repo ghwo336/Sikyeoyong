@@ -1,7 +1,14 @@
 // A fake API server in the browser, so screens can be walked end to end before apps/api has
 // these routes. Only lib/api imports this file; hooks see the ApiClient interface only.
 // It never pays: confirmOrder just flips the mock order to preparing (CLAUDE.md rule 3).
-import { AppError, type BudgetView, getPolicy, nagStage, parseAokrw } from '@sikyeoyong/shared';
+import {
+  AppError,
+  type BudgetView,
+  formatOkrw,
+  getPolicy,
+  nagStage,
+  parseAokrw,
+} from '@sikyeoyong/shared';
 import type {
   AgentSetupView,
   ApiClient,
@@ -162,21 +169,44 @@ function createOrder(body: CreateOrderBody): CreateOrderResult {
 }
 
 /** Stand-in for the LLM: a menu name orders it, anything else gets the recommendations again. */
+const BUDGET_WORDS = ['예산', '다 쓴', '다쓴', '남았', '얼마'];
+const FOOD_WORDS = ['시켜', '추천', '점심', '저녁', '배고', '먹'];
+
+/** The dragon's words about this month's budget, from the mock's own numbers. */
+function budgetLine(): string {
+  const spent = parseAokrw(budget.personalSpent);
+  const limit = parseAokrw(budget.personalBudget);
+  if (spent > limit) {
+    return `이번 달 예산 ${formatOkrw(limit)}을 벌써 ${formatOkrw(spent - limit)} 넘었어용. 더 시키면 주인님 허락을 받을게용.`;
+  }
+  return `이번 달 ${formatOkrw(spent)} 썼고 ${formatOkrw(limit - spent)} 남았어용.`;
+}
+
+/**
+ * The mock dragon understands a few kinds of words only (a real reply comes from Claude):
+ * a menu name opens its confirm card, "싼" the cheapest, budget words the budget, food
+ * words the recommendations. Anything else gets a line and no cards, so it never repeats.
+ */
 function reply(text: string): ChatEvent[] {
   const rec = RECOMMENDATIONS.find((r) => !r.needsApproval && text.includes(r.menu));
   if (rec) return [{ type: 'order_confirm', quote: quoteFor(rec) }];
   const cheapest = [...RECOMMENDATIONS].sort((a, b) =>
     parseAokrw(a.price) < parseAokrw(b.price) ? -1 : 1,
   )[0];
-  const events: ChatEvent[] = [];
   if (text.includes('싼') && cheapest) {
-    events.push({ type: 'token', text: `${cheapest.menu}이 제일 싸용.` });
-    events.push({ type: 'recommendations', items: [cheapest] });
-  } else {
-    events.push({ type: 'token', text: '알겠어용. 다시 골라 봤어용.' });
-    events.push({ type: 'recommendations', items: [...RECOMMENDATIONS] });
+    return [
+      { type: 'token', text: `${cheapest.menu}이 제일 싸용.` },
+      { type: 'recommendations', items: [cheapest] },
+    ];
   }
-  return events;
+  if (BUDGET_WORDS.some((w) => text.includes(w))) return [{ type: 'token', text: budgetLine() }];
+  if (FOOD_WORDS.some((w) => text.includes(w))) {
+    return [
+      { type: 'token', text: '알겠어용. 골라 봤어용.' },
+      { type: 'recommendations', items: [...RECOMMENDATIONS] },
+    ];
+  }
+  return [{ type: 'token', text: '음, 그건 잘 모르겠어용. 뭐 먹고 싶은지 말해 주세용.' }];
 }
 
 export const mockApi: ApiClient = {
