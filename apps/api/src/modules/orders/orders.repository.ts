@@ -137,7 +137,12 @@ export class OrdersRepository {
   transition(
     id: string,
     from: OrderStatus,
-    set: Partial<Pick<OrderRow, 'status' | 'errorCode' | 'txHash' | 'submitStartedAt'>>,
+    set: Partial<
+      Pick<
+        OrderRow,
+        'status' | 'errorCode' | 'txHash' | 'submitStartedAt' | 'submitTxHash' | 'submitNonce'
+      >
+    >,
     nowMs: number,
     opts: { bumpAttempt?: boolean } = {},
   ): boolean {

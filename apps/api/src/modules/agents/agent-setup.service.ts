@@ -43,6 +43,7 @@ export class AgentSetupService {
         const created = await this.payment.createAgent({
           userId: agent.userId,
           name: agent.dragonName,
+          agentRowId: agentId,
         });
         this.repo.saveWallet(agentId, {
           address: created.address,

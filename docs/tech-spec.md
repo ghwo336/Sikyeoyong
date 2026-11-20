@@ -360,6 +360,15 @@ export interface PayRequest {
   readonly amount: bigint;
   /** bytes32, made once from the DB order id; the same order retries only with this (D-19). */
   readonly orderRef: Hex;
+  /**
+   * Path B and C: called with the signed transaction's hash and nonce before it is broadcast. The
+   * caller saves them (orders.submit_tx_hash, submit_nonce, payment.md "제출 시작 표시"). If this
+   * throws, nothing is broadcast. Providers with no local signing (mock) never call it.
+   */
+  readonly beforeBroadcast?: (signed: {
+    readonly txHash: Hex;
+    readonly nonce: number;
+  }) => void | Promise<void>;
 }
 
 export type PayResult =
@@ -374,7 +383,12 @@ export type PayResult =
 export interface PaymentProvider {
   readonly path: PaymentPath;
   /** Creates the wallet and waits for the 8004 registration. */
-  createAgent(input: { readonly userId: string; readonly name: string }): Promise<AgentWallet>;
+  createAgent(input: {
+    readonly userId: string;
+    readonly name: string;
+    /** agents.id when the row exists, so a path B key can be linked to it. */
+    readonly agentRowId?: string;
+  }): Promise<AgentWallet>;
   /** 8004 setMetadata("TransferLimit"), before the agent may order (payment.md MUST). */
   setTransferLimit(agent: AgentWallet, amount: bigint): Promise<Hex>;
   fund(agent: AgentWallet, amount: bigint): Promise<Hex>;

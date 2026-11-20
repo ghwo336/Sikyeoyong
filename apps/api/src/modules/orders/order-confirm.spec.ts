@@ -336,6 +336,22 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(pay).toHaveBeenCalledTimes(1);
   });
 
+  it('saves the signed hash and nonce before the broadcast (path B), and a lost answer keeps them', async () => {
+    const { payment, quote, confirm, row } = await setup();
+    const signed: { txHash: Hex; nonce: number } = { txHash: `0x${'ab'.repeat(32)}`, nonce: 7 };
+    vi.spyOn(payment, 'pay').mockImplementationOnce(async (req) => {
+      await req.beforeBroadcast?.(signed);
+      throw new Error('socket hang up');
+    });
+    const id = await quote();
+    await confirm(id);
+    expect(row(id)).toMatchObject({
+      status: 'submitting',
+      submitTxHash: signed.txHash,
+      submitNonce: 7,
+    });
+  });
+
   it.each(['CHAIN_MERCHANT_INACTIVE', 'CHAIN_AGENT_PAUSED'] as const)(
     'a %s thrown (not returned) after the marker stays submitting: it may be out already',
     async (code) => {

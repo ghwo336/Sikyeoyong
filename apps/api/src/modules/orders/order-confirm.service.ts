@@ -106,7 +106,21 @@ export class OrderConfirmService {
       // The submit-start marker is committed before anything goes out (D-19).
       marked = this.repo.transition(row.id, 'submitting', { submitStartedAt: nowMs }, nowMs);
       if (!marked) throw new AppError('INTERNAL', { reason: 'order left submitting before pay' });
-      const result = await this.payment.pay(req);
+      // Path B saves the signed hash and nonce before the broadcast, so a lost answer can be
+      // checked on chain later (payment.md "제출 시작 표시와 순서").
+      const result = await this.payment.pay({
+        ...req,
+        beforeBroadcast: ({ txHash, nonce }) => {
+          const saved = this.repo.transition(
+            row.id,
+            'submitting',
+            { submitTxHash: txHash, submitNonce: nonce },
+            nowMs,
+          );
+          if (!saved)
+            throw new AppError('INTERNAL', { reason: 'order left submitting before send' });
+        },
+      });
       if (result.ok) {
         this.repo.transition(
           row.id,

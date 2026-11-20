@@ -135,6 +135,7 @@ interface PaymentProvider {
 - 제출 트랜잭션의 영수증이 revert면 그 사유로 위 분류를 따른다.
 - **제출 시작 표시와 순서**: 표시는 체인이나 MAWS에 무엇이든 내보내기 **전에** DB에 커밋한다.
   - 경로 B: nonce 예약 → 서명 → (`submit_tx_hash`, `submit_nonce`, `submit_started_at`)를 DB에 커밋 → 그다음 브로드캐스트.
+    - 코드 (2026-11-21): `PayRequest.beforeBroadcast({ txHash, nonce })`. 경로 B 제공자가 서명한 뒤 브로드캐스트 전에 부르고, confirm이 `submit_tx_hash`, `submit_nonce`를 조건부 UPDATE로 남긴다 (`submit_started_at`은 그보다 먼저 이미 커밋됨). 이 훅이 던지면 브로드캐스트하지 않는다(주문은 `submitting`에 남아 운영자 확인). 목 제공자는 부르지 않는다.
   - 경로 A: `maws_request_id`를 만들어 `submit_started_at`과 함께 DB에 커밋 → 그다음 MAWS 호출.
   - 표시가 없는 `submitting` 주문(시작 시 재확인 포함)은 "제출 전"이다. 근거: 브로드캐스트와 MAWS 호출은 표시 커밋 뒤에만 하므로, 표시 전에 죽었다면 서명된 트랜잭션도 내보내지지 않았다. 이 경우 재시도 가능 `failed`.
   - 표시가 있으면 tx hash 유무와 상관없이 위 "결과 모름" 규칙을 따른다.
