@@ -79,16 +79,17 @@ export const zChatHistoryMessage = z.discriminatedUnion('role', [
 ]);
 export type ChatHistoryMessage = z.infer<typeof zChatHistoryMessage>;
 
-/**
- * GET /chat/history?cursor (tech-spec 3.2). startedAt is the unix ms of the first
- * message shown (the "오늘 오후 12:28" stamp); nextCursor is null on the oldest page.
- */
 /** GET /chat/history query: cursor is the id of the oldest message already shown. */
 export const zChatHistoryQuery = z
   .object({ cursor: z.string().min(1).max(64).optional() })
   .strict();
 export type ChatHistoryQuery = z.infer<typeof zChatHistoryQuery>;
 
+/**
+ * GET /chat/history?cursor (tech-spec 3.2). startedAt is the unix ms of the first
+ * message shown (the "오늘 오후 12:28" stamp), or now when the page is empty;
+ * nextCursor is null on the oldest page.
+ */
 export const zChatHistory = z
   .object({
     startedAt: z.number().int().nonnegative(),

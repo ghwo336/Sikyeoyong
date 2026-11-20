@@ -56,8 +56,10 @@ export class ChatHistoryService {
       else messages.push(message);
     }
     const oldest = pageRows[0];
+    // The stamp is the time of the first message actually shown (unreadable rows are left out).
+    const firstShown = pageRows.find((r) => messages.some((m) => m.id === r.id));
     return {
-      startedAt: oldest?.createdAt ?? nowMs,
+      startedAt: firstShown?.createdAt ?? nowMs,
       messages,
       nextCursor: hasMore && oldest !== undefined ? oldest.id : null,
     };

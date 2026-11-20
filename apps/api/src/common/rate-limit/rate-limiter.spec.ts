@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RateLimiter } from './rate-limiter.js';
+import { RateLimiter, SWEEP_EVERY_MS } from './rate-limiter.js';
 
 const RULE = { limit: 3, windowMs: 60_000 };
 
@@ -29,13 +29,20 @@ describe('RateLimiter', () => {
     expect(r.allow('u1', RULE, 60_001)).toBe(true);
   });
 
-  it('keeps one entry per active key; a key whose window emptied starts fresh', () => {
+  it('sweeps out quiet keys on another key call once their window has passed', () => {
     const r = new RateLimiter();
-    r.allow('a', RULE, 0);
-    r.allow('b', RULE, 0);
-    expect(r.size).toBe(2);
-    r.allow('a', RULE, 120_000); // a's old hit left the window: dropped, then counted anew
-    expect(r.size).toBe(2);
+    for (let i = 0; i < 100; i += 1) r.allow(`u${String(i)}`, RULE, 0);
+    expect(r.size).toBe(100);
+    r.allow('fresh', RULE, RULE.windowMs + 1);
+    expect(r.size).toBe(1);
+  });
+
+  it('never sweeps a key still blocked in its own (longer) window when another rule sweeps', () => {
+    const r = new RateLimiter();
+    const LONG = { limit: 1, windowMs: 10 * 60_000 };
+    r.allow('long', LONG, 0);
+    r.allow('short', RULE, SWEEP_EVERY_MS + 1); // past RULE's window, inside LONG's
+    expect(r.allow('long', LONG, SWEEP_EVERY_MS + 2)).toBe(false);
   });
 
   it('keeps keys apart', () => {

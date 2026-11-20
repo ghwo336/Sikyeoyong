@@ -146,6 +146,52 @@ describe('GET /api/chat/history', () => {
     expect(page.messages).toHaveLength(4);
   });
 
+  it('keeps other users out of later pages too', async () => {
+    const { h, get } = await setup();
+    seedTurns(h, 'u2', 5, 0); // u2 rows are older than all of u1's
+    seedTurns(h, 'u1', 20, 1000); // 40 rows: two pages
+    const first = zChatHistory.parse((await get('u1')).body);
+    const second = zChatHistory.parse((await get('u1', `?cursor=${first.nextCursor ?? ''}`)).body);
+    const ids = [...first.messages, ...second.messages].map((m) => m.id);
+    expect(ids.every((id) => id.startsWith('u1-'))).toBe(true);
+    expect(ids).toHaveLength(40);
+    expect(second.nextCursor).toBeNull();
+  });
+
+  it('pages through rows that share a timestamp without gaps or repeats', async () => {
+    const { h, get } = await setup();
+    // 61 user rows, 7 per millisecond, so page edges fall inside groups of equal created_at.
+    const inserted: string[] = [];
+    for (let i = 0; i < 61; i += 1) {
+      const id = `u1-t${String(i).padStart(3, '0')}`;
+      inserted.push(id);
+      h.db
+        .insert(chatMessages)
+        .values({
+          id,
+          userId: 'u1',
+          role: 'user',
+          contentJson: JSON.stringify({ text: `m${String(i)}` }),
+          clientMessageId: id,
+          createdAt: 5000 + Math.floor(i / 7),
+        })
+        .run();
+    }
+    const seen: string[] = [];
+    let cursor: string | null = '';
+    let pages = 0;
+    while (cursor !== null) {
+      const page = zChatHistory.parse(
+        (await get('u1', cursor === '' ? '' : `?cursor=${cursor}`)).body,
+      );
+      seen.unshift(...page.messages.map((m) => m.id));
+      cursor = page.nextCursor;
+      pages += 1;
+    }
+    expect(pages).toBe(3);
+    expect(seen).toEqual(inserted);
+  });
+
   it('refuses a cursor that is not one of my messages (400), so ids do not leak', async () => {
     const { h, get } = await setup();
     seedTurns(h, 'u1', 1);
