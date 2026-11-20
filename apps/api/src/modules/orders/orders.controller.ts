@@ -15,6 +15,7 @@ import type { SessionUser } from '../auth/auth.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
 import { OrderQuoteService } from './order-quote.service.js';
 import { OrderRatingService } from './order-rating.service.js';
+import { OrderRequoteService } from './order-requote.service.js';
 import { OrderViews } from './order-views.service.js';
 
 /** /api/orders (tech-spec 3.2). HTTP only: the user comes from the session. */
@@ -26,6 +27,7 @@ export class OrdersController {
     private readonly confirms: OrderConfirmService,
     private readonly views: OrderViews,
     private readonly ratings: OrderRatingService,
+    private readonly requotes: OrderRequoteService,
   ) {}
 
   /** A quote for the app's own order button. Never pays (CLAUDE.md rule 3). */
@@ -52,6 +54,19 @@ export class OrdersController {
     @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
   ): Promise<OrderResult> {
     return this.confirms.confirm(user.userId, id);
+  }
+
+  /**
+   * After the owner raised the per-order limit (Blocked, user-flow 12): the order that waited
+   * for it, quoted again with its confirm card. Never pays (CLAUDE.md rule 3).
+   */
+  @Post(':id/requote')
+  @HttpCode(200)
+  requote(
+    @CurrentUser() user: SessionUser,
+    @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
+  ): Promise<CreateOrderResult> {
+    return this.requotes.requote(user.userId, id);
   }
 
   /** Arrived screen taste rating. Moves no money. */

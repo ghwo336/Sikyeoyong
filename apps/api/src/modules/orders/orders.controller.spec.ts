@@ -72,7 +72,7 @@ async function setup(
         .set('X-Requested-With', 'fetch')
         .send(body),
   });
-  return { h, http, as, token: tokens.u1, repo: moduleRef.get(OrdersRepository) };
+  return { h, http, as, token: tokens.u1, tokens, repo: moduleRef.get(OrdersRepository) };
 }
 
 const body = (
@@ -499,5 +499,71 @@ describe('POST /api/orders: clientOrderId', () => {
     expect(lost).toEqual(first);
     expect(h.db.select().from(orders).all()).toHaveLength(1);
     expect(h.db.select().from(approvals).all()).toHaveLength(1);
+  });
+});
+
+describe('POST /api/orders/:id/requote: the waiting order after a per-order raise (user-flow 12)', () => {
+  async function overOrder() {
+    const s = await setup();
+    const over = await s.as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c-over'));
+    const id = zCreateOrderResult.parse(over.body).order.id;
+    const requote = (who: 'u1' | 'u2' = 'u1') =>
+      s
+        .http()
+        .post(`/api/orders/${id}/requote`)
+        .set('Cookie', `sid=${s.tokens[who]}`)
+        .set('X-Requested-With', 'fetch');
+    return { ...s, id, requote };
+  }
+  const raiseTo = (h: DbHandle, won: string) =>
+    h.db
+      .update(agents)
+      .set({ perOrderLimitAokrw: W(won) })
+      .where(eq(agents.id, 'a-u1'))
+      .run();
+
+  it('still over the limit: stays pending_approval, no quote, the approval still waits', async () => {
+    const { h, id, requote } = await overOrder();
+    const res = await requote();
+    expect(res.status).toBe(200);
+    expect(zCreateOrderResult.parse(res.body)).toEqual({
+      order: { id, status: 'pending_approval' },
+    });
+    expect(h.db.select().from(approvals).get()?.status).toBe('pending');
+  });
+
+  it('after the raise: quoted with its confirm card, the approval closed as approved, nothing paid', async () => {
+    const { h, id, requote } = await overOrder();
+    raiseTo(h, '20000');
+    const res = await requote();
+    const r = zCreateOrderResult.parse(res.body);
+    expect(r.order).toEqual({ id, status: 'quoted' });
+    expect(r.quote).toMatchObject({ orderId: id, amount: W('18000'), perOrderLimit: W('20000') });
+    expect(h.db.select().from(approvals).get()?.status).toBe('approved');
+    expect(h.db.select().from(orders).where(eq(orders.id, id)).get()?.status).toBe('quoted');
+    // A second call answers the same card (no new approval, no payment).
+    const again = zCreateOrderResult.parse((await requote()).body);
+    expect(again.order.status).toBe('quoted');
+    expect(h.db.select().from(approvals).all()).toHaveLength(1);
+  });
+
+  it('an expired approval is not reopened', async () => {
+    const { h, id, requote } = await overOrder();
+    raiseTo(h, '20000');
+    vi.setSystemTime(NOW + 600_000);
+    const r = zCreateOrderResult.parse((await requote()).body);
+    expect(r.order.status).toBe('pending_approval');
+    expect(h.db.select().from(orders).where(eq(orders.id, id)).get()?.status).toBe(
+      'pending_approval',
+    );
+  });
+
+  it("another user's order is 404, a signed out call is 401", async () => {
+    const { http, id, requote } = await overOrder();
+    expect((await requote('u2')).status).toBe(404);
+    const signedOut = await http()
+      .post(`/api/orders/${id}/requote`)
+      .set('X-Requested-With', 'fetch');
+    expect(signedOut.status).toBe(401);
   });
 });

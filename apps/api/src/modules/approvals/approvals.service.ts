@@ -93,6 +93,11 @@ export class ApprovalsService {
     return this.repo.findForUser(id, userId);
   }
 
+  /** The order's pending approval row, if any (expired or not; the caller checks expires_at). */
+  pendingForOrder(orderId: string): ApprovalRow | undefined {
+    return this.repo.findPendingByOrder(orderId);
+  }
+
   /** Every pending row of the user, oldest first; the caller expires those past expires_at. */
   listPending(userId: string): ApprovalRow[] {
     return this.repo.listPending(userId);
