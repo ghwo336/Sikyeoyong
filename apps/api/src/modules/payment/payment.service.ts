@@ -21,6 +21,7 @@ export function createPaymentProvider(config: AppConfig): PaymentProvider {
     path,
     createAgent: fail,
     setTransferLimit: fail,
+    bindAgent: fail,
     fund: fail,
     drain: fail,
     freeze: fail,
@@ -31,3 +32,5 @@ export function createPaymentProvider(config: AppConfig): PaymentProvider {
     balanceOf: fail,
   };
 }
+
+export { OWNER_AUTHORITY, createOwnerAuthority, runOwnerAction } from './owner-authority.js';

@@ -143,6 +143,7 @@ interface PaymentProvider {
 - 구현 두 개: `CustodialOwner`(지금, 운영자 키로 서버가 서명, 수탁)와 `PouchOwner`(나중, 사용자 파우치 지갑에 서명을 요청, 비수탁). `OWNER_MODE=custodial|pouch`로 고른다.
 - `PouchOwner`에서는 서버가 서명하지 못한다. 서버는 트랜잭션을 만들어 웹에 넘기고, 웹이 파우치 SDK로 사용자 재인증 후 서명한다. 그래서 소유자 일을 하는 API는 지금부터 "준비(prepare)"와 "결과 반영(confirm)" 두 단계로 나눠 둔다. custodial에서는 서버가 두 단계를 바로 이어서 한다.
 - 주문, 대화, 화면 코드는 어느 구현인지 몰라야 한다.
+- 코드 (2026-11-20): 타입은 `packages/shared/src/payment/owner.ts`(`OwnerAction`, `PreparedOwnerAction`, `OwnerAuthority`). 구현은 `modules/payment/owner-authority.ts`의 `CustodialOwner`(prepare가 signer `server`, confirm이 결제 경로로 바로 실행)와 `PouchOwner`(SDK 전에는 모든 호출이 `INTERNAL`, Q-30, 서버 서명 없음). 다른 모듈은 `payment.service`의 `OWNER_AUTHORITY` 토큰과 `runOwnerAction`(server면 바로 confirm, user면 prepared를 돌려줌)으로만 부른다. 부화는 이미 이 포트로 `bind`와 `setTransferLimit`을 한다. `PaymentProvider`에 컨트랙트 `bindAgent`를 더했다 (흉내 체인은 기록만, 묶지 않은 에이전트를 거절하지는 않는다). 아직: pouch의 prepared를 DB에 두고 웹이 서명해 돌려주는 confirm API, 멈춤과 해제, 회수, 충전 API.
 
 ## 테스트 기준
 - 경로별 통합 테스트(테스트넷): 정상 주문, 건당 초과, 30일 초과(데모 프로필), 미등록 가게, 동결된 에이전트, 같은 orderRef 두 번.

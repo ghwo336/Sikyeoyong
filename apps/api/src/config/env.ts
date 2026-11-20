@@ -57,6 +57,8 @@ const schema = z.object({
   CONFIRMATIONS: int(1).default(1),
   /** mock: in-memory chain for development and tests, refused in production. */
   PAYMENT_PATH: z.enum(['A', 'B', 'C', 'mock']).default('B'),
+  /** D-24: custodial now (the operator owns agents); pouch once the Pouch embedded SDK ships. */
+  OWNER_MODE: z.enum(['custodial', 'pouch']).default('custodial'),
   WAAS_AUTH_TOKEN: optionalText,
   AGENT_KEY_ENCRYPTION_KEY: optionalText,
   AGENT_FLOAT_MULTIPLIER: int(1).default(2),
@@ -77,6 +79,7 @@ export interface AppConfig {
   readonly policy: PolicyConfig;
   readonly payment: {
     readonly path: 'A' | 'B' | 'C' | 'mock';
+    readonly ownerMode: 'custodial' | 'pouch';
     readonly floatMultiplier: bigint;
     readonly submittingAlertMs: number;
     readonly confirmations: number;
@@ -169,6 +172,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
     policy: getPolicy(env.POLICY_PROFILE),
     payment: {
       path: env.PAYMENT_PATH,
+      ownerMode: env.OWNER_MODE,
       floatMultiplier: BigInt(env.AGENT_FLOAT_MULTIPLIER),
       submittingAlertMs: env.SUBMITTING_ALERT_MS,
       confirmations: env.CONFIRMATIONS,

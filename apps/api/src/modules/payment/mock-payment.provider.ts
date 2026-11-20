@@ -74,6 +74,12 @@ export class MockPaymentProvider implements PaymentProvider {
     return Promise.resolve(this.tx());
   }
 
+  /** Recorded only: the mock does not refuse unbound agents (AgentNotBound is outside the revert table). */
+  bindAgent(agent: AgentWallet): Promise<Hex> {
+    this.wallet(agent.address);
+    return Promise.resolve(this.tx());
+  }
+
   fund(agent: AgentWallet, amount: bigint): Promise<Hex> {
     if (amount <= 0n) return Promise.reject(badAmount('fund amount must be positive'));
     this.wallet(agent.address).balance += amount;

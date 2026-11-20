@@ -49,6 +49,8 @@ export interface PaymentProvider {
   createAgent(input: { readonly userId: string; readonly name: string }): Promise<AgentWallet>;
   /** 8004 setMetadata("TransferLimit"), before the agent may order (payment.md MUST). */
   setTransferLimit(agent: AgentWallet, amount: bigint): Promise<Hex>;
+  /** SikyeoyongOrders.bindAgent: links the agent to its owner on the contract (operator only in phase 1). */
+  bindAgent(agent: AgentWallet): Promise<Hex>;
   fund(agent: AgentWallet, amount: bigint): Promise<Hex>;
   drain(agent: AgentWallet): Promise<Hex[]>;
   freeze(agent: AgentWallet): Promise<Hex[]>;
@@ -62,3 +64,4 @@ export interface PaymentProvider {
   /** aokrw balance of a wallet (float top-up math). */
   balanceOf(address: Hex): Promise<bigint>;
 }
+export * from './owner.js';

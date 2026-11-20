@@ -1,16 +1,18 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { aokrwToString, type PaymentProvider } from '@sikyeoyong/shared';
+import { aokrwToString, type OwnerAuthority, type PaymentProvider } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
-import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
+import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
 import { AgentsRepository } from './agents.repository.js';
 
 /**
  * Hatching (user-flow 4, payment.md): create the wallet and wait for the 8004
- * registration, then write the TransferLimit, and only then mark the agent
- * ACTIVE (payment.md MUST "TransferLimit 먼저"). Each step is saved so the
- * screen can show it; a failure parks the agent at `failed` for a retry.
+ * registration, then, as the owner, bind the agent to the contract and write
+ * the TransferLimit, and only then mark the agent ACTIVE (payment.md MUST
+ * "TransferLimit 먼저"). Owner work goes through OwnerAuthority (D-24), so this
+ * code does not know whether the operator (custodial) or the user's wallet
+ * (pouch) signs. Each step is saved; a failure parks the agent at `failed`.
  */
 @Injectable()
 export class AgentSetupService {
@@ -20,6 +22,7 @@ export class AgentSetupService {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
+    @Inject(OWNER_AUTHORITY) private readonly owner: OwnerAuthority,
     private readonly repo: AgentsRepository,
   ) {}
 
@@ -55,14 +58,22 @@ export class AgentSetupService {
       }
       this.repo.setStep(agentId, 'limit');
       const amount = this.config.policy.perOrderLimitAokrw[agent.level];
-      const txHash = await this.payment.setTransferLimit(
-        {
-          agentRowId: agentId,
-          address: wallet as `0x${string}`,
-          ownerAddress: owner as `0x${string}`,
-        },
+      const wallet_ = {
+        agentRowId: agentId,
+        address: wallet as `0x${string}`,
+        ownerAddress: owner as `0x${string}`,
+      };
+      const bound = await runOwnerAction(this.owner, { kind: 'bind', agent: wallet_ });
+      const limited = await runOwnerAction(this.owner, {
+        kind: 'setTransferLimit',
+        agent: wallet_,
         amount,
-      );
+      });
+      if (!bound.done || !limited.done) {
+        // The user's wallet must sign (pouch). Hatching waits for that confirm; not wired before Q-30.
+        throw new Error('owner signature needed before the agent can be ACTIVE');
+      }
+      const txHash = limited.txHashes[0] ?? '';
       this.repo.activate(agentId, {
         id: uuidv7(),
         level: agent.level,

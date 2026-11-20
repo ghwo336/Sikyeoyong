@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { type PaymentProvider, zAgentSetupView } from '@sikyeoyong/shared';
+import { type AgentWallet, type PaymentProvider, zAgentSetupView } from '@sikyeoyong/shared';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
@@ -116,12 +116,13 @@ describe('POST /api/agents and hatching (user-flow 4)', () => {
 
   it('shows the step that failed and stays not ACTIVE, then a retry finishes it', async () => {
     let failLimit = true;
-    const { h, as, settle } = await setup((real) => ({
-      ...real,
-      createAgent: real.createAgent.bind(real),
-      setTransferLimit: (a, amount) =>
-        failLimit ? Promise.reject(new Error('rpc down')) : real.setTransferLimit(a, amount),
-    }));
+    const { h, as, settle } = await setup((real) =>
+      // Keep every real method (prototype included) and replace only the TransferLimit write.
+      Object.assign(Object.create(real) as PaymentProvider, {
+        setTransferLimit: (a: AgentWallet, amount: bigint) =>
+          failLimit ? Promise.reject(new Error('rpc down')) : real.setTransferLimit(a, amount),
+      }),
+    );
     await as('u1').post('/api/agents', { dragonName: '용이', dragonSpecies: 'water' });
     await settle();
     expect(zAgentSetupView.parse((await as('u1').get('/api/agents/me')).body)).toEqual({

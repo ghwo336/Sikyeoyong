@@ -48,3 +48,5 @@ children: []
 ## 관련 문서
 - `docs/tech-spec.md` "8. 인프라"
 - `security.md`, `auth.md`
+
+- `OWNER_MODE=custodial|pouch` (D-24): 지금은 custodial. pouch는 파우치 SDK가 나온 뒤에만 켠다.

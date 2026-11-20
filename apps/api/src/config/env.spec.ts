@@ -35,6 +35,7 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
     expect(c.demo).toEqual({ enabled: false, bypassServerLimit: false });
     expect(c.payment).toEqual({
       path: 'B',
+      ownerMode: 'custodial',
       floatMultiplier: 2n,
       submittingAlertMs: 600_000,
       confirmations: 1,
@@ -104,6 +105,7 @@ describe('loadConfig rejects bad values without leaking them', () => {
     ['POLICY_PROFILE', 'prod'],
     ['OKRW_DENOM', 'X'],
     ['VERIFY_MODE', 'sms'],
+    ['OWNER_MODE', 'self'],
     ['MAROO_RPC_URL', 'http://'],
   ])('%s=%s', (name, value) => {
     const r = codeAndVars(() => loadConfig({ [name]: value }));
