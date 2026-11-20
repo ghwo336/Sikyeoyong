@@ -194,6 +194,21 @@ describe('StartContainer', () => {
   });
 });
 
+describe('StartContainer when the start fails', () => {
+  it('says so in one line instead of doing nothing, and the button works again', async () => {
+    login.mockRejectedValueOnce(new Error('POUCHI_EMBEDDED_REQUEST_INVALID'));
+    wrap(<StartContainer />);
+    await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('시작하지 못했어요');
+    expect(push).not.toHaveBeenCalled();
+    login.mockResolvedValueOnce(undefined);
+    await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/');
+    });
+  });
+});
+
 describe('StartContainer and the me cache', () => {
   it('a login drops the signed-out answer kept from before, so the front door asks again', async () => {
     login.mockResolvedValue(undefined);

@@ -1,6 +1,6 @@
 'use client';
 
-import { EmailStart, Egg, Hero, ScreenTitle } from '@sikyeoyong/ui';
+import { EmailStart, Egg, ErrorLine, Hero, ScreenTitle } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useLogin } from '../hooks/useSignup';
 
@@ -21,6 +21,10 @@ export function StartContainer() {
           description={'주인님이 정한 한도 안에서만 결제하는\n배달 비서예요. 카드 번호는 몰라요.'}
         />
       </Hero>
+      {/* A cancelled or refused start must say so; a button that does nothing looks broken. */}
+      {login.isError ? (
+        <ErrorLine align="center">시작하지 못했어요. 다시 눌러 주세요.</ErrorLine>
+      ) : null}
       <EmailStart
         onStart={() => {
           login.mutate(undefined, {

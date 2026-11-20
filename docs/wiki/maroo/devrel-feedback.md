@@ -153,5 +153,6 @@ children: []
 - 상태: 열림
 - 종류: 문서 불일치
 - 발견: 2026-11-20 (spikes/S14). cli.md는 테스트 체인에서 `http://localhost:5173` 같은 루프백 출처를 허용한다고 쓴다. sdk/embedded-start.md는 "`http://localhost`는 운영 중인 Pouchi SDK와 연결하는 배포 경로가 아니에요"라며 HTTPS 배포를 먼저 하라고 쓴다.
+- 확인 (2026-11-20, 시켜용 실제 연동): beta.8 웹 SDK `pouchiEmbedded`는 콜백 주소가 `https:`가 아니면 금고를 열기 전에 `POUCHI_EMBEDDED_REQUEST_INVALID`를 던진다(`pouchi-embedded.js` prewarmOnce, mountEmbedded). 등록은 `http://localhost:3000`으로 되지만 SDK가 쓸 수 없다. 오류 이름만으로는 원인(https)을 알 수 없다.
 - 영향: 로컬 개발로 시작하려는 개발자가 어느 쪽을 믿어야 할지 모른다.
 - 제안: 테스트넷 로컬 개발이 되는 범위(로그인만, 서명까지 등)를 한 곳에 적기.
