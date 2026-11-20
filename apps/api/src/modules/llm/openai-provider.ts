@@ -156,13 +156,15 @@ export class OpenAiProvider implements LlmProvider {
       role: 'assistant',
       model: this.options.model,
       content,
+      // A cut-off or filtered turn wins over any tool call in it, so the runtime's guards hold:
+      // max_tokens never runs a half-written tool input, refusal drops the turn's tool calls.
       stop_reason:
-        finish === 'tool_calls' || calls.size > 0
-          ? 'tool_use'
-          : finish === 'length'
-            ? 'max_tokens'
-            : finish === 'content_filter'
-              ? 'refusal'
+        finish === 'length'
+          ? 'max_tokens'
+          : finish === 'content_filter'
+            ? 'refusal'
+            : finish === 'tool_calls' || calls.size > 0
+              ? 'tool_use'
               : 'end_turn',
       stop_sequence: null,
       usage: {

@@ -16,7 +16,6 @@ import {
 
 type LimitedKind = Exclude<ToolKind, 'read'>;
 
-/** Who is talking: always from the login session, never from model output (D-21). */
 /**
  * CLAUDE.md 1: no em dash or en dash on screen, whatever a model writes. Replaced as the words
  * stream, so the saved turn and its replay show the same text.
@@ -25,6 +24,7 @@ export function screenText(text: string): string {
   return text.replace(/\s*[\u2013\u2014]\s*/g, ', ');
 }
 
+/** Who is talking: always from the login session, never from model output (D-21). */
 export interface SessionContext {
   readonly userId: string;
 }

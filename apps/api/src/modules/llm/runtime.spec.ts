@@ -386,6 +386,19 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     expect(provider.requests).toHaveLength(0);
   });
 
+  it('no em dash or en dash leaves the runtime, whatever the model streams (CLAUDE.md 1)', async () => {
+    const em = String.fromCharCode(0x2014);
+    const en = String.fromCharCode(0x2013);
+    const { events } = await run(
+      [{ blocks: [{ text: `국밥 ${em} 돼지국밥 9,000${en}9,500원` }] }],
+      '점심',
+    );
+    const said = events.flatMap((e) => (e.type === 'token' ? [e.text] : [])).join('');
+    expect(said).toBe('국밥, 돼지국밥 9,000, 9,500원');
+    expect(said).not.toContain(em);
+    expect(said).not.toContain(en);
+  });
+
   it('never runs a tool cut off at max_tokens', async () => {
     const h = handlers();
     const provider = new ScriptedProvider([

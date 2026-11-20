@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import type OpenAI from 'openai';
 import { describe, expect, it, vi } from 'vitest';
 import { type ChatClient, OpenAiProvider, toChatMessages } from './openai-provider.js';
+import { AgentRuntime } from './runtime.js';
 import { toChatTools } from './tools/openai-tools.js';
 
 type Chunk = OpenAI.Chat.Completions.ChatCompletionChunk;
@@ -134,6 +135,55 @@ describe('OpenAiProvider (D-30)', () => {
       () => undefined,
     );
     expect(m.stop_reason).toBe(stop);
+  });
+});
+
+describe('OpenAiProvider cut-off and filtered turns keep the runtime guards', () => {
+  const withCalls = (finish: string) =>
+    fake([
+      chunk({
+        tool_calls: [
+          { index: 0, id: 'a', function: { name: 'get_menu', arguments: '{"merchantId":"m1"}' } },
+        ],
+      }),
+      chunk({
+        tool_calls: [
+          { index: 1, id: 'b', function: { name: 'place_order', arguments: '{"merch' } },
+        ],
+      }),
+      chunk({}, finish),
+    ]).client;
+
+  it.each([
+    ['length', 'max_tokens'],
+    ['content_filter', 'refusal'],
+  ])('finish %s with tool calls is still %s', async (finish, stop) => {
+    const m = await new OpenAiProvider(withCalls(finish), { model: 'm', effort: 'low' }).turn(
+      request,
+      () => undefined,
+    );
+    expect(m.stop_reason).toBe(stop);
+  });
+
+  it('through the real runtime a cut-off turn runs no tool at all (not even the finished one)', async () => {
+    const getMenu = vi.fn(() => Promise.resolve({}));
+    const placeOrder = vi.fn(() => Promise.resolve({ orderId: 'o' }));
+    const provider = new OpenAiProvider(withCalls('length'), { model: 'm', effort: 'low' });
+    const runtime = new AgentRuntime(provider, {
+      get_budget: vi.fn(),
+      get_order_history: vi.fn(),
+      get_context: vi.fn(),
+      recommend_merchants: vi.fn(),
+      get_menu: getMenu,
+      place_order: placeOrder,
+      request_owner_approval: vi.fn(),
+      propose_limit_change: vi.fn(),
+    });
+    await expect(
+      runtime.run({ ctx: { userId: 'u1' }, history: [], userText: '주문' }, () => undefined),
+    ).rejects.toThrow();
+    expect(getMenu).not.toHaveBeenCalled();
+    expect(placeOrder).not.toHaveBeenCalled();
   });
 });
 

@@ -207,6 +207,7 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 영향: CLAUDE.md 절대 규칙 3(도구 목록), tech-spec 2.4(ChatEvent `limit_change_card`), 3.2(BudgetView `budgetOptions`), 3.3(도구 정의)과 9.2, agent-runtime.md, security.md, LimitChangeCard.md, open-questions Q-29, D-17(도구 목록 추가는 D-21).
 
 ## D-22 데모 LLM 모델: Claude Opus 5.5 하나 (2026-11-19, 호재)
+- (2026-11-20 D-30으로 바뀜: 공급자는 `LLM_PROVIDER` 설정, 기본은 Claude. 데모는 OpenAI로 돌릴 수 있다)
 - 데모 기간에는 용이 대화를 포함한 모든 LLM 호출을 Claude Opus 5.5(`claude-opus-5-5`) 하나로 한다. 모델 이름은 설정값(`LLM_MODEL`)이라 코드에 적지 않는다.
 - 호출마다 바꾸는 것은 모델이 아니라 생각 깊이(`LLM_EFFORT`, 기본 `medium`. 2026-11-20 D-26으로 코드 기본값을 `low`로 바꿨다)다. 모델을 섞으면 프롬프트 캐시를 같이 못 쓰고, 공식 안내도 여러 모델로 나누기 전에 좋은 모델의 낮은 effort를 먼저 재 보라고 한다.
 - 고정된 시스템 프롬프트와 도구 목록을 캐시하고, 강제 tool_choice는 쓰지 않는다 (Opus 5.5는 400). 도구는 `strict: true`.
