@@ -34,7 +34,7 @@ async function setup(override?: (p: PaymentProvider) => PaymentProvider, owner?:
   const h = openDb(':memory:');
   runMigrations(h.db);
   for (const id of ['u1', 'u2', 'u3']) {
-    h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: '1', createdAt: 1 }).run();
+    h.db.insert(users).values({ id, nickname: id, myPeriodicLimitAokrw: '1', createdAt: 1 }).run();
   }
   // D-16: u1 and u2 passed the identity check; u3 has not.
   for (const id of ['u1', 'u2']) {
@@ -88,7 +88,7 @@ async function setup(override?: (p: PaymentProvider) => PaymentProvider, owner?:
 }
 
 describe('POST /api/agents and hatching (user-flow 4)', () => {
-  it('creates a PENDING dragon, hatches it and records the level-1 TransferLimit before ACTIVE', async () => {
+  it('creates a PENDING dragon, hatches it and records the first TransferLimit (policy.perOrderLimit.initial, D-31) before ACTIVE', async () => {
     const { h, as, settle } = await setup();
     const res = await as('u1').post('/api/agents', {
       dragonName: ' 봄봄 ',
@@ -112,10 +112,11 @@ describe('POST /api/agents and hatching (user-flow 4)', () => {
       status: 'ACTIVE',
       setupStep: 'done',
       paymentPath: 'mock',
+      perOrderLimitAokrw: '10000000000000000000000',
     });
     expect(row?.walletAddress).toMatch(/^0x[0-9a-f]{40}$/);
     expect(h.db.select().from(agentLimitHistory).all()).toEqual([
-      expect.objectContaining({ level: 1, transferLimitAokrw: '10000000000000000000000' }),
+      expect.objectContaining({ transferLimitAokrw: '10000000000000000000000' }),
     ]);
   });
 

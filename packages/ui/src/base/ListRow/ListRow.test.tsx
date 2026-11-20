@@ -49,7 +49,7 @@ describe('ListRow (ListRow.md 테스트 기준)', () => {
 
   it("draws the Wallet arrow for 'chevron'", () => {
     const { container } = render(
-      <ListRow label="용이 신분증" value="레벨 1" trailing="chevron" onPress={vi.fn()} />,
+      <ListRow label="용이 신분증" value="한 번에 10,000원" trailing="chevron" onPress={vi.fn()} />,
     );
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('aria-hidden', 'true');

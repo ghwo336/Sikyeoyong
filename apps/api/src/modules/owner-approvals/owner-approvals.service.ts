@@ -53,8 +53,8 @@ export class OwnerApprovalsService {
   /**
    * Yes: a new store is remembered (allowed_merchants), a budget overrun is allowed
    * for this order's amount (the approved row itself), and the order is quoted again.
-   * A level raise is not done here: it changes the chain TransferLimit and goes through
-   * POST /agents/me/level with this approval (tech-spec 3.2).
+   * A per-order raise is not done here: it changes the chain TransferLimit and goes through
+   * PUT /agents/me/limits (tech-spec 3.2, D-31).
    */
   async approve(userId: string, id: string, nowMs: number = Date.now()): Promise<ApprovalDecision> {
     const a = this.pendingOrAnswer(userId, id, nowMs);
@@ -62,7 +62,7 @@ export class OwnerApprovalsService {
     if (a.row.reason === 'OVER_LEVEL_LIMIT') {
       throw new AppError('VALIDATION_FAILED', {
         public: {
-          issues: [{ path: 'id', message: 'raise the level with POST /agents/me/level' }],
+          issues: [{ path: 'id', message: 'raise the per-order limit with PUT /agents/me/limits' }],
         },
       });
     }

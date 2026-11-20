@@ -20,7 +20,14 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { agents, allowedMerchants, approvals, menus, orders } from '../../db/schema/index.js';
+import {
+  agents,
+  allowedMerchants,
+  approvals,
+  menus,
+  orders,
+  users,
+} from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AuthService } from '../auth/auth.service.js';
@@ -241,7 +248,7 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
   it('does not pay a pending_approval order', async () => {
     const { payment, quote, confirm, row } = await setup();
     const pay = vi.spyOn(payment, 'pay');
-    const id = await quote('c1', 2); // 18,000 over the level
+    const id = await quote('c1', 2); // 18,000 over the per-order limit
     const res = zOrderResult.parse((await confirm(id)).body);
     expect(res.order).toMatchObject({ status: 'pending_approval', dragonMood: 'worried' });
     expect(pay).not.toHaveBeenCalled();
@@ -306,7 +313,7 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
   it('a chain refusal at preflight that asks the owner goes to pending_approval with its approval row', async () => {
     const { h, payment, quote, confirm, row } = await setup({ limitWon: '5000' });
     const pay = vi.spyOn(payment, 'pay');
-    const id = await quote(); // 9,000 is within the server's level 1 (10,000), over the chain's 5,000
+    const id = await quote(); // 9,000 is within the server's per-order limit (10,000), over the chain's 5,000
     const res = zOrderResult.parse((await confirm(id)).body);
     expect(res.order.status).toBe('pending_approval');
     expect(pay).not.toHaveBeenCalled();
@@ -346,7 +353,13 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
   );
 
   it('the 30-day cap is checked again at the press: over it fails retryably with no top-up or payment', async () => {
-    const { payment, quote, confirm, chainUsed } = await setup();
+    const { h, payment, quote, confirm, chainUsed } = await setup();
+    // The owner's limit is the chain cap, so the server leaves the 30-day check to the chain (D-31).
+    h.db
+      .update(users)
+      .set({ myPeriodicLimitAokrw: W('500000') })
+      .where(eq(users.id, 'u1'))
+      .run();
     const fund = vi.spyOn(payment, 'fund');
     const pay = vi.spyOn(payment, 'pay');
     const id = await quote();
@@ -416,27 +429,13 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
   });
 });
 
-describe('confirm: the personal budget and the owner approval', () => {
-  it('re-checks the budget at the press; an approval for exactly this amount lets it pay', async () => {
-    const { h, payment, quote, confirm, row } = await setup();
+describe('confirm: the owner 30-day limit and the owner approval', () => {
+  it('re-checks the owner 30-day limit at the press (chain window); an approval for exactly this amount lets it pay', async () => {
+    const { h, payment, quote, confirm, row, chainUsed } = await setup();
     const pay = vi.spyOn(payment, 'pay');
     const id = await quote();
-    // Spent elsewhere after the quote: 292,000 + 9,000 > 300,000.
-    h.db
-      .insert(orders)
-      .values({
-        id: 'p1',
-        orderRef: `0x${'1'.repeat(64)}`,
-        userId: 'u1',
-        agentId: 'a-u1',
-        merchantId: 'm1',
-        amountAokrw: W('292000'),
-        itemsJson: '[]',
-        status: 'paid',
-        createdAt: NOW,
-        updatedAt: NOW,
-      })
-      .run();
+    // Spent elsewhere after the quote, in the chain's 30-day window: 292,000 + 9,000 > 300,000.
+    chainUsed.value = A('292000'); // the chain window after the quote
     expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('pending_approval');
     expect(h.db.select().from(approvals).get()?.reason).toBe('OVER_PERSONAL_BUDGET');
     // The owner approves (the approvals API's job, done by hand here) and the order is quoted again.
@@ -448,23 +447,9 @@ describe('confirm: the personal budget and the owner approval', () => {
   });
 
   it('an approval for another amount does not count', async () => {
-    const { h, quote, confirm } = await setup();
+    const { h, quote, confirm, chainUsed } = await setup();
     const id = await quote();
-    h.db
-      .insert(orders)
-      .values({
-        id: 'p1',
-        orderRef: `0x${'1'.repeat(64)}`,
-        userId: 'u1',
-        agentId: 'a-u1',
-        merchantId: 'm1',
-        amountAokrw: W('292000'),
-        itemsJson: '[]',
-        status: 'paid',
-        createdAt: NOW,
-        updatedAt: NOW,
-      })
-      .run();
+    chainUsed.value = A('292000'); // the chain window after the quote
     h.db
       .insert(approvals)
       .values({

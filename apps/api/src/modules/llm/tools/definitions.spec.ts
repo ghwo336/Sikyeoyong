@@ -1,5 +1,5 @@
 import { transformJSONSchema } from '@anthropic-ai/sdk/lib/transform-json-schema';
-import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS } from '@sikyeoyong/shared';
+import { LIMIT_FIELDS } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import { TOOL_DEFINITIONS, TOOL_INPUTS, TOOL_KIND } from './definitions.js';
 
@@ -34,15 +34,23 @@ describe('LLM tool whitelist', () => {
     ]);
   });
 
-  it('takes no amount, address or wallet field in any tool', () => {
+  it('takes no paid amount, address or wallet field in any tool', () => {
     const fields = TOOL_DEFINITIONS.flatMap((t) =>
       Object.keys((t.input_schema.properties ?? {}) as Record<string, unknown>),
     );
-    for (const f of fields.filter((x) => x !== 'maxPriceOkrw')) {
+    const known = ['maxPriceOkrw', 'amountOkrw'];
+    for (const f of fields.filter((x) => !known.includes(x))) {
       expect(f).not.toMatch(/amount|aokrw|okrw|address|wallet|to$|value|price/i);
     }
-    // maxPriceOkrw is a search filter for recommendations, not money that moves.
-    expect(fields.filter((f) => /okrw/i.test(f))).toEqual(['maxPriceOkrw']);
+    // maxPriceOkrw is a search filter for recommendations; amountOkrw is the limit card's asked
+    // amount (D-31), shown on a card only and range-checked by the server. Neither moves money.
+    expect(fields.filter((f) => /okrw/i.test(f))).toEqual(known);
+    const owner = TOOL_DEFINITIONS.find((t) =>
+      Object.keys((t.input_schema.properties ?? {}) as Record<string, unknown>).includes(
+        'amountOkrw',
+      ),
+    );
+    expect(owner?.name).toBe('propose_limit_change');
   });
 
   it('is strict and closed: every schema forbids extra fields', () => {
@@ -61,11 +69,28 @@ describe('LLM tool whitelist', () => {
     },
   );
 
-  it('keeps the card enums in step with shared policy', () => {
+  it('keeps the card field enum in step with shared LIMIT_FIELDS (D-31)', () => {
     const props = TOOL_DEFINITIONS.find((t) => t.name === 'propose_limit_change')?.input_schema
-      .properties as Record<string, { enum: unknown[] }>;
-    expect(props.targetLevel?.enum).toEqual([...AGENT_LEVELS]);
-    expect(props.budgetOption?.enum).toEqual([...MONTHLY_BUDGET_OPTION_IDS]);
+      .properties as Record<string, { enum?: unknown[] }>;
+    expect(props.field?.enum).toEqual([...LIMIT_FIELDS]);
+    expect(Object.keys(props)).toEqual(['field', 'amountOkrw']);
+  });
+
+  it('turns the limit card amount into aokrw bigint before a handler sees it (D-31)', () => {
+    const card = TOOL_INPUTS.propose_limit_change;
+    expect(card.parse({ field: 'perOrder', amountOkrw: 45_000 })).toEqual({
+      field: 'perOrder',
+      amountAokrw: 45_000n * OKRW,
+    });
+    for (const bad of [
+      { field: 'perOrder', amountOkrw: 1.5 },
+      { field: 'perOrder', amountOkrw: -1 },
+      { field: 'monthlyBudget', amountOkrw: 10_000 },
+      { field: 'perOrder', targetLevel: 3 },
+      { field: 'perOrder', amountOkrw: 10_000, toAokrw: '1' },
+    ]) {
+      expect(card.safeParse(bad).success, JSON.stringify(bad)).toBe(false);
+    }
   });
 
   it('turns the whole-won price filter into aokrw bigint before a handler sees it', () => {

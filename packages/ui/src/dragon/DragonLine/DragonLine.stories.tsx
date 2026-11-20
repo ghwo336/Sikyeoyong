@@ -49,7 +49,23 @@ export const Greeting: Story = {
   args: {
     layout: 'greeting',
     mood: 'default',
-    text: '안녕하세용!\n용이예용. 이번 달엔 얼마까지 시킬까용?',
+    text: '안녕하세용!\n용이예용. 얼마까지 맡겨 줄래용?',
+  },
+};
+
+/** Budget.dc.html (D-31): 한 번에 쓸 돈에 따라 자라는 용이 (1단계 80, 2단계 92, 3단계 104와 날개) */
+export const GreetingGrows: Story = {
+  render: (args) => (
+    <div style={{ display: 'grid', gap: 16 }}>
+      {([1, 2, 3] as const).map((stage) => (
+        <DragonLine key={stage} {...args} stage={stage} />
+      ))}
+    </div>
+  ),
+  args: {
+    layout: 'greeting',
+    mood: 'default',
+    text: '안녕하세용!\n용이예용. 얼마까지 맡겨 줄래용?',
   },
 };
 

@@ -3,7 +3,7 @@
 import { startSession } from '../../../lib/session/entry';
 import type { DragonSpecies } from '@sikyeoyong/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type AokrwString } from '../../../lib/api';
+import { api } from '../../../lib/api';
 import { hatchPollInterval } from '../hatch';
 
 /** Sign-up settings: which identity check, how much trial allowance (D-16). */
@@ -67,15 +67,6 @@ export function useRetryAgentSetup() {
   return useMutation({
     mutationFn: () => api.retryAgentSetup(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['agent-setup'] }),
-  });
-}
-
-/** Budget: save this month's budget. */
-export function useSetMonthlyBudget() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (amount: AokrwString) => api.setMonthlyBudget(amount),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['budget'] }),
   });
 }
 

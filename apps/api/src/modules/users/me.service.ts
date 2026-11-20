@@ -24,8 +24,7 @@ export class MeService {
     return {
       dragonName: agent.dragonName,
       dragonSpecies: agent.dragonSpecies,
-      level: agent.level,
-      perOrderLimit: aokrwToString(this.config.policy.perOrderLimitAokrw[agent.level]),
+      perOrderLimit: aokrwToString(agent.perOrderLimitAokrw),
       custodial: this.config.payment.ownerMode === 'custodial',
     };
   }

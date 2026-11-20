@@ -1,6 +1,6 @@
 'use client';
 
-import { levelWithRo } from '@sikyeoyong/shared';
+import type { LimitField } from '@sikyeoyong/shared';
 import { AmountChange } from '../../base/AmountChange';
 import { Button } from '../../base/Button';
 import { DetailRows } from '../../base/DetailRows';
@@ -10,7 +10,8 @@ import { Icon } from '../../base/Icon';
 import { ActionPair } from '../../base/ActionPair';
 import { ErrorLine } from '../../base/ErrorLine';
 
-export type LimitField = 'perOrder' | 'monthlyBudget';
+// The field list is shared with the chat card the server sends (LimitChangeCardView, D-31).
+export type { LimitField };
 export type LimitChangeStatus = 'idle' | 'confirming' | 'failed';
 
 export interface LimitChangeRow {
@@ -24,11 +25,9 @@ export interface LimitChangeCardProps {
   /** aokrw before and after. */
   readonly from: bigint;
   readonly to: bigint;
-  readonly levelFrom?: number;
-  readonly levelTo?: number;
   /** Raising needs Face ID (or the device lock) first; lowering does not. */
   readonly needsReauth: boolean;
-  /** Extra lines under the change ("30일 한도", "500,000원 그대로"). */
+  /** Extra lines under the change ("30일에 쓸 돈", "300,000원 그대로"). */
   readonly rows?: readonly LimitChangeRow[];
   /** Asks the parent to reauth and change. Only the button calls it, never the chat. */
   readonly onConfirm: () => void;
@@ -37,8 +36,8 @@ export interface LimitChangeCardProps {
 }
 
 const FIELD_LABEL: Record<LimitField, string> = {
-  perOrder: '한 번에 쓸 수 있는 돈',
-  monthlyBudget: '이번 달 배달 예산',
+  perOrder: '한 번에 쓸 돈',
+  myPeriodic: '30일에 쓸 돈',
 };
 
 /** Shows a limit change asked for in words, before and after, with a confirm button. */
@@ -46,8 +45,6 @@ export function LimitChangeCard({
   field,
   from,
   to,
-  levelFrom,
-  levelTo,
   needsReauth,
   rows,
   onConfirm,
@@ -58,13 +55,7 @@ export function LimitChangeCard({
   // One press changes once; after a failure it can be pressed again.
   const confirm = useSubmitLock(confirming, onConfirm);
 
-  const showLevel = levelFrom !== undefined && levelTo !== undefined && levelFrom !== levelTo;
-  const detailRows = [
-    ...(showLevel
-      ? [{ label: '레벨', value: `${String(levelFrom)}에서 ${levelWithRo(levelTo)}` }]
-      : []),
-    ...(rows ?? []),
-  ];
+  const detailRows = rows ?? [];
   return (
     <section className={styles.card} aria-label="한도 바꾸기">
       <p className={styles.title}>한도 바꾸기</p>

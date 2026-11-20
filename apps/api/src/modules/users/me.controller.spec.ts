@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { zBudgetView, zMeView, zSignupConfig, zUserView } from '@sikyeoyong/shared';
+import { zMeView, zSignupConfig } from '@sikyeoyong/shared';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
@@ -13,7 +13,6 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
-import { BudgetModule } from '../budget/budget.module.js';
 import { UsersModule } from './users.module.js';
 
 // Amounts written by hand: N won = N * 10^18 aokrw.
@@ -32,11 +31,11 @@ async function setup(env: Record<string, string> = {}) {
   runMigrations(h.db);
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: W('300000'), createdAt: 1 })
+    .values({ id: 'u1', nickname: '주인님', myPeriodicLimitAokrw: W('300000'), createdAt: 1 })
     .run();
   h.db
     .insert(users)
-    .values({ id: 'u2', nickname: '새 주인', monthlyBudgetAokrw: W('300000'), createdAt: 1 })
+    .values({ id: 'u2', nickname: '새 주인', myPeriodicLimitAokrw: W('300000'), createdAt: 1 })
     .run();
   h.db
     .insert(agents)
@@ -46,11 +45,11 @@ async function setup(env: Record<string, string> = {}) {
       dragonName: '봄봄',
       dragonSpecies: 'star',
       paymentPath: 'B',
-      level: 3,
+      perOrderLimitAokrw: '50000000000000000000000',
       createdAt: 1,
     })
     .run();
-  const moduleRef = await Test.createTestingModule({ imports: [UsersModule, BudgetModule] })
+  const moduleRef = await Test.createTestingModule({ imports: [UsersModule] })
     .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
@@ -72,14 +71,13 @@ async function setup(env: Record<string, string> = {}) {
 }
 
 describe('GET /api/me', () => {
-  it('shows the dragon, its level and that level per-order limit', async () => {
+  it('shows the dragon and its per-order limit, no level (D-31)', async () => {
     const { as } = await setup();
     const res = await as('u1').get('/api/me');
     expect(res.status).toBe(200);
     expect(zMeView.parse(res.body)).toEqual({
       dragonName: '봄봄',
       dragonSpecies: 'star',
-      level: 3,
       perOrderLimit: W('50000'),
       custodial: true,
     });
@@ -99,40 +97,18 @@ describe('GET /api/me', () => {
   });
 });
 
-describe('PATCH /api/me', () => {
-  it('sets the budget to a policy option at once', async () => {
+describe('PATCH /api/me (gone, D-31)', () => {
+  it('no longer changes the budget: the 30-day limit moved to PUT /agents/me/limits', async () => {
     const { as, h } = await setup();
     const res = await as('u1').patch('/api/me', { monthlyBudgetOkrw: W('200000') });
-    expect(res.status).toBe(200);
-    expect(zUserView.parse(res.body)).toEqual({
-      user: { nickname: '주인님', monthlyBudget: W('200000') },
-    });
-    // Shows at once in the budget screen, and touches no one else.
-    const budget = zBudgetView.parse((await as('u1').get('/api/budget')).body);
-    expect(budget.personalBudget).toBe(W('200000'));
-    const others = h.db
-      .select()
-      .from(users)
-      .all()
-      .filter((u) => u.id !== 'u1');
-    expect(others.map((u) => u.monthlyBudgetAokrw)).toEqual([W('300000')]);
-  });
-
-  it('refuses other amounts, extra fields and cookie writes without the CSRF header', async () => {
-    const { as, http } = await setup();
-    expect((await as('u1').patch('/api/me', { monthlyBudgetOkrw: W('250000') })).status).toBe(400);
-    expect((await as('u1').patch('/api/me', { monthlyBudgetOkrw: 200000 })).status).toBe(400);
+    expect(res.status).toBe(404);
     expect(
-      (await as('u1').patch('/api/me', { monthlyBudgetOkrw: W('200000'), role: 'operator' }))
-        .status,
-    ).toBe(400);
-    expect(
-      (
-        await http()
-          .patch('/api/me')
-          .send({ monthlyBudgetOkrw: W('200000') })
-      ).status,
-    ).toBe(401);
+      h.db
+        .select()
+        .from(users)
+        .all()
+        .map((u) => u.myPeriodicLimitAokrw),
+    ).toEqual([W('300000'), W('300000')]);
   });
 });
 

@@ -28,7 +28,7 @@ function setup() {
   handles.push(h);
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: won(300_000n), createdAt: 1 })
+    .values({ id: 'u1', nickname: '주인님', myPeriodicLimitAokrw: won(300_000n), createdAt: 1 })
     .run();
   h.db
     .insert(agents)
@@ -38,6 +38,7 @@ function setup() {
       dragonName: '용이',
       dragonSpecies: 'forest',
       paymentPath: 'B',
+      perOrderLimitAokrw: '10000000000000000000000',
       createdAt: 1,
     })
     .run();

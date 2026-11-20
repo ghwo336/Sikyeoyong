@@ -45,7 +45,7 @@ async function setup(env: Record<string, string> = {}) {
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
   open.push({ app, h });
-  // u1's dragon is hatched (fixture: ACTIVE, level 1); give it a mock wallet.
+  // u1's dragon is hatched (fixture: ACTIVE, 10,000 per order); give it a mock wallet.
   const payment = moduleRef.get<PaymentProvider>(PAYMENT_PROVIDER);
   const wallet = await payment.createAgent({ userId: 'u1', name: '용이' });
   h.db

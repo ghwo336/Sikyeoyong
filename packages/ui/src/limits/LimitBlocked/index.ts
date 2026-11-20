@@ -1,1 +1,1 @@
-export { LimitBlocked, type LimitBlockedProps, levelWithRo, type NextLevel } from './LimitBlocked';
+export { LimitBlocked, type LimitBlockedProps } from './LimitBlocked';

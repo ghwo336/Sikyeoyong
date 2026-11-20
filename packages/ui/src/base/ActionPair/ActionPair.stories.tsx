@@ -48,7 +48,7 @@ export const LimitChange: Story = {
   },
 };
 
-/** 주 버튼 없음 (md 8, 맨 위 레벨의 막힘) */
+/** 주 버튼 없음 (md 8, 올려도 안 들어가는 막힘) */
 export const SecondaryOnly: Story = {
   args: {
     gap: 'md',

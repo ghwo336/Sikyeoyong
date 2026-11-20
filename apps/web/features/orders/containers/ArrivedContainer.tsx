@@ -48,9 +48,9 @@ export function ArrivedContainer({ order }: { readonly order: OrderView }) {
       )}
       {budget && (
         <Meter
-          label="이번 달 배달비"
-          value={parseAokrw(budget.personalSpent)}
-          max={parseAokrw(budget.personalBudget)}
+          label="30일 배달비"
+          value={parseAokrw(budget.chainUsed)}
+          max={parseAokrw(budget.myPeriodicLimit)}
           tone={BUDGET_TONE[budget.nagLevel]}
           size="md"
         />

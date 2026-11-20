@@ -21,6 +21,7 @@ import type { ToolCard, ToolName } from './tools/index.js';
 export const CARD_OF_TOOL: Partial<Record<ToolName, ChatEvent['type']>> = {
   recommend_merchants: 'recommendations',
   place_order: 'order_confirm',
+  propose_limit_change: 'limit_change_card',
 };
 
 /** Said when the model refuses (D-22 left fallbacks to the server). Plain text, no claims. */

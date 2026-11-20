@@ -1,8 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { aokrwToString, type OwnerAuthority, type PaymentProvider } from '@sikyeoyong/shared';
+import { type OwnerAuthority, parseAokrw, type PaymentProvider } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
-import { APP_CONFIG } from '../../config/config.module.js';
-import type { AppConfig } from '../../config/env.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
 import { AgentsRepository } from './agents.repository.js';
 
@@ -20,7 +18,6 @@ export class AgentSetupService {
   private readonly running = new Map<string, Promise<void>>();
 
   constructor(
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
     @Inject(OWNER_AUTHORITY) private readonly owner: OwnerAuthority,
     private readonly repo: AgentsRepository,
@@ -57,7 +54,8 @@ export class AgentSetupService {
         owner = created.ownerAddress;
       }
       this.repo.setStep(agentId, 'limit');
-      const amount = this.config.policy.perOrderLimitAokrw[agent.level];
+      // The amount stored at creation: policy.perOrderLimit.initial (D-31). The owner changes it later.
+      const amount = parseAokrw(agent.perOrderLimitAokrw);
       const wallet_ = {
         agentRowId: agentId,
         address: wallet as `0x${string}`,
@@ -77,8 +75,7 @@ export class AgentSetupService {
       if (txHash === undefined) throw new Error('TransferLimit write returned no transaction');
       this.repo.activate(agentId, {
         id: uuidv7(),
-        level: agent.level,
-        aokrw: aokrwToString(amount),
+        aokrw: agent.perOrderLimitAokrw,
         txHash,
         at: Date.now(),
       });

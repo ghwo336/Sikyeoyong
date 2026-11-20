@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { okrwToAokrw, zBudgetView } from '@sikyeoyong/shared';
-import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
@@ -28,7 +27,7 @@ async function setup(chain: ChainReader, env: Record<string, string> = {}) {
   handles.push(h);
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: s(200_000n), createdAt: 1 })
+    .values({ id: 'u1', nickname: '주인님', myPeriodicLimitAokrw: s(200_000n), createdAt: 1 })
     .run();
   h.db
     .insert(agents)
@@ -38,7 +37,7 @@ async function setup(chain: ChainReader, env: Record<string, string> = {}) {
       dragonName: '용이',
       dragonSpecies: 'star',
       paymentPath: 'B',
-      level: 2,
+      perOrderLimitAokrw: '30000000000000000000000',
       walletAddress: WALLET,
       status: 'ACTIVE',
       createdAt: 1,
@@ -90,61 +89,52 @@ const chainOf = (usedOkrw: bigint, resetAtSec: number | null): ChainReader => ({
   },
 });
 
-describe('BudgetService.getView (tech-spec 3.2, 3.7)', () => {
-  it('builds a BudgetView from the user, the dragon, this month orders and the chain', async () => {
-    // Every source differs: user budget 200,000 (policy default is 300,000), DB spend 219,000,
-    // chain 30-day use 120,000 (60% of the budget, a different nag stage). Each field
-    // must come from its own source.
-    const { budget } = await setup(chainOf(120_000n, 1_767_225_600));
-    const view = await budget.getView('u1', NOW);
+describe('BudgetService.getView (tech-spec 3.2, 3.7, D-31)', () => {
+  it('builds a BudgetView from the user, the dragon and the chain 30-day window', async () => {
+    // The DB holds a 219,000 delivered order this month; D-31 ignores the calendar month:
+    // the nag is the chain's 30-day use 160,000 against the owner's 200,000 (80%, warn70).
+    const { budget } = await setup(chainOf(160_000n, 1_767_225_600));
+    const view = await budget.getView('u1');
     expect(zBudgetView.parse(view)).toEqual({
-      monthKst: '2026-12',
-      personalBudget: s(200_000n),
-      personalSpent: s(219_000n),
-      nagLevel: 'over100', // DB spend 219,000 / 200,000 (chain 120,000 would be none)
+      myPeriodicLimit: s(200_000n),
+      nagLevel: 'warn70',
       chainCap: s(500_000n),
-      chainUsed: s(120_000n),
+      chainUsed: s(160_000n),
       chainResetAtSec: 1_767_225_600,
-      level: 2,
       perOrderLimit: s(30_000n),
       frozen: false,
-      budgetOptions: [
-        { id: 'small', amount: s(200_000n) },
-        { id: 'medium', amount: s(300_000n) },
-        { id: 'large', amount: s(500_000n) },
-      ],
+      limitRanges: {
+        perOrder: { min: s(5_000n), max: s(50_000n), step: s(5_000n) },
+        myPeriodic: { min: s(50_000n), max: s(500_000n), step: s(50_000n) },
+      },
     });
   });
 
-  it('uses the demo profile cap when POLICY_PROFILE=demo', async () => {
+  it('uses the demo profile cap and ranges when POLICY_PROFILE=demo', async () => {
     const { budget } = await setup(chainOf(0n, null), { POLICY_PROFILE: 'demo' });
-    const view = await budget.getView('u1', NOW);
+    const view = await budget.getView('u1');
     expect(view.chainCap).toBe(s(60_000n));
     expect(view.chainResetAtSec).toBeNull();
+    expect(view.limitRanges.myPeriodic).toEqual({
+      min: s(10_000n),
+      max: s(60_000n),
+      step: s(10_000n),
+    });
+    // The stored 200,000 is over the demo range: read clamped to the cap (migration 0009 note).
+    expect(view.myPeriodicLimit).toBe(s(60_000n));
   });
 
-  it('shows frozen and counts the month in KST, not UTC', async () => {
+  it('shows frozen; nothing used on chain is no nag', async () => {
     const { h, budget } = await setup(chainOf(0n, null));
     h.db.update(agents).set({ status: 'FROZEN' }).run();
-    // 2027-01-01 00:30 KST is still Dec 31 in UTC: the December order no longer counts.
-    const view = await budget.getView('u1', Date.parse('2026-12-31T15:30:00.000Z'));
-    expect(view.monthKst).toBe('2027-01');
-    expect(view.personalSpent).toBe('0');
+    const view = await budget.getView('u1');
     expect(view.nagLevel).toBe('none');
     expect(view.frozen).toBe(true);
-  });
-
-  it('drops a refunded order from this month spend', async () => {
-    const { h, budget } = await setup(chainOf(0n, null));
-    h.db.update(orders).set({ status: 'refunded' }).where(eq(orders.id, 'o1')).run();
-    const view = await budget.getView('u1', NOW);
-    expect(view.personalSpent).toBe('0');
-    expect(view.nagLevel).toBe('none');
   });
 
   it('passes chain errors through instead of making up numbers', async () => {
     const failing: ChainReader = { periodicVolume: () => Promise.reject(new Error('rpc down')) };
     const { budget } = await setup(failing);
-    await expect(budget.getView('u1', NOW)).rejects.toThrow('rpc down');
+    await expect(budget.getView('u1')).rejects.toThrow('rpc down');
   });
 });

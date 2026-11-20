@@ -160,7 +160,7 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(css).toMatch(/\.accent\s*\{[^}]*background:\s*var\(--color-surface\)/);
   });
 
-  it.each(['sm', 'choice', 'tall'] as const)('renders the %s size class', (size) => {
+  it.each(['sm', 'choice', 'tall', 'round'] as const)('renders the %s size class', (size) => {
     render(
       <Button variant="primary" size={size} onPress={() => undefined}>
         x
@@ -169,7 +169,7 @@ describe('Button (Button.md 테스트 기준)', () => {
     expect(screen.getByRole('button').classList).toContain(size);
   });
 
-  it.each(['primary', 'secondary', 'outline', 'accent', 'text', 'link', 'kakao'] as const)(
+  it.each(['primary', 'secondary', 'outline', 'accent', 'soft', 'text', 'link', 'kakao'] as const)(
     'renders the %s variant class',
     (variant) => {
       render(
@@ -180,4 +180,42 @@ describe('Button (Button.md 테스트 기준)', () => {
       expect(screen.getByRole('button').className).toContain(variant);
     },
   );
+
+  it('does nothing and does not press when disabled (Budget "−" at the lowest amount)', async () => {
+    const onPress = vi.fn();
+    render(
+      <Button variant="soft" size="round" disabled label="내리기" onPress={onPress}>
+        −
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: '내리기' });
+    // aria-disabled keeps focus on the button when a keyboard press reaches the end.
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(tap.last).toBeUndefined();
+    await userEvent.click(button);
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(onPress).not.toHaveBeenCalled();
+    expect(button).toHaveFocus();
+    expect(css).toMatch(/\.button\[aria-disabled='true'\]\s*\{[^}]*opacity:\s*0\.35/);
+  });
+
+  it('takes its screen reader name from label when given', () => {
+    render(
+      <Button variant="soft" size="round" label="한 번에 쓸 돈 5,000원 올리기" onPress={vi.fn()}>
+        +
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' });
+    expect(button).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('draws the Budget stepper circle: 48 round, pale fill, 22/600 (Budget.dc.html)', () => {
+    expect(css).toMatch(/\.round\s*\{[^}]*width:\s*var\(--size-button-secondary\)/);
+    expect(css).toMatch(/\.round\s*\{[^}]*height:\s*var\(--size-button-secondary\)/);
+    expect(css).toMatch(/\.round\s*\{[^}]*border-radius:\s*var\(--radius-chip\)/);
+    expect(css).toMatch(/\.round\s*\{[^}]*font-size:\s*var\(--type-change-to-size\)/);
+    expect(css).toMatch(/\.round\s*\{[^}]*font-weight:\s*var\(--type-label-weight\)/);
+    expect(css).toMatch(/\.soft\s*\{[^}]*background:\s*var\(--color-track\)/);
+  });
 });

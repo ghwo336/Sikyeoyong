@@ -2,7 +2,6 @@
 // these routes. Only lib/api imports this file; hooks see the ApiClient interface only.
 // It never pays: confirmOrder just flips the mock order to preparing (CLAUDE.md rule 3).
 import {
-  type AgentLevel,
   AppError,
   type BudgetView,
   formatKstDateTime,
@@ -49,8 +48,8 @@ interface MockSession {
   signedIn: boolean;
   /** Passed the identity check (Verify). */
   verified?: boolean;
-  /** The dragon's level (1 until raised). */
-  level?: AgentLevel;
+  /** The per-order limit in aokrw (the first offer until changed, D-31). */
+  perOrderLimit?: string;
   dragon: { name: string; species: MeView['dragonSpecies']; hatchStartedAt: number } | null;
 }
 const SESSION_KEY = 'sikyeoyong.mock.session';
@@ -102,9 +101,11 @@ export function resetMockSession(next: 'first-visit' | 'hatched'): void {
   saveSession();
 }
 
-const levelPolicy = getPolicy('default');
-const levelOf = (): AgentLevel => session.level ?? 1;
-const perOrderOf = (level: AgentLevel): bigint => levelPolicy.perOrderLimitAokrw[level];
+const limitPolicy = getPolicy('default');
+const perOrderNow = (): bigint =>
+  session.perOrderLimit === undefined
+    ? limitPolicy.perOrderLimit.initialAokrw
+    : parseAokrw(session.perOrderLimit);
 
 function currentMe(): MeView {
   if (!session.signedIn) throw new AppError('UNAUTHENTICATED', { reason: 'mock: signed out' });
@@ -113,21 +114,20 @@ function currentMe(): MeView {
     ...ME,
     dragonName: session.dragon.name,
     dragonSpecies: session.dragon.species,
-    level: levelOf(),
-    perOrderLimit: perOrderOf(levelOf()).toString(),
+    perOrderLimit: perOrderNow().toString(),
   };
 }
 
-/** The budget view with the session's level (raised by raiseLevel). */
+/** The budget view with the session's per-order limit (changed by setLimits). */
 function currentBudget(): BudgetView {
-  return { ...budget, level: levelOf(), perOrderLimit: perOrderOf(levelOf()).toString() };
+  return { ...budget, perOrderLimit: perOrderNow().toString() };
 }
 
-/** Recommendations as the server would mark them now: over the level's limit asks the owner. */
+/** Recommendations as the server would mark them now: over the per-order limit asks the owner. */
 function recommendationsNow(): RecommendationCard[] {
   return RECOMMENDATIONS.map((r) => ({
     ...r,
-    needsApproval: parseAokrw(r.price) > perOrderOf(levelOf()),
+    needsApproval: parseAokrw(r.price) > perOrderNow(),
   }));
 }
 
@@ -154,7 +154,7 @@ function quoteFor(rec: RecommendationCard): OrderQuote {
     request: extra?.request,
     amount: rec.price,
     dragonLine: extra?.confirmLine ?? `${rec.menu} 시킬게용.\n이대로 괜찮아용?`,
-    perOrderLimit: perOrderOf(levelOf()).toString(),
+    perOrderLimit: perOrderNow().toString(),
     periodUsedAfter: (parseAokrw(budget.chainUsed) + amount).toString(),
     periodCap: budget.chainCap,
   };
@@ -268,7 +268,7 @@ function createOrder(body: CreateOrderBody): CreateOrderResult {
   }
   const id = orderIdOf(rec.menuId);
   refuseOverCap(parseAokrw(rec.price));
-  // Over the level's per-order limit: it waits for the owner (tech-spec flow 2, 3). No quote.
+  // Over the per-order limit: it waits for the owner (tech-spec flow 2, 3). No quote.
   if (rec.needsApproval) {
     waiting.set(id, rec);
     return { order: { id, status: 'pending_approval' } };
@@ -277,14 +277,13 @@ function createOrder(body: CreateOrderBody): CreateOrderResult {
   return { order: { id, status: 'quoted' }, quote: quoteFor(rec) };
 }
 
-/** A payment uses the 30-day window and this month's budget, like the chain and the server. */
+/** A payment uses the 30-day window, like the chain; the nag reads it against my limit (D-31). */
 function spend(amount: bigint): void {
-  const spent = parseAokrw(budget.personalSpent) + amount;
+  const used = parseAokrw(budget.chainUsed) + amount;
   budget = {
     ...budget,
-    personalSpent: spent.toString(),
-    nagLevel: nagStage(getPolicy('default'), spent, parseAokrw(budget.personalBudget)),
-    chainUsed: (parseAokrw(budget.chainUsed) + amount).toString(),
+    nagLevel: nagStage(limitPolicy, used, parseAokrw(budget.myPeriodicLimit)),
+    chainUsed: used.toString(),
     chainResetAtSec: budget.chainResetAtSec ?? anHourFromNowSec(),
   };
 }
@@ -294,14 +293,14 @@ const BUDGET_WORDS = ['예산', '다 쓴', '다쓴', '남았', '얼마'];
 const LIMIT_WORDS = ['올려', '늘려'];
 const FOOD_WORDS = ['시켜', '추천', '점심', '저녁', '배고', '먹'];
 
-/** The dragon's words about this month's budget, from the mock's own numbers. */
+/** The dragon's words about the 30-day limit, from the mock's own numbers. */
 function budgetLine(): string {
-  const spent = parseAokrw(budget.personalSpent);
-  const limit = parseAokrw(budget.personalBudget);
+  const spent = parseAokrw(budget.chainUsed);
+  const limit = parseAokrw(budget.myPeriodicLimit);
   if (spent > limit) {
-    return `이번 달 예산 ${formatOkrw(limit)}을 벌써 ${formatOkrw(spent - limit)} 넘었어용. 더 시키면 주인님 허락을 받을게용.`;
+    return `30일 한도 ${formatOkrw(limit)}을 벌써 ${formatOkrw(spent - limit)} 넘었어용. 더 시키면 주인님 허락을 받을게용.`;
   }
-  return `이번 달 ${formatOkrw(spent)} 썼고 ${formatOkrw(limit - spent)} 남았어용.`;
+  return `30일 동안 ${formatOkrw(spent)} 썼고 ${formatOkrw(limit - spent)} 남았어용.`;
 }
 
 /**
@@ -321,19 +320,18 @@ function reply(text: string): ChatEvent[] {
       { type: 'recommendations', items: [cheapest] },
     ];
   }
-  if (LIMIT_WORDS.some((w) => text.includes(w)) && levelOf() < 3) {
-    // LimitChat.dc.html: a card only; the change waits for the owner's button (D-21).
+  const top = limitPolicy.perOrderLimit.maxAokrw;
+  if (LIMIT_WORDS.some((w) => text.includes(w)) && perOrderNow() < top) {
+    // LimitChat.dc.html: a card only; the change waits for the owner's button (D-21, D-31).
     return [
-      { type: 'token', text: '와, 레벨 3이 되는 거예용? 이렇게 바꿀까용?' },
+      { type: 'token', text: `와, 한 번에 ${formatOkrw(top)}까지예용? 이렇게 바꿀까용?` },
       {
         type: 'limit_change_card',
         card: {
           cardId: `limit-${String(Date.now())}`,
           field: 'perOrder',
-          from: perOrderOf(levelOf()).toString(),
-          to: perOrderOf(3).toString(),
-          levelFrom: levelOf(),
-          levelTo: 3,
+          from: perOrderNow().toString(),
+          to: top.toString(),
           needsReauth: true,
           rows: [
             { label: '30일 한도', value: `${formatOkrw(parseAokrw(budget.chainCap))} 그대로` },
@@ -399,10 +397,19 @@ export const mockApi: ApiClient = {
     if (!p) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
     return later(null).then(() => ({ order: orderAt(p.rec, p.at, Date.now()) }));
   },
-  raiseLevel: (level) => {
-    session = { ...session, level };
+  setLimits: ({ perOrderLimit, myPeriodicLimit }) => {
+    if (perOrderLimit !== undefined) session = { ...session, perOrderLimit };
+    if (myPeriodicLimit !== undefined) {
+      const used = parseAokrw(budget.chainUsed);
+      const nagLevel = nagStage(limitPolicy, used, parseAokrw(myPeriodicLimit));
+      budget = { ...budget, myPeriodicLimit, nagLevel };
+    }
     saveSession();
-    return later(undefined);
+    return later({
+      perOrderLimit: perOrderNow().toString(),
+      myPeriodicLimit: budget.myPeriodicLimit,
+      txHash: perOrderLimit === undefined ? null : `0x${'5'.repeat(64)}`,
+    });
   },
   rateOrder: (orderId, value) => {
     ratings.set(orderId, value);
@@ -443,12 +450,6 @@ export const mockApi: ApiClient = {
       session = { ...session, dragon: { ...session.dragon, hatchStartedAt: Date.now() } };
       saveSession();
     }
-    return later(undefined);
-  },
-  setMonthlyBudget: (amount) => {
-    const spent = parseAokrw(budget.personalSpent);
-    const nagLevel = nagStage(getPolicy('default'), spent, parseAokrw(amount));
-    budget = { ...budget, personalBudget: amount, nagLevel };
     return later(undefined);
   },
   claimTrialAllowance: () => later(undefined),

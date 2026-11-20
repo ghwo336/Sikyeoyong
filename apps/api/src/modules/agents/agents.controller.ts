@@ -4,26 +4,24 @@ import {
   type CreateAgentBody,
   type FreezeResult,
   type RefundResult,
-  type SetLevelBody,
-  type SetLevelResult,
   zCreateAgentBody,
-  zSetLevelBody,
 } from '@sikyeoyong/shared';
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { AgentFreezeService } from './agent-freeze.service.js';
-import { AgentLevelService } from './agent-level.service.js';
 import { AgentRefundService } from './agent-refund.service.js';
 import { AgentsService } from './agents.service.js';
 
-/** POST /api/agents, GET /api/agents/me, POST /api/agents/me/setup/retry. HTTP only. */
+/**
+ * POST /api/agents, GET /api/agents/me, the owner's freeze, unfreeze and drain buttons, and
+ * POST /api/agents/me/setup/retry. HTTP only. PUT /agents/me/limits is the limits module's (D-31).
+ */
 @Controller('agents')
 @UseGuards(SessionGuard)
 export class AgentsController {
   constructor(
     private readonly agents: AgentsService,
-    private readonly levels: AgentLevelService,
     private readonly freezes: AgentFreezeService,
     private readonly refunds: AgentRefundService,
   ) {}
@@ -39,16 +37,6 @@ export class AgentsController {
   @Get('me')
   me(@CurrentUser() user: SessionUser): AgentSetupView {
     return this.agents.setupView(user.userId);
-  }
-
-  /** The owner's level button (D-21, D-28). Raising waits for re-auth unless REAUTH_MODE=none. */
-  @Post('me/level')
-  @HttpCode(200)
-  setLevel(
-    @CurrentUser() user: SessionUser,
-    @Body(new ZodValidationPipe(zSetLevelBody)) body: SetLevelBody,
-  ): Promise<SetLevelResult> {
-    return this.levels.setLevel(user.userId, body.level);
   }
 
   /** The kill switch (user-flow 17): the owner's button only, never an LLM tool. */

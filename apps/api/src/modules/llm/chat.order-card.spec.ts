@@ -18,7 +18,7 @@ import { ScriptedProvider } from './harness/scripted-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
 
-// Amounts by hand: 9,000원 = 9000 * 10^18 aokrw. Default policy: level 1, 10,000 per order.
+// Amounts by hand: 9,000원 = 9000 * 10^18 aokrw. Fixture: 10,000 per order (D-31).
 const W9000 = '9000000000000000000000';
 
 const open: { close: () => Promise<void> }[] = [];
@@ -143,7 +143,7 @@ describe('place_order in the chat stream: a confirm card, never a payment', () =
   });
 
   it('an order that needs the owner gives the model APPROVAL_REQUIRED and the screen no card', async () => {
-    const provider = placeTurns(2); // 18,000 over level 1
+    const provider = placeTurns(2); // 18,000 over the 10,000 per-order limit
     const { h, post } = await setup(provider);
     const list = events((await post('u1', '두 그릇 시켜 줘', 'c1')).text);
     expect(list.some((e) => e.type === 'order_confirm')).toBe(false);
@@ -186,7 +186,7 @@ const payloadOf = (h: DbHandle) =>
 
 describe('request_owner_approval: asks the owner, never approves or pays', () => {
   it("puts the message on the live approval of the same store and items; the reason is the server's", async () => {
-    const first = placeTurns(2); // 18,000: over level 1
+    const first = placeTurns(2); // 18,000: over the 10,000 per-order limit
     const { h, post } = await setup(first);
     await post('u1', '두 그릇 시켜 줘', 'c1');
     expect(h.db.select().from(approvals).all()).toHaveLength(1);

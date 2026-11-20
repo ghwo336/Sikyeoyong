@@ -12,10 +12,8 @@ const meta = {
     field: 'perOrder',
     from: won(10_000n),
     to: won(50_000n),
-    levelFrom: 1,
-    levelTo: 3,
     needsReauth: true,
-    rows: [{ label: '30일 한도', value: '500,000원 그대로' }],
+    rows: [{ label: '30일에 쓸 돈', value: '300,000원 그대로' }],
     onConfirm: () => undefined,
     onCancel: () => undefined,
   },
@@ -36,7 +34,12 @@ export const RaiseWithReauth: Story = {};
 
 /** 내리기 (바로) */
 export const Lower: Story = {
-  args: { from: won(50_000n), to: won(10_000n), levelFrom: 3, levelTo: 1, needsReauth: false },
+  args: { from: won(50_000n), to: won(10_000n), needsReauth: false },
+};
+
+/** 30일에 쓸 돈 바꾸기 */
+export const MyPeriodic: Story = {
+  args: { field: 'myPeriodic', from: won(300_000n), to: won(400_000n), rows: [] },
 };
 
 /** 확인 중 */

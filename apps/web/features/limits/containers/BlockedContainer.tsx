@@ -7,7 +7,7 @@ import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../../orders/hooks/useOrder';
 import { withEunNeun } from '../../../lib/format';
-import { levelFor } from '../levels';
+import { limitToFit } from '../fit';
 
 /** Blocked.dc.html: the order is over what the dragon may spend at once. Raise, or pick again. */
 export function BlockedContainer({ orderId }: { readonly orderId: string }) {
@@ -22,9 +22,9 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   const attempted = parseAokrw(order.amount);
   const limit = parseAokrw(budget.perOrderLimit);
   // Only an order over the per-order limit belongs here; other waits (a new store, the budget)
-  // are the owner's approval, not a level raise.
+  // are the owner's approval, not a limit raise.
   if (attempted <= limit) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
-  const next = levelFor(attempted);
+  const raiseTo = limitToFit(attempted);
   const menu = order.items[0]?.name ?? '이 메뉴';
   return (
     <>
@@ -38,7 +38,7 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
       <LimitBlocked
         attempted={attempted}
         limit={limit}
-        {...(next === undefined ? {} : { nextLevel: next })}
+        {...(raiseTo === undefined ? {} : { raiseTo })}
         onRaise={() => {
           router.push(`/limit/${encodeURIComponent(orderId)}/raise`);
         }}

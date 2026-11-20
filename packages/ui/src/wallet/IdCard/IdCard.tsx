@@ -1,4 +1,4 @@
-import { type DragonSpecies, formatKstDate, formatOkrw } from '@sikyeoyong/shared';
+import { dragonStage, type DragonSpecies, formatKstDate, formatOkrw } from '@sikyeoyong/shared';
 import { DetailRows } from '../../base/DetailRows';
 import { Dragon } from '../../dragon/Dragon';
 import styles from './IdCard.module.css';
@@ -8,8 +8,7 @@ export interface IdCardProps {
   readonly name: string;
   /** "이호재" in "이호재님의 배달 비서". */
   readonly ownerName: string;
-  readonly level: number;
-  /** aokrw per-order limit. */
+  /** aokrw per-order limit. Also sets how grown the portrait looks (dragonStage, D-31). */
   readonly perOrder: bigint;
   readonly ownerVerified: boolean;
   /** Birth time, unix ms. Shown as a Korean date "2026. 12. 1.". */
@@ -21,24 +20,13 @@ export interface IdCardProps {
 // The date format is shared (packages/shared time/kst); re-exported for older imports.
 export { formatKstDate };
 
-/** Wings grow at level 3 (Dragon.md). */
-const WINGS_LEVEL = 3;
-
-/** Draws the dragon's ID card: name, owner, level, per-order limit, verified, born (IdCard.md). */
-export function IdCard({
-  name,
-  ownerName,
-  level,
-  perOrder,
-  ownerVerified,
-  bornAt,
-  species,
-}: IdCardProps) {
+/** Draws the dragon's ID card: name, owner, per-order limit, verified, born (IdCard.md). */
+export function IdCard({ name, ownerName, perOrder, ownerVerified, bornAt, species }: IdCardProps) {
   return (
     <section className={styles.card} data-species={species} aria-label={`${name} 신분증`}>
       <div className={styles.head}>
         <div className={styles.portrait}>
-          <Dragon mood="default" size={64} species={species} wings={level >= WINGS_LEVEL} />
+          <Dragon mood="default" size={64} species={species} wings={dragonStage(perOrder) === 3} />
         </div>
         <div className={styles.who}>
           <span className={styles.name}>{name}</span>
@@ -50,7 +38,6 @@ export function IdCard({
         size="caption"
         gap="loose"
         rows={[
-          { label: '레벨', value: String(level) },
           { label: '한 번에', value: `${formatOkrw(perOrder)}까지` },
           { label: '주인', value: ownerVerified ? '실명 확인됨' : '실명 확인 전' },
           { label: '태어난 날', value: formatKstDate(bornAt) },

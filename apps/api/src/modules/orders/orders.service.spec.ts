@@ -21,7 +21,7 @@ function setup() {
   runMigrations(h.db);
   handles.push(h);
   for (const id of ['u1', 'u2']) {
-    h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: '1', createdAt: 1 }).run();
+    h.db.insert(users).values({ id, nickname: id, myPeriodicLimitAokrw: '1', createdAt: 1 }).run();
     h.db
       .insert(agents)
       .values({
@@ -30,6 +30,7 @@ function setup() {
         dragonName: '용이',
         dragonSpecies: 'forest',
         paymentPath: 'B',
+        perOrderLimitAokrw: '10000000000000000000000',
         createdAt: 1,
       })
       .run();

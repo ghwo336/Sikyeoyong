@@ -6,7 +6,7 @@ import type { DragonSpecies } from '@sikyeoyong/shared';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { LimitChangeCardView } from '../../../lib/api';
-import { useRaiseLevel } from '../hooks/useRaiseLevel';
+import { useSetLimits } from '../hooks/useSetLimits';
 
 /**
  * LimitChat.dc.html: the change card the dragon put in the chat (D-21). Nothing changes until
@@ -20,13 +20,17 @@ export function LimitChangeContainer({
   readonly species: DragonSpecies;
 }) {
   const router = useRouter();
-  const raise = useRaiseLevel();
+  const raise = useSetLimits();
   const [state, setState] = useState<'open' | 'done' | 'dropped'>('open');
   if (state === 'dropped') return null;
   if (state === 'done') {
     return (
       <DragonLine
-        text={`레벨 ${String(card.levelTo ?? '')}이 됐어용! 이제 한 번에 ${formatOkrw(parseAokrw(card.to))}까지 시킬 수 있어용.`}
+        text={
+          card.field === 'perOrder'
+            ? `바꿨어용! 이제 한 번에 ${formatOkrw(parseAokrw(card.to))}까지 시킬 수 있어용.`
+            : `바꿨어용! 이제 30일에 ${formatOkrw(parseAokrw(card.to))}까지 시킬게용.`
+        }
         mood="happy"
         layout="chat"
         species={species}
@@ -38,14 +42,14 @@ export function LimitChangeContainer({
       field={card.field}
       from={parseAokrw(card.from)}
       to={parseAokrw(card.to)}
-      {...(card.levelFrom === undefined ? {} : { levelFrom: card.levelFrom })}
-      {...(card.levelTo === undefined ? {} : { levelTo: card.levelTo })}
       needsReauth={card.needsReauth}
       rows={card.rows}
       status={raise.isPending ? 'confirming' : raise.isError ? 'failed' : 'idle'}
       onConfirm={() => {
-        if (raise.isPending || card.field !== 'perOrder' || card.levelTo === undefined) return;
-        raise.mutate(card.levelTo, {
+        if (raise.isPending) return;
+        const body =
+          card.field === 'perOrder' ? { perOrderLimit: card.to } : { myPeriodicLimit: card.to };
+        raise.mutate(body, {
           onSuccess: () => {
             setState('done');
             router.refresh();

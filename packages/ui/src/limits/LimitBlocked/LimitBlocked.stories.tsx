@@ -26,8 +26,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 기본 (Blocked.dc.html) */
-export const Default: Story = { args: { nextLevel: { level: 3, limit: won(50_000n) } } };
+/** 기본: 한 번에 45,000원으로 올리고 시키기 (Blocked.dc.html, D-12 장면 4) */
+export const Default: Story = { args: { raiseTo: won(45_000n) } };
 
-/** 다음 레벨 없음 (최고 레벨) */
-export const TopLevel: Story = { args: { attempted: won(320_000n), limit: won(300_000n) } };
+/** 올려도 안 들어감 (한 번에 한도의 맨 위보다 큰 주문) */
+export const CannotRaise: Story = { args: { attempted: won(62_000n), limit: won(50_000n) } };

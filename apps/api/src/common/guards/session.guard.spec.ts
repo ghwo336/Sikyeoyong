@@ -48,7 +48,7 @@ describe('SessionGuard over HTTP', () => {
     runMigrations(h.db);
     h.db
       .insert(users)
-      .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: '1', createdAt: 1 })
+      .values({ id: 'u1', nickname: '주인님', myPeriodicLimitAokrw: '1', createdAt: 1 })
       .run();
     const moduleRef = await Test.createTestingModule({ imports: [ProbeModule] })
       .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig({}) : undefined))

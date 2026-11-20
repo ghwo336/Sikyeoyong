@@ -21,7 +21,7 @@ import {
   zIdentityStatus,
   zOrderResult,
   zPouchiLoginConfig,
-  zSetLevelResult,
+  zSetLimitsResult,
   zSignupConfig,
 } from '@sikyeoyong/shared';
 import type { ApiClient } from './types';
@@ -109,7 +109,7 @@ export function createHttpApi(
   base = '/api',
   devLoginKey?: string,
 ): ApiClient {
-  async function call(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown) {
+  async function call(method: 'GET' | 'POST' | 'PATCH' | 'PUT', path: string, body?: unknown) {
     const res = await fetchImpl(`${base}${path}`, {
       method,
       credentials: 'same-origin',
@@ -202,9 +202,6 @@ export function createHttpApi(
     retryAgentSetup: async () => {
       await call('POST', '/agents/me/setup/retry');
     },
-    setMonthlyBudget: async (amount) => {
-      await call('PATCH', '/me', { monthlyBudgetOkrw: amount });
-    },
     claimTrialAllowance: async () => {
       zTrialResult.parse(await call('POST', '/signup/trial'));
     },
@@ -217,9 +214,7 @@ export function createHttpApi(
     refundPocket: async () => {
       zRefundResult.parse(await call('POST', '/agents/me/drain'));
     },
-    // D-28: the owner's button only (never an LLM tool); the server writes the chain limit first.
-    raiseLevel: async (level) => {
-      zSetLevelResult.parse(await call('POST', '/agents/me/level', { level }));
-    },
+    // D-28, D-31: the owner's button only (never an LLM tool); the server writes the chain limit first.
+    setLimits: async (body) => zSetLimitsResult.parse(await call('PUT', '/agents/me/limits', body)),
   };
 }

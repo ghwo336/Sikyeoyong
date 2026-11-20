@@ -21,7 +21,6 @@ export function IdCardContainer() {
       <IdCard
         name={me.dragonName}
         ownerName={card.ownerName}
-        level={me.level}
         perOrder={parseAokrw(me.perOrderLimit)}
         ownerVerified={card.ownerVerified}
         bornAt={card.bornAt}

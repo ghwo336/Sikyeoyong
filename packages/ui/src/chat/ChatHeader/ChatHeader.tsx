@@ -6,7 +6,7 @@ import styles from './ChatHeader.module.css';
 export interface ChatHeaderProps {
   /** The dragon's name ("용이"). */
   readonly name: string;
-  /** One line under the name, already worded by the parent ("레벨 1, 한 번에 10,000원까지"). */
+  /** One line under the name, already worded by the parent ("한 번에 10,000원까지", Main.dc.html). */
   readonly caption: string;
   readonly species: DragonSpecies;
   /** Default `default`. */
@@ -15,7 +15,7 @@ export interface ChatHeaderProps {
   readonly onSettings?: () => void;
 }
 
-/** Draws the top row of the chat: the dragon, its name and level line, and settings (ChatHeader.md). */
+/** Draws the top row of the chat: the dragon, its name and limit line, and settings (ChatHeader.md). */
 export function ChatHeader({
   name,
   caption,

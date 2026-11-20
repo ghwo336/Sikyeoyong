@@ -22,7 +22,7 @@ function setup() {
   handles.push(h);
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: '1', createdAt: 1 })
+    .values({ id: 'u1', nickname: '주인님', myPeriodicLimitAokrw: '1', createdAt: 1 })
     .run();
   return { h, auth: new AuthService(new SessionsRepository(h)) };
 }

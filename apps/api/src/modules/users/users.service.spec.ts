@@ -4,7 +4,7 @@ import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { users } from '../../db/schema/index.js';
 import { UsersRepository } from './users.repository.js';
-import { UsersService } from './users.service.js';
+import { clampToRange, UsersService } from './users.service.js';
 import { loadConfig } from '../../config/env.js';
 
 const handles: DbHandle[] = [];
@@ -21,7 +21,7 @@ function service() {
     .values({
       id: 'u1',
       nickname: '주인님',
-      monthlyBudgetAokrw: '300000000000000000000000',
+      myPeriodicLimitAokrw: '300000000000000000000000',
       createdAt: 1,
     })
     .run();
@@ -29,12 +29,12 @@ function service() {
 }
 
 describe('UsersService', () => {
-  it('reads the monthly budget as aokrw bigint', () => {
-    expect(service().getMonthlyBudgetAokrw('u1')).toBe(okrwToAokrw(300_000n));
+  it('reads the 30-day limit as aokrw bigint', () => {
+    expect(service().getMyPeriodicLimitAokrw('u1')).toBe(okrwToAokrw(300_000n));
   });
 
   it('answers NOT_FOUND for an unknown user', () => {
-    expect(() => service().getMonthlyBudgetAokrw('nobody')).toThrow(
+    expect(() => service().getMyPeriodicLimitAokrw('nobody')).toThrow(
       expect.objectContaining({ code: 'NOT_FOUND' }),
     );
   });
@@ -47,20 +47,26 @@ describe('UsersService', () => {
     );
   });
 
-  it('sets the monthly budget to a policy option only (D-21)', () => {
+  it('sets the 30-day limit only inside the range and on a step (D-31)', () => {
     const s = service();
-    expect(s.setMonthlyBudget('u1', okrwToAokrw(500_000n))).toEqual({
-      user: { nickname: '주인님', monthlyBudget: '500000000000000000000000' },
-    });
-    expect(s.getMonthlyBudgetAokrw('u1')).toBe(okrwToAokrw(500_000n));
-    for (const bad of [okrwToAokrw(250_000n), okrwToAokrw(500_000n) + 1n, 0n]) {
-      expect(() => s.setMonthlyBudget('u1', bad)).toThrow(
-        expect.objectContaining({ code: 'VALIDATION_FAILED' }),
-      );
+    s.setMyPeriodicLimit('u1', okrwToAokrw(450_000n));
+    expect(s.getMyPeriodicLimitAokrw('u1')).toBe(okrwToAokrw(450_000n));
+    for (const bad of [okrwToAokrw(250_001n), okrwToAokrw(550_000n), okrwToAokrw(25_000n), 0n]) {
+      expect(() => {
+        s.setMyPeriodicLimit('u1', bad);
+      }).toThrow(expect.objectContaining({ code: 'VALIDATION_FAILED' }));
     }
-    expect(s.getMonthlyBudgetAokrw('u1')).toBe(okrwToAokrw(500_000n));
-    expect(() => s.setMonthlyBudget('nobody', okrwToAokrw(200_000n))).toThrow(
-      expect.objectContaining({ code: 'NOT_FOUND' }),
-    );
+    expect(s.getMyPeriodicLimitAokrw('u1')).toBe(okrwToAokrw(450_000n));
+    expect(() => {
+      s.setMyPeriodicLimit('nobody', okrwToAokrw(200_000n));
+    }).toThrow(expect.objectContaining({ code: 'NOT_FOUND' }));
+  });
+
+  it('clamps an old stored value into the range and onto a step when read (migration 0009)', () => {
+    const range = loadConfig({}).policy.myPeriodicLimit;
+    expect(clampToRange(range, okrwToAokrw(1_000_000n))).toBe(okrwToAokrw(500_000n));
+    expect(clampToRange(range, okrwToAokrw(1n))).toBe(okrwToAokrw(50_000n));
+    expect(clampToRange(range, okrwToAokrw(275_000n))).toBe(okrwToAokrw(250_000n));
+    expect(clampToRange(range, okrwToAokrw(300_000n))).toBe(okrwToAokrw(300_000n));
   });
 });

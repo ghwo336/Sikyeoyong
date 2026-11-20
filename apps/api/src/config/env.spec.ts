@@ -57,7 +57,7 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
     expect(c.chain.chainId).toBe(NETWORKS['maroo-testnet'].chainId);
     expect(c.chain.okrwDenom).toBe('atokrw');
     expect(c.policy.profile).toBe('default');
-    expect(c.policy.perOrderLimitAokrw[1]).toBe(10_000n * OKRW);
+    expect(c.policy.perOrderLimit.initialAokrw).toBe(10_000n * OKRW);
   });
 });
 

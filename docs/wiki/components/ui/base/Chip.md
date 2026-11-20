@@ -24,7 +24,7 @@ children: []
 - 고정폭 숫자
 
 ## 쓰는 화면
-Main, Budget, Arrived
+Main, Arrived
 
 ## 테스트 기준
 - selected일 때 aria-checked
@@ -32,8 +32,8 @@ Main, Budget, Arrived
 
 ## 메모
 - `sm`은 Main 빠른 답장: 높이 36(`size.chip`), 좌우 여백 14(`size.chipPaddingX`), 1px `line-strong` 테두리, 흰 바탕, 알약, 14px(`type.chip`). 보이는 높이는 36이지만 누르는 영역은 투명하게 44로 넓힌다.
-- `lg`는 Budget 예산: 높이 52(`size.input`), 반경 14, 16/600(`type.row`).
+- `lg`는 옛 Budget 예산 칩(D-31 전 시안, 지금 쓰는 곳 없음): 높이 52(`size.input`), 반경 14, 16/600(`type.row`).
 - `tile`은 Arrived 맛 평가: `lg`와 같은 52 칸이지만 글자는 15/400(`type.body`). Arrived 시안의 맛 평가에는 고른 상태가 없다. TasteRating이 고르기(radio)로 쓴다.
 - 고르면 2px 잎색 테두리, 연한 잎색 바탕, `leaf-pressed` 글자색.
 - 누름은 Button과 같은 0.97 스프링, 동작 줄이기면 없음.
-- 고르기 묶음의 키보드(Tab 한 번으로 들어가고 화살표로 옮기며 고름, Home, End)는 `base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`가 맡는다. TasteRating, BudgetPicker가 쓰고 EggPicker도 쓸 예정이다. 보조키(Alt, Ctrl, Cmd)와 함께 누른 화살표는 브라우저에 맡긴다.
+- 고르기 묶음의 키보드(Tab 한 번으로 들어가고 화살표로 옮기며 고름, Home, End)는 `base/radio-group.ts`의 `radioGroupKeyDown`, `radioTabIndex`가 맡는다. TasteRating이 쓰고 EggPicker도 쓸 예정이다 (BudgetPicker는 D-31로 없어졌다). 보조키(Alt, Ctrl, Cmd)와 함께 누른 화살표는 브라우저에 맡긴다.

@@ -80,7 +80,7 @@ describe('GET /api/me/id-card (IdCard.dc.html)', () => {
     const { h, http, get } = await setup();
     h.db
       .insert(users)
-      .values({ id: 'u2', nickname: 'u2', monthlyBudgetAokrw: '1', createdAt: 1 })
+      .values({ id: 'u2', nickname: 'u2', myPeriodicLimitAokrw: '1', createdAt: 1 })
       .run();
     expect((await get('u2')).status).toBe(404);
     expect((await http().get('/api/me/id-card')).status).toBe(401);

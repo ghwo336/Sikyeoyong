@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AgentLevel, DragonSpecies } from '@sikyeoyong/shared';
+import type { DragonSpecies } from '@sikyeoyong/shared';
 import { and, eq } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
@@ -11,7 +11,7 @@ export type AgentPath = 'A' | 'B' | 'C' | 'mock';
 const COLUMNS = {
   id: agents.id,
   userId: agents.userId,
-  level: agents.level,
+  perOrderLimitAokrw: agents.perOrderLimitAokrw,
   status: agents.status,
   walletAddress: agents.walletAddress,
   onchainAgentId: agents.onchainAgentId,
@@ -42,6 +42,7 @@ export class AgentsRepository {
     dragonName: string;
     dragonSpecies: DragonSpecies;
     paymentPath: AgentPath;
+    perOrderLimitAokrw: string;
     createdAt: number;
   }): void {
     this.handle.db
@@ -70,17 +71,13 @@ export class AgentsRepository {
   }
 
   /** The limit is recorded and the agent may order: one transaction, so neither is half done. */
-  activate(
-    id: string,
-    limit: { id: string; level: AgentLevel; aokrw: string; txHash: string; at: number },
-  ): void {
+  activate(id: string, limit: { id: string; aokrw: string; txHash: string; at: number }): void {
     this.handle.sqlite.transaction(() => {
       this.handle.db
         .insert(agentLimitHistory)
         .values({
           id: limit.id,
           agentId: id,
-          level: limit.level,
           transferLimitAokrw: limit.aokrw,
           txHash: limit.txHash,
           createdAt: limit.at,
@@ -105,10 +102,13 @@ export class AgentsRepository {
     );
   }
 
-  /** A level change after its TransferLimit was written: the level and its history in one transaction. */
-  changeLevel(
+  /**
+   * A per-order limit change after its TransferLimit was written (D-31): the amount and its
+   * history in one transaction.
+   */
+  changePerOrderLimit(
     id: string,
-    limit: { id: string; level: AgentLevel; aokrw: string; txHash: string | null; at: number },
+    limit: { id: string; aokrw: string; txHash: string | null; at: number },
   ): void {
     this.handle.sqlite.transaction(() => {
       this.handle.db
@@ -116,13 +116,16 @@ export class AgentsRepository {
         .values({
           id: limit.id,
           agentId: id,
-          level: limit.level,
           transferLimitAokrw: limit.aokrw,
           txHash: limit.txHash,
           createdAt: limit.at,
         })
         .run();
-      this.handle.db.update(agents).set({ level: limit.level }).where(eq(agents.id, id)).run();
+      this.handle.db
+        .update(agents)
+        .set({ perOrderLimitAokrw: limit.aokrw })
+        .where(eq(agents.id, id))
+        .run();
     })();
   }
 }

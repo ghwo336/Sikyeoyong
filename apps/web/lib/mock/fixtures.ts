@@ -24,32 +24,34 @@ const policy = getPolicy('default');
 export const ME: MeView = {
   dragonName: '용이',
   dragonSpecies: 'forest',
-  level: 1,
-  perOrderLimit: aokrwToString(policy.perOrderLimitAokrw[1]),
+  perOrderLimit: aokrwToString(policy.perOrderLimit.initialAokrw),
   custodial: true,
 };
 
 /**
- * Main.dc.html: 210,000 / 300,000원 this month, 70% nag already sent. The 30-day cap uses the
- * demo profile (60,000원 an hour, user-flow "데모에서 보여 줄 순서" 4) so the Cap scene is a few
- * orders away: 41,000 used, so two 9,000원 bowls fit and the third does not.
+ * The 30-day window uses the demo profile (60,000원 an hour, user-flow "데모에서 보여 줄 순서"
+ * 4) so the Cap scene is a few orders away: 42,000 used (70%, the nag already sent), so two
+ * 9,000원 bowls fit and the third does not. My 30-day limit starts at the chain cap in the
+ * demo (D-31), so the third is refused by the chain, not by the app.
  */
 const demoPolicy = getPolicy('demo');
+const range = (r: typeof policy.perOrderLimit) => ({
+  min: aokrwToString(r.minAokrw),
+  max: aokrwToString(r.maxAokrw),
+  step: aokrwToString(r.stepAokrw),
+});
 export const BUDGET: BudgetView = zBudgetView.parse({
-  monthKst: '2026-11',
-  personalBudget: won(300_000n),
-  personalSpent: won(210_000n),
+  myPeriodicLimit: aokrwToString(demoPolicy.myPeriodicLimit.initialAokrw),
   nagLevel: 'warn70',
   chainCap: aokrwToString(demoPolicy.periodicCapAokrw),
-  chainUsed: won(41_000n),
+  chainUsed: won(42_000n),
   chainResetAtSec: null,
-  level: 1,
   perOrderLimit: ME.perOrderLimit,
   frozen: false,
-  budgetOptions: policy.monthlyBudgetOptions.map((o) => ({
-    id: o.id,
-    amount: aokrwToString(o.amountAokrw),
-  })),
+  limitRanges: {
+    perOrder: range(demoPolicy.perOrderLimit),
+    myPeriodic: range(demoPolicy.myPeriodicLimit),
+  },
 });
 
 /** Budget.dc.html: 100,000원 trial allowance. Kakao check until Mock KYC is switched on (D-16). */

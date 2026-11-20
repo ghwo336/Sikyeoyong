@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppError, type AppErrorCode, formatKstDateTime, kstMonthOf } from '@sikyeoyong/shared';
+import { AppError, type AppErrorCode, formatKstDateTime } from '@sikyeoyong/shared';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
 import type { AgentSummary } from '../agents/agents.service.js';
@@ -8,7 +8,7 @@ import { CHAIN_READER, type ChainReader } from '../chain/chain.service.js';
 import { MerchantsService } from '../merchants/merchants.service.js';
 import { UsersService } from '../users/users.service.js';
 import { OrdersRepository } from './orders.repository.js';
-import { OrderSpend, SPENT_STATUSES } from './order-spend.service.js';
+import { SPENT_STATUSES } from './order-spend.service.js';
 
 /**
  * The server's own order rules, checked by the quote and again by confirm
@@ -21,7 +21,6 @@ export class OrderRules {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(CHAIN_READER) private readonly chain: ChainReader,
     private readonly repo: OrdersRepository,
-    private readonly spend: OrderSpend,
     private readonly users: UsersService,
     private readonly approvals: ApprovalsService,
     private readonly merchants: MerchantsService,
@@ -48,10 +47,14 @@ export class OrderRules {
   }
 
   /**
-   * Rules that ask the owner, first match wins: over the level's per-order limit,
-   * a store the owner has not allowed and never paid at (D-07, Q-35), then over the
-   * personal monthly budget with this order (exactly the budget passes).
-   * budgetApproved: the owner already said yes to going over the budget for exactly
+   * Rules that ask the owner, first match wins: over the dragon's per-order limit (the amount
+   * the owner picked, D-31; code name SERVER_OVER_LEVEL kept), a store the owner has not allowed
+   * and never paid at (D-07, Q-35), then over the owner's own 30-day limit with this order
+   * (SERVER_BUDGET_OVER; exactly the limit passes). The 30-day check uses the chain's window:
+   * periodUsed is periodicVolume's used amount (periodUsedOrRefuse), not a calendar month.
+   * When the owner's limit equals the chain's shared cap the server does not check it: the chain
+   * keeps the same number, and its revert (CHAIN_PERIODIC_LIMIT) is what shows (D-31, scene 14).
+   * budgetApproved: the owner already said yes to going over the 30-day limit for exactly
    * this amount on this order (payment.md "승인된 사유는 다시 막지 않는다").
    */
   approvalNeeded(
@@ -59,11 +62,10 @@ export class OrderRules {
     agent: AgentSummary,
     merchantId: string,
     amount: bigint,
-    nowMs: number,
+    periodUsed: bigint,
     budgetApproved = false,
   ): AppErrorCode | null {
-    const policy = this.config.policy;
-    if (amount > policy.perOrderLimitAokrw[agent.level]) return 'SERVER_OVER_LEVEL';
+    if (amount > agent.perOrderLimitAokrw) return 'SERVER_OVER_LEVEL';
     const seen =
       // D-27: in demo mode the seeded mock stores count as allowed (the first order is a plain one).
       (this.config.demo.enabled && this.merchants.isSeeded(merchantId)) ||
@@ -71,8 +73,10 @@ export class OrderRules {
       this.repo.hasOrderAt(userId, merchantId, SPENT_STATUSES);
     if (!seen) return 'SERVER_NEW_MERCHANT';
     if (budgetApproved) return null;
-    const spent = this.spend.spentInMonthAokrw(userId, kstMonthOf(nowMs));
-    if (spent + amount > this.users.getMonthlyBudgetAokrw(userId)) return 'SERVER_BUDGET_OVER';
+    const mine = this.users.getMyPeriodicLimitAokrw(userId);
+    if (mine < this.config.policy.periodicCapAokrw && periodUsed + amount > mine) {
+      return 'SERVER_BUDGET_OVER';
+    }
     return null;
   }
 }

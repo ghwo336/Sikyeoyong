@@ -15,8 +15,8 @@ import {
  * Every expected score below is worked out by hand from tech-spec 3.8:
  * score = 35*affordability + 20*weather + 20*habit + 15*novelty + 10*craving (fits 0..100).
  *
- * NOW is Thursday 2026-12-10 12:28 KST. December has 22 days left counting today.
- * Budget 300,000, spent 80,000: 220,000 left / 22 days = 10,000 a day.
+ * NOW is Thursday 2026-12-10 12:28 KST. The 30-day window has 22 days left counting today.
+ * The owner's 30-day limit 300,000, chain use 80,000: 220,000 left / 22 days = 10,000 a day.
  */
 const NOW = Date.parse('2026-12-10T12:28:00+09:00');
 const DAY = 86_400_000;
@@ -84,10 +84,11 @@ const BASE: RankInput = {
   nowMs: NOW,
   weather: '비',
   perOrderLimitAokrw: w(10_000n),
-  personalBudgetAokrw: w(300_000n),
-  personalSpentAokrw: w(80_000n),
+  myPeriodicLimitAokrw: w(300_000n),
   chainCapAokrw: w(500_000n),
-  chainUsedAokrw: 0n,
+  chainUsedAokrw: w(80_000n),
+  // The chain's 30-day window ends 2027-01-01 00:00 KST: 22 days left counting today.
+  periodEndMs: Date.parse('2026-12-31T15:00:00.000Z'),
   nagLevel: 'none',
   frozen: false,
   recentOrders: RECENT,
@@ -132,7 +133,7 @@ describe('rank (tech-spec 3.8, hand-computed)', () => {
   });
 
   it('puts within-limit matches before an over-limit one even when it scores higher', () => {
-    // craving "국밥", no history (habit 0, novelty 100), 10,000 a day, level 1 limit 10,000.
+    // craving "국밥", no history (habit 0, novelty 100), 10,000 a day, per-order limit 10,000.
     // q1 순대국밥 9,000 (in limit): 35*100 + 0 + 0 + 15*100 + 10*100 = 6000
     // r2 공기밥 1,000 at 국밥집 (merchant name only, craving 50): 3500 + 0 + 0 + 1500 + 500 = 5500
     // p1 특국밥 10,500 (over limit): affordability (100*(20,000-10,500))/10,000 = 95
@@ -192,17 +193,27 @@ describe('rank (tech-spec 3.8, hand-computed)', () => {
     // b2 4,500: (100*(8,000-4,500))/4,000 = 87 -> 55*87 + 2000 + 1000 + 0 = 7785
     // a1 9,000 >= 8,000: 0 + 2000 + 1000 + 1500 = 4500
     // f1 7,000: (100*1,000)/4,000 = 25 -> 1375 + 0 + 0 + 1500 = 2875
-    expect(picks({ ...BASE, personalSpentAokrw: w(212_000n), nagLevel: 'warn70' })).toEqual([
+    expect(picks({ ...BASE, chainUsedAokrw: w(212_000n), nagLevel: 'warn70' })).toEqual([
       ['b2', 7785, null],
       ['a1', 4500, null],
       ['f1', 2875, null],
     ]);
   });
 
-  it('marks menus that would pass the personal budget as needing approval', () => {
-    const r = rank({ ...BASE, personalSpentAokrw: w(295_000n), nagLevel: 'warn90' });
+  it('marks menus that would pass the owner 30-day limit as needing approval', () => {
+    const r = rank({ ...BASE, chainUsedAokrw: w(295_000n), nagLevel: 'warn90' });
     const reasons = Object.fromEntries(r.items.map((x) => [x.menu.id, x.approvalReason]));
     expect(reasons).toEqual({ b2: null, a1: 'OVER_PERSONAL_BUDGET', f1: 'OVER_PERSONAL_BUDGET' });
+  });
+
+  it('does not mark them when the owner limit equals the chain cap (the chain keeps it, D-31)', () => {
+    const r = rank({
+      ...BASE,
+      myPeriodicLimitAokrw: w(500_000n),
+      chainUsedAokrw: w(495_500n),
+      nagLevel: 'warn90',
+    });
+    expect(r.items.map((x) => [x.menu.id, x.approvalReason])).toEqual([['b2', null]]);
   });
 
   it('leaves out menus the 30-day chain cap would refuse', () => {

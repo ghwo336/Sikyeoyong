@@ -22,7 +22,7 @@ const MOODS: DragonMood[] = [
   'eating',
   'cooking',
 ];
-const SIZES: DragonSize[] = [32, 44, 56, 96, 128];
+const SIZES: DragonSize[] = [32, 44, 56, 64, 96, 104, 128];
 const row = { display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' } as const;
 
 /** 표정 8종 전부 */
@@ -65,7 +65,7 @@ export const Sizes: Story = {
   ),
 };
 
-/** 날개 있음 (레벨 3) */
+/** 날개 있음 (3단계: 한 번에 30,000원 넘음) */
 export const Wings: Story = {
   render: () => (
     <div style={row}>

@@ -53,7 +53,7 @@ beforeEach(() => {
 });
 
 describe('Wallet screen (Wallet.dc.html)', () => {
-  it('draws the design numbers: allowance, pocket, limits, budget, saved', async () => {
+  it('draws the design numbers: allowance, pocket, both limits, saved (D-31)', async () => {
     wrap(
       <>
         <AllowanceContainer />
@@ -62,13 +62,13 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     );
     expect(await screen.findByText('81,000원')).toBeInTheDocument();
     expect(screen.getByText('용이 주머니에 20,000원')).toBeInTheDocument();
-    expect(await screen.findByText('한 번에 쓸 수 있는 돈')).toBeInTheDocument();
+    expect(await screen.findByText('한 번에 쓸 돈')).toBeInTheDocument();
     expect(screen.getByText('10,000원')).toBeInTheDocument();
-    expect(screen.getByText('300,000원')).toBeInTheDocument();
     expect(await screen.findByText('32,000원')).toBeInTheDocument();
-    // 30 days: used first, then the cap (demo profile 60,000, fixtures BUDGET).
-    const thirty = screen.getByText('30일 한도').parentElement;
-    expect(thirty?.textContent).toMatch(/41,000\s*\/\s*60,000원/);
+    // 30 days: used first, then my 30-day limit (demo 60,000, fixtures BUDGET).
+    const thirty = screen.getByText('30일에 쓸 돈').parentElement;
+    expect(thirty?.textContent).toMatch(/42,000\s*\/\s*60,000원/);
+    expect(screen.queryByText('이번 달 예산')).toBeNull();
   });
 
   it('shows no made-up balance when the server has no wallet (the row is just absent)', async () => {
@@ -79,7 +79,7 @@ describe('Wallet screen (Wallet.dc.html)', () => {
         <LimitRowsContainer />
       </>,
     );
-    expect(await screen.findByText('이번 달 예산')).toBeInTheDocument();
+    expect(await screen.findByText('30일에 쓸 돈')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText('주인님 용돈')).toBeNull();
     });

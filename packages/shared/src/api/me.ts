@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { zAgentLevel } from './level.js';
 import { zDragonSpecies } from '../domain/dragon.js';
 import { zAokrwString } from '../money/money.js';
 
@@ -12,7 +11,7 @@ export const zMeView = z
   .object({
     dragonName: z.string().min(1).max(8),
     dragonSpecies: zDragonSpecies,
-    level: zAgentLevel,
+    /** The per-order limit; the dragon's look grows with it (dragonStage, D-31). */
     perOrderLimit: zAokrwString,
     /**
      * True while the operator holds the owner rights (OWNER_MODE=custodial, D-24).
@@ -22,19 +21,6 @@ export const zMeView = z
   })
   .strict();
 export type MeView = z.infer<typeof zMeView>;
-
-/**
- * PATCH /me body (tech-spec 3.2). Only the monthly budget for now; the server
- * accepts only one of the policy options (D-21), never a free amount.
- */
-export const zPatchMeBody = z.object({ monthlyBudgetOkrw: zAokrwString }).strict();
-export type PatchMeBody = z.infer<typeof zPatchMeBody>;
-
-/** PATCH /me answer. */
-export const zUserView = z
-  .object({ user: z.object({ nickname: z.string(), monthlyBudget: zAokrwString }).strict() })
-  .strict();
-export type UserView = z.infer<typeof zUserView>;
 
 /** GET /signup/config (tech-spec 3.2). The identity step is a server setting (D-16). */
 export const zSignupConfig = z

@@ -9,7 +9,7 @@ const css = readFileSync(resolve(__dirname, 'ChatHeader.module.css'), 'utf8');
 const rule = (selector: string) =>
   new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
 
-const base = { name: '용이', caption: '레벨 1, 한 번에 10,000원까지', species: 'forest' } as const;
+const base = { name: '용이', caption: '한 번에 10,000원까지', species: 'forest' } as const;
 
 describe('ChatHeader (ChatHeader.md 테스트 기준)', () => {
   it('shows a 44px dragon of the species, the name and the caption in order', () => {
@@ -20,7 +20,7 @@ describe('ChatHeader (ChatHeader.md 테스트 기준)', () => {
     expect(svg).toHaveAttribute('data-mood', 'default');
     // The name is the chat screen's heading; the caption follows it.
     const heading = screen.getByRole('heading', { level: 1, name: '용이' });
-    expect(heading.nextElementSibling).toHaveTextContent('레벨 1, 한 번에 10,000원까지');
+    expect(heading.nextElementSibling).toHaveTextContent('한 번에 10,000원까지');
   });
 
   it('opens settings once per press with a button named after the dragon', async () => {

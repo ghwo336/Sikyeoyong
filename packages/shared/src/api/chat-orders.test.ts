@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DRAGON_MOODS } from '../domain/dragon-mood.js';
 import { zChatEvent, zChatHistory, zChatHistoryQuery, zSendChatMessageBody } from './chat.js';
-import { zSetLevelBody, zSetLevelResult } from './level.js';
-import { zAgentSetupView, zCreateAgentBody, zMeView, zPatchMeBody, zSignupConfig } from './me.js';
+import { zSetLimitsBody, zSetLimitsResult } from './limits.js';
+import { zAgentSetupView, zCreateAgentBody, zMeView, zSignupConfig } from './me.js';
 import {
   ORDER_STATUSES,
   zCreateOrderBody,
@@ -58,8 +58,6 @@ describe('zChatEvent (tech-spec 2.4)', () => {
         field: 'perOrder',
         from: W10000,
         to: '50000000000000000000000',
-        levelFrom: 1,
-        levelTo: 3,
         needsReauth: true,
         rows: [{ label: '30일 한도', value: '500,000원 그대로' }],
       },
@@ -77,7 +75,7 @@ describe('zChatEvent (tech-spec 2.4)', () => {
     ['more than 3 recommendations', { type: 'recommendations', items: [REC, REC, REC, REC] }],
     ['unknown error code', { type: 'order_failed', code: 'OOPS', dragonLine: 'x' }],
     [
-      'level 4 in a limit card',
+      'a level in a limit card (gone, D-31)',
       {
         type: 'limit_change_card',
         card: {
@@ -85,7 +83,7 @@ describe('zChatEvent (tech-spec 2.4)', () => {
           field: 'perOrder',
           from: '1',
           to: '2',
-          levelTo: 4,
+          levelTo: 3,
           needsReauth: false,
           rows: [],
         },
@@ -239,29 +237,18 @@ describe('order schemas (tech-spec 3.2)', () => {
 });
 
 describe('me and sign-up schemas', () => {
-  it('reads the dragon, level and per-order limit', () => {
+  it('reads the dragon and its per-order limit', () => {
     const me = {
       dragonName: '용이',
       dragonSpecies: 'forest',
-      level: 1,
       perOrderLimit: W10000,
       custodial: true,
     };
     expect(zMeView.parse(me)).toEqual(me);
     expect(zMeView.safeParse({ ...me, custodial: undefined }).success).toBe(false);
     expect(zMeView.safeParse({ ...me, custodial: 'yes' }).success).toBe(false);
-    expect(zMeView.safeParse({ ...me, level: 4 }).success).toBe(false);
+    expect(zMeView.safeParse({ ...me, level: 1 }).success).toBe(false);
     expect(zMeView.safeParse({ ...me, dragonSpecies: 'fire' }).success).toBe(false);
-  });
-
-  it('takes only an aokrw budget in PATCH /me', () => {
-    expect(zPatchMeBody.parse({ monthlyBudgetOkrw: W10000 })).toEqual({
-      monthlyBudgetOkrw: W10000,
-    });
-    expect(zPatchMeBody.safeParse({ monthlyBudgetOkrw: 200000 }).success).toBe(false);
-    expect(zPatchMeBody.safeParse({ monthlyBudgetOkrw: W10000, role: 'operator' }).success).toBe(
-      false,
-    );
   });
 
   it('names a dragon with 1 to 8 letters after trimming', () => {
@@ -291,15 +278,23 @@ describe('me and sign-up schemas', () => {
   });
 });
 
-describe('level change schemas (D-21, D-28)', () => {
-  it('takes a level 1 to 3 only, and answers the limit and the chain write', () => {
-    expect(zSetLevelBody.parse({ level: 3 })).toEqual({ level: 3 });
-    expect(zSetLevelBody.safeParse({ level: 4 }).success).toBe(false);
-    expect(zSetLevelBody.safeParse({ level: 3, approvalId: 'a' }).success).toBe(false);
-    const ok = { level: 3, perOrderLimit: W10000, txHash: `0x${'ab'.repeat(32)}` };
-    expect(zSetLevelResult.parse(ok)).toEqual(ok);
-    expect(zSetLevelResult.parse({ ...ok, txHash: null }).txHash).toBeNull();
-    expect(zSetLevelResult.safeParse({ ...ok, txHash: '0x1' }).success).toBe(false);
+describe('limit change schemas (D-31, D-28)', () => {
+  it('takes either or both aokrw limits, never a level or a number', () => {
+    expect(zSetLimitsBody.parse({ perOrderLimit: W10000 })).toEqual({ perOrderLimit: W10000 });
+    expect(zSetLimitsBody.parse({ myPeriodicLimit: W10000 })).toEqual({ myPeriodicLimit: W10000 });
+    expect(zSetLimitsBody.safeParse({}).success).toBe(false);
+    expect(zSetLimitsBody.safeParse({ level: 3 }).success).toBe(false);
+    expect(zSetLimitsBody.safeParse({ perOrderLimit: 10000 }).success).toBe(false);
+    expect(zSetLimitsBody.safeParse({ perOrderLimit: W10000, approvalId: 'a' }).success).toBe(
+      false,
+    );
+  });
+
+  it('answers both limits and the chain write', () => {
+    const ok = { perOrderLimit: W10000, myPeriodicLimit: W10000, txHash: `0x${'ab'.repeat(32)}` };
+    expect(zSetLimitsResult.parse(ok)).toEqual(ok);
+    expect(zSetLimitsResult.parse({ ...ok, txHash: null }).txHash).toBeNull();
+    expect(zSetLimitsResult.safeParse({ ...ok, txHash: '0x1' }).success).toBe(false);
   });
 });
 

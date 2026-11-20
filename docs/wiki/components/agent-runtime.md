@@ -34,35 +34,35 @@ children: []
 ## 도구 화이트리스트 (D-06)
 | 도구 | 종류 | 설명 |
 | --- | --- | --- |
-| `get_budget` | 읽기 | 이번 달 개인 예산·사용액, 30일 상한·사용량·리셋 시각, 레벨, 건당 한도, 예산 선택지. 모델에게는 금액을 `formatOkrw` 표기("300,000원"), 리셋 시각을 KST 글자로 바꿔 준다 (`budgetForModel`). 모델이 단위를 바꾸거나 금액을 계산하지 않게 |
+| `get_budget` | 읽기 | 한 번에 쓸 돈, 내 30일 한도(30일에 쓸 돈), 체인 30일 사용량·공통 상한·리셋 시각, 고를 수 있는 범위(D-31). 모델에게는 금액을 `formatOkrw` 표기("300,000원"), 리셋 시각을 KST 글자로 바꿔 준다 (`budgetForModel`). 모델이 단위를 바꾸거나 금액을 계산하지 않게 |
 | `get_order_history` | 읽기 | 최근 주문 기록 (`days` 1~60) |
 | `get_context` | 읽기 | 현재 시각(KST), 기본 주소 동네, 날씨 요약 |
 | `recommend_merchants` | 읽기 | 서버가 결정적으로 계산한 가게·메뉴 후보 최대 3개 (점수 규칙은 `recommend-and-nag.md`). 입력 `craving?`(50자), `maxPriceOkrw?`(원, 핸들러에는 aokrw bigint). 모델에게는 `{ weather, frozen, cravingMatched, candidates: [{ merchantId, store, category, menuId, menu, description, price: "9,000원", etaMin, needsApproval, approvalReason, reasons }] }`. 화면에는 같은 결과를 `recommendations` 카드(aokrw)로 (`ToolReply`) |
 | `get_menu` | 읽기 | 가게의 메뉴와 가격. 모델에게는 `{ merchantId, store, category, openNow, etaMin, menus: [{ menuId, menu, price: "9,000원", description, tags, available }] }`. 미인증·비활성·없는 가게는 `NOT_FOUND` 오류 결과. 가게는 사용자별 데이터가 아니라 세션 확인 대상이 없다 |
 | `place_order` | 주문 | 입력은 `merchantId`, `items[]`, `note`뿐. 금액과 가게 주소는 서버가 DB에서 계산·조회 |
 | `request_owner_approval` | 승인 요청 | `reason` = `OVER_LEVEL_LIMIT` / `NEW_MERCHANT` / `OVER_PERSONAL_BUDGET`. 주인 승인 요청을 만든다 |
-| `propose_limit_change` | 카드 | `field`와 `targetLevel` 또는 `budgetOption`. 한도 변경 카드만 띄우고 아무것도 바꾸지 않는다 (D-21). 금액은 서버가 붙인다 |
+| `propose_limit_change` | 카드 | `field`(`perOrder` 또는 `myPeriodic`)와 `amountOkrw`(원 단위 정수, 핸들러에는 aokrw bigint). 한도 변경 카드만 띄우고 아무것도 바꾸지 않는다 (D-21, D-31). 전과 후와 아래 줄은 서버가 현재 값으로 붙인다 (`tools/limit-card-views.ts`) |
 
 ## 반드시 지킬 규칙 (MUST)
 - LLM에게는 위 도구만 준다. 새 도구를 추가하려면 decisions.md에 기록하고 보안 리뷰를 받는다.
-- `place_order`는 서버가 다시 검증한다: 가게가 등록·인증됐는지, 메뉴와 가격이 DB와 맞는지, 금액이 레벨 한도·개인 예산·30일 상한 안인지, 처음 보는 가게면 승인이 있는지. LLM이 준 금액을 믿지 않는다 (금액은 입력에 없다).
+- `place_order`는 서버가 다시 검증한다: 가게가 등록·인증됐는지, 메뉴와 가격이 DB와 맞는지, 금액이 한 번에 쓸 돈·내 30일 한도·30일 상한 안인지, 처음 보는 가게면 승인이 있는지. LLM이 준 금액을 믿지 않는다 (금액은 입력에 없다).
 - 주문 전에 사용자에게 확인을 받는다 (가게, 메뉴, 금액). `place_order`는 견적과 확인 카드(`order_confirm` 이벤트)를 만들고, 결제는 사용자가 카드의 버튼을 눌렀을 때(`POST /api/orders/:id/confirm`) 실행한다. 자연어 "응"만으로 결제하지 않는다 (tech-spec "1.4 요청 흐름 3개").
 - 코드 (2026-11-20): `tools/handlers.ts`의 `place_order`가 `OrdersService.quote`(주문 모듈의 견적, `POST /orders`와 같은 함수)를 세션 사용자로 부른다. `clientOrderId`는 없다(null). 화면에는 `order_confirm` 카드(aokrw 문자열), 모델에는 `tools/order-views.ts`의 표시 말(`CONFIRM_CARD_SHOWN`, "9,000원", `paid: false`)만 간다. 주문 ID와 aokrw 정수는 모델에 가지 않는다. 승인이 필요하면 카드 없이 `APPROVAL_REQUIRED`와 사유. 아직: 같은 가게 연속 주문 60초 쿨다운.
 - 코드 (2026-11-20): `request_owner_approval`은 `OrdersService.requestApproval`로 간다. 같은 사용자의 살아 있는(만료 전) 대기 승인 가운데 가게와 메뉴·수량이 같은 가장 최근 주문에 `message`(최대 200자, 화면에 글자로만. 아직 `GET /approvals` 응답에는 없음)를 붙인다. 가게만 주면 그 가게의 가장 최근 살아 있는 대기 승인에, 가게를 안 주면 가장 최근의 살아 있는 대기 승인에 붙인다. 가게 없이 메뉴만 주면 400. 맞는 대기 승인이 없으면 서버 규칙이 승인을 요구할 때만 견적 함수로 대기 주문과 승인(메시지 포함)을 만든다. 요구하지 않으면 아무것도 만들지 않고 카드도 없이 `NO_APPROVAL_NEEDED`를 돌려준다(주문은 `place_order` 하나, 메시지당 주문 1건). 모델이 준 `reason`은 쓰지 않고 서버가 판정한 사유만 `APPROVAL_REQUESTED`로 돌려준다. 승인하거나 결제하지 않는다.
 - 한 메시지당 도구 호출 최대 8회, `place_order` 1회, `request_owner_approval` 1회 (따로 센다. 흐름 3은 주문이 승인 필요로 돌아온 뒤 승인 요청). 같은 가게 연속 주문 60초 쿨다운.
-- 도구 스키마는 `strict: true`이고 strict가 지원하지 않는 키워드를 넣지 않는다. 범위와 길이는 `TOOL_INPUTS`(zod)가 검사한다. 금액성 입력(`maxPriceOkrw`)은 zod에서 aokrw `bigint`로 바꿔 핸들러에 넘긴다.
+- 도구 스키마는 `strict: true`이고 strict가 지원하지 않는 키워드를 넣지 않는다. 범위와 길이는 `TOOL_INPUTS`(zod)가 검사한다. 금액성 입력(`maxPriceOkrw`, `amountOkrw`)은 zod에서 `okrwToAokrw`로 aokrw `bigint`로 바꿔 핸들러에 넘긴다.
 - 모델이 거절(refusal)하면 답하지 않은 tool_use를 대화 기록에서 뺀다.
 - 체인 거절은 에러 코드를 받아 말투 규칙에 맞게 설명하고, 필요하면 `request_owner_approval`을 제안한다. 같은 주문을 금액을 쪼개서 다시 시도하지 않는다.
 - 외부 데이터(가게 이름, 메뉴 설명, 리뷰, 날씨 응답)는 시스템 프롬프트에서 "데이터"로 구분해 넣는다. 그 안의 지시는 따르지 않는다. 가게 이름 40자, 메뉴 설명 200자로 `MerchantsService`가 자른 뒤 그대로 넘긴다 (지시문 필터는 판매자 입력이 생기는 2단계, tech-spec 9.2).
 - 대화 로그에 금액·주문은 남기되, 세션 토큰·키는 남기지 않는다.
-- `propose_limit_change`(D-21): 그 턴의 사용자 원문에 `policy.ts` 한도 의도 키워드가 없으면 카드를 버린다 (도구 결과 글은 보지 않는다). 최고 레벨 넘기, 선택지에 없는 값, 지금과 같은 값도 버린다. 여러 단계 올리기는 된다. 메시지당 1회. 바꾸기는 카드 버튼 뒤 서버가 한다 (레벨 올리기만 재인증).
+- `propose_limit_change`(D-21, D-31): 그 턴의 사용자 원문에 `policy.ts` 한도 의도 키워드가 없으면 카드를 버린다 (런타임, 도구 결과 글은 보지 않는다). 범위와 단위(`isInRange`) 밖이거나 지금과 같은 값이면 핸들러가 카드 없이 `NO_CARD`와 이유(범위는 표시 금액)만 모델에게 돌려준다. 메시지당 1회. 카드의 `needsReauth`는 올리기면 true. 바꾸기는 카드 버튼 뒤 `PUT /agents/me/limits`가 한다 (올리기는 둘 다 재인증, 내리기는 바로).
 - 도구 핸들러는 사용자와 에이전트를 로그인 세션에서 정한다. LLM이 준 ID가 그 사용자 것인지 확인한다.
 - 사용자별 메시지 수 제한(분당, 하루)을 둔다. LLM 비용 공격 방지.
 - 모델 답은 웹에서 글자로만 그린다 (HTML 주입 금지).
 
 ## 하지 말 것 (MUST NOT)
 - MAWS MCP 도구(`transfer.send`, `agent.create`, `agent.fund`, `policy.set` 등)를 LLM에 직접 노출하지 않는다. MAWS MCP 클라이언트는 `payment` 모듈 안에서만 import한다 (`no-restricted-imports` 린트로 강제).
-- 즉시 충전(`fund`), 회수, 동결, 레벨 변경을 도구로 만들지 않는다 (`propose_limit_change`는 카드만 띄우고 레벨을 바꾸지 않는다). 즉시 충전은 주문 서비스가 결제 직전에 서버 코드로 부른다 (모드 P, D-06).
+- 즉시 충전(`fund`), 회수, 동결, 한도 변경을 도구로 만들지 않는다 (`propose_limit_change`는 카드만 띄우고 한도를 바꾸지 않는다). 즉시 충전은 주문 서비스가 결제 직전에 서버 코드로 부른다 (모드 P, D-06).
 - LLM이 주소, 금액, 정책값을 생성하게 하지 않는다.
 - 한도를 피하려고 주문을 여러 건으로 나누는 행동을 허용하지 않는다 (서버가 같은 의도의 연속 주문을 감지하면 승인 요청으로 돌린다).
 - 승인 요청을 LLM이 스스로 승인하지 않는다. 승인은 주인의 UI 행동으로만.

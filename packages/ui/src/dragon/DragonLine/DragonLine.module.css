@@ -39,6 +39,34 @@
   gap: var(--size-dragon-greeting-gap);
 }
 
+/* Budget.dc.html (D-31): the dragon grows with the per-order limit, 80, 92, 104 by stage.
+   Drawn at 104 and scaled, so the words beside it never move. 240ms like the design. */
+.grow {
+  display: block;
+  flex-shrink: 0;
+  transform-origin: center;
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.grow[data-stage='1'] {
+  transform: scale(calc(80 / 104));
+}
+
+.grow[data-stage='2'] {
+  transform: scale(calc(92 / 104));
+}
+
+.grow[data-stage='3'] {
+  transform: none;
+}
+
+/* Reduced motion: the size changes at once, nothing moves (design-and-motion.md). */
+@media (prefers-reduced-motion: reduce) {
+  .grow {
+    transition: none;
+  }
+}
+
 /* Main.dc.html: the words, then what the dragon hands over, 12 apart in one column. */
 .body {
   display: flex;

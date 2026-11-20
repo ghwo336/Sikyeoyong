@@ -19,6 +19,6 @@ describe('nameIs', () => {
 
 describe('BORN_LINE', () => {
   it('reads like Name.dc.html with the level 1 per-order limit from policy', () => {
-    expect(BORN_LINE).toBe('레벨 1로 태어나요. 한 번에 10,000원까지.');
+    expect(BORN_LINE).toBe('처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요.');
   });
 });

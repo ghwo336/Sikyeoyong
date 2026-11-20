@@ -5,7 +5,7 @@ import styles from './ActionPair.module.css';
 export type ActionPairGap = 'xs' | 'sm' | 'md';
 
 export interface ActionPairProps {
-  /** The main action, a base Button. Optional: Blocked has none at the top level. */
+  /** The main action, a base Button. Optional: Blocked has none when no limit fits. */
   readonly primary?: ReactNode;
   /** The way out under it ("다시 고를래", "그만두기"), a base Button. */
   readonly secondary: ReactNode;

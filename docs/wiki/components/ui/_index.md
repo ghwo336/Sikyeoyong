@@ -38,6 +38,6 @@ children:
 | [dragon/_index.md](dragon/_index.md) | 드래곤: 용이 그림과 말. 표정으로 상태를 말한다 |
 | [chat/_index.md](chat/_index.md) | 대화: 대화 화면 부품. 말풍선, 드래곤 한 줄, 입력창 |
 | [order/_index.md](order/_index.md) | 주문: 추천, 확인, 기다림, 도착, 상세 |
-| [limits/_index.md](limits/_index.md) | 한도: 한도 표시, 막힘, 변경 카드 |
-| [onboarding/_index.md](onboarding/_index.md) | 가입: 로그인, 본인 인증, 알 고르기, 부화, 예산 |
+| [limits/_index.md](limits/_index.md) | 한도: 한도 정하기(금액 조절), 막힘, 변경 카드 |
+| [onboarding/_index.md](onboarding/_index.md) | 가입: 로그인, 본인 인증, 알 고르기, 부화, 체험용 용돈 |
 | [wallet/_index.md](wallet/_index.md) | 용이 관리: 용돈, 신분증, 멈춤, 맡아 둔다는 한 줄 |

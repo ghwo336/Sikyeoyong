@@ -231,19 +231,18 @@ apps/api/src/
 | POST | `/signup/trial` | user | | `TrialResult` (`{ granted }`, `api/wallet.ts`). 본인 인증을 마친 주인만(아니면 403). 체험용 용돈(정책 `trialAllowanceAokrw`, 기본 100,000원)을 주인 용돈 장부에 한 번만 넣는다. 두 번째부터는 200 `granted: false`(동시에 와도 하나만, 부분 유일 색인). 수탁(D-24) 동안은 장부만 쓰고 체인에서는 아무것도 옮기지 않는다. 2026-11-20 추가 (allowance 모듈) |
 | GET | `/identity` | user | | `IdentityStatus` (`{ verified }`, `api/auth.ts`). 본인 인증을 마쳤는지. 입구(EntryGate)가 용이 없는 사용자를 Verify와 Name 중 어디로 보낼지 정한다. 2026-11-20 추가 |
 | POST | `/identity/verify` | user | | `{ verified: true }`. 본인 인증(D-16). `VERIFY_MODE=mock`이면 통과를 기록, `kakao`는 Q-19가 풀릴 때까지 500 `INTERNAL`. 통과한 사실, 방법, 시각만 남긴다. 인증 전의 `POST /agents`는 403 (2026-11-20) |
-| GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, level, perOrderLimit, custodial }`, `api/me.ts`. `custodial`은 `OWNER_MODE=custodial`일 때만 true, 지갑 화면의 체험판 한 줄용, D-24). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
+| GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, perOrderLimit, custodial }`, `api/me.ts`. 레벨 칸은 D-31로 없앴다. `custodial`은 `OWNER_MODE=custodial`일 때만 true, 지갑 화면의 체험판 한 줄용, D-24). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
 | GET | `/me/id-card` | user | | `IdCardView` (`api/wallet.ts`, 용이 신분증 화면): `ownerName`은 닉네임(실명은 저장하지 않는다, D-16), `ownerVerified`는 본인 인증 기록 여부, `bornAt`은 용이를 만든 시각. 용이 없으면 404. 2026-11-20 추가 (users 모듈: users가 agents와 identity를 이미 가져오므로 순환 없이 여기) |
-| PATCH | `/me` | user | `{ nickname?, address?, monthlyBudgetOkrw? }` | `{ user }` |
 | POST | `/agents` | user | `{ dragonName, dragonSpecies }` | `{ agent: { id, status: 'PENDING' } }` |
 | GET | `/agents/me` | user | | `AgentSetupView` (`{ status: PENDING \| ACTIVE \| FAILED, steps: [wallet, identity, limit] }`, `api/me.ts`). 지갑 화면용 상세(8004 agentId, 지갑, 체인 상태)는 그 화면을 만들 때 선택 칸으로 더한다 |
 | POST | `/agents/me/setup/retry` | user | | `AgentSetupView`. 부화가 실패했을 때만 멈춘 단계부터 다시 한다 ("다시 깨우기", 2026-11-20 추가) |
-| POST | `/agents/me/level` | user | `{ level: 1 \| 2 \| 3 }` (`zSetLevelBody`) | `{ level, perOrderLimit, txHash }` (`zSetLevelResult`, 같은 레벨이면 `txHash` null). TransferLimit을 `OwnerAuthority`로 먼저 쓰고 그다음 레벨과 한도 이력. 내리기는 바로, 올리기는 재인증(D-28: `REAUTH_MODE=none`이면 버튼만, `pouch`는 Q-30 전까지 거절). 멈춘 용이는 `SERVER_FROZEN`. 레벨 초과 승인을 묶는 `approvalId`는 승인 API 쪽 후속 (2026-11-20) |
+| PUT | `/agents/me/limits` | user | `{ perOrderLimit?, myPeriodicLimit? }` (`zSetLimitsBody`, aokrw 문자열, 하나 이상) | `{ perOrderLimit, myPeriodicLimit, txHash }` (`zSetLimitsResult`). D-31: `POST /agents/me/level`과 `PATCH /me { monthlyBudgetOkrw }`를 대신한다. 두 값 모두 정책 범위와 단위(`isInRange`) 밖이면 `VALIDATION_FAILED`이고 아무것도 바꾸지 않는다. 한 번에 쓸 돈은 TransferLimit을 `OwnerAuthority`로 먼저 쓰고 그다음 저장 값과 한도 이력(`txHash`는 이 기록). 30일에 쓸 돈은 서버만 저장한다(이것만 바뀌면 `txHash` null). 둘 중 하나라도 올리면 재인증(D-28: `REAUTH_MODE=none`이면 버튼만, `pouch`는 Q-30 전까지 거절), 내리기는 바로. 지금 값과 같으면 아무것도 하지 않는다. 체인 기록이 실패하면 둘 다 그대로. 같은 용이의 주인 동작과 한 줄로 선다(`AgentLock`). 멈춘 용이의 한 번에 쓸 돈 변경은 `SERVER_FROZEN`. 구현은 `modules/limits` (users가 agents를 이미 가져와서 둘을 함께 쓰는 모듈을 따로 둠, 2026-11-20) |
 | POST | `/agents/me/freeze` | user | | `FreezeResult` (`{ frozen, txHashes }`, `api/wallet.ts`). 서버 동결 플래그 먼저(바로 `SERVER_FROZEN`), 그다음 소유자 포트로 체인 `setAgentPaused`. 체인 호출이 실패해도 서버는 멈춘 채로 남고 주인이 다시 누른다(자동 재시도 없음). 이미 멈춘 용이면 체인 멈춤만 다시 보낸다. 같은 용이의 멈추기, 깨우기, 돌려받기는 한 번에 하나씩(`AgentLock`, 프로세스 안 줄 세우기)이고 각자 차례 안에서 상태를 다시 읽는다. 그래서 느린 깨우기가 뒤에 누른 멈추기보다 늦게 끝나 용이를 깨워 두는 일이 없다. 멈춤은 계약을 통한 주문만 막고, 유출된 키로 float를 직접 보내는 것은 막지 못한다(D-06). 2026-11-20 구현 (`agents/agent-freeze.service.ts`) |
 | POST | `/agents/me/unfreeze` | user | | `FreezeResult`. 체인 재개 먼저, 그다음 서버 플래그. 체인 호출이 실패하면 계속 멈춤. 이미 깨어 있으면 아무것도 보내지 않는다 |
 | POST | `/agents/me/fund` | user | `{ amount }` (aokrw 문자열) | `{ txHash }` |
 | POST | `/agents/me/drain` | user | | `RefundResult` (`{ refunded, txHashes }`, `api/wallet.ts`, 멈춤 화면 "돌려받기"). 멈춘 용이만(아니면 409 `CONFLICT`, 멈춘 동안은 주문 확정이 막혀 주머니가 다른 데서 움직이지 않는다). 소유자 포트 drain 뒤 잔액 차이(전 - 후)를 주인 용돈 장부 `refund`로 기록. 같은 용이의 동시 요청은 하나만 옮긴다(프로세스 안 잠금). 실패하면 아무것도 기록하지 않고 주인이 다시 누른다. 2026-11-20 구현 (`agents/agent-refund.service.ts`) |
 | GET | `/budget` | user | | `BudgetView` (아래) |
-| GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 이번 달 예산에서 쓴 돈을 뺀 값(0 아래로 안 감, Q-37). 용이 없으면 404 |
+| GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 내 30일 한도(D-31, 예전 월 예산)에서 이번 달(KST) 쓴 돈을 뺀 값(0 아래로 안 감, Q-37). 용이 없으면 404 |
 | POST | `/chat/messages` | user | `{ text, clientMessageId }` | SSE `ChatEvent` 스트림 |
 | GET | `/chat/history` | user | `?cursor` | `ChatHistory` (`{ startedAt, messages, nextCursor }`, `api/chat.ts`). 용의 말은 그 말을 만든 `ChatEvent` 목록으로 돌려준다 |
 | GET | `/merchants` | user | `?category&verified` | `{ merchants: MerchantCard[] }` (`MerchantCard` = `{ id, name, category, tags, verified, openNow, etaMin }`, `api/merchants.ts`). 미인증·비활성 가게는 나오지 않는다. `verified`는 `true`만 받고 그 밖은 400. 2026-11-20 |
@@ -256,7 +255,7 @@ apps/api/src/
 | POST | `/orders/:id/rating` | user | `{ value: again \| okay \| meh }` (`zRateOrderBody`) | 204. 도착 화면 맛 평가. 결제된 주문(paid, preparing, delivering, delivered)만, 아니면 409. 남의 주문이나 없는 id는 404. 다시 보내면 바꾼다. 돈을 옮기지 않는다. 추천에 반영은 후속 (테이블 `order_ratings`, 마이그레이션 0007). 2026-11-20 추가 |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |
 | GET | `/approvals` | user | `?status=pending` | `{ approvals }` |
-| POST | `/approvals/:id/approve` | user | | `{ approval, order, quote? }` (`zApprovalDecision`). 필요한 조치(가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌려 확인 카드를 다시 준다. 레벨 초과는 400이고 `POST /agents/me/level { approvalId }`로 올린다 (TransferLimit 기록과 재인증이 필요해서, payment.md). 만료된 승인은 `expired`와 실패한 주문을 답한다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
+| POST | `/approvals/:id/approve` | user | | `{ approval, order, quote? }` (`zApprovalDecision`). 필요한 조치(가게 허용, 예산 초과 허락)를 하고 묶인 주문을 `quoted`로 되돌려 확인 카드를 다시 준다. 건당 한도 초과는 400이고 `PUT /agents/me/limits`로 올린다 (TransferLimit 기록과 재인증이 필요해서, payment.md, D-31). 만료된 승인은 `expired`와 실패한 주문을 답한다. **결제하지 않는다** (D-19, 결제는 confirm에서만) |
 | POST | `/approvals/:id/reject` | user | | `{ approval, order }`. 묶인 주문은 재시도 불가 `failed` |
 | GET | `/health` | 공개 | | `{ status: 'ok' }`. 프로세스 살아있음만 (compose 헬스체크용, 2026-11-19 추가). 체인과 MAWS 상태는 `/admin/health` |
 | GET | `/admin/health` | operator | | 체인 연결, MAWS 연결, 인덱서 커서, 정책 동기화 상태 |
@@ -267,20 +266,17 @@ apps/api/src/
 | POST | `/demo/key-leak` | user + DEMO_MODE | `{ side: 'plain' \| 'maroo' }` | 시뮬레이션 결과 |
 | POST | `/demo/time-skip` | operator + DEMO_MODE | `{ seconds }` | 배달 타이머만 앞당김 (체인 시간은 못 바꿈) |
 
-`BudgetView` (zod 원본은 `packages/shared/src/api/budget.ts`의 `zBudgetView`, 남는 칸은 거절):
+`BudgetView` (zod 원본은 `packages/shared/src/api/budget.ts`의 `zBudgetView`, 남는 칸은 거절. D-31로 레벨, 달력 월, 예산 선택지를 없앴다):
 ```ts
 {
-  monthKst: '2026-12',               // 개인 예산은 달력 월(KST) 기준. 서버 계산이라 가능
-  personalBudget: string,            // aokrw
-  personalSpent: string,
-  nagLevel: 'none' | 'warn70' | 'warn90' | 'over100',
-  chainCap: string,                  // 30일 상한
+  myPeriodicLimit: string,           // 내 30일 한도(30일에 쓸 돈), aokrw. 서버가 지킨다. 저장 값이 정책 범위 밖이면 읽을 때 범위와 단위로 맞춘다
+  nagLevel: 'none' | 'warn70' | 'warn90' | 'over100',  // chainUsed를 myPeriodicLimit과 비교 (체인 30일 창, 달력 월 아님)
+  chainCap: string,                  // 모두에게 같은 30일 상한
   chainUsed: string,                 // contractPeriodicVolume 읽은 값
   chainResetAtSec: number | null,    // unix 초 (체인 resetAt, 단위를 이름에 표시). 창 안 첫 주문 전에는 null
-  level: 1 | 2 | 3,
-  perOrderLimit: string,
+  perOrderLimit: string,             // 한 번에 쓸 돈 (주인이 고른 금액, 체인 TransferLimit과 같음)
   frozen: boolean,
-  budgetOptions: { id: 'small' | 'medium' | 'large'; amount: string }[]  // policy.ts monthlyBudgetOptions (20만, 30만, 50만 원), D-21
+  limitRanges: { perOrder: { min, max, step }, myPeriodic: { min, max, step } }  // policy.ts perOrderLimit, myPeriodicLimit (aokrw 문자열)
 }
 ```
 
@@ -301,20 +297,20 @@ apps/api/src/
 
 ```json
 [
-  {"name":"get_budget","description":"이번 달 개인 예산, 사용액, 체인 30일 상한과 리셋 시각, 레벨과 건당 한도, 예산 선택지를 조회한다.","strict":true,"input_schema":{"type":"object","properties":{},"additionalProperties":false}},
+  {"name":"get_budget","description":"한 번에 쓸 돈, 30일에 쓸 돈(내 한도)과 30일 동안 쓴 돈, 모두에게 같은 30일 상한과 리셋 시각, 고를 수 있는 금액 범위를 조회한다.","strict":true,"input_schema":{"type":"object","properties":{},"additionalProperties":false}},
   {"name":"get_order_history","description":"최근 주문 기록을 조회한다.","strict":true,"input_schema":{"type":"object","properties":{"days":{"type":"integer","description":"1~60일"}},"required":["days"],"additionalProperties":false}},
   {"name":"get_context","description":"현재 시각(KST), 사용자 기본 주소 동네, 날씨 요약을 조회한다.","strict":true,"input_schema":{"type":"object","properties":{},"additionalProperties":false}},
   {"name":"recommend_merchants","description":"예산, 날씨, 기록을 반영해 주문 가능한 가게와 메뉴 후보를 최대 3개 돌려준다.","strict":true,"input_schema":{"type":"object","properties":{"craving":{"type":"string","description":"사용자가 말한 먹고 싶은 것"},"maxPriceOkrw":{"type":"integer","description":"원 단위 가격 상한 (검색 조건)"}},"additionalProperties":false}},
   {"name":"get_menu","description":"가게의 메뉴와 가격을 조회한다.","strict":true,"input_schema":{"type":"object","properties":{"merchantId":{"type":"string"}},"required":["merchantId"],"additionalProperties":false}},
   {"name":"place_order","description":"가게 주문의 견적과 확인 카드를 만든다. 결제는 사용자가 카드 버튼을 누를 때 서버가 한다. 금액은 서버가 메뉴 가격으로 계산한다.","strict":true,"input_schema":{"type":"object","properties":{"merchantId":{"type":"string"},"items":{"type":"array","minItems":1,"items":{"type":"object","properties":{"menuId":{"type":"string"},"qty":{"type":"integer"}},"required":["menuId","qty"],"additionalProperties":false}},"note":{"type":"string"}},"required":["merchantId","items"],"additionalProperties":false}},
   {"name":"request_owner_approval","description":"한도 초과나 처음 보는 가게처럼 주인 승인이 필요할 때 승인을 요청한다.","strict":true,"input_schema":{"type":"object","properties":{"reason":{"enum":["OVER_LEVEL_LIMIT","NEW_MERCHANT","OVER_PERSONAL_BUDGET"]},"merchantId":{"type":"string"},"items":{"type":"array","minItems":0,"items":{"type":"object","properties":{"menuId":{"type":"string"},"qty":{"type":"integer"}},"required":["menuId","qty"],"additionalProperties":false}},"message":{"type":"string"}},"required":["reason"],"additionalProperties":false}},
-  {"name":"propose_limit_change","description":"사용자가 한도나 예산을 바꾸자고 직접 말했을 때만 변경 카드를 띄운다. 아무것도 바꾸지 않는다. 바꾸는 일은 사용자가 카드 버튼을 누른 뒤 서버가 한다.","strict":true,"input_schema":{"type":"object","properties":{"field":{"enum":["perOrder","monthlyBudget"]},"targetLevel":{"enum":[1,2,3]},"budgetOption":{"enum":["small","medium","large"]}},"required":["field"],"additionalProperties":false}}
+  {"name":"propose_limit_change","description":"사용자가 한도를 바꾸자고 직접 말했을 때만 변경 카드를 띄운다. 아무것도 바꾸지 않는다. 바꾸는 일은 사용자가 카드 버튼을 누른 뒤 서버가 한다.","strict":true,"input_schema":{"type":"object","properties":{"field":{"enum":["perOrder","myPeriodic"],"description":"perOrder는 한 번에 쓸 돈, myPeriodic은 30일에 쓸 돈"},"amountOkrw":{"type":"integer","description":"사용자가 말한 바꿀 금액, 원 단위"}},"required":["field","amountOkrw"],"additionalProperties":false}}
 ]
 ```
 
-- `propose_limit_change` (D-21): 금액을 받지 않는다. 서버가 레벨표와 예산 선택지에서 전과 후 금액을 붙여 `limit_change_card` 이벤트로 보낸다. 서버는 그 턴의 사용자 원문에 `policy.ts` 한도 의도 키워드가 없거나, 최고 레벨을 넘거나 선택지에 없는 값이거나, 지금 값과 같으면 카드를 버린다. 한 번에 여러 단계 올리기는 막지 않는다 (LimitChat 시안). 메시지당 1회. 확정은 카드 버튼 → 레벨은 `POST /agents/me/level`(올리기는 재인증, 내리기는 바로), 월 예산은 `PATCH /me { monthlyBudgetOkrw }`(바로).
+- `propose_limit_change` (D-21, D-31): 입력은 `field`(`perOrder` 한 번에 쓸 돈, `myPeriodic` 30일에 쓸 돈)와 `amountOkrw`(원 단위 정수, 사용자 말에서 온 금액). 핸들러는 `okrwToAokrw`로 바꾼 aokrw `bigint`만 본다. 서버는 그 턴의 사용자 원문에 `policy.ts` 한도 의도 키워드가 없거나(런타임), 범위와 단위(`isInRange`) 밖이거나, 지금 값과 같으면 카드를 버리고 모델에게 이유(`NO_CARD`, 범위는 표시 금액)만 돌려준다. 카드의 전과 후, `needsReauth`(올리기면 true), 아래 줄(다른 한도 "그대로")은 서버가 현재 값으로 만들어 `limit_change_card` 이벤트로 보낸다. 메시지당 1회. 확정은 카드 버튼 → `PUT /agents/me/limits`(올리기는 재인증, 내리기는 바로).
 
-- 금액 인자는 받지 않는다. 서버가 `menus.price * qty`로 계산한다 (LLM이 금액을 조작할 수 없게).
+- 결제 금액 인자는 받지 않는다. 서버가 `menus.price * qty`로 계산한다 (LLM이 금액을 조작할 수 없게). 금액이 들어오는 도구는 검색 조건 `maxPriceOkrw`와 한도 카드의 `amountOkrw`뿐이고 둘 다 돈을 옮기지 않는다.
 - `merchantId`는 서버 DB의 내부 ID(문자열 UUID). 주소가 아니다.
 - 모든 도구는 `strict: true`다. strict 모드가 지원하지 않는 키워드(minimum, maximum, maxLength, maxItems 등)는 스키마에 넣지 않고, 범위와 길이는 서버의 zod 입력 검사(`TOOL_INPUTS`)가 매 호출마다 본다. 스키마가 SDK `transformJSONSchema`의 고정점인지 테스트가 확인한다 (D-22).
 - `recommend_merchants.maxPriceOkrw`는 원 단위 검색 조건(0~1,000,000)이고, 핸들러에는 aokrw `bigint`(`maxPriceAokrw`)로 바뀌어 간다.
@@ -506,16 +502,16 @@ score(merchant, menu) =
 
 | 테이블 | 주요 컬럼 | 인덱스·제약 |
 | --- | --- | --- |
-| `users` | id, nickname, address_text, address_dong, monthly_budget, role(`user`/`operator`/`merchant`), created_at | |
+| `users` | id, nickname, address_text, address_dong, my_periodic_limit(내 30일 한도, D-31. 0009에서 monthly_budget 이름만 바꾸고 값은 그대로), role(`user`/`operator`/`merchant`), created_at | |
 | `identity_checks` | user_id(PK, users), method(`kakao`/`mock`), verified_at | 본인 인증 통과 기록만. 인증 원문은 저장하지 않는다 (마이그레이션 0005) |
 | `order_ratings` | order_id(PK, orders), user_id(users), value(`again`/`okay`/`meh`), rated_at | 맛 평가. 주문당 하나, 다시 평가하면 바꾼다 (마이그레이션 0007) |
 | `pouchi_accounts` | wallet_id(PK, 파우치 앱 지갑 ID), user_id(users, 유일), wallet_address, created_at | D-29 파우치 로그인 계정 연결. 지갑 ID가 로그인 신원, 주소는 사용자 스마트 지갑(D-24 pouch 때 소유자 지갑). 프로필은 저장하지 않는다 (마이그레이션 0008) |
 | `owner_allowance_entries` | id(uuidv7), user_id(users), kind(`trial`/`fund`/`refund`), amount_aokrw(0보다 큼), tx_hash, created_at. `trial`은 사용자당 하나(부분 유일 색인) | 주인 용돈 장부 (D-24 수탁 동안 운영자가 맡은 돈 중 이 사용자 몫 = trial + refund - fund). `OWNER_MODE=pouch`면 사용자 지갑의 체인 잔액으로 바뀐다 (마이그레이션 0006) |
 | `oauth_accounts` | id, user_id → users, provider(`kakao`/`google`/`apple`), provider_user_id, email?, created_at | 유니크(provider, provider_user_id) |
 | `sessions` | id(토큰 해시), user_id, platform(`web`/`native`), expires_at, revoked_at | 인덱스(user_id) |
-| `agents` | id, user_id(1:1), dragon_name, dragon_species(`forest`/`water`/`flower`/`star`, D-20), status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, level, created_at | 유니크(user_id), 유니크(wallet_address) |
+| `agents` | id, user_id(1:1), dragon_name, dragon_species(`forest`/`water`/`flower`/`star`, D-20), status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, per_order_limit(aokrw 문자열, D-31. 마이그레이션 0009가 레벨 1, 2, 3을 10,000, 30,000, 50,000원으로 옮김), setup_step, created_at | 유니크(user_id), 유니크(wallet_address) |
 | `agent_keys` | agent_id → agents, ciphertext, iv, key_version | 경로 B 전용 |
-| `agent_limit_history` | id, agent_id, level, transfer_limit, tx_hash, approval_id?, created_at | |
+| `agent_limit_history` | id, agent_id, transfer_limit, tx_hash, approval_id?, created_at | level 칸은 0009에서 없앴다 (D-31) |
 | `wallet_txs` | id, agent_id, kind(`fund`/`drain`/`set_limit`/`freeze`/`pay`/`refund`), request_id(충전은 orderRef와 attempt에서 만듦), order_id?, attempt?, submit_started_at?, nonce?, maws_request_id?, tx_hash?, status, error_code?, created_at | 인덱스(agent_id, created_at), 유니크(request_id) |
 | `merchants` | id, onchain_id?, name, category, tags_json, payout_address, kyb_uid?, verified, active, business_no_hash?, metadata_uri, open_hours_json, source(`seed`/`console`), created_at | 유니크(onchain_id), 유니크(payout_address) |
 | `menus` | id, merchant_id, name, price, tags_json, description, available | 인덱스(merchant_id) |

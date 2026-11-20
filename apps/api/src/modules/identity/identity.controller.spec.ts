@@ -28,7 +28,7 @@ async function setup(env: Record<string, string>) {
   const h = openDb(':memory:');
   runMigrations(h.db);
   for (const id of ['u1', 'u2']) {
-    h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: '1', createdAt: 1 }).run();
+    h.db.insert(users).values({ id, nickname: id, myPeriodicLimitAokrw: '1', createdAt: 1 }).run();
   }
   const moduleRef = await Test.createTestingModule({ imports: [IdentityModule] })
     .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))

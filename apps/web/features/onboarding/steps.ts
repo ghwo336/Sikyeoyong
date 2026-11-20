@@ -2,13 +2,13 @@ import { formatOkrw, getPolicy } from '@sikyeoyong/shared';
 import type { AgentSetupStepKey } from '../../lib/api';
 
 /** The three sign-up steps on the top bar (Verify, Name, Budget). Names are for screen readers. */
-export const SIGNUP_STEPS = ['본인 인증', '알 고르기', '예산'] as const;
+export const SIGNUP_STEPS = ['본인 인증', '알 고르기', '한도'] as const;
 
 /**
- * Name.dc.html line under the name field. Every dragon is born at level 1; its per-order limit is
- * the shared policy value (the same in every policy profile), so the words follow the policy.
+ * Name.dc.html line under the name field. Every dragon starts with the first per-order offer
+ * (the same in every policy profile) and the owner picks the real one after hatching (D-31).
  */
-export const BORN_LINE = `레벨 1로 태어나요. 한 번에 ${formatOkrw(getPolicy('default').perOrderLimitAokrw[1])}까지.`;
+export const BORN_LINE = `처음엔 한 번에 ${formatOkrw(getPolicy('default').perOrderLimit.initialAokrw)}까지. 깨어나면 바꿀 수 있어요.`;
 
 /** Hatch.dc.html step labels. */
 export const HATCH_LABEL: { readonly [K in AgentSetupStepKey]: string } = {

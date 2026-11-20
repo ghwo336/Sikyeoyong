@@ -20,7 +20,6 @@ describe('createHttpApi', () => {
     const me = {
       dragonName: '용이',
       dragonSpecies: 'forest',
-      level: 1,
       perOrderLimit: W10000,
       custodial: true,
     };
@@ -32,7 +31,7 @@ describe('createHttpApi', () => {
   });
 
   it('refuses an answer that breaks the shared schema (no silent number amounts)', async () => {
-    const bad = { dragonName: '용이', dragonSpecies: 'forest', level: 1, perOrderLimit: 10000 };
+    const bad = { dragonName: '용이', dragonSpecies: 'forest', perOrderLimit: 10000 };
     const f = fakeFetch({ 'GET /api/me': { body: JSON.stringify(bad) } });
     await expect(createHttpApi(f).getMe()).rejects.toThrow();
   });
@@ -85,14 +84,6 @@ describe('createHttpApi', () => {
     });
     expect((await createHttpApi(f).confirmOrder('o/1')).order.status).toBe('paid');
     expect(f.mock.calls[0]?.[1]?.body).toBeUndefined();
-  });
-
-  it('PATCH /api/me carries the budget as an aokrw string', async () => {
-    const f = fakeFetch({
-      'PATCH /api/me': { body: '{"user":{"nickname":"n","monthlyBudget":"1"}}' },
-    });
-    await createHttpApi(f).setMonthlyBudget('300000000000000000000000');
-    expect(f.mock.calls[0]?.[1]?.body).toBe('{"monthlyBudgetOkrw":"300000000000000000000000"}');
   });
 
   it('refuses what the server cannot do yet instead of pretending it worked', async () => {
@@ -215,28 +206,32 @@ describe('createHttpApi', () => {
     await expect(createHttpApi(no).verifyIdentity()).rejects.toMatchObject({ code: 'INTERNAL' });
   });
 
-  it('a level raise posts the level to /api/agents/me/level and checks the answer', async () => {
-    const ok = fakeFetch({
-      'POST /api/agents/me/level': {
-        body: JSON.stringify({ level: 2, perOrderLimit: W10000, txHash: `0x${'a'.repeat(64)}` }),
-      },
-    });
-    await createHttpApi(ok).raiseLevel(2);
-    expect(ok.mock.calls[0]?.[1]?.body).toBe('{"level":2}');
+  it('a limit change puts aokrw strings to /api/agents/me/limits and checks the answer (D-31)', async () => {
+    const answer = {
+      perOrderLimit: W10000,
+      myPeriodicLimit: W10000,
+      txHash: `0x${'a'.repeat(64)}`,
+    };
+    const ok = fakeFetch({ 'PUT /api/agents/me/limits': { body: JSON.stringify(answer) } });
+    expect(await createHttpApi(ok).setLimits({ perOrderLimit: W10000 })).toEqual(answer);
+    expect(ok.mock.calls[0]?.[1]?.method).toBe('PUT');
+    expect(ok.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({ perOrderLimit: W10000 }));
     expect((ok.mock.calls[0]?.[1]?.headers as Record<string, string>)['X-Requested-With']).toBe(
       'fetch',
     );
     const numberLimit = fakeFetch({
-      'POST /api/agents/me/level': { body: '{"level":2,"perOrderLimit":10000,"txHash":null}' },
+      'PUT /api/agents/me/limits': {
+        body: '{"perOrderLimit":10000,"myPeriodicLimit":"1","txHash":null}',
+      },
     });
-    await expect(createHttpApi(numberLimit).raiseLevel(2)).rejects.toThrow();
+    await expect(createHttpApi(numberLimit).setLimits({ perOrderLimit: W10000 })).rejects.toThrow();
     const frozen = fakeFetch({
-      'POST /api/agents/me/level': {
+      'PUT /api/agents/me/limits': {
         status: 409,
         body: JSON.stringify({ error: { code: 'SERVER_FROZEN', message: '멈춰 있어요' } }),
       },
     });
-    await expect(createHttpApi(frozen).raiseLevel(2)).rejects.toMatchObject({
+    await expect(createHttpApi(frozen).setLimits({ perOrderLimit: W10000 })).rejects.toMatchObject({
       code: 'SERVER_FROZEN',
     });
   });
@@ -296,12 +291,14 @@ describe('createHttpApi: what the server and proxies require', () => {
   it('every cookie write carries X-Requested-With and the same-origin cookie (else 403)', async () => {
     const f = fakeFetch({
       'POST /api/orders/o1/confirm': { body: JSON.stringify({ order: VIEW }) },
-      'PATCH /api/me': { body: '{"user":{"nickname":"n","monthlyBudget":"1"}}' },
+      'PUT /api/agents/me/limits': {
+        body: '{"perOrderLimit":"1","myPeriodicLimit":"1","txHash":null}',
+      },
       'POST /api/chat/messages': { body: 'data: {"type":"done","messageId":"m1"}\n\n' },
     });
     const api = createHttpApi(f);
     await api.confirmOrder('o1');
-    await api.setMonthlyBudget('1');
+    await api.setLimits({ myPeriodicLimit: '1' });
     await api.sendChatMessage({ text: '점심', clientMessageId: 'c1' });
     for (const i of [0, 1, 2]) {
       expect(headersOf(f, i)['X-Requested-With']).toBe('fetch');

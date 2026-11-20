@@ -256,7 +256,7 @@ describe('Pouchi login (D-29)', () => {
     const { h, auth, login } = await setup();
     h.db
       .insert(users)
-      .values({ id: 'someone', nickname: 's', monthlyBudgetAokrw: '1', createdAt: 1 })
+      .values({ id: 'someone', nickname: 's', myPeriodicLimitAokrw: '1', createdAt: 1 })
       .run();
     const old = auth.issue('someone', 'web');
     expect(auth.resolve(old)).not.toBeNull();

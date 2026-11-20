@@ -318,10 +318,11 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
     expect(h.db.select().from(approvals).get()?.reason).toBe('NEW_MERCHANT');
   });
 
-  it('over the monthly budget with this order is OVER_PERSONAL_BUDGET; landing exactly on it is quoted', async () => {
-    const { h, as } = await setup();
-    paidOrder(h, 'p1', 'm1', '291000'); // this month (KST December)
-    paidOrder(h, 'p0', 'm1', '100000', Date.parse('2026-11-20T03:00:00.000Z')); // last month, not counted
+  it('over the owner 30-day limit in the chain window is OVER_PERSONAL_BUDGET; landing exactly on it is quoted (D-31)', async () => {
+    // The chain says 291,000 used in its 30-day window; the owner's limit is 300,000.
+    const { h, as } = await setup({ usedAokrw: BigInt(W('291000')), resetAtSec: null });
+    // Orders in the DB this calendar month do not count: only the chain window does.
+    paidOrder(h, 'p1', 'm1', '200000');
     const exact = zCreateOrderResult.parse(
       (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }]))).body,
     );
@@ -344,7 +345,22 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
     expect(h.db.select().from(approvals).get()?.reason).toBe('OVER_PERSONAL_BUDGET');
   });
 
-  it('the level rule wins when several apply', async () => {
+  it('does not check the owner limit when it equals the chain cap: the chain keeps it (D-31, scene 14)', async () => {
+    const { h, as } = await setup({ usedAokrw: BigInt(W('491000')), resetAtSec: null });
+    h.db
+      .update(users)
+      .set({ myPeriodicLimitAokrw: W('500000') })
+      .where(eq(users.id, 'u1'))
+      .run();
+    // 491,000 + 9,000 is over nothing the server keeps: quoted, no approval asked.
+    const res = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }]))).body,
+    );
+    expect(res.order.status).toBe('quoted');
+    expect(h.db.select().from(approvals).all()).toHaveLength(0);
+  });
+
+  it('the per-order rule wins when several apply', async () => {
     const { h, as } = await setup();
     await as('u1').post(body([{ menuId: 'x-guksu', qty: 2 }], 'm2')); // 14,000 at a new store
     expect(h.db.select().from(approvals).get()?.reason).toBe('OVER_LEVEL_LIMIT');
@@ -357,6 +373,12 @@ describe('POST /api/orders: refusals that make no order', () => {
       usedAokrw: BigInt(W('495000')),
       resetAtSec: Date.parse('2026-12-20T09:30:00.000Z') / 1000,
     });
+    // The owner's limit is the chain cap, so only the chain's refusal shows (D-31).
+    h.db
+      .update(users)
+      .set({ myPeriodicLimitAokrw: W('500000') })
+      .where(eq(users.id, 'u1'))
+      .run();
     const res = await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }]));
     expect(res.status).toBe(422);
     expect(errorOf(res.body)).toMatchObject({

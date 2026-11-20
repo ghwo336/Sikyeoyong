@@ -28,6 +28,9 @@ export const Variants: Story = {
       <Button {...args} variant="accent">
         받기
       </Button>
+      <Button {...args} variant="soft">
+        더 보기
+      </Button>
       <Button {...args} variant="text">
         다시 고를래
       </Button>
@@ -105,15 +108,14 @@ export const Choice: Story = {
   ),
 };
 
-/** 두 줄 크기 (tall, 64): Blocked "레벨 올리고 시키기". 줄은 부르는 쪽이 쌓는다 */
+/** 두 줄 크기 (tall, 64): Blocked "한 번에 N원으로 올리고 시키기". 줄은 부르는 쪽이 쌓는다 */
 export const Tall: Story = {
   args: {
     size: 'tall',
     variant: 'primary',
     children: (
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-        <span>레벨 3으로 올리고 시키기</span>
-        <span style={{ fontSize: 13 }}>한 번에 50,000원까지</span>
+        <span>한 번에 45,000원으로 올리고 시키기</span>
       </span>
     ),
   },
@@ -127,4 +129,18 @@ export const Outline: Story = {
 /** 잎색 테두리 알약 (accent md): Budget "받기" */
 export const Accent: Story = {
   args: { size: 'md', variant: 'accent', children: '받기' },
+};
+
+/** 동그라미 (soft round, 48): Budget "−" "+". 끝 금액에서는 못 누름(흐리게) */
+export const Round: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 12 }}>
+      <Button {...args} variant="soft" size="round" label="한 번에 쓸 돈 5,000원 내리기" disabled>
+        −
+      </Button>
+      <Button {...args} variant="soft" size="round" label="한 번에 쓸 돈 5,000원 올리기">
+        +
+      </Button>
+    </div>
+  ),
 };

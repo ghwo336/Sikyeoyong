@@ -26,13 +26,13 @@ describe('GET /api/budget', () => {
   beforeAll(async () => {
     h = openDb(':memory:');
     runMigrations(h.db);
-    for (const [id, budget, level] of [
-      ['u1', 200_000n, 1],
-      ['u2', 500_000n, 3],
+    for (const [id, budget, perOrder] of [
+      ['u1', 200_000n, 10_000n],
+      ['u2', 500_000n, 50_000n],
     ] as const) {
       h.db
         .insert(users)
-        .values({ id, nickname: id, monthlyBudgetAokrw: s(budget), createdAt: 1 })
+        .values({ id, nickname: id, myPeriodicLimitAokrw: s(budget), createdAt: 1 })
         .run();
       h.db
         .insert(agents)
@@ -42,7 +42,7 @@ describe('GET /api/budget', () => {
           dragonName: '용이',
           dragonSpecies: 'forest',
           paymentPath: 'B',
-          level,
+          perOrderLimitAokrw: s(perOrder),
           createdAt: 1,
         })
         .run();
@@ -69,8 +69,7 @@ describe('GET /api/budget', () => {
     const res = await http().get('/api/budget').set('Cookie', `sid=${tokens.u1}`);
     expect(res.status).toBe(200);
     const view = zBudgetView.parse(res.body);
-    expect(view.personalBudget).toBe(s(200_000n));
-    expect(view.level).toBe(1);
+    expect(view.myPeriodicLimit).toBe(s(200_000n));
     expect(view.perOrderLimit).toBe(s(10_000n));
   });
 
@@ -79,7 +78,7 @@ describe('GET /api/budget', () => {
       .get('/api/budget?userId=u1')
       .set('Authorization', `Bearer ${tokens.u2}`);
     const view = zBudgetView.parse(res.body);
-    expect(view.personalBudget).toBe(s(500_000n));
-    expect(view.level).toBe(3);
+    expect(view.myPeriodicLimit).toBe(s(500_000n));
+    expect(view.perOrderLimit).toBe(s(50_000n));
   });
 });

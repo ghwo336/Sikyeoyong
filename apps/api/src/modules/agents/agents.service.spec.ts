@@ -6,8 +6,9 @@ import { agents, users } from '../../db/schema/index.js';
 import { AgentsRepository } from './agents.repository.js';
 import { AgentsService } from './agents.service.js';
 import type { AgentSetupService } from './agent-setup.service.js';
-import type { PaymentProvider } from '@sikyeoyong/shared';
+import { okrwToAokrw, type PaymentProvider } from '@sikyeoyong/shared';
 import type { IdentityService } from '../identity/identity.service.js';
+import { loadConfig } from '../../config/env.js';
 
 const handles: DbHandle[] = [];
 afterEach(() => {
@@ -20,11 +21,11 @@ function setup() {
   handles.push(h);
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: '1', createdAt: 1 })
+    .values({ id: 'u1', nickname: '주인님', myPeriodicLimitAokrw: '1', createdAt: 1 })
     .run();
   h.db
     .insert(users)
-    .values({ id: 'u2', nickname: '알만', monthlyBudgetAokrw: '1', createdAt: 1 })
+    .values({ id: 'u2', nickname: '알만', myPeriodicLimitAokrw: '1', createdAt: 1 })
     .run();
   h.db
     .insert(agents)
@@ -34,7 +35,7 @@ function setup() {
       dragonName: '용이',
       dragonSpecies: 'water',
       paymentPath: 'B',
-      level: 2,
+      perOrderLimitAokrw: '30000000000000000000000',
       createdAt: 1,
     })
     .run();
@@ -42,16 +43,19 @@ function setup() {
   const noSetup = { run: () => Promise.resolve() } as unknown as AgentSetupService;
   const noPayment = { path: 'mock' } as unknown as PaymentProvider;
   const verified = { isVerified: () => true } as unknown as IdentityService;
-  return { h, s: new AgentsService(new AgentsRepository(h), noSetup, noPayment, verified) };
+  return {
+    h,
+    s: new AgentsService(new AgentsRepository(h), noSetup, noPayment, verified, loadConfig({})),
+  };
 }
 
 describe('AgentsService', () => {
-  it('returns the level and not frozen for an active dragon', () => {
+  it('returns the per-order limit and not frozen for an active dragon', () => {
     const { h, s } = setup();
     h.db.update(agents).set({ status: 'ACTIVE' }).where(eq(agents.id, 'a1')).run();
     expect(s.getForUser('u1')).toEqual({
       id: 'a1',
-      level: 2,
+      perOrderLimitAokrw: okrwToAokrw(30_000n),
       frozen: false,
       ready: true,
       wallet: null,

@@ -149,14 +149,14 @@ export class OrderConfirmService {
     if (priceLines(items, found.menus).total !== amount) {
       throw new AppError('SERVER_PRICE_CHANGED', { reason: 'menu price changed since the quote' });
     }
-    await this.rules.periodUsedOrRefuse(agent, amount, nowMs);
+    const periodUsed = await this.rules.periodUsedOrRefuse(agent, amount, nowMs);
     const budgetApproved = this.approvals.budgetApprovedFor(row.id, row.amountAokrw);
     const code = this.rules.approvalNeeded(
       userId,
       agent,
       row.merchantId,
       amount,
-      nowMs,
+      periodUsed,
       budgetApproved,
     );
     if (code !== null) return { kind: 'approval', code };

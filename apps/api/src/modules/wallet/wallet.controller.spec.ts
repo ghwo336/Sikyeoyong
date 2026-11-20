@@ -84,12 +84,12 @@ describe('GET /api/wallet', () => {
     expect(view.owner).toBe('0');
   });
 
-  it('saved this month is the budget minus what was paid, and 0 when spent reaches or passes it', async () => {
+  it('saved this month is the 30-day limit minus what was paid, and 0 when spent reaches or passes it', async () => {
     const { h, get } = await setup();
-    // u1's budget is 10,000 won (the fixture default is 300,000).
+    // u1's 30-day limit is 50,000 won, the range's lowest (the fixture default is 300,000).
     h.db
       .update(users)
-      .set({ monthlyBudgetAokrw: s(10_000n) })
+      .set({ myPeriodicLimitAokrw: s(50_000n) })
       .where(eq(users.id, 'u1'))
       .run();
     insertMerchant(h.db, 'm1');
@@ -113,10 +113,10 @@ describe('GET /api/wallet', () => {
         .run();
     };
     const saved = async () => zWalletView.parse((await get('u1')).body).savedThisMonth;
-    expect(await saved()).toBe(s(10_000n));
-    paid(9_000n);
+    expect(await saved()).toBe(s(50_000n));
+    paid(49_000n);
     expect(await saved()).toBe(s(1_000n));
-    paid(1_000n); // exactly the budget
+    paid(1_000n); // exactly the limit
     expect(await saved()).toBe('0');
     paid(5_000n); // past the budget: 200 and 0, not an error
     const res = await get('u1');

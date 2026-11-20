@@ -84,7 +84,7 @@ describe('POST /api/auth/dev-login (local development only)', () => {
     expect(cookie).toMatch(/SameSite=Lax/);
     expect(h.db.select().from(users).where(eq(users.id, 'dev-hojae')).get()).toMatchObject({
       nickname: 'hojae',
-      monthlyBudgetAokrw: '300000000000000000000000',
+      myPeriodicLimitAokrw: '300000000000000000000000',
     });
     const sid = cookie.split(';')[0] ?? '';
     // Signed in, no dragon yet: /me says 404, not 401 (the web goes to naming).

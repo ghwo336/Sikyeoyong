@@ -68,16 +68,17 @@ describe('mock sign-up', () => {
     expect(me).toMatchObject({ dragonName: '봄봄', dragonSpecies: 'star' });
   });
 
-  it('a new budget changes the amount and the nag stage', async () => {
-    // 210,000 spent: 70% of 300,000 (warn70), 42% of 500,000 (none), 105% of 200,000 (over100).
-    await settle(mockApi.setMonthlyBudget(won(500_000n)));
+  it('new limits change the amounts and the nag stage (D-31)', async () => {
+    // 42,000 used: 70% of 60,000 (warn70), 42% of 100,000 (none), 105% of 40,000 (over100).
+    await settle(mockApi.setLimits({ myPeriodicLimit: won(100_000n) }));
     expect(await settle(mockApi.getBudget())).toMatchObject({
-      personalBudget: won(500_000n),
+      myPeriodicLimit: won(100_000n),
       nagLevel: 'none',
     });
-    await settle(mockApi.setMonthlyBudget(won(200_000n)));
+    await settle(mockApi.setLimits({ myPeriodicLimit: won(40_000n), perOrderLimit: won(20_000n) }));
     expect(await settle(mockApi.getBudget())).toMatchObject({
-      personalBudget: won(200_000n),
+      myPeriodicLimit: won(40_000n),
+      perOrderLimit: won(20_000n),
       nagLevel: 'over100',
     });
   });

@@ -126,8 +126,8 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     expect(perOrder.nextElementSibling?.textContent).toBe('9,000 / 10,000원');
     const thirty = await screen.findByText('30일 한도');
     expect(thirty.tagName).toBe('DT');
-    // fixtures BUDGET: 41,000 used of the demo profile's 60,000.
-    expect(thirty.nextElementSibling?.textContent).toBe('41,000 / 60,000원');
+    // fixtures BUDGET: 42,000 used of the demo profile's 60,000.
+    expect(thirty.nextElementSibling?.textContent).toBe('42,000 / 60,000원');
   });
 
   it.each(['failed', 'cancelled', 'refunded'] as const)(

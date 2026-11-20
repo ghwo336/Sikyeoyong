@@ -38,7 +38,7 @@ const won = (n: bigint) => aokrwToString(okrwToAokrw(n));
 function seed(h: DbHandle) {
   h.db
     .insert(users)
-    .values({ id: 'u1', nickname: '호재', monthlyBudgetAokrw: won(300_000n), createdAt: 1 })
+    .values({ id: 'u1', nickname: '호재', myPeriodicLimitAokrw: won(300_000n), createdAt: 1 })
     .run();
   h.db
     .insert(agents)
@@ -48,6 +48,7 @@ function seed(h: DbHandle) {
       dragonName: '용이',
       dragonSpecies: 'forest',
       paymentPath: 'B',
+      perOrderLimitAokrw: '10000000000000000000000',
       createdAt: 1,
     })
     .run();
@@ -96,10 +97,14 @@ const CORE_TABLES = [
 
 const BAD_AMOUNTS = ['', '-1', '1.5', '0100', '00', '1e3', ' 1', '1 ', '0x10', '9'.repeat(79)];
 
-/** Every amount column in migration 0001 (data.md: amounts carry a CHECK in the DB too). */
+/**
+ * Every amount column of the core tables after all migrations (data.md: amounts carry a CHECK
+ * in the DB too). 0009 (D-31) renamed users.monthly_budget and turned agents.level into an amount.
+ */
 const AMOUNT_COLUMNS = [
   ['orders', 'amount'],
-  ['users', 'monthly_budget'],
+  ['users', 'my_periodic_limit'],
+  ['agents', 'per_order_limit'],
   ['nag_events', 'spent'],
   ['nag_events', 'budget'],
   ['agent_limit_history', 'transfer_limit'],
@@ -113,9 +118,7 @@ const ENUM_COLUMNS = [
   ['agents', 'dragon_species', 'fire'],
   ['agents', 'status', 'LOST'],
   ['agents', 'payment_path', 'D'],
-  ['agents', 'level', 4],
   ['agents', 'setup_step', 'hatched'],
-  ['agent_limit_history', 'level', 0],
   ['orders', 'status', 'done'],
   ['order_events', 'source', 'llm'],
   ['approvals', 'reason', 'BECAUSE'],
@@ -139,7 +142,7 @@ function seedAll(h: DbHandle) {
   h.db.insert(sessions).values({ id: 's1', userId: 'u1', platform: 'web', expiresAt: 1 }).run();
   h.db
     .insert(agentLimitHistory)
-    .values({ id: 'l1', agentId: 'a1', level: 1, transferLimitAokrw: won(10_000n), createdAt: 1 })
+    .values({ id: 'l1', agentId: 'a1', transferLimitAokrw: won(10_000n), createdAt: 1 })
     .run();
   h.db
     .insert(orderEvents)
@@ -247,8 +250,8 @@ describe('core domain schema (migration 0001)', () => {
     }).toThrow(/CHECK/);
   });
 
-  // Every CHECK in migration 0001 must be exercised above, so dropping one fails a test.
-  it('tests every CHECK constraint migration 0001 creates', () => {
+  // Every CHECK on the core tables must be exercised above, so dropping one fails a test.
+  it('tests every CHECK constraint the core tables carry', () => {
     const h = fresh();
     const ddl = h.sqlite
       .prepare(
@@ -278,6 +281,7 @@ describe('core domain schema (migration 0001)', () => {
           dragonName: '둘째',
           dragonSpecies: 'star',
           paymentPath: 'B',
+          perOrderLimitAokrw: '10000000000000000000000',
           createdAt: 2,
         })
         .run(),
@@ -401,7 +405,7 @@ describe('enumCheck', () => {
     expect(() => enumCheck('x', users.role, ['user', 'operator'])).not.toThrow();
     expect(() => enumCheck('x', users.role, [])).toThrow(/no values/);
     expect(() => enumCheck('x" or 1=1 --', users.role, ['user'])).toThrow(/unsafe constraint/);
-    expect(() => intEnumCheck('x', agents.level, [1, 1.5])).toThrow(/unsafe value/);
-    expect(() => intEnumCheck('x', agents.level, [])).toThrow(/no values/);
+    expect(() => intEnumCheck('x', agents.createdAt, [1, 1.5])).toThrow(/unsafe value/);
+    expect(() => intEnumCheck('x', agents.createdAt, [])).toThrow(/no values/);
   });
 });

@@ -24,7 +24,7 @@ children: []
 - 제목 없이 한 줄 (`RowNoTitle`)
 
 ## 쓰는 화면
-Budget(`BudgetPicker`), Arrived(`TasteRating`), Name(`EggPicker`, 제목 없이 row)
+Arrived(`TasteRating`), Name(`EggPicker`, 제목 없이 row)
 
 ## 테스트 기준
 - radiogroup 이름은 보이는 제목, 없으면 label. 제목이 없으면 문단도 없다
@@ -37,6 +37,6 @@ Budget(`BudgetPicker`), Arrived(`TasteRating`), Name(`EggPicker`, 제목 없이 
 - 시안 값 (제목과 칸 사이 10, 제목 15/600, columns 같은 너비 간격 8, row 간격 10)
 
 ## 메모
-- 2026-11-19 재사용 감사(D-18 원칙 5)로 BudgetPicker, TasteRating, EggPicker에 복사된 radiogroup 마크업과 `base/radio-group.ts` 연결을 모았다. 키보드 규칙 자체는 `radio-group.ts`에 그대로 있고 이 부품만 부른다.
+- 2026-11-19 재사용 감사(D-18 원칙 5)로 BudgetPicker(2026-11-20 D-31로 없어짐), TasteRating, EggPicker에 복사된 radiogroup 마크업과 `base/radio-group.ts` 연결을 모았다. 키보드 규칙 자체는 `radio-group.ts`에 그대로 있고 이 부품만 부른다.
 - columns는 `grid-auto-flow: column`으로 선택지 수만큼 같은 너비 칸을 만든다 (Budget, Arrived 시안은 셋).
 - 선택지를 감싸지 않는 이유: Chip이 그리드 칸을 꽉 채워야 시안과 같다.

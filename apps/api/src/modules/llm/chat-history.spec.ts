@@ -63,7 +63,7 @@ async function setup() {
   const h = openDb(':memory:');
   runMigrations(h.db);
   for (const id of ['u1', 'u2']) {
-    h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: '1', createdAt: 1 }).run();
+    h.db.insert(users).values({ id, nickname: id, myPeriodicLimitAokrw: '1', createdAt: 1 }).run();
     h.db
       .insert(agents)
       .values({
@@ -72,6 +72,7 @@ async function setup() {
         dragonName: '용이',
         dragonSpecies: 'forest',
         paymentPath: 'B',
+        perOrderLimitAokrw: '10000000000000000000000',
         createdAt: 1,
       })
       .run();

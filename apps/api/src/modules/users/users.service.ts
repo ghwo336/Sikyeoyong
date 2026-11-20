@@ -1,5 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppError, aokrwToString, parseAokrw, type UserView } from '@sikyeoyong/shared';
+import {
+  type AmountRange,
+  AppError,
+  aokrwToString,
+  isInRange,
+  parseAokrw,
+} from '@sikyeoyong/shared';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
 import { uuidv7 } from '../../common/ids.js';
@@ -15,14 +21,14 @@ export class UsersService {
 
   /**
    * dev-login only: the user for a local developer key, made on first use with the
-   * policy's default monthly budget. Ids are `dev-<key>`, never an OAuth user's.
+   * profile's first 30-day limit (D-31). Ids are `dev-<key>`, never an OAuth user's.
    */
   ensureDevUser(key: string, nowMs: number = Date.now()): string {
     const id = `dev-${key}`;
     this.repo.ensure({
       id,
       nickname: key,
-      monthlyBudgetAokrw: aokrwToString(this.config.policy.defaultMonthlyBudgetAokrw),
+      myPeriodicLimitAokrw: aokrwToString(this.config.policy.myPeriodicLimit.initialAokrw),
       createdAt: nowMs,
     });
     return id;
@@ -30,13 +36,13 @@ export class UsersService {
 
   /**
    * D-29: the user behind a Pouchi app wallet, made on the first login with the policy's
-   * default monthly budget. Pouchi gives no name, so the owner is "주인님" until one is set.
+   * first 30-day limit (D-31). Pouchi gives no name, so the owner is "주인님" until one is set.
    */
   ensurePouchiUser(walletId: string, walletAddress: string, nowMs: number = Date.now()): string {
     return this.repo.ensurePouchiUser(walletId, walletAddress, {
       id: uuidv7(nowMs),
       nickname: '주인님',
-      monthlyBudgetAokrw: aokrwToString(this.config.policy.defaultMonthlyBudgetAokrw),
+      myPeriodicLimitAokrw: aokrwToString(this.config.policy.myPeriodicLimit.initialAokrw),
       createdAt: nowMs,
     });
   }
@@ -48,11 +54,15 @@ export class UsersService {
     return profile.nickname;
   }
 
-  /** Personal monthly budget in aokrw (server-side only, D-07). */
-  getMonthlyBudgetAokrw(userId: string): bigint {
-    const stored = this.repo.findMonthlyBudget(userId);
+  /**
+   * The owner's own 30-day limit in aokrw (D-31, server-side only). Rows from before D-31 hold
+   * the old monthly budget as it was (migration 0009 cannot read the profile), so the value is
+   * clamped into the profile range and down onto its step here.
+   */
+  getMyPeriodicLimitAokrw(userId: string): bigint {
+    const stored = this.repo.findMyPeriodicLimit(userId);
     if (stored === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
-    return parseAokrw(stored);
+    return clampToRange(this.config.policy.myPeriodicLimit, parseAokrw(stored));
   }
 
   /**
@@ -76,27 +86,24 @@ export class UsersService {
   }
 
   /**
-   * PATCH /me monthly budget (D-21): only one of the policy options, applied at
-   * once (the budget is an in-app limit, not a chain one). Any other amount is 400.
+   * The owner's 30-day limit after the button (PUT /agents/me/limits, D-31). The caller checks
+   * re-auth; the amount must be one the owner may pick, else VALIDATION_FAILED.
    */
-  setMonthlyBudget(userId: string, aokrw: bigint): UserView {
-    const allowed = this.config.policy.monthlyBudgetOptions.some((o) => o.amountAokrw === aokrw);
-    if (!allowed) {
+  setMyPeriodicLimit(userId: string, aokrw: bigint): void {
+    if (!isInRange(this.config.policy.myPeriodicLimit, aokrw)) {
       throw new AppError('VALIDATION_FAILED', {
-        public: {
-          issues: [{ path: 'monthlyBudgetOkrw', message: 'not one of the budget options' }],
-        },
+        public: { issues: [{ path: 'myPeriodicLimit', message: 'out of range or off step' }] },
       });
     }
     if (this.repo.findProfile(userId) === undefined)
       throw new AppError('NOT_FOUND', { reason: 'user not found' });
-    this.repo.setMonthlyBudget(userId, aokrwToString(aokrw));
-    return this.view(userId);
+    this.repo.setMyPeriodicLimit(userId, aokrwToString(aokrw));
   }
+}
 
-  private view(userId: string): UserView {
-    const profile = this.repo.findProfile(userId);
-    if (profile === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
-    return { user: { nickname: profile.nickname, monthlyBudget: profile.monthlyBudgetAokrw } };
-  }
+/** Into [min, max] and down onto a step (D-31): an old row never reads as a value the owner cannot pick. */
+export function clampToRange(range: AmountRange, aokrw: bigint): bigint {
+  if (aokrw <= range.minAokrw) return range.minAokrw;
+  if (aokrw >= range.maxAokrw) return range.maxAokrw;
+  return range.minAokrw + ((aokrw - range.minAokrw) / range.stepAokrw) * range.stepAokrw;
 }

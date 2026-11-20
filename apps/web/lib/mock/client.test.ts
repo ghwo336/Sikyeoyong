@@ -15,8 +15,8 @@ describe('mockApi', () => {
     expect(res.quote).toMatchObject({
       amount: won(9_000n),
       perOrderLimit: won(10_000n),
-      // 30 days on the demo profile: 41,000 used + 9,000 of 60,000 (fixtures BUDGET).
-      periodUsedAfter: won(50_000n),
+      // 30 days on the demo profile: 42,000 used + 9,000 of 60,000 (fixtures BUDGET).
+      periodUsedAfter: won(51_000n),
       periodCap: won(60_000n),
     });
     await expect(mockApi.getOrder(res.order.id)).rejects.toMatchObject({ code: 'NOT_FOUND' });

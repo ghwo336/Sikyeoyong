@@ -26,7 +26,7 @@ import { CHAIN_READER } from '../chain/chain.service.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { OwnerApprovalsModule } from './owner-approvals.module.js';
 
-// Amounts by hand: N won = N * 10^18 aokrw. Default policy: level 1, 10,000 per order; budget 300,000.
+// Amounts by hand: N won = N * 10^18 aokrw. Fixture: 10,000 per order; the owner's 30-day limit 300,000.
 const W = (won: string) => `${won}000000000000000000`;
 const NOW = Date.parse('2026-12-10T03:00:00.000Z');
 const errorOf = (body: unknown) => (body as { error: { code: string } }).error;
@@ -42,6 +42,8 @@ afterEach(async () => {
 });
 
 async function setup() {
+  // The chain's 30-day use, which the owner's 30-day limit is checked against (D-31).
+  const chainUsed = { value: 0n };
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
   const h = openDb(':memory:');
@@ -58,7 +60,9 @@ async function setup() {
       t === DB ? h : t === APP_CONFIG ? loadConfig({ PAYMENT_PATH: 'mock' }) : undefined,
     )
     .overrideProvider(CHAIN_READER)
-    .useValue({ periodicVolume: () => Promise.resolve({ usedAokrw: 0n, resetAtSec: null }) })
+    .useValue({
+      periodicVolume: () => Promise.resolve({ usedAokrw: chainUsed.value, resetAtSec: null }),
+    })
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
@@ -100,6 +104,7 @@ async function setup() {
     pending,
     order,
     payment,
+    chainUsed,
     approvalsService: moduleRef.get(ApprovalsService),
   };
 }
@@ -157,7 +162,8 @@ describe('POST /api/approvals/:id/approve: never pays, quotes again', () => {
   });
 
   it('a budget overrun: allowed for this order amount, so the press pays without asking again', async () => {
-    const { h, post, pending } = await setup();
+    const { h, post, pending, chainUsed } = await setup();
+    chainUsed.value = BigInt(W('295000'));
     // m2 is known by a paid order, not by an allowance: approving the budget must not allow it.
     h.db
       .insert(orders)
@@ -187,9 +193,9 @@ describe('POST /api/approvals/:id/approve: never pays, quotes again', () => {
     expect(paid.order.status).toBe('paid');
   });
 
-  it('a level overrun is raised with POST /agents/me/level, not here: 400 and nothing changes', async () => {
+  it('a per-order overrun is raised with PUT /agents/me/limits, not here: 400 and nothing changes', async () => {
     const { h, post, pending, order } = await setup();
-    const p = await pending('m1', 'x-dwaeji', 2); // 18,000 over level 1
+    const p = await pending('m1', 'x-dwaeji', 2); // 18,000 over the 10,000 per-order limit
     const res = await post('u1', `/api/approvals/${p.approvalId}/approve`);
     expect(res.status).toBe(400);
     expect(errorOf(res.body).code).toBe('VALIDATION_FAILED');
@@ -286,22 +292,8 @@ describe('POST /api/approvals/:id/reject', () => {
   });
 
   it('rejecting a budget overrun keeps SERVER_BUDGET_OVER on the order', async () => {
-    const { h, post, pending, order } = await setup();
-    h.db
-      .insert(orders)
-      .values({
-        id: 'p0',
-        orderRef: `0x${'1'.repeat(64)}`,
-        userId: 'u1',
-        agentId: 'a-u1',
-        merchantId: 'm1',
-        amountAokrw: W('292000'),
-        itemsJson: '[]',
-        status: 'paid',
-        createdAt: NOW,
-        updatedAt: NOW,
-      })
-      .run();
+    const { post, pending, order, chainUsed } = await setup();
+    chainUsed.value = BigInt(W('292000')); // 292,000 + 9,000 > 300,000 in the chain window
     const p = await pending('m1', 'x-dwaeji');
     await post('u1', `/api/approvals/${p.approvalId}/reject`);
     expect(order(p.orderId)).toMatchObject({ status: 'failed', errorCode: 'SERVER_BUDGET_OVER' });

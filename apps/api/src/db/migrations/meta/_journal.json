@@ -64,6 +64,13 @@
       "when": 1795159908954,
       "tag": "0008_pouchi_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1795169792461,
+      "tag": "0009_limit_amounts",
+      "breakpoints": true
     }
   ]
 }

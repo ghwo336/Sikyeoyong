@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { DragonMood } from './Dragon';
 import styles from './Dragon.module.css';
 
-// Things around the dragon that come with a mood or a level: Zz, sweat, steam, the bowl, wings.
+// Things around the dragon that come with a mood or a growth stage: Zz, sweat, steam, the bowl, wings.
 
 /** Zz while sleeping, a sweat drop when worried or hiding, steam while cooking. */
 export function Extras({ mood }: { mood: DragonMood }): ReactNode {
@@ -46,7 +46,7 @@ export function Bowl(): ReactNode {
   );
 }
 
-/** Level 3 grows wings behind the head (Dragon.md). */
+/** Stage 3 (dragonStage) grows wings behind the head (Dragon.md). */
 export function Wings(): ReactNode {
   return (
     <g data-part="wings">

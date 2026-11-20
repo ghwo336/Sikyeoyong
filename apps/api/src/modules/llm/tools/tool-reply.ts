@@ -1,7 +1,10 @@
 import type { ChatEvent } from '@sikyeoyong/shared';
 
-/** Card events a tool may put on screen. Grows as limit_change_card lands. */
-export type ToolCard = Extract<ChatEvent, { type: 'recommendations' | 'order_confirm' }>;
+/** Card events a tool may put on screen. */
+export type ToolCard = Extract<
+  ChatEvent,
+  { type: 'recommendations' | 'order_confirm' | 'limit_change_card' }
+>;
 
 /**
  * A tool result with two faces (agent-runtime.md "모델용과 화면용"):

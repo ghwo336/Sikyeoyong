@@ -6,7 +6,9 @@ import { DragonLine } from './DragonLine';
 
 const css = readFileSync(resolve(__dirname, 'DragonLine.module.css'), 'utf8');
 const rule = (selector: string) =>
-  new RegExp(`(^|\\n)${selector.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? '';
+  new RegExp(`(^|\\n)${selector.replace(/[.[\]'=]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`).exec(
+    css,
+  )?.[2] ?? '';
 const THREE = '첫째 줄이에용.\n둘째 줄이에용.\n셋째 줄도 그대로 보여용.';
 
 describe('DragonLine (DragonLine.md 테스트 기준)', () => {
@@ -145,5 +147,44 @@ describe('DragonLine (DragonLine.md 테스트 기준)', () => {
       'width',
       String(tokens.size.dragonSheet),
     );
+  });
+
+  // Budget.dc.html (D-31): 80, 92, 104 by stage, wings at 3, transform only.
+  it.each([
+    [1, 'scale(calc(80 / 104))', false],
+    [2, 'scale(calc(92 / 104))', false],
+    [3, 'none', true],
+  ] as const)('greeting stage %s grows the dragon to its size', (stage, transform, wings) => {
+    const { container } = render(
+      <DragonLine text="x" layout="greeting" species="forest" stage={stage} />,
+    );
+    const slot = container.querySelector('svg')?.parentElement;
+    expect(slot?.getAttribute('data-stage')).toBe(String(stage));
+    expect(slot?.classList).toContain('grow');
+    expect(container.querySelector('svg')).toHaveAttribute('width', '104');
+    expect(rule(`.grow[data-stage='${String(stage)}']`)).toContain(`transform: ${transform}`);
+    expect(container.querySelector('[data-part="wings"]') !== null).toBe(wings);
+  });
+
+  it('grows with transform only, and not at all under reduced motion', () => {
+    expect(rule('.grow')).toMatch(/transition:\s*transform 240ms/);
+    expect(css).not.toMatch(/transition:[^;]*\b(width|height)\b/);
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.grow\s*\{\s*transition:\s*none;/,
+    );
+  });
+
+  it('keeps fixed sizes outside greeting, with wings at stage 3 only', () => {
+    const { container, rerender } = render(
+      <DragonLine text="x" layout="chat" species="forest" stage={3} />,
+    );
+    expect(container.querySelector('svg')).toHaveAttribute('width', '32');
+    expect(container.querySelector('.grow')).toBeNull();
+    expect(container.querySelector('[data-part="wings"]')).not.toBeNull();
+    rerender(<DragonLine text="x" layout="chat" species="forest" stage={2} />);
+    expect(container.querySelector('[data-part="wings"]')).toBeNull();
+    rerender(<DragonLine text="x" layout="greeting" species="forest" />);
+    expect(container.querySelector('svg')).toHaveAttribute('width', '96');
+    expect(container.querySelector('.grow')).toBeNull();
   });
 });

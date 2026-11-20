@@ -59,7 +59,7 @@ export const Main: Story = {
       header={
         <ChatHeader
           name="용이"
-          caption="레벨 1, 한 번에 10,000원까지"
+          caption="한 번에 10,000원까지"
           species="forest"
           onSettings={() => undefined}
         />
@@ -85,7 +85,7 @@ export const NoTop: Story = {
   args: { children: null, footer: null },
   render: () => (
     <ChatLayout
-      header={<ChatHeader name="용이" caption="레벨 1, 한 번에 10,000원까지" species="forest" />}
+      header={<ChatHeader name="용이" caption="한 번에 10,000원까지" species="forest" />}
       footer={<Input />}
     >
       {thread}

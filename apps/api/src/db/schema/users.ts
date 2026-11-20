@@ -11,13 +11,16 @@ export const users = sqliteTable(
     nickname: text('nickname').notNull(),
     addressText: text('address_text'),
     addressDong: text('address_dong'),
-    /** Personal monthly budget, server-side only (D-07). */
-    monthlyBudgetAokrw: text('monthly_budget').notNull(),
+    /**
+     * The owner's own 30-day limit (D-31, was the monthly budget), server-side only. Read through
+     * UsersService, which clamps it into the profile range (rows from before D-31 keep their value).
+     */
+    myPeriodicLimitAokrw: text('my_periodic_limit').notNull(),
     role: text('role', { enum: USER_ROLES }).notNull().default('user'),
     createdAt: integer('created_at').notNull(),
   },
   (t) => [
-    aokrwCheck('users_monthly_budget_check', t.monthlyBudgetAokrw),
+    aokrwCheck('users_my_periodic_limit_check', t.myPeriodicLimitAokrw),
     enumCheck('users_role_check', t.role, USER_ROLES),
   ],
 );

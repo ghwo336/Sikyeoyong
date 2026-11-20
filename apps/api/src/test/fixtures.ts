@@ -11,14 +11,19 @@ import { agents, identityChecks, menus, merchants, users } from '../db/schema/in
 export function insertUser(
   db: Db,
   id: string,
-  opts: { budgetWon?: bigint; level?: 1 | 2 | 3; dong?: string | null; frozen?: boolean } = {},
+  opts: {
+    myPeriodicWon?: bigint;
+    perOrderWon?: bigint;
+    dong?: string | null;
+    frozen?: boolean;
+  } = {},
 ): void {
   db.insert(users)
     .values({
       id,
       nickname: id,
       addressDong: opts.dong ?? null,
-      monthlyBudgetAokrw: okrwToAokrw(opts.budgetWon ?? 300_000n).toString(),
+      myPeriodicLimitAokrw: okrwToAokrw(opts.myPeriodicWon ?? 300_000n).toString(),
       createdAt: 1,
     })
     .run();
@@ -29,7 +34,7 @@ export function insertUser(
       dragonName: '용이',
       dragonSpecies: 'forest',
       paymentPath: 'B',
-      level: opts.level ?? 1,
+      perOrderLimitAokrw: okrwToAokrw(opts.perOrderWon ?? 10_000n).toString(),
       status: opts.frozen === true ? 'FROZEN' : 'ACTIVE',
       createdAt: 1,
     })

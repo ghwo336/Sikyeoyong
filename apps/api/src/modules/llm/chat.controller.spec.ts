@@ -39,7 +39,10 @@ async function setup(
     ['u1', '100000000000000000000000'],
     ['u2', '500000000000000000000000'],
   ] as const) {
-    h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: budget, createdAt: 1 }).run();
+    h.db
+      .insert(users)
+      .values({ id, nickname: id, myPeriodicLimitAokrw: budget, createdAt: 1 })
+      .run();
     h.db
       .insert(agents)
       .values({
@@ -48,6 +51,7 @@ async function setup(
         dragonName: '용이',
         dragonSpecies: 'forest',
         paymentPath: 'B',
+        perOrderLimitAokrw: '10000000000000000000000',
         createdAt: 1,
       })
       .run();

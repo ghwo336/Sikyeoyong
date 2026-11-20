@@ -1,10 +1,4 @@
-import {
-  kstDaysBetween,
-  kstMonthOf,
-  kstMonthRange,
-  type MerchantCard,
-  type NagStage,
-} from '@sikyeoyong/shared';
+import { kstDaysBetween, type MerchantCard, type NagStage } from '@sikyeoyong/shared';
 import type { CatalogEntry, MenuItem } from '../merchants/merchants.service.js';
 
 /*
@@ -50,11 +44,14 @@ export interface RankInput {
   readonly weather: string;
   readonly craving?: string;
   readonly maxPriceAokrw?: bigint;
+  /** The per-order limit the owner picked (D-31). */
   readonly perOrderLimitAokrw: bigint;
-  readonly personalBudgetAokrw: bigint;
-  readonly personalSpentAokrw: bigint;
+  /** The owner's own 30-day limit (D-31); spend against it is chainUsedAokrw, the chain's window. */
+  readonly myPeriodicLimitAokrw: bigint;
   readonly chainCapAokrw: bigint;
   readonly chainUsedAokrw: bigint;
+  /** When the chain's 30-day window ends (unix ms): the daily share spreads what is left until then. */
+  readonly periodEndMs: number;
   readonly nagLevel: NagStage;
   readonly frozen: boolean;
   readonly recentOrders: readonly RecentOrder[];
@@ -76,7 +73,7 @@ export interface Recommendation {
   readonly menu: MenuItem;
   readonly score: number;
   readonly fits: Fits;
-  /** Over the level's per-order limit, or over this month's personal budget. */
+  /** Over the per-order limit, or over the owner's 30-day limit (D-31). Code names kept. */
   readonly approvalReason: ApprovalReason | null;
 }
 
@@ -93,7 +90,7 @@ function points(x: bigint): number {
 }
 
 /**
- * Affordability against what is left per day this month: 100 up to the daily
+ * Affordability against what is left per day of the 30-day window: 100 up to the daily
  * share, falling in a straight line to 0 at twice the daily share. Nothing left
  * means 0 for every menu.
  */
@@ -104,12 +101,12 @@ export function affordabilityFit(costAokrw: bigint, dailyAokrw: bigint): number 
   return points((100n * (2n * dailyAokrw - costAokrw)) / dailyAokrw);
 }
 
-/** Personal budget left per remaining KST day this month, today included. */
+/** The owner's 30-day limit left per remaining KST day of the chain's window, today included. */
 export function dailyShareAokrw(input: RankInput): bigint {
-  const left = input.personalBudgetAokrw - input.personalSpentAokrw;
+  const left = input.myPeriodicLimitAokrw - input.chainUsedAokrw;
   if (left <= 0n) return 0n;
-  const { endMs } = kstMonthRange(kstMonthOf(input.nowMs));
-  const daysLeft = kstDaysBetween(input.nowMs, endMs - 1) + 1;
+  const end = Math.max(input.periodEndMs, input.nowMs + 1);
+  const daysLeft = kstDaysBetween(input.nowMs, end - 1) + 1;
   return left / BigInt(daysLeft);
 }
 
@@ -232,7 +229,10 @@ export function rank(input: RankInput): RankResult {
         weights.novelty * fits.novelty +
         weights.craving * fits.craving;
       const overLimit = cost > input.perOrderLimitAokrw;
-      const overMonth = input.personalSpentAokrw + cost > input.personalBudgetAokrw;
+      // Same rule as the order check: the owner's limit is the server's only below the chain cap.
+      const overMonth =
+        input.myPeriodicLimitAokrw < input.chainCapAokrw &&
+        input.chainUsedAokrw + cost > input.myPeriodicLimitAokrw;
       const approvalReason: ApprovalReason | null = overLimit
         ? 'OVER_LEVEL_LIMIT'
         : overMonth

@@ -27,7 +27,7 @@ describe('GET /api/merchants', () => {
     h = openDb(':memory:');
     runMigrations(h.db);
     insertUser(h.db, 'u1');
-    insertUser(h.db, 'u2', { level: 3 });
+    insertUser(h.db, 'u2', { perOrderWon: 50_000n });
     insertMerchant(h.db, 'm-gukbap', { name: '마루국밥 본점', tags: ['국물'] });
     insertMerchant(h.db, 'm-jjajang', { name: '용용반점', category: '중식' });
     insertMerchant(h.db, 'm-fake', { name: '초특가 아무거나', category: '기타', verified: false });

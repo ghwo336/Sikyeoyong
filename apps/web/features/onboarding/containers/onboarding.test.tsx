@@ -13,7 +13,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace }) }));
 // Reads come from the fixtures; every write is a spy.
 const createAgent = vi.fn();
 const verifyIdentity = vi.fn();
-const setMonthlyBudget = vi.fn();
+const setLimits = vi.fn();
 const claimTrialAllowance = vi.fn();
 const login = vi.fn();
 const getAgentSetup = vi.fn();
@@ -24,7 +24,7 @@ vi.mock('../../../lib/api', () => ({
     getSignupConfig: () => Promise.resolve(SIGNUP),
     createAgent: (b: unknown) => createAgent(b) as unknown,
     verifyIdentity: () => verifyIdentity() as unknown,
-    setMonthlyBudget: (a: string) => setMonthlyBudget(a) as unknown,
+    setLimits: (b: unknown) => setLimits(b) as unknown,
     claimTrialAllowance: () => claimTrialAllowance() as unknown,
     login: () => login() as unknown,
     getAgentSetup: () => getAgentSetup() as unknown,
@@ -58,7 +58,7 @@ beforeEach(() => {
     replace,
     createAgent,
     verifyIdentity,
-    setMonthlyBudget,
+    setLimits,
     claimTrialAllowance,
     login,
     getAgentSetup,
@@ -75,7 +75,7 @@ describe('NameContainer', () => {
       '알을 하나 골라이름을 지어 주세요',
     );
     expect(screen.getByRole('textbox', { name: '이름' })).toHaveAccessibleDescription(
-      '레벨 1로 태어나요. 한 번에 10,000원까지.',
+      '처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요.',
     );
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
     expect(replace).toHaveBeenCalledExactlyOnceWith('/verify');
@@ -108,16 +108,30 @@ describe('NameContainer', () => {
 });
 
 describe('BudgetSetupContainer', () => {
-  it('saves the picked budget, as an aokrw string, once', async () => {
-    setMonthlyBudget.mockResolvedValue(undefined);
+  it('sends both picked limits as aokrw strings, once (D-31)', async () => {
+    setLimits.mockResolvedValue(undefined);
     wrap(<BudgetSetupContainer />);
-    await userEvent.click(await screen.findByRole('radio', { name: '500,000원' }));
+    const more = await screen.findByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' });
+    await userEvent.click(more);
+    await userEvent.click(more);
+    await userEvent.click(screen.getByRole('button', { name: '30일에 쓸 돈 10,000원 내리기' }));
     await userEvent.click(screen.getByRole('button', { name: '용이랑 시작하기' }));
-    expect(setMonthlyBudget).toHaveBeenCalledTimes(1);
-    expect(setMonthlyBudget).toHaveBeenCalledWith(won(500_000n));
+    expect(setLimits).toHaveBeenCalledTimes(1);
+    expect(setLimits).toHaveBeenCalledWith({
+      perOrderLimit: won(20_000n),
+      myPeriodicLimit: won(50_000n),
+    });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/');
     });
+  });
+
+  it('sends only what changed, and nothing when nothing did', async () => {
+    setLimits.mockResolvedValue(undefined);
+    wrap(<BudgetSetupContainer />);
+    await userEvent.click(await screen.findByRole('button', { name: '용이랑 시작하기' }));
+    expect(setLimits).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith('/');
   });
 
   it('takes the trial allowance once, however often 받기 is pressed', async () => {
@@ -139,10 +153,13 @@ describe('BudgetSetupContainer', () => {
     expect(claimTrialAllowance).toHaveBeenCalledTimes(1);
   });
 
-  it('greets with the 96px dragon and shows the trial allowance amount', async () => {
+  it('greets with the dragon at its stage and shows the trial allowance amount', async () => {
     const { container } = wrap(<BudgetSetupContainer />);
     expect(await screen.findByText('100,000원')).toBeInTheDocument();
-    expect(container.querySelector('svg[width="96"]')).not.toBeNull();
+    // 10,000 at once is stage 1; 15,000 grows it to stage 2 (D-31).
+    expect(container.querySelector('[data-stage="1"]')).not.toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' }));
+    expect(container.querySelector('[data-stage="2"]')).not.toBeNull();
   });
 });
 

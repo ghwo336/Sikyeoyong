@@ -27,7 +27,6 @@ const BORN = Date.UTC(2026, 11, 1, 0, 0);
 const base: IdCardProps = {
   name: '용이',
   ownerName: '이호재',
-  level: 1,
   perOrder: okrwToAokrw(10_000n),
   ownerVerified: true,
   bornAt: BORN,
@@ -50,12 +49,16 @@ describe('IdCard (IdCard.md 테스트 기준)', () => {
     expect(fact('주인')).toBe('실명 확인 전');
   });
 
-  it('shows the four facts like IdCard.dc.html', () => {
+  it('shows the three facts like IdCard.dc.html, with no level (D-31)', () => {
     render(<IdCard {...base} />);
     expect(screen.getByRole('region', { name: '용이 신분증' })).toBeInTheDocument();
     expect(screen.getByText('용이')).toBeInTheDocument();
     expect(screen.getByText('이호재님의 배달 비서')).toBeInTheDocument();
-    expect(fact('레벨')).toBe('1');
+    expect(Array.from(document.querySelectorAll('dt')).map((t) => t.textContent)).toEqual([
+      '한 번에',
+      '주인',
+      '태어난 날',
+    ]);
     expect(fact('한 번에')).toBe('10,000원까지');
     expect(fact('태어난 날')).toBe('2026. 12. 1.');
   });
@@ -70,10 +73,10 @@ describe('IdCard (IdCard.md 테스트 기준)', () => {
     expect(formatKstDate(Date.UTC(2026, 10, 30, 14, 59))).toBe('2026. 11. 30.');
   });
 
-  it('grows wings from level 3', () => {
-    const { container, rerender } = render(<IdCard {...base} level={2} />);
+  it('grows wings at stage 3: a per-order limit over 30,000 (dragonStage)', () => {
+    const { container, rerender } = render(<IdCard {...base} perOrder={okrwToAokrw(30_000n)} />);
     expect(container.querySelector('[data-part="wings"]')).toBeNull();
-    rerender(<IdCard {...base} level={3} />);
+    rerender(<IdCard {...base} perOrder={okrwToAokrw(35_000n)} />);
     expect(container.querySelector('[data-part="wings"]')).not.toBeNull();
   });
 

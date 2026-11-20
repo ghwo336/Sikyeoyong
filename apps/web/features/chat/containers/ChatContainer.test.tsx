@@ -92,15 +92,15 @@ describe('ChatContainer', () => {
     expect(confirmOrder).not.toHaveBeenCalled();
   });
 
-  it('"한도 올려 줘" puts the change card in the chat; only its button changes the level', async () => {
+  it('"한도 올려 줘" puts the change card in the chat; only its button changes the limit', async () => {
     setup();
     await userEvent.type(await screen.findByRole('textbox'), '한도 5만 원까지 올려 줘');
     await userEvent.click(screen.getByRole('button', { name: /보내기/ }));
     const confirm = await screen.findByRole('button', { name: /Face ID로 확인하고 바꾸기/ });
-    expect((await mockApi.getMe()).level).toBe(1);
+    expect((await mockApi.getMe()).perOrderLimit).toBe(okrwToAokrw(10_000n).toString());
     await userEvent.click(confirm);
-    expect(await screen.findByText(/레벨 3이 됐어용/)).toBeInTheDocument();
-    expect((await mockApi.getMe()).level).toBe(3);
+    expect(await screen.findByText(/이제 한 번에 50,000원까지/)).toBeInTheDocument();
+    expect((await mockApi.getMe()).perOrderLimit).toBe(okrwToAokrw(50_000n).toString());
   });
 
   it('with the 30-day cap used up, picking a menu opens the Cap screen; no sheet, no payment', async () => {

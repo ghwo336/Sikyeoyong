@@ -4,6 +4,7 @@ export {
   zChatHistory,
   zChatHistoryQuery,
   zChatHistoryMessage,
+  LIMIT_FIELDS,
   zLimitChangeCardView,
   zQuickReply,
   zSendChatMessageBody,
@@ -13,6 +14,7 @@ export {
   type ChatHistoryQuery,
   type ChatHistoryMessage,
   type LimitChangeCardView,
+  type LimitField,
   type QuickReply,
   type SendChatMessageBody,
 } from './chat.js';
@@ -21,14 +23,10 @@ export {
   zAgentSetupView,
   zCreateAgentBody,
   zMeView,
-  zPatchMeBody,
-  zUserView,
   zSignupConfig,
   type AgentSetupView,
   type CreateAgentBody,
   type MeView,
-  type PatchMeBody,
-  type UserView,
   type SignupConfig,
 } from './me.js';
 export {
@@ -58,12 +56,13 @@ export {
   type RecommendationCard,
 } from './orders.js';
 export {
-  zAgentLevel,
-  zSetLevelBody,
-  zSetLevelResult,
-  type SetLevelBody,
-  type SetLevelResult,
-} from './level.js';
+  zAmountRangeView,
+  zSetLimitsBody,
+  zSetLimitsResult,
+  type AmountRangeView,
+  type SetLimitsBody,
+  type SetLimitsResult,
+} from './limits.js';
 export {
   MENU_DESCRIPTION_MAX,
   MENU_NAME_MAX,

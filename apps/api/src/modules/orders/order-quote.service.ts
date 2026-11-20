@@ -106,7 +106,7 @@ export class OrderQuoteService {
     const merchant = this.orderableMerchant(req.merchantId, nowMs);
     const { lines, total } = priceLines(req.items, merchant.menus);
     const periodUsed = await this.rules.periodUsedOrRefuse(agent, total, nowMs);
-    const refusal = this.rules.approvalNeeded(userId, agent, req.merchantId, total, nowMs);
+    const refusal = this.rules.approvalNeeded(userId, agent, req.merchantId, total, periodUsed);
     const reason = refusal === null ? null : approvalReasonOf(refusal);
     if (refusal !== null && reason === null) {
       throw new AppError('INTERNAL', { reason: 'not an approval code' });
@@ -211,7 +211,7 @@ export class OrderQuoteService {
       ...(note === null ? {} : { request: note }),
       amount: aokrwToString(total),
       dragonLine: `${first} 시킬게용.\n이대로 괜찮아용?`,
-      perOrderLimit: aokrwToString(policy.perOrderLimitAokrw[agent.level]),
+      perOrderLimit: aokrwToString(agent.perOrderLimitAokrw),
       periodUsedAfter: aokrwToString(periodUsed + total),
       periodCap: aokrwToString(policy.periodicCapAokrw),
     };

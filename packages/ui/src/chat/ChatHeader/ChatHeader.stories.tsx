@@ -5,7 +5,7 @@ import { ChatHeader } from './ChatHeader';
 const meta = {
   title: 'chat/ChatHeader',
   component: ChatHeader,
-  args: { name: '용이', caption: '레벨 1, 한 번에 10,000원까지', species: 'forest' },
+  args: { name: '용이', caption: '한 번에 10,000원까지', species: 'forest' },
   decorators: [(Story) => <div style={{ width: 350 }}>{Story()}</div>],
 } satisfies Meta<typeof ChatHeader>;
 
@@ -20,11 +20,11 @@ export const WithSettings: Story = {
 /** 설정 버튼 없음 (LimitChat 시안) */
 export const NoSettings: Story = {};
 
-/** 다른 종, 긴 이름과 레벨 3 (줄바꿈) */
+/** 다른 종, 긴 이름과 큰 한도 (줄바꿈) */
 export const LongCaption: Story = {
   args: {
     name: '봄봄이와친구들',
-    caption: '레벨 3, 한 번에 50,000원까지',
+    caption: '한 번에 50,000원까지, 30일에 500,000원까지',
     species: 'flower',
     onSettings: () => undefined,
   },

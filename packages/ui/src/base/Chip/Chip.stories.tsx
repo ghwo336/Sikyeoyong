@@ -52,7 +52,7 @@ function TastePicker() {
   );
 }
 
-function BudgetPicker() {
+function NumericPicker() {
   const [picked, setPicked] = useState('30만 원');
   return (
     <div
@@ -86,5 +86,5 @@ function BudgetPicker() {
 /** 선택됨 (Arrived 맛 평가) */
 export const Selected: Story = { render: () => <TastePicker /> };
 
-/** 고정폭 숫자 (Budget 예산 고르기) */
-export const Numeric: Story = { render: () => <BudgetPicker /> };
+/** 고정폭 숫자 (금액 칩, 옛 Budget 예산 고르기 모양) */
+export const Numeric: Story = { render: () => <NumericPicker /> };

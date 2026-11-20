@@ -1,0 +1,36 @@
+/* Budget.dc.html: a 15/600 title, 10 above a white 64 box with "− amount +". */
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-summary-gap);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+}
+
+/* 64 high, 0 8 inside, radius 18, 1px line, 12 between the buttons and the amount. */
+.box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  height: var(--size-pick-row);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+}
+
+/* 24/700 fixed-width digits in the middle (type.pay); the digits roll in base Amount. */
+.value {
+  flex-grow: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: var(--type-pay-size);
+  font-weight: var(--type-pay-weight);
+  letter-spacing: var(--type-pay-letter-spacing);
+  font-variant-numeric: tabular-nums;
+}

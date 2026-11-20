@@ -54,7 +54,9 @@ export const Invalid: Story = {
 /** Name.dc.html: the line under the field. */
 export const WithHint: Story = {
   args: { label: '이름', value: '용이', onChange: noop },
-  render: () => <Controlled initial="용이" hint="레벨 1로 태어나요. 한 번에 10,000원까지." />,
+  render: () => (
+    <Controlled initial="용이" hint="처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요." />
+  ),
 };
 
 /** An empty name with the line still there: the error comes first. */
@@ -64,7 +66,7 @@ export const InvalidWithHint: Story = {
     <Controlled
       initial=""
       error="이름을 지어 주세요"
-      hint="레벨 1로 태어나요. 한 번에 10,000원까지."
+      hint="처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요."
     />
   ),
 };

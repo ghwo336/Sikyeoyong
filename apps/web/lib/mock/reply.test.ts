@@ -18,18 +18,18 @@ describe('the mock dragon (a few kinds of words only)', () => {
     ]);
   });
 
-  it('budget words get this month: spent and left (210,000 of 300,000)', async () => {
-    expect(await say('이번 달 얼마 남았어?')).toEqual([
-      { type: 'token', text: '이번 달 210,000원 썼고 90,000원 남았어용.' },
+  it('budget words get the 30 days: spent and left (42,000 of my 60,000)', async () => {
+    expect(await say('얼마 남았어?')).toEqual([
+      { type: 'token', text: '30일 동안 42,000원 썼고 18,000원 남았어용.' },
     ]);
   });
 
-  it('over the budget, it says by how much (210,000 of 200,000)', async () => {
-    await mockApi.setMonthlyBudget(won(200_000n));
+  it('over my 30-day limit, it says by how much (42,000 of 40,000)', async () => {
+    await mockApi.setLimits({ myPeriodicLimit: won(40_000n) });
     expect(await say('그럼 다 쓴 거 아님?')).toEqual([
       {
         type: 'token',
-        text: '이번 달 예산 200,000원을 벌써 10,000원 넘었어용. 더 시키면 주인님 허락을 받을게용.',
+        text: '30일 한도 40,000원을 벌써 2,000원 넘었어용. 더 시키면 주인님 허락을 받을게용.',
       },
     ]);
   });

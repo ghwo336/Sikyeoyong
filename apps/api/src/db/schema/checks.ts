@@ -28,7 +28,7 @@ export function enumCheck(name: string, column: SQLiteColumn, values: readonly s
   return check(name, sql`${column} in (${sql.raw(values.map((v) => `'${v}'`).join(', '))})`);
 }
 
-/** CHECK that an integer column is one of the given values (agent levels). */
+/** CHECK that an integer column is one of the given values (no column uses it since D-31 removed agent levels; kept for the next integer enum). */
 export function intEnumCheck(name: string, column: SQLiteColumn, values: readonly number[]) {
   assertSafeName(name);
   if (values.length === 0) throw new Error(`intEnumCheck: ${name} has no values`);

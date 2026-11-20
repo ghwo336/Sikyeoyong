@@ -49,7 +49,7 @@ export const LimitChange: Story = {
     size: 'small',
     gap: 'loose',
     rows: [
-      { label: '레벨', value: '1에서 3으로' },
+      { label: '30일에 쓸 돈', value: '300,000원 그대로' },
       { label: '30일 한도', value: '500,000원 그대로' },
     ],
   },
@@ -62,7 +62,7 @@ export const IdCardFacts: Story = {
     size: 'caption',
     gap: 'loose',
     rows: [
-      { label: '레벨', value: '1' },
+      { label: '한 번에', value: '10,000원까지' },
       { label: '한 번에', value: '10,000원까지' },
       { label: '주인', value: '실명 확인됨' },
       { label: '태어난 날', value: '2026. 12. 1.' },

@@ -1,11 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import * as shared from '@sikyeoyong/shared';
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { LimitBlocked, levelWithRo } from './LimitBlocked';
+import { LimitBlocked } from './LimitBlocked';
 
 const css = readFileSync(resolve(__dirname, 'LimitBlocked.module.css'), 'utf8');
 const rule = (selector: string) =>
@@ -44,21 +43,15 @@ const base = {
 };
 
 describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
-  it('uses the shared particle helper, not a copy of its own', () => {
-    expect(levelWithRo).toBe(shared.levelWithRo);
-  });
-
   it('has no explanation paragraph: only the numbers and the two choices (no slop)', () => {
-    const { container } = render(
-      <LimitBlocked {...base} nextLevel={{ level: 3, limit: won(50_000n) }} />,
-    );
+    const { container } = render(<LimitBlocked {...base} raiseTo={won(45_000n)} />);
     expect(container.querySelectorAll('p')).toHaveLength(1);
     expect(container.textContent).toBe(
-      '45,000원 / 10,000원까지레벨 3으로 올리고 시키기 한 번에 50,000원까지10,000원 안에서 다시 고르기',
+      '45,000원 / 10,000원까지한 번에 45,000원으로 올리고 시키기10,000원 안에서 다시 고르기',
     );
   });
 
-  it('hides the raise button without a next level', () => {
+  it('hides the raise button when no limit fits (raiseTo missing)', () => {
     render(<LimitBlocked {...base} />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /올리고/ })).toBeNull();
@@ -68,16 +61,9 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
   it('calls the matching callback once', async () => {
     const onRaise = vi.fn();
     const onRepick = vi.fn();
-    render(
-      <LimitBlocked
-        {...base}
-        onRaise={onRaise}
-        onRepick={onRepick}
-        nextLevel={{ level: 3, limit: won(50_000n) }}
-      />,
-    );
+    render(<LimitBlocked {...base} onRaise={onRaise} onRepick={onRepick} raiseTo={won(45_000n)} />);
     await userEvent.click(
-      screen.getByRole('button', { name: '레벨 3으로 올리고 시키기 한 번에 50,000원까지' }),
+      screen.getByRole('button', { name: '한 번에 45,000원으로 올리고 시키기' }),
     );
     expect(onRaise).toHaveBeenCalledTimes(1);
     expect(onRepick).not.toHaveBeenCalled();
@@ -93,19 +79,12 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
   });
 
   it.each([
-    [1, '1로'],
-    [2, '2로'],
-    [3, '3으로'],
-    [4, '4로'],
-    [5, '5로'],
-    [6, '6으로'],
-    [7, '7로'],
-    [8, '8로'],
-    [9, '9로'],
-    [10, '10으로'],
-    [11, '11로'],
-  ])('reads level %s as %s', (level, text) => {
-    expect(levelWithRo(level)).toBe(text);
+    [won(5_000n), '한 번에 5,000원으로 올리고 시키기'],
+    [won(50_000n), '한 번에 50,000원으로 올리고 시키기'],
+    [won(123_456_789_012_345_678n), '한 번에 123,456,789,012,345,678원으로 올리고 시키기'],
+  ])('names the new limit with 원으로 (%s)', (raiseTo, name) => {
+    render(<LimitBlocked {...base} raiseTo={raiseTo} />);
+    expect(screen.getByRole('button', { name })).toBeInTheDocument();
   });
 
   // Blocked.dc.html 30-46.
@@ -126,11 +105,10 @@ describe('LimitBlocked (LimitBlocked.md 테스트 기준)', () => {
       unmount();
     }
     expect(pairRule('.md')).toMatch(/gap:\s*var\(--space-2\)/);
-    expect(rule('.raiseLines')).toMatch(/gap:\s*2px/);
     expect(rule('.raiseMain')).toMatch(/font-size:\s*var\(--type-button-size\)/);
-    expect(rule('.raiseSub')).toMatch(/color:\s*var\(--color-leaf-sub-ink\)/);
+    expect(rule('.raiseMain')).toMatch(/font-weight:\s*var\(--type-button-weight\)/);
     // Raise: Button primary tall (64, leaf). Repick: Button secondary choice (52, pale line, 15/600).
-    render(<LimitBlocked {...base} nextLevel={{ level: 3, limit: won(50_000n) }} />);
+    render(<LimitBlocked {...base} raiseTo={won(45_000n)} />);
     const raise = screen.getByRole('button', { name: /올리고/ });
     expect([...raise.classList]).toEqual(expect.arrayContaining(['primary', 'tall']));
     const repick = screen.getByRole('button', { name: /다시 고르기/ });

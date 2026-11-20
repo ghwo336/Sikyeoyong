@@ -33,13 +33,13 @@ children: []
   `code`는 `AppErrorCode`만 (tech-spec 3.6). 체인 revert는 `chain-and-pcl.md` 매핑으로 바꾼다. 원본 revert는 `AppError.detail.chain`에 담아 서버 로그에만 남기고 응답에는 내보내지 않는다.
   HTTP 상태, `message`, `dragonLine`은 `packages/shared`의 `APP_ERRORS[code]`에서만 가져온다(필터에서 따로 정하지 않는다). 필터는 `common/filters/app-error.filter.ts` 하나이고 `configureApp`이 전역으로 건다. `AppError.detail`에서 응답으로 나가는 것은 `detail.public`뿐이고(5xx는 그것도 내보내지 않는다), 대사 자리표시 값은 `detail.dragonParams`로 넘긴다. 자리표시 값이 빠지면 대사를 빼고 보낸다. Nest HTTP 예외는 400, 401, 403, 404(405 포함), 409, 429를 해당 코드로 바꾸고, 그 밖의 4xx(본문 너무 큼 등)는 `VALIDATION_FAILED`(400), 5xx는 `INTERNAL`(500)로 보낸다. 요약: 검증 400, 로그인 401, 권한 403, 없음 404, 같은 멱등 키에 다른 내용 409, 체인·서버 규칙 거절 422, 멈춤 423, 레이트 리밋 429, 서버 설정·그 밖 500, 한도 메타데이터 미설정 503. 같은 멱등 키와 같은 내용의 재요청은 에러가 아니라 처음 응답을 그대로 돌려준다.
 - **금액**: JSON에서 aokrw 정수 문자열. 숫자 타입 금지.
-- **시간**: unix ms 정수 (체인 `resetAt`은 unix 초, 필드 이름에 단위 표시). 개인 예산의 달력 월(KST)은 `packages/shared/src/time`의 `kstMonthOf`, `kstMonthRange`로만 계산한다. 화면에 보이는 KST 글자(`formatKstClock`, `formatKstDate`, `formatKstDateTime`)와 달력 날짜 차이(`kstDaysBetween`)도 같은 파일에 있다.
+- **시간**: unix ms 정수 (체인 `resetAt`은 unix 초, 필드 이름에 단위 표시). 달력 월(KST, 지갑 화면의 이번 달 아낀 돈과 잔소리 기록)은 `packages/shared/src/time`의 `kstMonthOf`, `kstMonthRange`로만 계산한다. 내 30일 한도는 달력 월이 아니라 체인 30일 창이다 (D-31). 화면에 보이는 KST 글자(`formatKstClock`, `formatKstDate`, `formatKstDateTime`)와 달력 날짜 차이(`kstDaysBetween`)도 같은 파일에 있다.
 - **멱등성**: 주문 `clientOrderId`, 대화 `clientMessageId`, 충전과 회수도 클라이언트 요청 ID. 체인에서는 `orderRef`.
 - **결제는 확인 엔드포인트에서만**: `POST /api/orders`와 LLM `place_order`는 견적만. 결제는 `POST /api/orders/:id/confirm`에서만.
 - **confirm은 상태로 멱등** (D-19): 상태별 동작은 `payment.md` "confirm 상태 규칙"이 원본이다. 요지: `quoted`와 재시도 가능한 `failed`에서만 결제하고(실패는 체인 조회 뒤 같은 orderRef로), 상태 전이는 조건부 UPDATE 하나로 해서 동시에 온 요청 중 하나만 결제로 간다. 나머지 상태는 결제 없이 200과 현재 주문. confirm 상태 때문에 409를 쓰지 않는다.
 - **바꿔 끼우는 구현은 프로바이더 토큰으로 주입**: `PaymentProvider`(A, B, C), `LlmProvider`, `MerchantSource`. 설정값으로 고른다.
 - **주기 작업**: `indexer`(3초 간격 getLogs), `delivery`(배달 단계 타이머)는 `@nestjs/schedule`. SQLite라 프로세스 하나.
-- **감사 로그**: 돈, 정책, 동결, 레벨 변경은 누가 언제 무엇을 했는지 기록.
+- **감사 로그**: 돈, 정책, 동결, 한도 변경은 누가 언제 무엇을 했는지 기록.
 - 대화 응답은 SSE. 본문이 있는 POST라 `@Sse`(GET 전용) 대신 `@Post` + `@Res`로 직접 쓴다 (`data: <ChatEvent JSON>` 한 줄씩, 끝나면 항상 `res.end()`).
 
 ## 하지 말 것 (MUST NOT)

@@ -10,7 +10,7 @@ export interface TextFieldProps {
   readonly placeholder?: string;
   /** Message from the parent; the field only shows it (TextField.md). */
   readonly error?: string;
-  /** One plain line under the field ("레벨 1로 태어나요. 한 번에 10,000원까지."). Stays with an error. */
+  /** One plain line under the field ("처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요."). Stays with an error. */
   readonly hint?: string;
   readonly inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
   /** Name.dc.html caps the dragon name at 8. */

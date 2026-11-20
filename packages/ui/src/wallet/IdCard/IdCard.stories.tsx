@@ -12,7 +12,6 @@ const meta = {
   args: {
     name: '용이',
     ownerName: '이호재',
-    level: 1,
     perOrder: okrwToAokrw(10_000n),
     ownerVerified: true,
     bornAt: BORN,
@@ -30,11 +29,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 레벨 1 (IdCard.dc.html) */
-export const LevelOne: Story = {};
-/** 레벨 3 날개 */
-export const LevelThreeWings: Story = {
-  args: { level: 3, perOrder: okrwToAokrw(50_000n), species: 'star' },
+/** 기본 (IdCard.dc.html, 한 번에 10,000원) */
+export const Default: Story = {};
+/** 날개 (한 번에 30,000원 넘음, 3단계) */
+export const Wings: Story = {
+  args: { perOrder: okrwToAokrw(50_000n), species: 'star' },
 };
 /** 주인 미인증 */
 export const OwnerNotVerified: Story = { args: { ownerVerified: false, species: 'water' } };

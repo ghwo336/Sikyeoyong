@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   AppError,
   type BudgetView,
@@ -7,6 +7,9 @@ import {
   formatOkrw,
   parseAokrw,
 } from '@sikyeoyong/shared';
+import { uuidv7 } from '../../../common/ids.js';
+import { APP_CONFIG } from '../../../config/config.module.js';
+import type { AppConfig } from '../../../config/env.js';
 import { BudgetService } from '../../budget/budget.service.js';
 import { MerchantsService } from '../../merchants/merchants.service.js';
 import { OrdersService } from '../../orders/orders.service.js';
@@ -14,6 +17,7 @@ import { RecommendService, WeatherService } from '../../recommend/recommend.serv
 import { UsersService } from '../../users/users.service.js';
 import type { SessionContext, ToolHandlers } from '../runtime.js';
 import type { ToolName } from './definitions.js';
+import { limitCardReply } from './limit-card-views.js';
 import { menuForModel, recommendReply } from './merchant-views.js';
 import { approvalRequestReply, placeOrderReply } from './order-views.js';
 
@@ -27,18 +31,23 @@ const kstTime = (unixMs: number) => `${formatKstDate(unixMs)} ${formatKstClock(u
  * The HTTP BudgetView stays in aokrw for the screens.
  */
 export function budgetForModel(view: BudgetView) {
+  const range = (r: BudgetView['limitRanges']['perOrder']) => ({
+    min: won(r.min),
+    max: won(r.max),
+    step: won(r.step),
+  });
   return {
-    month: view.monthKst,
-    personalBudget: won(view.personalBudget),
-    personalSpent: won(view.personalSpent),
+    perOrderLimit: won(view.perOrderLimit),
+    myThirtyDayLimit: won(view.myPeriodicLimit),
+    thirtyDayUsed: won(view.chainUsed),
     nagLevel: view.nagLevel,
     thirtyDayCap: won(view.chainCap),
-    thirtyDayUsed: won(view.chainUsed),
     thirtyDayResetsAt: view.chainResetAtSec === null ? null : kstTime(view.chainResetAtSec * 1000),
-    level: view.level,
-    perOrderLimit: won(view.perOrderLimit),
     frozen: view.frozen,
-    budgetOptions: view.budgetOptions.map((o) => ({ id: o.id, amount: won(o.amount) })),
+    ranges: {
+      perOrderLimit: range(view.limitRanges.perOrder),
+      myThirtyDayLimit: range(view.limitRanges.myPeriodic),
+    },
   };
 }
 
@@ -51,6 +60,7 @@ export function budgetForModel(view: BudgetView) {
 @Injectable()
 export class LlmToolHandlers {
   constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly budget: BudgetService,
     private readonly users: UsersService,
     private readonly weather: WeatherService,
@@ -64,8 +74,7 @@ export class LlmToolHandlers {
     const notReady = (tool: ToolName) => () =>
       Promise.reject(new AppError('INTERNAL', { reason: 'tool not ready', tool }));
     return {
-      get_budget: (ctx: SessionContext) =>
-        this.budget.getView(ctx.userId, now()).then(budgetForModel),
+      get_budget: (ctx: SessionContext) => this.budget.getView(ctx.userId).then(budgetForModel),
       get_context: (ctx: SessionContext) => Promise.resolve().then(() => this.context(ctx, now())),
       get_order_history: notReady('get_order_history'),
       recommend_merchants: (ctx, input) =>
@@ -101,7 +110,12 @@ export class LlmToolHandlers {
             now(),
           )
           .then(approvalRequestReply),
-      propose_limit_change: notReady('propose_limit_change'),
+      // A card only, never a change (CLAUDE.md rule 3, D-21, D-31). The runtime already checked
+      // the user's own words; range, step, same value and the card's numbers are the server's.
+      propose_limit_change: (ctx, input) =>
+        this.budget
+          .getView(ctx.userId)
+          .then((view) => limitCardReply(this.config.policy, view, input, uuidv7(now()))),
     };
   }
 

@@ -5,6 +5,7 @@ import { DbModule } from './db/db.module.js';
 import { BudgetModule } from './modules/budget/budget.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
+import { LimitsModule } from './modules/limits/limits.module.js';
 import { LlmModule } from './modules/llm/llm.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WalletModule } from './modules/wallet/wallet.module.js';
@@ -19,6 +20,7 @@ import { OwnerApprovalsModule } from './modules/owner-approvals/owner-approvals.
     RateLimitModule,
     HealthModule,
     IdentityModule,
+    LimitsModule,
     LlmModule,
     BudgetModule,
     UsersModule,

@@ -75,7 +75,7 @@ describe('TextField (TextField.md 테스트 기준)', () => {
   });
 
   it('reads the hint line under the field, after the error when both are there', () => {
-    const hint = '레벨 1로 태어나요. 한 번에 10,000원까지.';
+    const hint = '처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요.';
     const { rerender } = render(
       <TextField label="이름" value="용이" hint={hint} onChange={vi.fn()} />,
     );

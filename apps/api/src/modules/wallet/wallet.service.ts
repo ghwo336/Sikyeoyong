@@ -15,8 +15,8 @@ import { UsersService } from '../users/users.service.js';
  * The wallet screen's money (GET /api/wallet, Wallet.dc.html).
  * - owner: the owner allowance ledger while custodial (D-24, allowance module).
  * - pocket: what the dragon's wallet holds on chain now (0 before hatching wrote a wallet).
- * - savedThisMonth: this month's personal budget minus what was spent, never below zero
- *   (default reading of "이번 달 아낀 돈", open-questions Q-37).
+ * - savedThisMonth: the owner's 30-day limit (D-31, was the monthly budget) minus what was
+ *   spent this KST month, never below zero (default reading of "이번 달 아낀 돈", Q-37).
  */
 @Injectable()
 export class WalletService {
@@ -32,7 +32,7 @@ export class WalletService {
     const agent = this.agents.getForUser(userId);
     const pocket = agent.wallet === null ? 0n : await this.payment.balanceOf(agent.wallet);
     const owner = this.allowance.balanceAokrw(userId);
-    const budget = this.users.getMonthlyBudgetAokrw(userId);
+    const budget = this.users.getMyPeriodicLimitAokrw(userId);
     const spent = this.orders.spentInMonthAokrw(userId, kstMonthOf(nowMs));
     return {
       owner: aokrwToString(owner > 0n ? owner : 0n),

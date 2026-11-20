@@ -23,8 +23,8 @@ async function setup(recent: RecentOrdersReader, env: Record<string, string> = {
   const h = openDb(':memory:');
   runMigrations(h.db);
   handles.push(h);
-  insertUser(h.db, 'u1', { budgetWon: 300_000n, level: 1 });
-  insertUser(h.db, 'u3', { budgetWon: 300_000n, level: 3 });
+  insertUser(h.db, 'u1', { myPeriodicWon: 300_000n, perOrderWon: 10_000n });
+  insertUser(h.db, 'u3', { myPeriodicWon: 300_000n, perOrderWon: 50_000n });
   insertUser(h.db, 'uf', { frozen: true });
   insertMerchant(h.db, 'm-gukbap', { name: '마루국밥', category: '한식', tags: ['국물'] });
   insertMerchant(h.db, 'm-bunsik', { name: '대청분식', category: '분식' });
@@ -58,7 +58,7 @@ describe('RecommendService', () => {
     expect(r.weather).toBe('비');
   });
 
-  it('uses the session user level: 45,000 needs approval at level 1, not at level 3', async () => {
+  it('uses the session user per-order limit: 45,000 needs approval at 10,000, not at 50,000', async () => {
     const svc = await setup(none);
     const l1 = await svc.recommend('u1', { craving: '보쌈' }, NOW);
     expect(l1.items.map((x) => [x.menu.id, x.approvalReason])).toEqual([

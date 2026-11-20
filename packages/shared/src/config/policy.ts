@@ -8,16 +8,35 @@ import { MAX_AOKRW, okrwToAokrw } from '../money/index.js';
  * needs `pnpm policy:apply` (chain-and-pcl.md).
  */
 export type PolicyProfile = 'default' | 'demo';
-export type AgentLevel = 1 | 2 | 3;
 
-export const AGENT_LEVELS: readonly AgentLevel[] = [1, 2, 3];
+/**
+ * The per-order limit the owner picks (D-31), chain-enforced via 8004 TransferLimit.
+ * Same for every profile. `initial` is what Hatch writes before the owner picks.
+ */
+const PER_ORDER_LIMIT_OKRW = { min: 5_000n, max: 50_000n, step: 5_000n, initial: 10_000n };
 
-/** Per-order limit by level, chain-enforced via 8004 TransferLimit (D-07). */
-const PER_ORDER_LIMIT_OKRW: { readonly [L in AgentLevel]: bigint } = {
-  1: 10_000n,
-  2: 30_000n,
-  3: 50_000n,
+/**
+ * The owner's own 30-day limit (D-31, the old monthly budget). The server keeps it, inside
+ * the chain's shared cap (its max). The demo starts at the chain cap so scene 14 is a chain revert.
+ */
+const MY_PERIODIC_OKRW: {
+  readonly [P in PolicyProfile]: { min: bigint; step: bigint; initial: bigint };
+} = {
+  default: { min: 50_000n, step: 50_000n, initial: 300_000n },
+  demo: { min: 10_000n, step: 10_000n, initial: 60_000n },
 };
+
+/** Dragon growth by the per-order limit (D-31): up to 10,000 stage 1, up to 30,000 stage 2. */
+const DRAGON_STAGE_MAX_OKRW = { 1: 10_000n, 2: 30_000n } as const;
+export type DragonStage = 1 | 2 | 3;
+
+/** A limit the owner can pick: from min to max in steps (aokrw). */
+export interface AmountRange {
+  readonly minAokrw: bigint;
+  readonly maxAokrw: bigint;
+  readonly stepAokrw: bigint;
+  readonly initialAokrw: bigint;
+}
 
 /** 30-day cap, chain-enforced via PERIODIC_VOLUME_POLICY on placeOrder (D-07, D-12). */
 const PERIODIC_CAP: { readonly [P in PolicyProfile]: { okrw: bigint; periodSec: number } } = {
@@ -27,39 +46,22 @@ const PERIODIC_CAP: { readonly [P in PolicyProfile]: { okrw: bigint; periodSec: 
 
 export interface PolicyConfig {
   readonly profile: PolicyProfile;
-  readonly perOrderLimitAokrw: { readonly [L in AgentLevel]: bigint };
+  /** The per-order limit range (D-31). */
+  readonly perOrderLimit: AmountRange;
+  /** The owner's own 30-day limit range, max = periodicCapAokrw (D-31). */
+  readonly myPeriodicLimit: AmountRange;
   readonly periodicCapAokrw: bigint;
   readonly periodicPeriodSec: number;
   /** Global testnet KYC limits for owners without attestation (chain global policy, D-07). */
   readonly unverifiedPerTxAokrw: bigint;
   readonly unverifiedPerDayAokrw: bigint;
-  /** Personal monthly budget default, server-side only (D-07). */
-  readonly defaultMonthlyBudgetAokrw: bigint;
-  /** Nag thresholds in basis points of the monthly budget (tech-spec 3.7). */
+  /** Nag thresholds in basis points of the owner's 30-day limit (tech-spec 3.7, D-31). */
   readonly nagThresholdsBps: readonly [number, number, number];
   /** Approval requests expire after this (tech-spec 1.4 flow 3). */
   readonly approvalTtlMs: number;
-  /**
-   * Monthly budget choices (Budget.dc.html, D-21). The LLM picks only a key;
-   * the server turns it into an amount.
-   */
-  readonly monthlyBudgetOptions: readonly MonthlyBudgetOption[];
   /** Trial allowance shown on sign-up (Budget.dc.html "체험용 용돈 100,000원", user-flow 5). */
   readonly trialAllowanceAokrw: bigint;
 }
-
-export type MonthlyBudgetOptionId = 'small' | 'medium' | 'large';
-
-export interface MonthlyBudgetOption {
-  readonly id: MonthlyBudgetOptionId;
-  readonly amountAokrw: bigint;
-}
-
-export const MONTHLY_BUDGET_OPTION_IDS: readonly MonthlyBudgetOptionId[] = [
-  'small',
-  'medium',
-  'large',
-];
 
 /**
  * Words in the user's own message that open the limit-change card (D-21).
@@ -74,7 +76,6 @@ export const LIMIT_INTENT_KEYWORDS: readonly string[] = [
   '내려',
   '늘려',
   '줄여',
-  '레벨',
   '만 원',
   '만원',
 ];
@@ -97,35 +98,66 @@ export function getPolicy(profile: PolicyProfile): PolicyConfig {
     throw new AppError('INTERNAL', { reason: 'unknown policy profile', profile: String(profile) });
   }
   const cap = PERIODIC_CAP[profile];
+  const mine = MY_PERIODIC_OKRW[profile];
   return {
     profile,
-    perOrderLimitAokrw: {
-      1: okrwToAokrw(PER_ORDER_LIMIT_OKRW[1]),
-      2: okrwToAokrw(PER_ORDER_LIMIT_OKRW[2]),
-      3: okrwToAokrw(PER_ORDER_LIMIT_OKRW[3]),
+    perOrderLimit: {
+      minAokrw: okrwToAokrw(PER_ORDER_LIMIT_OKRW.min),
+      maxAokrw: okrwToAokrw(PER_ORDER_LIMIT_OKRW.max),
+      stepAokrw: okrwToAokrw(PER_ORDER_LIMIT_OKRW.step),
+      initialAokrw: okrwToAokrw(PER_ORDER_LIMIT_OKRW.initial),
+    },
+    myPeriodicLimit: {
+      minAokrw: okrwToAokrw(mine.min),
+      maxAokrw: okrwToAokrw(cap.okrw),
+      stepAokrw: okrwToAokrw(mine.step),
+      initialAokrw: okrwToAokrw(mine.initial),
     },
     periodicCapAokrw: okrwToAokrw(cap.okrw),
     periodicPeriodSec: cap.periodSec,
     unverifiedPerTxAokrw: okrwToAokrw(2_000_000n),
     unverifiedPerDayAokrw: okrwToAokrw(10_000_000n),
-    defaultMonthlyBudgetAokrw: okrwToAokrw(300_000n),
     nagThresholdsBps: [7_000, 9_000, 10_000],
     approvalTtlMs: 10 * 60 * 1000,
-    monthlyBudgetOptions: [
-      { id: 'small', amountAokrw: okrwToAokrw(200_000n) },
-      { id: 'medium', amountAokrw: okrwToAokrw(300_000n) },
-      { id: 'large', amountAokrw: okrwToAokrw(500_000n) },
-    ],
     trialAllowanceAokrw: okrwToAokrw(100_000n),
   };
 }
 
+/** True when the owner may pick this amount: inside the range and on a step (D-31). */
+export function isInRange(range: AmountRange, aokrw: bigint): boolean {
+  return (
+    aokrw >= range.minAokrw &&
+    aokrw <= range.maxAokrw &&
+    (aokrw - range.minAokrw) % range.stepAokrw === 0n
+  );
+}
+
+/**
+ * The smallest per-order limit that lets this order through (Blocked: "한 번에 N원으로 올리고
+ * 시키기"), or null when even the top of the range is too small.
+ */
+export function perOrderLimitToFit(policy: PolicyConfig, amountAokrw: bigint): bigint | null {
+  const r = policy.perOrderLimit;
+  if (amountAokrw > r.maxAokrw) return null;
+  if (amountAokrw <= r.minAokrw) return r.minAokrw;
+  const over = amountAokrw - r.minAokrw;
+  const steps = (over + r.stepAokrw - 1n) / r.stepAokrw;
+  return r.minAokrw + steps * r.stepAokrw;
+}
+
+/** How grown the dragon looks for a per-order limit (D-31). Display only. */
+export function dragonStage(perOrderLimitAokrw: bigint): DragonStage {
+  if (perOrderLimitAokrw <= okrwToAokrw(DRAGON_STAGE_MAX_OKRW[1])) return 1;
+  if (perOrderLimitAokrw <= okrwToAokrw(DRAGON_STAGE_MAX_OKRW[2])) return 2;
+  return 3;
+}
+
 /** Agent float in mode P: per-order limit times the multiplier (D-06, AGENT_FLOAT_MULTIPLIER). */
-export function floatCapAokrw(policy: PolicyConfig, level: AgentLevel, multiplier: bigint): bigint {
+export function floatCapAokrw(perOrderLimitAokrw: bigint, multiplier: bigint): bigint {
   if (multiplier < 1n) {
     throw new AppError('INTERNAL', { reason: 'float multiplier must be at least 1' });
   }
-  const cap = policy.perOrderLimitAokrw[level] * multiplier;
+  const cap = perOrderLimitAokrw * multiplier;
   if (cap > MAX_AOKRW) {
     throw new AppError('INTERNAL', { reason: 'float cap out of range' });
   }

@@ -1,10 +1,12 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AGENT_LEVELS, MONTHLY_BUDGET_OPTION_IDS, okrwToAokrw } from '@sikyeoyong/shared';
+import { LIMIT_FIELDS, okrwToAokrw } from '@sikyeoyong/shared';
 import { z } from 'zod';
 
 /**
  * The whole tool surface Claude gets (agent-runtime.md, tech-spec 3.3, D-06, D-21).
- * No tool takes an amount, an address or a policy value. Nothing here moves money:
+ * No tool takes an address or a policy value, and no amount that is paid: the only amounts are
+ * the recommendation price filter and the limit card's asked amount (D-31), which the server
+ * checks against the policy range before it shows anything. Nothing here moves money:
  * place_order only makes a quote and a confirm card, propose_limit_change only a card.
  * Adding a tool needs a decisions.md entry and a security review first.
  */
@@ -12,6 +14,8 @@ export type ToolKind = 'read' | 'order' | 'approval' | 'card';
 
 /** Upper bound for the recommendation price filter, in whole OKRW (a search filter, not a payment). */
 export const MAX_PRICE_FILTER_OKRW = 1_000_000;
+/** Upper bound for the limit card's asked amount in whole OKRW (the server checks the real range). */
+export const MAX_LIMIT_CARD_OKRW = 100_000_000;
 
 const idString = z.string().min(1).max(64);
 
@@ -54,22 +58,15 @@ export const TOOL_INPUTS = {
     .strict(),
   propose_limit_change: z
     .object({
-      field: z.enum(['perOrder', 'monthlyBudget']),
-      targetLevel: z
-        .number()
-        .int()
-        .refine((n) => (AGENT_LEVELS as readonly number[]).includes(n))
-        .optional(),
-      budgetOption: z.enum(MONTHLY_BUDGET_OPTION_IDS as [string, ...string[]]).optional(),
+      field: z.enum(LIMIT_FIELDS),
+      amountOkrw: z.number().int().min(0).max(MAX_LIMIT_CARD_OKRW),
     })
     .strict()
-    .refine(
-      (v) =>
-        v.field === 'perOrder'
-          ? v.targetLevel !== undefined && v.budgetOption === undefined
-          : v.budgetOption !== undefined && v.targetLevel === undefined,
-      { message: 'perOrder needs targetLevel only, monthlyBudget needs budgetOption only' },
-    ),
+    // Handlers see only aokrw bigint (CLAUDE.md rule 4); the whole-won number stops here.
+    .transform(({ field, amountOkrw }) => ({
+      field,
+      amountAokrw: okrwToAokrw(BigInt(amountOkrw)),
+    })),
 } as const;
 
 export type ToolName = keyof typeof TOOL_INPUTS;
@@ -115,7 +112,7 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
   {
     name: 'get_budget',
     description:
-      '이번 달 개인 예산, 사용액, 체인 30일 상한과 리셋 시각, 레벨과 건당 한도, 예산 선택지를 조회한다.',
+      '한 번에 쓸 돈, 30일에 쓸 돈(내 한도)과 30일 동안 쓴 돈, 모두에게 같은 30일 상한과 리셋 시각, 고를 수 있는 금액 범위를 조회한다.',
     strict: true,
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
   },
@@ -195,16 +192,18 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
   {
     name: 'propose_limit_change',
     description:
-      '사용자가 한도나 예산을 바꾸자고 직접 말했을 때만 변경 카드를 띄운다. 아무것도 바꾸지 않는다. 바꾸는 일은 사용자가 카드 버튼을 누른 뒤 서버가 한다.',
+      '사용자가 한도를 바꾸자고 직접 말했을 때만 변경 카드를 띄운다. 아무것도 바꾸지 않는다. 바꾸는 일은 사용자가 카드 버튼을 누른 뒤 서버가 한다.',
     strict: true,
     input_schema: {
       type: 'object',
       properties: {
-        field: { enum: ['perOrder', 'monthlyBudget'] },
-        targetLevel: { enum: [1, 2, 3] },
-        budgetOption: { enum: ['small', 'medium', 'large'] },
+        field: {
+          enum: ['perOrder', 'myPeriodic'],
+          description: 'perOrder는 한 번에 쓸 돈, myPeriodic은 30일에 쓸 돈',
+        },
+        amountOkrw: { type: 'integer', description: '사용자가 말한 바꿀 금액, 원 단위' },
       },
-      required: ['field'],
+      required: ['field', 'amountOkrw'],
       additionalProperties: false,
     },
   },

@@ -13,7 +13,7 @@ export class UsersRepository {
   ensure(row: {
     id: string;
     nickname: string;
-    monthlyBudgetAokrw: string;
+    myPeriodicLimitAokrw: string;
     createdAt: number;
   }): void {
     this.handle.db.insert(users).values(row).onConflictDoNothing().run();
@@ -26,7 +26,7 @@ export class UsersRepository {
   ensurePouchiUser(
     walletId: string,
     walletAddress: string,
-    fresh: { id: string; nickname: string; monthlyBudgetAokrw: string; createdAt: number },
+    fresh: { id: string; nickname: string; myPeriodicLimitAokrw: string; createdAt: number },
   ): string {
     return this.handle.sqlite.transaction(() => {
       const found = this.handle.db
@@ -44,26 +44,26 @@ export class UsersRepository {
     })();
   }
 
-  findMonthlyBudget(userId: string): string | undefined {
+  findMyPeriodicLimit(userId: string): string | undefined {
     return this.handle.db
-      .select({ monthlyBudgetAokrw: users.monthlyBudgetAokrw })
+      .select({ myPeriodicLimitAokrw: users.myPeriodicLimitAokrw })
       .from(users)
       .where(eq(users.id, userId))
-      .get()?.monthlyBudgetAokrw;
+      .get()?.myPeriodicLimitAokrw;
   }
 
-  findProfile(userId: string): { nickname: string; monthlyBudgetAokrw: string } | undefined {
+  findProfile(userId: string): { nickname: string } | undefined {
     return this.handle.db
-      .select({ nickname: users.nickname, monthlyBudgetAokrw: users.monthlyBudgetAokrw })
+      .select({ nickname: users.nickname })
       .from(users)
       .where(eq(users.id, userId))
       .get();
   }
 
-  setMonthlyBudget(userId: string, aokrw: string): void {
+  setMyPeriodicLimit(userId: string, aokrw: string): void {
     this.handle.db
       .update(users)
-      .set({ monthlyBudgetAokrw: aokrw })
+      .set({ myPeriodicLimitAokrw: aokrw })
       .where(eq(users.id, userId))
       .run();
   }

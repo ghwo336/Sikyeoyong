@@ -62,10 +62,8 @@ const base: LimitChangeCardProps = {
   field: 'perOrder',
   from: won(10_000n),
   to: won(50_000n),
-  levelFrom: 1,
-  levelTo: 3,
   needsReauth: true,
-  rows: [{ label: '30일 한도', value: '500,000원 그대로' }],
+  rows: [{ label: '30일에 쓸 돈', value: '300,000원 그대로' }],
   onConfirm: () => undefined,
   onCancel: () => undefined,
 };
@@ -155,7 +153,7 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
   it('shows before and after with formatOkrw, read as "A에서 B으로"', () => {
     render(<LimitChangeCard {...base} />);
     const region = screen.getByRole('region', { name: '한도 바꾸기' });
-    expect(region).toHaveTextContent('한 번에 쓸 수 있는 돈10,000원에서50,000원으로');
+    expect(region).toHaveTextContent('한 번에 쓸 돈10,000원에서50,000원으로');
     // The old amount is struck through (base AmountChange draws it inside <s>).
     expect(screen.getByText('10,000원').closest('s')).not.toBeNull();
   });
@@ -165,29 +163,25 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(screen.getByText('123,456,789,012,345,678원')).toBeInTheDocument();
   });
 
-  it('names the field: per order or the month budget', () => {
-    const { rerender } = render(<LimitChangeCard {...base} />);
-    expect(screen.getByText('한 번에 쓸 수 있는 돈')).toBeInTheDocument();
-    rerender(
-      <LimitChangeCard {...base} field="monthlyBudget" levelFrom={undefined} levelTo={undefined} />,
-    );
-    expect(screen.getByText('이번 달 배달 예산')).toBeInTheDocument();
+  it('names the field: per order or the owner 30-day limit (D-31)', () => {
+    const { rerender } = render(<LimitChangeCard {...base} rows={[]} />);
+    expect(screen.getByText('한 번에 쓸 돈')).toBeInTheDocument();
+    rerender(<LimitChangeCard {...base} field="myPeriodic" rows={[]} />);
+    expect(screen.getByText('30일에 쓸 돈')).toBeInTheDocument();
   });
 
-  it('shows the level line only when the level changes, with the right particle', () => {
-    const { rerender } = render(<LimitChangeCard {...base} />);
-    expect(screen.getByText('1에서 3으로')).toBeInTheDocument();
-    rerender(<LimitChangeCard {...base} levelFrom={3} levelTo={2} />);
-    expect(screen.getByText('3에서 2로')).toBeInTheDocument();
-    rerender(<LimitChangeCard {...base} levelFrom={2} levelTo={2} />);
-    expect(screen.queryByText('레벨')).toBeNull();
-    rerender(<LimitChangeCard {...base} levelFrom={undefined} levelTo={undefined} />);
-    expect(screen.queryByText('레벨')).toBeNull();
+  it('has no level line, only the rows the parent gives (D-31)', () => {
+    const { container, rerender } = render(<LimitChangeCard {...base} rows={[]} />);
+    expect(container.querySelector('dl')).toBeNull();
+    rerender(<LimitChangeCard {...base} />);
+    expect(Array.from(container.querySelectorAll('dt')).map((t) => t.textContent)).toEqual([
+      '30일에 쓸 돈',
+    ]);
   });
 
   it('shows the extra rows as given', () => {
     render(<LimitChangeCard {...base} />);
-    expect(screen.getByText('30일 한도').nextSibling).toHaveTextContent('500,000원 그대로');
+    expect(screen.getByText('30일에 쓸 돈').nextSibling).toHaveTextContent('300,000원 그대로');
   });
 
   // LimitChat.dc.html 36-50.
@@ -201,7 +195,7 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(changeRule('.from')).toMatch(/color:\s*var\(--color-ink-muted\)/);
     expect(changeRule('.to')).toMatch(/font-size:\s*var\(--type-change-to-size\)/);
     const { unmount } = render(<LimitChangeCard {...base} />);
-    const dl = screen.getByText('30일 한도').closest('dl');
+    const dl = screen.getByText('30일에 쓸 돈').closest('dl');
     expect([...(dl?.classList ?? [])]).toEqual(
       expect.arrayContaining(['inline', 'small', 'loose']),
     );

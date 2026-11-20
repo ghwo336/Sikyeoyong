@@ -19,7 +19,7 @@ export function DragonControlsContainer() {
     <>
       <ListRow
         label="용이 신분증"
-        value={`레벨 ${String(me.level)}`}
+        value={me.dragonName}
         trailing="chevron"
         onPress={() => {
           router.push('/dragon/id');

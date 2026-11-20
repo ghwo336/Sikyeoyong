@@ -5,7 +5,8 @@ import Database from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema/index.js';
 
-export type Db = BetterSQLite3Database<typeof schema>;
+/** drizzle() also carries the SQLite handle ($client); runMigrations uses it for the FK pragma. */
+export type Db = BetterSQLite3Database<typeof schema> & { $client: Database.Database };
 
 export interface DbHandle {
   readonly db: Db;

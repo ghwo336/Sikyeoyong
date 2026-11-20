@@ -1,4 +1,4 @@
-import { AppError } from '@sikyeoyong/shared';
+import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { ScriptedProvider, type ScriptedTurn } from './harness/scripted-provider.js';
 import {
@@ -193,7 +193,7 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
         {
           blocks: [
             tool('request_owner_approval', { reason: 'OVER_LEVEL_LIMIT' }),
-            tool('propose_limit_change', { field: 'perOrder', targetLevel: 2 }),
+            tool('propose_limit_change', { field: 'perOrder', amountOkrw: 30_000 }),
             tool('place_order', ORDER),
           ],
         },
@@ -211,18 +211,18 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
       [
         {
           blocks: [
-            tool('propose_limit_change', { field: 'perOrder', targetLevel: 3 }),
-            tool('propose_limit_change', { field: 'monthlyBudget', budgetOption: 'large' }),
+            tool('propose_limit_change', { field: 'perOrder', amountOkrw: 50_000 }),
+            tool('propose_limit_change', { field: 'myPeriodic', amountOkrw: 500_000 }),
           ],
         },
-        { blocks: [tool('propose_limit_change', { field: 'perOrder', targetLevel: 2 })] },
+        { blocks: [tool('propose_limit_change', { field: 'perOrder', amountOkrw: 30_000 })] },
         { blocks: [{ text: '끝' }] },
       ],
       '한도랑 예산 다 올려 줘',
     );
     expect(h.propose_limit_change).toHaveBeenCalledExactlyOnceWith(ME, {
       field: 'perOrder',
-      targetLevel: 3,
+      amountAokrw: okrwToAokrw(50_000n),
     });
     expect(provider.resultsAfter(1).map((r) => r.is_error ?? false)).toEqual([false, true]);
     expect(provider.resultsAfter(2)[0]?.is_error).toBe(true);
@@ -232,7 +232,7 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     const { h, provider } = await run(
       [
         { blocks: [tool('get_menu', { merchantId: 'm-evil' })] },
-        { blocks: [tool('propose_limit_change', { field: 'perOrder', targetLevel: 3 })] },
+        { blocks: [tool('propose_limit_change', { field: 'perOrder', amountOkrw: 50_000 })] },
         { blocks: [{ text: '끝' }] },
       ],
       '이 집 메뉴 보여 줘',
@@ -244,14 +244,14 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
   it('shows the limit card when the user asked in their own words (LimitChat)', async () => {
     const { h, events } = await run(
       [
-        { blocks: [tool('propose_limit_change', { field: 'perOrder', targetLevel: 3 })] },
+        { blocks: [tool('propose_limit_change', { field: 'perOrder', amountOkrw: 50_000 })] },
         { blocks: [{ text: '이렇게 바꿀까용?' }] },
       ],
       '회식 때 보쌈 대(大)도 시킬 수 있게 한 번에 5만 원까지 올려 줘',
     );
     expect(h.propose_limit_change).toHaveBeenCalledExactlyOnceWith(ME, {
       field: 'perOrder',
-      targetLevel: 3,
+      amountAokrw: okrwToAokrw(50_000n),
     });
     expect(events).toContainEqual({
       type: 'tool_output',
@@ -261,12 +261,12 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
   });
 
   it.each([
-    [{ field: 'perOrder', targetLevel: 4 }],
-    [{ field: 'perOrder', budgetOption: 'large' }],
-    [{ field: 'monthlyBudget', budgetOption: 'huge' }],
-    [{ field: 'monthlyBudget', budgetOption: 'large', amountOkrw: 1_000_000 }],
-    [{ field: 'perOrder', targetLevel: 3, toAokrw: '1' }],
-  ])('rejects limit card input %j (no amounts, known keys only)', async (input) => {
+    [{ field: 'perOrder', targetLevel: 3 }],
+    [{ field: 'perOrder', amountOkrw: 1.5 }],
+    [{ field: 'monthlyBudget', amountOkrw: 300_000 }],
+    [{ field: 'myPeriodic', amountOkrw: -1 }],
+    [{ field: 'perOrder', amountOkrw: 50_000, toAokrw: '1' }],
+  ])('rejects limit card input %j (whole won, known keys only)', async (input) => {
     const { h, provider } = await run(
       [{ blocks: [tool('propose_limit_change', input)] }, { blocks: [{ text: '끝' }] }],
       '한도 올려 줘',

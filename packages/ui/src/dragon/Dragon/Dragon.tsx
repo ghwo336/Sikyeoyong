@@ -6,13 +6,13 @@ import { ShellPattern } from './DragonSpecies';
 
 export type DragonMood =
   'default' | 'happy' | 'excited' | 'worried' | 'hiding' | 'sleeping' | 'eating' | 'cooking';
-export type DragonSize = 32 | 44 | 56 | 64 | 96 | 128;
+export type DragonSize = 32 | 44 | 56 | 64 | 96 | 104 | 128;
 
 export interface DragonProps {
   readonly mood: DragonMood;
   readonly size: DragonSize;
   readonly species: DragonSpecies;
-  /** Level 3 grows wings (Dragon.md). */
+  /** Stage 3 grows wings: a per-order limit over 30,000 (shared dragonStage, Dragon.md). */
   readonly wings?: boolean;
 }
 

@@ -1,27 +1,14 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
-import {
-  type IdCardView,
-  type MeView,
-  parseAokrw,
-  type PatchMeBody,
-  type SignupConfig,
-  type UserView,
-  zPatchMeBody,
-} from '@sikyeoyong/shared';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import type { IdCardView, MeView, SignupConfig } from '@sikyeoyong/shared';
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { MeService } from './me.service.js';
-import { UsersService } from './users.service.js';
 
-/** GET /api/me, PATCH /api/me. HTTP only. */
+/** GET /api/me, GET /api/me/id-card. HTTP only. The 30-day limit moved to PUT /agents/me/limits (D-31). */
 @Controller('me')
 @UseGuards(SessionGuard)
 export class MeController {
-  constructor(
-    private readonly me: MeService,
-    private readonly users: UsersService,
-  ) {}
+  constructor(private readonly me: MeService) {}
 
   @Get()
   get(@CurrentUser() user: SessionUser): MeView {
@@ -31,14 +18,6 @@ export class MeController {
   @Get('id-card')
   idCard(@CurrentUser() user: SessionUser): IdCardView {
     return this.me.idCard(user.userId);
-  }
-
-  @Patch()
-  patch(
-    @CurrentUser() user: SessionUser,
-    @Body(new ZodValidationPipe(zPatchMeBody)) body: PatchMeBody,
-  ): UserView {
-    return this.users.setMonthlyBudget(user.userId, parseAokrw(body.monthlyBudgetOkrw));
   }
 }
 

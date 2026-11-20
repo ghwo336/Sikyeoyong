@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { zAgentLevel } from './level.js';
 import { APP_ERROR_CODES } from '../errors/app-error-code.js';
 import { zAokrwString } from '../money/money.js';
 import { zOrderQuote, zRecommendationCard } from './orders.js';
@@ -9,15 +8,19 @@ export const zQuickReply = z
   .strict();
 export type QuickReply = z.infer<typeof zQuickReply>;
 
-/** Limit change card (D-21). Names follow the ui LimitChangeCard props. Nothing changes until its button. */
+export const LIMIT_FIELDS = ['perOrder', 'myPeriodic'] as const;
+export type LimitField = (typeof LIMIT_FIELDS)[number];
+
+/**
+ * Limit change card (D-21, D-31). Names follow the ui LimitChangeCard props. Nothing changes
+ * until its button. perOrder is the per-order limit, myPeriodic the owner's 30-day limit.
+ */
 export const zLimitChangeCardView = z
   .object({
     cardId: z.string().min(1),
-    field: z.enum(['perOrder', 'monthlyBudget']),
+    field: z.enum(LIMIT_FIELDS),
     from: zAokrwString,
     to: zAokrwString,
-    levelFrom: zAgentLevel.optional(),
-    levelTo: zAgentLevel.optional(),
     needsReauth: z.boolean(),
     rows: z.array(z.object({ label: z.string(), value: z.string() }).strict()),
   })

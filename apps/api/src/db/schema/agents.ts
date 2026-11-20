@@ -1,6 +1,6 @@
-import { AGENT_LEVELS, type AgentLevel, DRAGON_SPECIES } from '@sikyeoyong/shared';
+import { DRAGON_SPECIES } from '@sikyeoyong/shared';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { aokrwCheck, enumCheck, intEnumCheck } from './checks.js';
+import { aokrwCheck, enumCheck } from './checks.js';
 import { users } from './users.js';
 
 export const AGENT_STATUSES = ['PENDING', 'ACTIVE', 'FROZEN', 'REVOKED'] as const;
@@ -28,7 +28,8 @@ export const agents = sqliteTable(
     onchainAgentId: text('onchain_agent_id'),
     ownerAddress: text('owner_address'),
     mawsAgentId: text('maws_agent_id'),
-    level: integer('level').$type<AgentLevel>().notNull().default(1),
+    /** The per-order limit the owner picked (D-31), aokrw text. The chain's TransferLimit holds the same. */
+    perOrderLimitAokrw: text('per_order_limit').notNull(),
     setupStep: text('setup_step', { enum: SETUP_STEPS }).notNull().default('wallet'),
     createdAt: integer('created_at').notNull(),
   },
@@ -37,7 +38,7 @@ export const agents = sqliteTable(
     enumCheck('agents_status_check', t.status, AGENT_STATUSES),
     enumCheck('agents_payment_path_check', t.paymentPath, PAYMENT_PATHS),
     enumCheck('agents_setup_step_check', t.setupStep, SETUP_STEPS),
-    intEnumCheck('agents_level_check', t.level, AGENT_LEVELS),
+    aokrwCheck('agents_per_order_limit_check', t.perOrderLimitAokrw),
   ],
 );
 
@@ -49,7 +50,6 @@ export const agentLimitHistory = sqliteTable(
     agentId: text('agent_id')
       .notNull()
       .references(() => agents.id),
-    level: integer('level').$type<AgentLevel>().notNull(),
     transferLimitAokrw: text('transfer_limit').notNull(),
     txHash: text('tx_hash'),
     approvalId: text('approval_id'),
@@ -58,6 +58,5 @@ export const agentLimitHistory = sqliteTable(
   (t) => [
     index('agent_limit_history_agent_idx').on(t.agentId, t.createdAt),
     aokrwCheck('agent_limit_history_transfer_limit_check', t.transferLimitAokrw),
-    intEnumCheck('agent_limit_history_level_check', t.level, AGENT_LEVELS),
   ],
 );

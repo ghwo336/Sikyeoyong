@@ -1,14 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   AppError,
-  type AgentLevel,
+  aokrwToString,
   type AgentWallet,
   type AgentSetupView,
   type CreateAgentBody,
   type DragonSpecies,
+  parseAokrw,
   type PaymentProvider,
 } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
+import { APP_CONFIG } from '../../config/config.module.js';
+import type { AppConfig } from '../../config/env.js';
 import { IdentityService } from '../identity/identity.service.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
@@ -16,7 +19,8 @@ import { AgentsRepository } from './agents.repository.js';
 
 export interface AgentSummary {
   readonly id: string;
-  readonly level: AgentLevel;
+  /** The per-order limit the owner picked (D-31); the chain's TransferLimit holds the same. */
+  readonly perOrderLimitAokrw: bigint;
   /** FROZEN by the owner or the operator; nothing is paid while frozen. */
   readonly frozen: boolean;
   /** Hatched: the TransferLimit is written (ACTIVE or FROZEN). Orders wait until then (user-flow 4). */
@@ -45,6 +49,7 @@ export class AgentsService {
     private readonly setup: AgentSetupService,
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
     private readonly identity: IdentityService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   getForUser(userId: string): AgentSummary {
@@ -52,7 +57,7 @@ export class AgentsService {
     if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'agent not found' });
     return {
       id: row.id,
-      level: row.level,
+      perOrderLimitAokrw: parseAokrw(row.perOrderLimitAokrw),
       frozen: row.status === 'FROZEN',
       ready: row.status === 'ACTIVE' || row.status === 'FROZEN',
       wallet: asWallet(row.walletAddress),
@@ -103,6 +108,8 @@ export class AgentsService {
         dragonName: body.dragonName,
         dragonSpecies: body.dragonSpecies,
         paymentPath: this.payment.path,
+        // D-31: hatching writes the first suggestion; the owner picks another on the Budget screen.
+        perOrderLimitAokrw: aokrwToString(this.config.policy.perOrderLimit.initialAokrw),
         createdAt: nowMs,
       });
     } catch {

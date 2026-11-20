@@ -24,6 +24,12 @@
   opacity: 0.6;
 }
 
+/* Budget "−" at the lowest amount: 0.35 like the design, not pressable. */
+.button[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.35;
+}
+
 .lg {
   width: 100%;
   min-height: var(--size-button-primary);
@@ -60,12 +66,23 @@
   font-weight: var(--type-label-weight);
 }
 
-/* Blocked "레벨 3으로 올리고 시키기": 64 high for a main line and a sub line. The lines
+/* Blocked "한 번에 45,000원으로 올리고 시키기": 64 high for a main line and a sub line. The lines
    and their text sizes belong to the caller. */
 .tall {
   width: 100%;
   min-height: var(--size-raise-button);
   padding: var(--space-2) var(--space-4);
+}
+
+/* Budget "−" and "+": a 48 circle, one 22/600 sign in the middle. */
+.round {
+  flex-shrink: 0;
+  width: var(--size-button-secondary);
+  height: var(--size-button-secondary);
+  padding: 0;
+  border-radius: var(--radius-chip);
+  font-size: var(--type-change-to-size);
+  font-weight: var(--type-label-weight);
 }
 
 .primary {
@@ -107,6 +124,12 @@
   background: var(--color-surface);
   color: var(--color-leaf);
   border: 1px solid var(--color-leaf);
+}
+
+/* Budget "−" and "+": pale fill, no line. */
+.soft {
+  background: var(--color-track);
+  color: var(--color-ink);
 }
 
 .text {
