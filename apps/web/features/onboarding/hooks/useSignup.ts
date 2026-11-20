@@ -16,7 +16,9 @@ export function useLogin() {
   return useMutation({
     mutationFn: (provider: 'kakao' | 'google') => api.login(provider),
     // A 401 kept from before the login must not send the front door back to Start.
-    onSuccess: () => { qc.removeQueries({ queryKey: ['me'] }); },
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: ['me'] });
+    },
   });
 }
 
