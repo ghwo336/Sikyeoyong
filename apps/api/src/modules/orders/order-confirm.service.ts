@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   AppError,
   type AgentWallet,
@@ -33,6 +33,8 @@ type Checked =
  */
 @Injectable()
 export class OrderConfirmService {
+  private readonly logger = new Logger(OrderConfirmService.name);
+
   constructor(
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
     @Inject(OWNER_AUTHORITY) private readonly owner: OwnerAuthority,
@@ -95,7 +97,7 @@ export class OrderConfirmService {
         amount: parseAokrw(row.amountAokrw),
         orderRef: row.orderRef as Hex,
       };
-      await this.topUp(userId, checked.wallet, req.amount);
+      await this.topUp(userId, checked.wallet, req.amount, nowMs);
       const pre = await this.payment.preflight(req);
       if (!pre.ok) {
         this.settle(userId, row, pre.error.code, false, nowMs);
@@ -177,8 +179,15 @@ export class OrderConfirmService {
    * The moved shortfall comes out of the owner allowance ledger (D-24 custodial, wallet screen
    * "주인님 용돈"): recorded only after the fund succeeded, so a failed or skipped top-up records
    * nothing. Refusing an order when the ledger is short is open (open-questions Q-38).
+   * The money already moved when the ledger is written, so a ledger failure never turns the
+   * payment into a failure: it is logged (order, amount, tx) for reconciliation instead.
    */
-  private async topUp(userId: string, wallet: AgentWallet, amount: bigint): Promise<void> {
+  private async topUp(
+    userId: string,
+    wallet: AgentWallet,
+    amount: bigint,
+    nowMs: number,
+  ): Promise<void> {
     const balance = await this.payment.balanceOf(wallet.address);
     if (balance >= amount) return;
     const r = await runOwnerAction(this.owner, {
@@ -187,7 +196,15 @@ export class OrderConfirmService {
       amount: amount - balance,
     });
     if (!r.done) throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
-    this.allowance.record(userId, 'fund', amount - balance, r.txHashes[0] ?? null);
+    // fund sends one transaction; its hash is the record's.
+    const txHash = r.txHashes[0] ?? null;
+    try {
+      this.allowance.record(userId, 'fund', amount - balance, txHash, nowMs);
+    } catch (e) {
+      this.logger.error(
+        `owner allowance fund not recorded: user ${userId} tx ${txHash ?? '-'} (${(e as Error).name})`,
+      );
+    }
   }
 
   /** Moves the order out of submitting by the class of the refusal (payment.md "실패 분류"). */

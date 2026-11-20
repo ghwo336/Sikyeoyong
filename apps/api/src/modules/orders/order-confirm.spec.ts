@@ -192,6 +192,16 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
     expect(allowance.balanceAokrw('u1')).toBe(0n);
   });
 
+  it('a ledger failure after the top-up does not fail the payment', async () => {
+    const { allowance, quote, confirm, row } = await setup();
+    vi.spyOn(allowance, 'record').mockImplementationOnce(() => {
+      throw new Error('disk full');
+    });
+    const id = await quote();
+    expect((await confirm(id)).status).toBe(200);
+    expect(row(id)?.status).toBe('paid');
+  });
+
   it('pays once however often or however fast the button is pressed', async () => {
     const { payment, quote, confirm, row } = await setup();
     const pay = vi.spyOn(payment, 'pay');

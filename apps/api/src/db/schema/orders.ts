@@ -1,3 +1,4 @@
+import { TASTE_RATINGS } from '@sikyeoyong/shared';
 import { sql } from 'drizzle-orm';
 import {
   index,
@@ -147,7 +148,6 @@ export const allowedMerchants = sqliteTable(
 );
 
 /** Arrived screen taste rating (user-flow 10): one per order, a second replaces it. Feeds recommendations later. */
-export const TASTE_RATINGS = ['again', 'okay', 'meh'] as const;
 
 export const orderRatings = sqliteTable(
   'order_ratings',

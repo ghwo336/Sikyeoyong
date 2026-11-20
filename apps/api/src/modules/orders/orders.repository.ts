@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import type { TasteRating } from '@sikyeoyong/shared';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { ORDER_STATUSES, orderRatings, orders } from '../../db/schema/index.js';
@@ -142,9 +143,8 @@ export class OrdersRepository {
     return r.changes === 1;
   }
 
-  /** Throws on a used (user, clientOrderId) or orderRef (unique indexes). */
   /** The taste rating for one order: insert, or replace the earlier one. */
-  rate(orderId: string, userId: string, value: 'again' | 'okay' | 'meh', nowMs: number): void {
+  rate(orderId: string, userId: string, value: TasteRating, nowMs: number): void {
     this.handle.db
       .insert(orderRatings)
       .values({ orderId, userId, value, ratedAt: nowMs })
@@ -152,6 +152,7 @@ export class OrdersRepository {
       .run();
   }
 
+  /** Throws on a used (user, clientOrderId) or orderRef (unique indexes). */
   insert(row: NewOrder): void {
     this.handle.db
       .insert(orders)

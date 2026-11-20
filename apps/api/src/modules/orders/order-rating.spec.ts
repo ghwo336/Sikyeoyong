@@ -10,7 +10,9 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { orderRatings, orders } from '../../db/schema/index.js';
+import { ORDER_STATUSES, orderRatings, orders } from '../../db/schema/index.js';
+
+type OrderStatus = (typeof ORDER_STATUSES)[number];
 import { insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
 import { OrdersModule } from './orders.module.js';
@@ -30,7 +32,7 @@ async function setup() {
   insertUser(h.db, 'u2');
   insertMerchant(h.db, 'm1');
   let seq = 0;
-  const order = (userId: string, status: 'paid' | 'delivered' | 'quoted' | 'failed') => {
+  const order = (userId: string, status: OrderStatus) => {
     seq += 1;
     const id = `o${seq}`;
     h.db
@@ -71,6 +73,15 @@ async function setup() {
 }
 
 describe('POST /api/orders/:id/rating (Arrived.dc.html)', () => {
+  it.each(['paid', 'preparing', 'delivering', 'delivered'] as const)(
+    'a %s order can be rated',
+    async (status) => {
+      const { order, rate, stored } = await setup();
+      expect((await rate(order('u1', status), 'okay')).status).toBe(204);
+      expect(stored()).toHaveLength(1);
+    },
+  );
+
   it('rates a paid or delivered order; a second rating replaces the first', async () => {
     const { order, rate, stored } = await setup();
     const paid = order('u1', 'paid');
@@ -88,12 +99,15 @@ describe('POST /api/orders/:id/rating (Arrived.dc.html)', () => {
     ]);
   });
 
-  it.each(['quoted', 'failed'] as const)('a %s order cannot be rated (409)', async (status) => {
-    const { order, rate, stored } = await setup();
-    const res = await rate(order('u1', status), 'again');
-    expect(res.status).toBe(409);
-    expect(stored()).toHaveLength(0);
-  });
+  it.each(['quoted', 'pending_approval', 'submitting', 'failed', 'cancelled', 'refunded'] as const)(
+    'a %s order cannot be rated (409)',
+    async (status) => {
+      const { order, rate, stored } = await setup();
+      const res = await rate(order('u1', status), 'again');
+      expect(res.status).toBe(409);
+      expect(stored()).toHaveLength(0);
+    },
+  );
 
   it("someone else's order or an unknown id is 404", async () => {
     const { order, rate, stored } = await setup();
