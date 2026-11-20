@@ -7,6 +7,7 @@ import {
   zCreateAgentBody,
   zMeView,
   zPatchAgentBody,
+  zPatchAgentResult,
   zSignupConfig,
 } from './me.js';
 import {
@@ -17,6 +18,7 @@ import {
   zOrderIdParam,
   zRateOrderBody,
   zOrderResult,
+  zOrderList,
   zOrderView,
 } from './orders.js';
 
@@ -200,6 +202,14 @@ describe('order schemas (tech-spec 3.2)', () => {
       dragonMood: 'cooking',
     };
     expect(zOrderView.parse(view)).toEqual(view);
+    // GET /orders (D-32 history and the in-progress card): at most 20, no cursor.
+    const list = (n: number) => ({
+      orders: Array.from({ length: n }, (_, i) => ({ ...view, id: `o${String(i)}` })),
+    });
+    expect(zOrderList.parse(list(20)).orders).toHaveLength(20);
+    expect(zOrderList.parse({ orders: [] }).orders).toEqual([]);
+    expect(zOrderList.safeParse(list(21)).success).toBe(false);
+    expect(zOrderList.safeParse({ ...list(1), nextCursor: 'x' }).success).toBe(false);
     expect(zOrderView.safeParse({ ...view, dragonMood: 'angry' }).success).toBe(false);
     expect(zOrderView.safeParse({ ...view, status: 'done' }).success).toBe(false);
     expect(DRAGON_MOODS).toContain('cooking');
@@ -320,6 +330,10 @@ describe('look change schema (D-32)', () => {
     expect(zPatchAgentBody.parse({ dragonSpecies: 'water' })).toEqual({ dragonSpecies: 'water' });
     expect(zPatchAgentBody.safeParse({ dragonSpecies: 'fire' }).success).toBe(false);
     expect(zPatchAgentBody.safeParse({ dragonSpecies: 'water', dragonName: 'x' }).success).toBe(
+      false,
+    );
+    expect(zPatchAgentResult.parse({ dragonSpecies: 'star' })).toEqual({ dragonSpecies: 'star' });
+    expect(zPatchAgentResult.safeParse({ dragonSpecies: 'star', agentId: 'a' }).success).toBe(
       false,
     );
   });
