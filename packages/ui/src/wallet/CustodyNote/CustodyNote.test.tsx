@@ -29,5 +29,6 @@ describe('CustodyNote (CustodyNote.md 테스트 기준)', () => {
     expect(container.children).toHaveLength(1);
     expect(css).toMatch(/font-size:\s*var\(--type-caption-size\)/);
     expect(css).toMatch(/color:\s*var\(--color-ink-secondary\)/);
+    expect(css).toMatch(/text-align:\s*left/); // Wallet.dc.html rows are left aligned
   });
 });

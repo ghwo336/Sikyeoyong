@@ -4,6 +4,6 @@
   padding: var(--space-4) 0;
   font-size: var(--type-caption-size);
   color: var(--color-ink-secondary);
-  text-align: center;
+  text-align: left;
   overflow-wrap: anywhere;
 }
