@@ -166,7 +166,6 @@ export function createHttpApi(
     getIdCard: () => notReady('id card'),
     setFrozen: () => notReady('pause'),
     refundPocket: () => notReady('refund'),
-    // POST /agents/me/level waits for the re-auth decision (Q-36).
     // D-28: the owner's button only (never an LLM tool); the server writes the chain limit first.
     raiseLevel: async (level) => {
       zSetLevelResult.parse(await call('POST', '/agents/me/level', { level }));

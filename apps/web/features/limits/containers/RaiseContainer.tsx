@@ -10,7 +10,7 @@ import { levelFor } from '../levels';
 
 /**
  * Blocked's "레벨 N으로 올리고 시키기": the change card (LimitChat.dc.html card). The button is
- * the re-auth step (Face ID on the device, Q-36); then back to the chat to pick it again.
+ * the re-auth step (D-28: the button alone on testnet, a wallet signature with pouch); then back to the chat to pick it again.
  */
 export function RaiseContainer({ orderId }: { readonly orderId: string }) {
   const router = useRouter();

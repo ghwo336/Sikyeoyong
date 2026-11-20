@@ -10,7 +10,7 @@ import { useRaiseLevel } from '../hooks/useRaiseLevel';
 
 /**
  * LimitChat.dc.html: the change card the dragon put in the chat (D-21). Nothing changes until
- * the owner presses it (the re-auth step, Q-36); then the dragon says the new limit.
+ * the owner presses it (the re-auth step, D-28); then the dragon says the new limit.
  */
 export function LimitChangeContainer({
   card,
