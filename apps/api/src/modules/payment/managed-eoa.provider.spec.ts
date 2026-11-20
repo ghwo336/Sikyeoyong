@@ -377,6 +377,31 @@ describe('drain', () => {
     expect(lastPrepare).toMatchObject({ to: OPERATOR.address, value: 1_000_000n - 210_000n });
   });
 
+  it('pays a pouch-style owner that is not the operator, signed by the agent, to nobody else', async () => {
+    const t = setup({ balance: 1_000_000n });
+    const pouch: Hex = '0x000000000000000000000000000000000a0b0c0d';
+    const agent: AgentWallet = { ...t.agent, ownerAddress: pouch };
+    t.pub.sendRawTransaction.mockResolvedValue(hash(2002));
+    t.receipts.set(hash(2002), success(2002));
+    const signers: string[] = [];
+    const prepared: { to?: Hex }[] = [];
+    t.agentWallet.prepareTransactionRequest.mockImplementation((a) => {
+      prepared.push(a as { to?: Hex });
+      return Promise.resolve({ ...a, gas: 21_000n, maxFeePerGas: 10n });
+    });
+    t.agentWallet.signTransaction.mockImplementation(() => {
+      signers.push('agent');
+      return Promise.resolve('0x02f8abcdef' as Hex);
+    });
+    await t.provider.drain(agent);
+    expect(prepared.length).toBeGreaterThan(0);
+    for (const p of prepared) expect(p.to).toBe(pouch);
+    expect(prepared.some((p) => p.to === OPERATOR.address)).toBe(false);
+    expect(signers).toEqual(['agent']);
+    expect(t.walletAccounts).toEqual([agent.address.toLowerCase()]);
+    expect(t.operatorSends).toEqual([]);
+  });
+
   it('has nothing to send when the balance cannot pay its own fee', async () => {
     const t = setup({ balance: 100n });
     expect(await t.provider.drain(t.agent)).toEqual([]);
