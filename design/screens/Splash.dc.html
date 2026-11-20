@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시켜용 로딩</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+a:focus-visible{outline:2px solid #FFFFFF;outline-offset:3px}
+@keyframes sy-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes sy-shadow{0%,100%{transform:scaleX(1);opacity:.22}50%{transform:scaleX(.8);opacity:.12}}
+@keyframes sy-leaf{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-9deg)}}
+@keyframes sy-dot{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-6px);opacity:1}}
+.sy-bob{animation:sy-bob 1.6s ease-in-out infinite}
+.sy-shadow{animation:sy-shadow 1.6s ease-in-out infinite;transform-origin:center}
+.sy-leaf-l{animation:sy-leaf 1.6s ease-in-out infinite;transform-origin:27px 15px;transform-box:view-box}
+.sy-leaf-r{animation:sy-leaf 1.6s ease-in-out infinite reverse;transform-origin:37px 15px;transform-box:view-box}
+.sy-dot{animation:sy-dot 1.2s ease-in-out infinite}
+.sy-dot:nth-child(2){animation-delay:.15s}
+.sy-dot:nth-child(3){animation-delay:.3s}
+@media (prefers-reduced-motion:reduce){.sy-bob,.sy-shadow,.sy-leaf-l,.sy-leaf-r,.sy-dot{animation:none}}
+</style>
+</helmet>
+<a href="Start.dc.html" aria-label="시켜용 시작하기" style="width: 390px; height: 844px; box-sizing: border-box; background: {{bg}}; color: #FFFFFF; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 0 32px 40px; text-decoration: none; position: relative; overflow: hidden">
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 40px">
+<svg class="sy-bob" width="168" height="168" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 61 C17 61 6.5 52 6.5 38 L6.5 36 L14 30.5 L17 32.5 C17 22 23 14.5 25 14 C20 11 19 4 24.5 0.8 C29 3.5 30.5 9 29 13.6 L35 13.6 C33.5 9 35 3.5 39.5 0.8 C45 4 44 11 39 14 C41 14.5 47 22 47 32.5 L50 30.5 L57.5 36 L57.5 38 C57.5 52 47 61 32 61 Z" fill="#FFFFFF"></path><g class="sy-leaf-l"><path d="M27 15 C21 12 20 5 25 2 C29 5 30 11 27 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="2" stroke-linejoin="round"></path><path d="M26.5 13 L25 5" stroke="#1E2320" stroke-width="1" stroke-linecap="round"></path></g><g class="sy-leaf-r"><path d="M37 15 C43 12 44 5 39 2 C35 5 34 11 37 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="2" stroke-linejoin="round"></path><path d="M37.5 13 L39 5" stroke="#1E2320" stroke-width="1" stroke-linecap="round"></path></g><circle cx="32" cy="30" r="16" fill="{{dragon}}" stroke="#1E2320" stroke-width="2"></circle><circle cx="26" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="38" cy="29" r="2.4" fill="#1E2320"></circle><circle cx="26.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><circle cx="38.8" cy="28.2" r="0.8" fill="#FFFFFF"></circle><ellipse cx="21.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><ellipse cx="42.5" cy="34" rx="2.8" ry="1.7" fill="#FF9E9E"></ellipse><path d="M30 34.5 Q32 36.5 34 34.5" fill="none" stroke="#1E2320" stroke-width="1.6" stroke-linecap="round"></path><path d="M8 38 L14 33 L20 38 L26 33 L32 38 L38 33 L44 38 L50 33 L56 38 C56 52 46 60 32 60 C18 60 8 52 8 38 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="2" stroke-linejoin="round"></path></svg>
+<div class="sy-shadow" style="width: 92px; height: 12px; border-radius: 50%; background: #10301E"></div>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<div style="font-family: 'Gowun Dodum', Pretendard, sans-serif; font-size: 44px; line-height: 1.1; letter-spacing: 0">시켜용</div>
+<div style="font-size: 16px; color: #DDEFE2">배달은 용이한테 시켜용</div>
+</div>
+
+<div role="status" aria-live="polite" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px">
+<div aria-hidden="true" style="display: flex; gap: 8px">
+<span class="sy-dot" style="width: 9px; height: 9px; border-radius: 50%; background: #FFD15C"></span>
+<span class="sy-dot" style="width: 9px; height: 9px; border-radius: 50%; background: #FFD15C"></span>
+<span class="sy-dot" style="width: 9px; height: 9px; border-radius: 50%; background: #FFD15C"></span>
+</div>
+<span style="font-size: 14px; color: #DDEFE2">용이를 깨우는 중이에요</span>
+</div>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 36px; text-align: center; font-size: 12px; color: #BFDCC8">마루 테스트넷 데모</div>
+</a>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dragon":{"editor":"color","default":"#8FD694","options":["#8FD694","#9AD3F0","#F7B7C8","#C9B8F2"]},"bg":{"editor":"color","default":"#2E7D4F","options":["#2E7D4F","#1E5C3A","#24684A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { dragon: this.props.dragon ?? '#8FD694', bg: this.props.bg ?? '#2E7D4F' };
+}
+}
+</script>
+</body>
+</html>
