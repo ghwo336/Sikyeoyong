@@ -19,3 +19,6 @@ export interface ChainReader {
 }
 
 export const CHAIN_READER = Symbol('CHAIN_READER');
+
+// The reader factory, for owner-run scripts that build their own reader (payment e2e).
+export { createChainReader } from './chain-reader.factory.js';
