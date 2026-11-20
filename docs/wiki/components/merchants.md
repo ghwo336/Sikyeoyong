@@ -31,6 +31,13 @@ children: []
 - 처음 제안 건당 한도(10,000 OKRW)로도 살 수 있는 메뉴와 넘는 메뉴를 섞는다. 장면 4용으로 10,000원 한도는 넘고 건당 한도 최대(50,000) 안인 메뉴(보쌈 대 45,000)를 둔다. 건당 한도를 45,000으로 올리면 통과한다 (D-31).
 - 배달 상태: 접수 → 조리 중 → 배달 중 → 완료. 서버 타이머, 값은 `DELIVERY_TIMELINE_SECONDS` (기본 30, 60, 90초).
 
+## 가게 키 보관과 회수 (D-33)
+- 코드: `apps/api/src/db/merchant-keys/` (`payout-keys.ts` 키 파일과 보관본, `sweep.ts` 회수 계획과 실행, `cli.ts` 명령, `viem-chain.ts` 체인 연결). 체인 ID와 RPC는 `packages/shared` 설정에서만 읽는다 (`MAROO_RPC_URL`로 덮어쓸 수 있음).
+- 보관본: 키를 만들 때마다 `seed/.keys/archive/keys.jsonl`(폴더 700, 파일 600, git 제외)에 한 줄 `{ merchantKey, address, privateKey, createdAt }`을 **덧붙이기만** 한다. 지우거나 고쳐 쓰지 않는다. 시드에서 빠진 가게의 키도 남는다. 이 기능 이전에 만든 키는 다음 `pnpm db:seed` 때 채워 넣는다.
+- `pnpm merchants:balances [--keys <폴더>] [--merchant <키>]`: 읽기 전용. 가게 이름, 주소, 잔액(tOKRW 문자열)만 출력한다. 보관본에만 있는 가게는 `(archived)`가 붙는다.
+- `pnpm merchants:sweep --to <체크섬 주소> (--merchant <키> | --all) [--dry-run] [--keys <폴더>]`: 가게 지갑마다 `잔액 - 가스 추정 x 가스 가격`을 `--to`로 보낸다. 잔액이 0이거나 가스에도 모자라면 건너뛴다. `--dry-run`은 가게별 잔액, 수수료, 보낼 금액만 보여 주고 아무것도 보내지 않는다. 한 지갑이 실패해도 나머지는 계속하고 자동 재시도는 없다.
+- 키는 어떤 출력과 오류에도 싣지 않는다. 사람이 직접 실행할 때만 돌고 LLM 도구와 서버 API에는 없다 (규칙 3).
+
 ## 실제 가게 등록 (2단계 규칙)
 1. 사장님 가입 (카카오 로그인, 역할 `merchant`).
 2. 사업자등록번호 입력, 국세청 사업자 상태 조회로 진위·휴폐업 확인 (k-skill `nts-business-registration` 또는 공공데이터 API).

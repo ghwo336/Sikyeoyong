@@ -25,6 +25,8 @@
     "format:check": "prettier --check .",
     "db:migrate": "pnpm --filter @sikyeoyong/api build && pnpm --filter @sikyeoyong/api db:migrate",
     "db:seed": "pnpm --filter @sikyeoyong/api build && pnpm --filter @sikyeoyong/api db:seed",
+    "merchants:balances": "pnpm --filter @sikyeoyong/api build && node apps/api/dist/db/merchant-keys/cli.js balances",
+    "merchants:sweep": "pnpm --filter @sikyeoyong/api build && node apps/api/dist/db/merchant-keys/cli.js sweep",
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts",
     "contracts:deploy:testnet": "sh contracts/script/deploy-testnet.sh"
