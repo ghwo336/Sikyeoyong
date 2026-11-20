@@ -1,6 +1,6 @@
 'use client';
 
-import { parseAokrw } from '@sikyeoyong/shared';
+import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import { OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
 import { amountRatioText } from '../../../lib/format';
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,8 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
     rows.push(
       {
         label: '지금 한 번에 쓸 수 있는 돈',
-        value: amountRatioText(amount, parseAokrw(budget.perOrderLimit)),
+        // A plain value, not "this order / limit": that ratio reads like an overrun (QA 3).
+        value: formatOkrw(parseAokrw(budget.perOrderLimit)),
       },
       {
         label: '지금 30일 한도',

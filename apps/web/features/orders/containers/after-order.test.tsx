@@ -123,7 +123,7 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     expect(method.nextElementSibling?.textContent).toBe('용이 용돈');
     const perOrder = await screen.findByText('지금 한 번에 쓸 수 있는 돈');
     expect(perOrder.tagName).toBe('DT');
-    expect(perOrder.nextElementSibling?.textContent).toBe('9,000 / 10,000원');
+    expect(perOrder.nextElementSibling?.textContent).toBe('10,000원');
     const thirty = await screen.findByText('지금 30일 한도');
     expect(thirty.tagName).toBe('DT');
     // fixtures BUDGET: 42,000 used of the demo profile's 60,000.
