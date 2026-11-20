@@ -60,13 +60,13 @@ describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
     const pay = (ref: string) =>
       payment.pay({ agent, merchantOnchainId: 1n, amount, orderRef: `0x${ref.repeat(64)}` });
 
-    const firstMs = clock;
     expect(await pay('a')).toMatchObject({ ok: true });
-    // The window opens with the first order and lasts the policy's period exactly.
-    const resetAtSec = Math.floor(firstMs / 1000) + config.policy.periodicPeriodSec;
+    // The window edge is a unix multiple of the period (3,600 s), not first order + period:
+    // 1700000000 s is 800 s into the hour that began at 1699999200, so it resets at 1700002800.
+    const resetAtSec = 1_700_002_800;
     expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: amount, resetAtSec });
 
-    // A second order adds to the same window; the reset stays at the first order's.
+    // A second order adds to the same window; the reset stays the same.
     at(clock + 60_000);
     expect(await pay('b')).toMatchObject({ ok: true });
     expect(await reader.periodicVolume(agent.address)).toEqual({
@@ -75,7 +75,7 @@ describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
     });
 
     // One millisecond before the end it still counts; at the end it is empty again.
-    at(firstMs + config.policy.periodicPeriodSec * 1000 - 1);
+    at(resetAtSec * 1000 - 1);
     expect((await reader.periodicVolume(agent.address)).usedAokrw).toBe(amount * 2n);
     at(clock + 1);
     expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: 0n, resetAtSec: null });

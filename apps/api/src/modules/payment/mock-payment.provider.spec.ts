@@ -165,16 +165,34 @@ describe('MockPaymentProvider money edges', () => {
     expect(await p.balanceOf(agent.address)).toBe(0n);
   });
 
-  it('dates resetAt from the first order of the window, not from now', async () => {
+  it('aligns the window to a multiple of the period on unix time, not first order + period', async () => {
     const { p, advance } = setup('demo');
+    advance(20 * 60_000); // 12:20 KST = 03:20Z = 1796095200 s
     const agent = await ready(p, won(50_000n), won(200_000n));
-    expect((await p.pay(req(agent, won(50_000n), 1))).ok).toBe(true); // window opens 12:00 KST
-    advance(10 * 60_000); // 12:10
+    expect((await p.pay(req(agent, won(50_000n), 1))).ok).toBe(true);
+    // 2026-12-01T03:20:00Z = 1796095200 s; the 3,600 s multiple above it is 1796097600 (04:00Z = 13:00 KST).
+    expect(p.periodicVolume(agent.address).resetAtSec).toBe(1_796_097_600);
+    advance(10 * 60_000); // 12:30
     expect(await p.pay(req(agent, won(20_000n), 2))).toEqual({
       ok: false,
       stage: 'execution',
       error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: '12월 1일 오후 1시' } },
     });
+    advance(30 * 60_000 - 1); // 12:59:59.999
+    expect((await p.pay(req(agent, won(20_000n), 3))).ok).toBe(false);
+    advance(1); // 13:00 KST, the boundary
+    expect((await p.pay(req(agent, won(20_000n), 4))).ok).toBe(true);
+  });
+
+  it('with no order yet, the pre-check dates resetAt at the next boundary too', async () => {
+    const { p, advance } = setup('demo');
+    advance(20 * 60_000);
+    const agent = await ready(p, won(70_000n), won(200_000n));
+    expect(await p.preflight(req(agent, won(60_001n)))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: '12월 1일 오후 1시' } },
+    });
+    expect(p.periodicVolume(agent.address).resetAtSec).toBeNull();
   });
 });
 

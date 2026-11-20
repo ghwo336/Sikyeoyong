@@ -16,7 +16,7 @@ interface MockWallet {
   balance: bigint;
   limit: bigint | null;
   paused: boolean;
-  /** Fixed 30-day window that starts with the first order (maroo-facts 3.2, (추론)). */
+  /** Window start is a unix multiple of the period, not the first order time (maroo-facts 3.2, confirmed at 3,600 s only). */
   window: { readonly start: number; used: bigint } | null;
 }
 
@@ -112,7 +112,7 @@ export class MockPaymentProvider implements PaymentProvider {
       return Promise.resolve({ ok: false, stage: refused.stage, error: refused.error });
     const w = this.wallet(req.agent.address);
     w.balance -= req.amount;
-    const start = w.window?.start ?? this.now();
+    const start = w.window?.start ?? this.windowStartMs();
     w.window = { start, used: (w.window?.used ?? 0n) + req.amount };
     this.block += 1n;
     const done = { txHash: this.tx(), blockNumber: this.block };
@@ -157,8 +157,9 @@ export class MockPaymentProvider implements PaymentProvider {
     this.rollWindow(w);
     const used = w.window?.used ?? 0n;
     if (used + req.amount > this.policy.periodicCapAokrw) {
-      // A window opens with the first order; with none yet, this order would open it now.
-      const resetMs = (w.window?.start ?? this.now()) + this.policy.periodicPeriodSec * 1000;
+      // With no window yet, this order would open the one that holds now.
+      const resetMs =
+        (w.window?.start ?? this.windowStartMs()) + this.policy.periodicPeriodSec * 1000;
       return {
         stage: 'execution',
         error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: formatKstDateTime(resetMs) } },
@@ -171,7 +172,7 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   /**
-   * The mock chain's 30-day window for one agent (what contractPeriodicVolume will answer on the
+   * The mock chain's periodic window for one agent (boundaries are unix multiples of the period) (what contractPeriodicVolume will answer on the
    * real chain): used aokrw and its reset in unix seconds, null before the first order.
    */
   periodicVolume(address: Hex): { usedAokrw: bigint; resetAtSec: number | null } {
@@ -182,6 +183,12 @@ export class MockPaymentProvider implements PaymentProvider {
       usedAokrw: w.window.used,
       resetAtSec: Math.floor((w.window.start + this.policy.periodicPeriodSec * 1000) / 1000),
     };
+  }
+
+  /** Start of the window that holds now: floor(now / period) * period on unix time, in ms. */
+  private windowStartMs(): number {
+    const periodMs = this.policy.periodicPeriodSec * 1000;
+    return Math.floor(this.now() / periodMs) * periodMs;
   }
 
   private rollWindow(w: MockWallet): void {

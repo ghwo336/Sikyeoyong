@@ -245,12 +245,12 @@ const ratings = new Map<string, 'again' | 'okay' | 'meh'>();
 /** Orders waiting for the owner (over the level's limit): the Blocked screen reads them. */
 const waiting = new Map<string, RecommendationCard>();
 
-/** Unix seconds an hour from now: the demo profile's window length (a time, not money). */
+/** The next hour boundary on unix time: the demo profile's window edge, like the chain's (a time, not money). */
 function anHourFromNowSec(): number {
-  return Math.floor(Date.now() / 1000) + 3_600;
+  return (Math.floor(Date.now() / 1000 / 3_600) + 1) * 3_600;
 }
 
-/** The 30-day window (demo profile): opens with the first payment, refills an hour later. */
+/** The 30-day window (demo profile): is aligned to the hour on unix time, refills at the next boundary. */
 function refuseOverCap(amount: bigint): void {
   const used = parseAokrw(budget.chainUsed);
   if (used + amount <= parseAokrw(budget.chainCap)) return;
