@@ -217,6 +217,28 @@ describe('POST /api/agents and hatching (user-flow 4)', () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
+  it('stays not ACTIVE when the TransferLimit write returns no transaction', async () => {
+    let inner: OwnerAuthority | undefined;
+    const noTx: OwnerAuthority = {
+      mode: 'custodial',
+      prepare: (action) => (inner as OwnerAuthority).prepare(action),
+      confirm: (prepared) =>
+        prepared.action.kind === 'setTransferLimit'
+          ? Promise.resolve({ txHashes: [] })
+          : (inner as OwnerAuthority).confirm(prepared),
+    };
+    const { h, as, settle } = await setup((real) => {
+      inner = new CustodialOwner(real);
+      return real;
+    }, noTx);
+    await as('u1').post('/api/agents', { dragonName: '용이', dragonSpecies: 'forest' });
+    await settle();
+    const row = h.db.select().from(agents).all()[0];
+    expect(row?.status).toBe('PENDING');
+    expect(row?.setupStep).toBe('failed');
+    expect(h.db.select().from(agentLimitHistory).all()).toHaveLength(0);
+  });
+
   it('never turns ACTIVE when only the bind still needs the owner signature', async () => {
     // Bind waits for the user's device; the TransferLimit would go through. Still not ACTIVE.
     let inner: OwnerAuthority | undefined;
