@@ -43,7 +43,7 @@ async function setup(env: Record<string, string>) {
       .post('/api/identity/verify')
       .set('Cookie', `sid=${token}`)
       .set('X-Requested-With', 'fetch');
-  return { h, http, verify, service: moduleRef.get(IdentityService) };
+  return { h, http, verify, token, service: moduleRef.get(IdentityService) };
 }
 
 describe('POST /api/identity/verify (D-16)', () => {
@@ -74,7 +74,10 @@ describe('POST /api/identity/verify (D-16)', () => {
   });
 
   it('needs a session (401) and the fetch header (403)', async () => {
-    const { http } = await setup({ VERIFY_MODE: 'mock' });
+    const { h, http, token } = await setup({ VERIFY_MODE: 'mock' });
     expect((await http().post('/api/identity/verify')).status).toBe(401);
+    const noHeader = await http().post('/api/identity/verify').set('Cookie', `sid=${token}`);
+    expect(noHeader.status).toBe(403);
+    expect(h.db.select().from(identityChecks).all()).toHaveLength(0);
   });
 });
