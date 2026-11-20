@@ -1,6 +1,6 @@
 'use client';
 
-import { AppError, parseAokrw } from '@sikyeoyong/shared';
+import { AppError, parseAokrw, renderDragonLine } from '@sikyeoyong/shared';
 import {
   ChatInput,
   ChatLayout,
@@ -51,6 +51,11 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
   function pick(entry: RecommendationsEntry, id: string) {
     const rec = entry.items.find((r) => r.id === id);
     if (!rec || createOrder.isPending) return;
+    // Frozen.dc.html: a sleeping dragon orders nothing; it says so instead of a silent tap.
+    if (budget?.frozen === true) {
+      chat.say(renderDragonLine('SERVER_FROZEN'));
+      return;
+    }
     createOrder.mutate(rec, {
       onSuccess: (res) => {
         if (res.quote) chat.showQuote(res.quote);
@@ -67,6 +72,12 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
         // The 30-day cap is used up: the Cap screen (user-flow 14).
         if (err instanceof AppError && err.code === 'CHAIN_PERIODIC_LIMIT')
           router.push('/limit/cap');
+        // Frozen since the screen loaded (423): the same sleeping line.
+        else if (
+          err instanceof AppError &&
+          (err.code === 'SERVER_FROZEN' || err.code === 'CHAIN_AGENT_PAUSED')
+        )
+          chat.say(renderDragonLine(err.code));
       },
     });
   }
@@ -106,7 +117,13 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
               chat.send(text);
               setDraft('');
             }}
-            placeholder={ordered ? '오늘 저녁도 부탁해' : '뭐 먹고 싶은지 말해 줘'}
+            placeholder={
+              frozen
+                ? '깨우면 다시 말할 수 있어요'
+                : ordered
+                  ? '오늘 저녁도 부탁해'
+                  : '뭐 먹고 싶은지 말해 줘'
+            }
             sending={chat.sending}
             // Frozen.dc.html: while the dragon sleeps nothing is ordered, so nothing is sent.
             disabled={frozen}

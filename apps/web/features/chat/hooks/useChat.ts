@@ -113,6 +113,13 @@ export function useChat() {
       update((es) => [...es, { kind: 'user', id, text, status: 'sending' }]);
       send.mutate({ id, text });
     },
+    /**
+     * A line the dragon says on this screen only, with no model turn: the answer to a tap the
+     * server refused (a sleeping dragon). Not stored; the history does not have it.
+     */
+    say: (text: string) => {
+      update((es) => [...es, { kind: 'dragon', id: `local-${crypto.randomUUID()}`, text }]);
+    },
     /** Sends a failed message again with the same id (the server can tell it is a repeat). */
     retry: (id: string) => {
       const entry = thread.data?.entries.find((e) => e.kind === 'user' && e.id === id);

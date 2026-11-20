@@ -145,6 +145,20 @@ describe('ChatContainer', () => {
       expect(input).toBeDisabled();
     });
     expect(screen.getByText('용이가 자고 있어요')).toBeInTheDocument();
+    // Browser QA 2: the placeholder still asked for dinner while the dragon slept.
+    expect(input).toHaveAttribute('placeholder', '깨우면 다시 말할 수 있어요');
+  });
+
+  it('while the dragon sleeps a tapped recommendation gets the sleeping line, no order', async () => {
+    await mockApi.setFrozen(true);
+    setup();
+    await waitFor(() => {
+      expect(screen.getByRole('textbox', { name: '용이에게 말하기' })).toBeDisabled();
+    });
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    expect(await screen.findByText(/쉬고 있을게용/)).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '주문 확인' })).not.toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
   it('a first owner (no orders yet) gets a plain placeholder, not "오늘 저녁도"', async () => {
     setup();
