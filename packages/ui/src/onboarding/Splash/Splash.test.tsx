@@ -18,7 +18,9 @@ describe('Splash (Splash.md 테스트 기준)', () => {
     expect(screen.getByText('시켜용')).toBeInTheDocument();
     expect(screen.getByText('배달은 용이한테 시켜용')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('용이를 깨우는 중이에요');
-    expect(screen.getByText('마루 테스트넷 데모')).toBeInTheDocument();
+    // Not the design's "마루 테스트넷 데모": no chain words on screen (D-17).
+    expect(screen.getByText('체험용 데모')).toBeInTheDocument();
+    expect(screen.queryByText(/테스트넷|마루/)).toBeNull();
   });
 
   it.each(['forest', 'water', 'flower', 'star'] as const)(
@@ -36,8 +38,23 @@ describe('Splash (Splash.md 테스트 기준)', () => {
   it('a press anywhere calls onSkip once', async () => {
     const onSkip = vi.fn();
     render(<Splash species="forest" onSkip={onSkip} />);
-    await userEvent.click(screen.getByText('마루 테스트넷 데모'));
+    await userEvent.click(screen.getByText('체험용 데모'));
     expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips from the keyboard too: a button named 시켜용 시작하기, Enter or Space', async () => {
+    const onSkip = vi.fn();
+    render(<Splash species="forest" onSkip={onSkip} />);
+    const skip = screen.getByRole('button', { name: '시켜용 시작하기' });
+    skip.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.keyboard(' ');
+    expect(onSkip).toHaveBeenCalledTimes(2);
+  });
+
+  it('is no button without onSkip', () => {
+    render(<Splash species="forest" />);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('is the theme color with white words (D-32 loading background), and fades in', () => {

@@ -161,6 +161,8 @@ CASES = [
          hit=["D17 motion"]),
     dict(name="D17 chain word is review", files={"apps/web/features/o/components/L.tsx": "export const t = '지갑 연결';\n"},
          hit=["D17 chain-words"], ok=True),
+    dict(name="D17 testnet is a chain word", files={"apps/web/features/o/components/S.tsx": "export const t = '마루 테스트넷 데모';\n"},
+         hit=["D17 chain-words"], ok=True),
     # D18 ui components
     dict(name="D18 ui missing stories", files={"packages/ui/src/base/Btn/Btn.tsx": "export const Btn = () => null;\n",
          "packages/ui/src/base/Btn/index.ts": "export * from './Btn';\n"}, hit=["D18 ui-harness", "D18 ui-doc"]),

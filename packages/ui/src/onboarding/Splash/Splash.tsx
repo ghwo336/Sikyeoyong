@@ -1,4 +1,5 @@
 import type { DragonSpecies } from '@sikyeoyong/shared';
+import type { KeyboardEvent } from 'react';
 import { Dragon } from '../../dragon/Dragon';
 import styles from './Splash.module.css';
 
@@ -6,7 +7,11 @@ import styles from './Splash.module.css';
 export const SPLASH_TITLE = '시켜용';
 export const SPLASH_TAGLINE = '배달은 용이한테 시켜용';
 export const SPLASH_STATUS = '용이를 깨우는 중이에요';
-export const SPLASH_FOOTER = '마루 테스트넷 데모';
+// Splash.dc.html says "마루 테스트넷 데모"; a chain word on screen (D-17, CLAUDE.md 12), so it
+// is the plain demo mark until the canvas changes (Splash.md "시안과 다른 점").
+export const SPLASH_FOOTER = '체험용 데모';
+/** The name of the skip press for keyboards and screen readers. */
+export const SPLASH_SKIP_LABEL = '시켜용 시작하기';
 
 // Splash.dc.html: the white sticker edge around the dragon, drawn behind it.
 const HALO =
@@ -22,8 +27,25 @@ export interface SplashProps {
 /** Draws the full-screen loading splash: the bobbing dragon, the name and "waking" dots (Splash.md). */
 export function Splash({ species, onSkip }: SplashProps) {
   return (
-    // A press anywhere skips (user-flow 0); the status line is what screen readers get.
-    <div className={styles.splash} onClick={onSkip} data-part="splash">
+    // A press anywhere skips (user-flow 0); with onSkip it is also a button for keyboards
+    // (Enter or Space). The status line is what screen readers hear while it waits.
+    <div
+      className={styles.splash}
+      onClick={onSkip}
+      data-part="splash"
+      {...(onSkip
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            'aria-label': SPLASH_SKIP_LABEL,
+            onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              onSkip();
+            },
+          }
+        : {})}
+    >
       <div className={styles.figure}>
         <div className={styles.bob} data-part="bob">
           <svg className={styles.halo} viewBox="0 0 64 64" aria-hidden="true" focusable="false">

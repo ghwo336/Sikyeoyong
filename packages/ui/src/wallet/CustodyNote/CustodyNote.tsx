@@ -6,6 +6,7 @@ export const CUSTODY_NOTE_PLAIN = '체험판이에요. 용이 용돈은 지금 �
 
 /** D-24 "밝히는 문구": the exact words inside 자세히 보기 (demo) and the README. */
 export const CUSTODY_NOTE_DETAILED =
+  // verify-allow: D17 자세히 보기 안에서만 보이는 정확한 문구 (D-24, D-31)
   '테스트넷 데모. 에이전트 키와 소유자 권한은 운영자 서버가 보관한다(수탁, D-24). 파우치 임베디드 SDK가 나오면 사용자 지갑이 소유자가 된다.';
 
 export interface CustodyNoteProps {

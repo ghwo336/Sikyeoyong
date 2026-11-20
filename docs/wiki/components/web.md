@@ -112,6 +112,7 @@ children: []
 - IdCard 화면 아래 "가게는 주문을 받을 때 이 신분증을 봐요" 한 줄과 "신분증 공유하기" 버튼: 이 한 줄에 맞는 ui 부품(카드 아래 작은 안내 글)이 없다. ui에 만들지(예: IdCard에 `footnote`) 정한다. 그 전까지 웹은 그리지 않는다.
 - 받은 뒤 모양("받았어요")은 시안에 없다. TrialAllowance.md에 디자인 선택으로 적었다.
 - 빠른 답장 `quick_replies` 이벤트는 shared `zChatEvent`와 tech-spec 2.4에 들어갔다 (해결).
+- 캔버스 수정 요청 (2026-11-20 검증 지적): Splash 시안 맨 아래 "마루 테스트넷 데모"는 블록체인 말(D-17)이다. ui는 "체험용 데모"로 그린다(Splash.md 시안과 다른 점). 캔버스 시안도 같은 문구로 고쳐 주세요.
 
 ## 남은 일 (가입)
 - 체험용 용돈은 `POST /api/signup/trial` (2026-11-20, allowance 모듈): 두 번 와도 한 번만 주고 `{ granted }`(`zTrialResult`), 본인 인증을 마친 주인만.

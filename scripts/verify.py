@@ -41,7 +41,7 @@ STYLELESS_RE = re.compile(re.escape(STYLELESS_MARK) + r"[ \t]*(?:[.(]|$)", re.M)
 STYLED_BODY = [(r"\bstyle=\{", "인라인 style"),
                (r"className=(?:\"|'|\{\s*(?:styles\b|['\"`]))", "자기 className"),
                (r"\.module\.css['\"]", "CSS 모듈 import")]
-BANNED_UI = ["지갑", "토큰", "트랜잭션", "KYC", "PCL", "블록체인", "가스비", "해시", "OKRW", "attestation", "시드 문구"]
+BANNED_UI = ["지갑", "토큰", "트랜잭션", "KYC", "PCL", "블록체인", "가스비", "해시", "OKRW", "attestation", "시드 문구", "테스트넷"]
 WEB_APP_FILES = {"page.tsx", "layout.tsx", "loading.tsx", "error.tsx", "not-found.tsx", "template.tsx",
                  "global-error.tsx", "globals.css"}
 CODE_EXT = (".ts", ".tsx", ".js", ".mjs", ".cjs", ".sol", ".css")
