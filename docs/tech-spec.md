@@ -524,6 +524,8 @@ score(merchant, menu) =
 
 ### 5.2 상태 변수와 함수
 
+> 구현(2026-11-20)과 다른 점은 `docs/wiki/components/contracts.md` "명세와 다른 점"이 기준이다. 요지: `bindAgent`는 1단계에 운영자만 부르고(Q-31), 아래 의사 코드의 빈 `revert()`는 `WrongMode()`다. 더한 에러도 그 표에 있다.
+
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;

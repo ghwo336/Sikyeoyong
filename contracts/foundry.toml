@@ -1,0 +1,31 @@
+# 시켜용 컨트랙트 (SikyeoyongOrders). 체인 ID, RPC, 주소는 여기에 적지 않는다 (CLAUDE.md 2).
+# 배포 대상은 환경변수(MAROO_RPC_URL, CHAIN_ID)로만 받는다. script/Deploy.s.sol 참고.
+
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+# 컴파일러는 정확한 버전으로 고정한다.
+solc_version = "0.8.30"
+# 마루 EVM이 어느 하드포크까지 지원하는지(PUSH0, MCOPY, TSTORE) 문서에서 찾지 못했다 (미확인, open-questions Q-32).
+# 그래서 가장 보수적인 paris로 컴파일한다. 확인되면 올린다.
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 200
+# 배포 스크립트는 배포 결과를 packages/shared/src/config/deployments/에만 쓴다.
+fs_permissions = [{ access = "read-write", path = "../packages/shared/src/config/deployments" }]
+
+[fuzz]
+runs = 1024
+# 고정 시드: 게이트(verify.py)가 매번 같은 입력으로 돈다.
+seed = "0x5179"
+
+[invariant]
+runs = 256
+depth = 64
+fail_on_revert = false
+
+[fmt]
+line_length = 120

@@ -270,6 +270,9 @@ CASES = [
          hit=["T1 tests-required"]),
     dict(name="T1 code inside block comment ok", **t1("/*\n * old\n */\nexport const a = 1n;\n",
          "/*\n * old\n * const old = 1n;\n */\nexport const a = 1n;\n"), miss=["T1 tests-required"]),
+    dict(name="T1 sol src without test", files={"contracts/src/X.sol": "contract X {}\n"}, hit=["T1 tests-required"]),
+    dict(name="T1 sol vendored lib ok", files={"contracts/lib/forge-std/src/Test.sol": "contract T {}\n"},
+         miss=["T1 tests-required"]),
     dict(name="T1 sol natspec ok", **t1("contract X {}\n", "/// @notice x\ncontract X {}\n", path="contracts/src/X.sol"),
          miss=["T1 tests-required"]),
     # R8 wiki

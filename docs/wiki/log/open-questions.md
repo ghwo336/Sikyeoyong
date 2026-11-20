@@ -132,6 +132,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 상태: 열림
 - 우선순위: P0
 - 배경: 배포 스크립트와 정책 인코딩 (tech-spec "5.5", "5.6"). `AGENT_OKRW_TRANSFER_LIMIT_POLICY`의 필드 없는 struct 인코딩도 미확인.
+- 덧붙임 (2026-11-20): `SikyeoyongOrders.initialize`는 접근 제어가 없어 `deployPclProxy`가 초기화 데이터를 같이 받는지(원자적 초기화)도 이 질문으로 확인한다. 못 받으면 초기화 뒤 `owner()`, `operator()`를 다시 읽어 확인한다 (contracts.md "반드시 지킬 규칙").
 - 확인 방법: `IPcl.sol` 원본(`@maroo-chain/contracts`) 확인, 스파이크 S4.
 - 담당: 구현 세션
 - 결론:
@@ -291,3 +292,30 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 담당: 호재
 - 결론:
 - 반영한 곳:
+
+### Q-31 `bindAgent`를 언제 소유자 직접 호출로 여나?
+- 상태: 열림
+- 우선순위: P1
+- 배경: D-08과 tech-spec 5.3은 소유자가 `bindAgent`를 부르고 컨트랙트가 8004에서 소유 관계를 확인한다고 한다. 그런데 확인 인터페이스(`IAgent.getAgentIds` 페이지 인자, IdentityRegistry `ownerOf`)가 미확인이다 (Q-11, S11). 확인 없이 열면 아무나 남의 에이전트를 자기에게 묶어 멈추거나 환불을 받을 수 있다. 그래서 1단계 구현(2026-11-20)은 `bindAgent`를 운영자만 부르게 하고 주인은 호출자(운영자)로 둔다. 1단계는 모든 에이전트의 8004 소유자가 운영자라 결과가 같다 (tech-spec 5.3).
+- 확인 방법: S11로 ABI가 확정되면 (a) `bindAgent`에 8004 확인을 넣고 소유자 직접 호출로 연다, 또는 (b) tech-spec 5.3 대안 `bindAgentByOperator(agent, owner)`를 더해 운영자가 실제 사용자 주소를 주인으로 묶는다. 어느 쪽이든 UUPS 업그레이드로 한다.
+- 담당: 컨트랙트 작업자, 호재 님 (결정)
+- 결론:
+- 반영한 곳: contracts/src/SikyeoyongOrders.sol `bindAgent`, contracts.md "명세와 다른 점"
+
+### Q-32 마루 EVM은 어느 하드포크까지 지원하나? (PUSH0, MCOPY, TSTORE)
+- 상태: 열림
+- 우선순위: P1
+- 배경: docs.maroo.io에서 EVM 버전(Shanghai의 PUSH0, Cancun의 MCOPY와 TSTORE) 지원 여부를 찾지 못했다 (미확인). 지원하지 않는 옵코드가 바이트코드에 있으면 배포나 호출이 실패한다. 그래서 `contracts/foundry.toml`은 가장 보수적인 `evm_version = "paris"`로 컴파일하고, 재진입 가드는 일시 저장소(`ReentrancyGuardTransient`) 대신 저장소 기반 `ReentrancyGuard`를 쓴다.
+- 확인 방법: 마루 팀에 cosmos/evm 버전과 활성 하드포크를 묻는다. 또는 테스트넷에 PUSH0, MCOPY, TSTORE를 쓰는 작은 컨트랙트를 배포해 본다 (돈이 드는 체인 호출이라 호재 님 승인 뒤).
+- 담당: 컨트랙트 작업자
+- 결론:
+- 반영한 곳: contracts/foundry.toml, contracts.md "구현"
+
+### Q-33 운영자 키를 어떻게 바꾸나?
+- 상태: 열림
+- 우선순위: P2
+- 배경: tech-spec 5.2에 `operator` 변수는 있지만 바꾸는 함수가 없다. 명세에 없는 기능이라 구현(2026-11-20)도 만들지 않았다. 지금은 owner가 UUPS 업그레이드로만 바꿀 수 있다. 운영자 권한은 가게 활성화, 에이전트 바인딩, 환불 대행이다 (환불 돈은 소유자에게만 간다). 1단계는 owner와 운영자가 같은 키라 키가 새면 업그레이드 권한도 함께 넘어간다.
+- 확인 방법: 호재 님 결정. (a) owner만 부르는 `setOperator`를 더한다 (decisions D-08부터), (b) 업그레이드로만 바꾼다, (c) 2단계에 owner를 멀티시그로 옮길 때 같이 정한다.
+- 담당: 호재 님
+- 결론:
+- 반영한 곳: contracts.md "명세와 다른 점"
