@@ -132,6 +132,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 상태: 열림
 - 우선순위: P0
 - 배경: 배포 스크립트와 정책 인코딩 (tech-spec "5.5", "5.6"). `AGENT_OKRW_TRANSFER_LIMIT_POLICY`의 필드 없는 struct 인코딩도 미확인.
+- 덧붙임 (2026-11-20): `SikyeoyongOrders.initialize`는 접근 제어가 없어 `deployPclProxy`가 초기화 데이터를 같이 받는지(원자적 초기화)도 이 질문으로 확인한다. 못 받으면 초기화 뒤 `owner()`, `operator()`를 다시 읽어 확인한다 (contracts.md "반드시 지킬 규칙").
 - 확인 방법: `IPcl.sol` 원본(`@maroo-chain/contracts`) 확인, 스파이크 S4.
 - 담당: 구현 세션
 - 결론:

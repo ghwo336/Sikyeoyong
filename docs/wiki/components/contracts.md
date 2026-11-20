@@ -74,6 +74,7 @@ children: []
 - 커스텀 에러 사용 (문자열 revert 금지). 이름은 위 목록과 `chain-and-pcl.md` 매핑을 맞춘다.
 - 업그레이드: UUPS 저장소 레이아웃을 깨지 않는다 (새 변수는 끝에, gap 사용). 1단계 운영자 키, 2단계 멀티시그.
 - 배포 순서 (tech-spec "5.5 PCL 프록시 배포 절차"): 구현 배포, `deployPclProxy`, `initialize(operator, owner, vaultMode=false)`, **같은 스크립트에서 즉시 운영자 키로 `changeContractPolicies` 첫 호출** (최초 호출자가 정책 admin이 되고 한 번만 지정됨, 확인), 목 가게 등록, 주소를 `packages/shared/src/config/deployments/<chainId>.<profile>.json`에 기록.
+- **`initialize`에는 접근 제어가 없다** (처음 부른 사람이 운영자와 owner를 정한다). 프록시 배포와 초기화가 따로 일어나면 그 사이에 남이 먼저 초기화할 수 있다. 그래서 배포 절차에서 (1) 초기화 데이터를 프록시 배포와 같은 트랜잭션에 넘겨 원자적으로 하거나, 그 방법이 없으면 (2) 초기화 뒤 프록시의 `owner()`와 `operator()`를 다시 읽어 우리 주소인지 확인하고, 다르면 그 프록시를 버리고 새로 배포한다 (정책 바인딩 전에). `deployPclProxy`가 초기화 데이터를 받는지는 (미확인, Q-13, F-12).
 - 데모 프로필(D-12)은 별도 프록시로 배포한다. 운영 프로필과 주소가 다르다.
 - 테스트넷 배포 주소와 트랜잭션 해시를 worklog에 남긴다.
 - 실제 테스트넷 배포는 호재 님 승인 뒤에만 한다 (돈이 드는 체인 호출). `pnpm contracts:deploy:testnet`은 환경변수(`MAROO_RPC_URL`, `CHAIN_ID`, `POLICY_PROFILE`, `OPERATOR_KEY`)가 있는지만 보고 승인 뒤 실행할 명령을 안내한다. 값은 출력하지 않는다.
