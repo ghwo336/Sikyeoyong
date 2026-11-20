@@ -66,9 +66,9 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     expect(screen.getByText('10,000원')).toBeInTheDocument();
     expect(screen.getByText('300,000원')).toBeInTheDocument();
     expect(await screen.findByText('32,000원')).toBeInTheDocument();
-    // 30 days: used first, then the cap (Wallet.dc.html "219,000 / 500,000원" shape).
+    // 30 days: used first, then the cap (demo profile 60,000, fixtures BUDGET).
     const thirty = screen.getByText('30일 한도').parentElement;
-    expect(thirty?.textContent).toMatch(/210,000\s*\/\s*500,000원/);
+    expect(thirty?.textContent).toMatch(/41,000\s*\/\s*60,000원/);
   });
 
   it('shows no made-up balance when the server has no wallet (the row is just absent)', async () => {

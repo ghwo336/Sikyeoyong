@@ -3,6 +3,7 @@
 import type {
   ChatEvent,
   ChatHistoryMessage,
+  LimitChangeCardView,
   OrderQuote,
   QuickReplyItem,
   RecommendationCard,
@@ -27,6 +28,12 @@ export type ChatEntry =
       readonly kind: 'quick_replies';
       readonly id: string;
       readonly items: readonly QuickReplyItem[];
+    }
+  | {
+      /** LimitChat.dc.html: the change the dragon proposes; only its button changes it (D-21). */
+      readonly kind: 'limit_change';
+      readonly id: string;
+      readonly card: LimitChangeCardView;
     };
 
 export interface DragonTurn {
@@ -68,6 +75,10 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
         break;
       case 'order_confirm':
         quote = e.quote;
+        break;
+      case 'limit_change_card':
+        flushText();
+        entries.push({ kind: 'limit_change', id: e.card.cardId, card: e.card });
         break;
       case 'done':
         break;

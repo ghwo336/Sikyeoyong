@@ -1,6 +1,6 @@
 'use client';
 
-import { parseAokrw } from '@sikyeoyong/shared';
+import { AppError, parseAokrw } from '@sikyeoyong/shared';
 import {
   ChatInput,
   ChatLayout,
@@ -10,8 +10,10 @@ import {
   RecommendationList,
   UserBubble,
 } from '@sikyeoyong/ui';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { minutes } from '../../../lib/format';
+import { LimitChangeContainer } from '../../limits/containers/LimitChangeContainer';
 import { useMe } from '../../me/hooks/useMe';
 import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
@@ -32,6 +34,7 @@ export interface ChatContainerProps {
  * A picked recommendation or a quote from the dragon opens the confirm sheet over the chat.
  */
 export function ChatContainer({ header, top }: ChatContainerProps) {
+  const router = useRouter();
   const chat = useChat();
   const me = useMe().data;
   const createOrder = useCreateOrder();
@@ -43,8 +46,16 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
     if (!rec || createOrder.isPending) return;
     createOrder.mutate(rec, {
       onSuccess: (res) => {
-        // pending_approval has no quote yet: the approval card is not built (web.md).
         if (res.quote) chat.showQuote(res.quote);
+        // Over the dragon's per-order limit: the Blocked screen (user-flow 12).
+        else if (res.order.status === 'pending_approval') {
+          router.push(`/limit/${encodeURIComponent(res.order.id)}`);
+        }
+      },
+      onError: (err) => {
+        // The 30-day cap is used up: the Cap screen (user-flow 14).
+        if (err instanceof AppError && err.code === 'CHAIN_PERIODIC_LIMIT')
+          router.push('/limit/cap');
       },
     });
   }
@@ -110,6 +121,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
                 );
               case 'recommendations':
                 return recommendations(e);
+              case 'limit_change':
+                return <LimitChangeContainer key={e.id} card={e.card} species={me.dragonSpecies} />;
               case 'quick_replies': {
                 // Chips belong to the latest turn only.
                 if (!last) return null;

@@ -2,8 +2,10 @@
 // these routes. Only lib/api imports this file; hooks see the ApiClient interface only.
 // It never pays: confirmOrder just flips the mock order to preparing (CLAUDE.md rule 3).
 import {
+  type AgentLevel,
   AppError,
   type BudgetView,
+  formatKstDateTime,
   explorerTxUrl,
   formatOkrw,
   NETWORKS,
@@ -45,6 +47,8 @@ const HATCH_STEP_MS = 1_500;
  */
 interface MockSession {
   signedIn: boolean;
+  /** The dragon's level (1 until raised). */
+  level?: AgentLevel;
   dragon: { name: string; species: MeView['dragonSpecies']; hatchStartedAt: number } | null;
 }
 const SESSION_KEY = 'sikyeoyong.mock.session';
@@ -85,13 +89,38 @@ export function resetMockSession(next: 'first-visit' | 'hatched'): void {
       : { signedIn: false, dragon: null };
   budget = BUDGET;
   wallet = WALLET;
+  paid.clear();
+  waiting.clear();
   saveSession();
 }
+
+const levelPolicy = getPolicy('default');
+const levelOf = (): AgentLevel => session.level ?? 1;
+const perOrderOf = (level: AgentLevel): bigint => levelPolicy.perOrderLimitAokrw[level];
 
 function currentMe(): MeView {
   if (!session.signedIn) throw new AppError('UNAUTHENTICATED', { reason: 'mock: signed out' });
   if (session.dragon === null) throw new AppError('NOT_FOUND', { reason: 'mock: no dragon' });
-  return { ...ME, dragonName: session.dragon.name, dragonSpecies: session.dragon.species };
+  return {
+    ...ME,
+    dragonName: session.dragon.name,
+    dragonSpecies: session.dragon.species,
+    level: levelOf(),
+    perOrderLimit: perOrderOf(levelOf()).toString(),
+  };
+}
+
+/** The budget view with the session's level (raised by raiseLevel). */
+function currentBudget(): BudgetView {
+  return { ...budget, level: levelOf(), perOrderLimit: perOrderOf(levelOf()).toString() };
+}
+
+/** Recommendations as the server would mark them now: over the level's limit asks the owner. */
+function recommendationsNow(): RecommendationCard[] {
+  return RECOMMENDATIONS.map((r) => ({
+    ...r,
+    needsApproval: parseAokrw(r.price) > perOrderOf(levelOf()),
+  }));
 }
 
 function later<T>(value: T): Promise<T> {
@@ -103,10 +132,6 @@ function later<T>(value: T): Promise<T> {
 }
 
 const orderIdOf = (menuId: string) => `order-${menuId}`;
-
-function recByMenu(menuId: string): RecommendationCard | undefined {
-  return RECOMMENDATIONS.find((r) => r.menuId === menuId);
-}
 
 /** What the server would quote for one recommended menu. */
 function quoteFor(rec: RecommendationCard): OrderQuote {
@@ -203,20 +228,57 @@ function agentSetup(now: number): AgentSetupView {
 const paid = new Map<string, { rec: RecommendationCard; at: number }>();
 const ratings = new Map<string, 'again' | 'okay' | 'meh'>();
 
+/** Orders waiting for the owner (over the level's limit): the Blocked screen reads them. */
+const waiting = new Map<string, RecommendationCard>();
+
+/** Unix seconds an hour from now: the demo profile's window length (a time, not money). */
+function anHourFromNowSec(): number {
+  return Math.floor(Date.now() / 1000) + 3_600;
+}
+
+/** The 30-day window (demo profile): opens with the first payment, refills an hour later. */
+function refuseOverCap(amount: bigint): void {
+  const used = parseAokrw(budget.chainUsed);
+  if (used + amount <= parseAokrw(budget.chainCap)) return;
+  const resetAtSec = budget.chainResetAtSec ?? anHourFromNowSec();
+  budget = { ...budget, chainResetAtSec: resetAtSec };
+  throw new AppError('CHAIN_PERIODIC_LIMIT', {
+    dragonParams: { resetAt: formatKstDateTime(resetAtSec * 1000) },
+  });
+}
+
 function createOrder(body: CreateOrderBody): CreateOrderResult {
   const first = body.items[0];
-  const rec = first ? recByMenu(first.menuId) : undefined;
+  const rec = first ? recommendationsNow().find((r) => r.menuId === first.menuId) : undefined;
   if (!rec || rec.merchantId !== body.merchantId) {
     throw new AppError('NOT_FOUND', { reason: 'mock menu not found' });
   }
   const id = orderIdOf(rec.menuId);
-  // A store seen for the first time waits for the owner (tech-spec flow 3). No quote yet.
-  if (rec.needsApproval) return { order: { id, status: 'pending_approval' } };
+  refuseOverCap(parseAokrw(rec.price));
+  // Over the level's per-order limit: it waits for the owner (tech-spec flow 2, 3). No quote.
+  if (rec.needsApproval) {
+    waiting.set(id, rec);
+    return { order: { id, status: 'pending_approval' } };
+  }
+  waiting.delete(id);
   return { order: { id, status: 'quoted' }, quote: quoteFor(rec) };
+}
+
+/** A payment uses the 30-day window and this month's budget, like the chain and the server. */
+function spend(amount: bigint): void {
+  const spent = parseAokrw(budget.personalSpent) + amount;
+  budget = {
+    ...budget,
+    personalSpent: spent.toString(),
+    nagLevel: nagStage(getPolicy('default'), spent, parseAokrw(budget.personalBudget)),
+    chainUsed: (parseAokrw(budget.chainUsed) + amount).toString(),
+    chainResetAtSec: budget.chainResetAtSec ?? anHourFromNowSec(),
+  };
 }
 
 /** Stand-in for the LLM: a menu name orders it, anything else gets the recommendations again. */
 const BUDGET_WORDS = ['예산', '다 쓴', '다쓴', '남았', '얼마'];
+const LIMIT_WORDS = ['올려', '한도'];
 const FOOD_WORDS = ['시켜', '추천', '점심', '저녁', '배고', '먹'];
 
 /** The dragon's words about this month's budget, from the mock's own numbers. */
@@ -235,9 +297,9 @@ function budgetLine(): string {
  * words the recommendations. Anything else gets a line and no cards, so it never repeats.
  */
 function reply(text: string): ChatEvent[] {
-  const rec = RECOMMENDATIONS.find((r) => !r.needsApproval && text.includes(r.menu));
+  const rec = recommendationsNow().find((r) => !r.needsApproval && text.includes(r.menu));
   if (rec) return [{ type: 'order_confirm', quote: quoteFor(rec) }];
-  const cheapest = [...RECOMMENDATIONS].sort((a, b) =>
+  const cheapest = recommendationsNow().sort((a, b) =>
     parseAokrw(a.price) < parseAokrw(b.price) ? -1 : 1,
   )[0];
   if (text.includes('싼') && cheapest) {
@@ -246,11 +308,32 @@ function reply(text: string): ChatEvent[] {
       { type: 'recommendations', items: [cheapest] },
     ];
   }
+  if (LIMIT_WORDS.some((w) => text.includes(w)) && levelOf() < 3) {
+    // LimitChat.dc.html: a card only; the change waits for the owner's button (D-21).
+    return [
+      { type: 'token', text: '와, 레벨 3이 되는 거예용? 이렇게 바꿀까용?' },
+      {
+        type: 'limit_change_card',
+        card: {
+          cardId: `limit-${String(Date.now())}`,
+          field: 'perOrder',
+          from: perOrderOf(levelOf()).toString(),
+          to: perOrderOf(3).toString(),
+          levelFrom: levelOf(),
+          levelTo: 3,
+          needsReauth: true,
+          rows: [
+            { label: '30일 한도', value: `${formatOkrw(parseAokrw(budget.chainCap))} 그대로` },
+          ],
+        },
+      },
+    ];
+  }
   if (BUDGET_WORDS.some((w) => text.includes(w))) return [{ type: 'token', text: budgetLine() }];
   if (FOOD_WORDS.some((w) => text.includes(w))) {
     return [
       { type: 'token', text: '알겠어용. 골라 봤어용.' },
-      { type: 'recommendations', items: [...RECOMMENDATIONS] },
+      { type: 'recommendations', items: recommendationsNow() },
     ];
   }
   return [{ type: 'token', text: '음, 그건 잘 모르겠어용. 뭐 먹고 싶은지 말해 주세용.' }];
@@ -258,24 +341,50 @@ function reply(text: string): ChatEvent[] {
 
 export const mockApi: ApiClient = {
   getMe: () => later(null).then(currentMe),
-  getBudget: () => later(budget),
+  getBudget: () => later(null).then(currentBudget),
   getChatHistory: () => later(chatHistory(Date.now())),
   sendChatMessage: ({ text, clientMessageId }) =>
     later([...reply(text), { type: 'done', messageId: `reply-${clientMessageId}` }]),
-  createOrder: (body) => later(createOrder(body)),
+  // Refusals come back as a rejected promise, like the HTTP client, never a sync throw.
+  createOrder: (body) => later(null).then(() => createOrder(body)),
   confirmOrder: (orderId) => {
     const rec = RECOMMENDATIONS.find((r) => orderIdOf(r.menuId) === orderId);
     if (!rec) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
     // Pays nothing here: the order just starts its clock (CLAUDE.md rule 3 holds on the server).
-    const at = paid.get(orderId)?.at ?? Date.now();
-    paid.set(orderId, { rec, at });
-    return later(null).then(() => ({ order: orderAt(rec, at, Date.now()) }));
+    return later(null).then(() => {
+      const before = paid.get(orderId);
+      if (!before) {
+        refuseOverCap(parseAokrw(rec.price));
+        spend(parseAokrw(rec.price));
+      }
+      const at = before?.at ?? Date.now();
+      paid.set(orderId, { rec, at });
+      return { order: orderAt(rec, at, Date.now()) };
+    });
   },
   getOrder: (orderId) => {
     // Only a confirmed order exists. A reload loses the mock's memory, like a server restart.
     const p = paid.get(orderId);
+    const w = waiting.get(orderId);
+    if (!p && w) {
+      return later({
+        order: {
+          ...orderAt(w, Date.now(), Date.now()),
+          status: 'pending_approval' as const,
+          dragonLine: '주인님 허락을 기다려용.',
+          dragonMood: 'worried' as const,
+          txHash: undefined,
+          receipt: undefined,
+        },
+      });
+    }
     if (!p) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
     return later(null).then(() => ({ order: orderAt(p.rec, p.at, Date.now()) }));
+  },
+  raiseLevel: (level) => {
+    session = { ...session, level };
+    saveSession();
+    return later(undefined);
   },
   rateOrder: (orderId, value) => {
     ratings.set(orderId, value);

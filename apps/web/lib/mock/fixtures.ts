@@ -29,14 +29,19 @@ export const ME: MeView = {
   custodial: true,
 };
 
-/** Main.dc.html: 210,000 / 300,000원 this month, 70% nag already sent. */
+/**
+ * Main.dc.html: 210,000 / 300,000원 this month, 70% nag already sent. The 30-day cap uses the
+ * demo profile (60,000원 an hour, user-flow "데모에서 보여 줄 순서" 4) so the Cap scene is a few
+ * orders away: 41,000 used, so two 9,000원 bowls fit and the third does not.
+ */
+const demoPolicy = getPolicy('demo');
 export const BUDGET: BudgetView = zBudgetView.parse({
   monthKst: '2026-11',
   personalBudget: won(300_000n),
   personalSpent: won(210_000n),
   nagLevel: 'warn70',
-  chainCap: aokrwToString(policy.periodicCapAokrw),
-  chainUsed: won(210_000n),
+  chainCap: aokrwToString(demoPolicy.periodicCapAokrw),
+  chainUsed: won(41_000n),
   chainResetAtSec: null,
   level: 1,
   perOrderLimit: ME.perOrderLimit,

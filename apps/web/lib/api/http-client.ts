@@ -165,5 +165,7 @@ export function createHttpApi(
     getIdCard: () => notReady('id card'),
     setFrozen: () => notReady('pause'),
     refundPocket: () => notReady('refund'),
+    // POST /agents/me/level waits for the re-auth decision (Q-36).
+    raiseLevel: () => notReady('level raise'),
   };
 }

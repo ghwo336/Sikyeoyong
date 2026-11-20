@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi, resetMockSession } from '../../../lib/mock/client';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+const push = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn() }),
+}));
 
 // The mock server answers everything except payment, which is a spy here.
 const confirmOrder = vi.fn();
@@ -78,12 +81,24 @@ describe('ChatContainer', () => {
     expect(confirmOrder).not.toHaveBeenCalled();
   });
 
-  it('a new store needing approval opens nothing', async () => {
+  it('a menu over the per-order limit opens the Blocked screen, not the sheet, and pays nothing', async () => {
     setup();
     await userEvent.click(await screen.findByRole('button', { name: /보쌈 정식/ }));
     await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(push).toHaveBeenCalledWith('/limit/order-bossam-set');
     });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(confirmOrder).not.toHaveBeenCalled();
+  });
+
+  it('"한도 올려 줘" puts the change card in the chat; only its button changes the level', async () => {
+    setup();
+    await userEvent.type(await screen.findByRole('textbox'), '한도 5만 원까지 올려 줘');
+    await userEvent.click(screen.getByRole('button', { name: /보내기/ }));
+    const confirm = await screen.findByRole('button', { name: /Face ID로 확인하고 바꾸기/ });
+    expect((await mockApi.getMe()).level).toBe(1);
+    await userEvent.click(confirm);
+    expect(await screen.findByText(/레벨 3이 됐어용/)).toBeInTheDocument();
+    expect((await mockApi.getMe()).level).toBe(3);
   });
 });
