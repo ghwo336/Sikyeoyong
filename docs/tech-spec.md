@@ -442,6 +442,7 @@ score(merchant, menu) =
 
 - 날씨: 1단계는 `WEATHER_PROVIDER=static|openmeteo`. 데모는 `static`(시드 값 "비")으로 재현성 확보. 2단계에 k-skill `korea-weather`, `kakao-map` 연동 지점(`ContextProvider` 인터페이스).
 - 메뉴 태그는 시드 데이터에 넣는다 (`tags: ["국물", "따뜻한", "가성비"]`).
+- 코드(`apps/api/src/modules/recommend/score.ts`, 2026-11-20)는 위 식을 정수로 계산한다(요소 0~100점, 가중치 35·20·20·15·10, 금액 bigint). 위 식과 다른 곳: 한도를 넘는 메뉴는 craving이 맞을 때만 "승인 필요"로 넣고 한도 안 메뉴 뒤에 둔다, craving이 맞으면 맞은 메뉴만 순위를 매긴다, craving이 없으면 가게마다 메뉴 하나, 개인 예산을 넘게 되는 메뉴는 "승인 필요", 30일 체인 상한을 넘게 되는 메뉴와 품절 메뉴는 제외, `warn70` 이상이면 예산 가중치 55. 요소별 정의와 이유는 `docs/wiki/components/recommend-and-nag.md` "추천 점수 규칙".
 
 ### 3.9 체인 읽기와 인덱서 (chain 모듈)
 - viem `publicClient` (HTTP `MAROO_RPC_URL`, WebSocket은 2단계). 체인 ID는 부팅 시 `eth_chainId`로 읽어 `CHAIN_ID` 환경 변수와 다르면 경고 후 RPC 값 사용 (D-05 하드코딩 금지).
