@@ -25,3 +25,11 @@ export {
   type PolicyConfig,
   type PolicyProfile,
 } from './policy.js';
+export {
+  deploymentSchema,
+  findDeployment,
+  parseDeployment,
+  resolveOrdersContract,
+  type DeploymentRecord,
+} from './deployments.js';
+export { DEPLOYMENTS } from './deployments-data.js';
