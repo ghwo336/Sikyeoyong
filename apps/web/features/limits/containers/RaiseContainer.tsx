@@ -10,6 +10,7 @@ import { handQuoteToChat } from '../../chat/hooks/useChat';
 import { useOrder } from '../../orders/hooks/useOrder';
 import { useRequoteOrder } from '../../orders/hooks/useRequoteOrder';
 import { limitToFit } from '../fit';
+import { useBackToChat } from '../hooks/useBackToChat';
 import { useSetLimits } from '../hooks/useSetLimits';
 
 /**
@@ -22,7 +23,8 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const budget = useBudget().data;
-  const { data: order } = useOrder(orderId);
+  const orderQuery = useOrder(orderId);
+  const order = orderQuery.data;
   const raise = useSetLimits();
   const requote = useRequoteOrder();
   const back = () => {
@@ -36,6 +38,12 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
   const [pressedFrom, setPressedFrom] = useState<bigint | undefined>(undefined);
   const to = order ? limitToFit(parseAokrw(order.amount)) : undefined;
   // Nothing to raise: no limit in the range covers it, or the limit is already there.
+  const nothingToRaise =
+    budget !== undefined &&
+    order !== undefined &&
+    pressedFrom === undefined &&
+    (to === undefined || to <= parseAokrw(budget.perOrderLimit));
+  useBackToChat(orderQuery.isError || nothingToRaise);
   if (
     !budget ||
     !order ||

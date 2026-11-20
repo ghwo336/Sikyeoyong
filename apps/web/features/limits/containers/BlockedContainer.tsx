@@ -8,16 +8,25 @@ import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../../orders/hooks/useOrder';
 import { withEunNeun } from '../../../lib/format';
 import { limitToFit } from '../fit';
+import { useBackToChat } from '../hooks/useBackToChat';
 
 /** Blocked.dc.html: the order is over what the dragon may spend at once. Raise, or pick again. */
 export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   const router = useRouter();
   const me = useMe().data;
   const budget = useBudget().data;
-  const { data: order } = useOrder(orderId);
+  const orderQuery = useOrder(orderId);
+  const order = orderQuery.data;
   const back = () => {
     router.push('/');
   };
+  // An old link: the order is gone, or it fits the limit now (raised, or waiting for another
+  // reason, which is the owner's approval and not a raise).
+  const fits =
+    order !== undefined &&
+    budget !== undefined &&
+    parseAokrw(order.amount) <= parseAokrw(budget.perOrderLimit);
+  useBackToChat(orderQuery.isError || fits);
   if (!me || !budget || !order) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
   const attempted = parseAokrw(order.amount);
   const limit = parseAokrw(budget.perOrderLimit);

@@ -6,6 +6,7 @@ import type { DragonSpecies } from '@sikyeoyong/shared';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { LimitChangeCardView } from '../../../lib/api';
+import { useBudget } from '../../budget/hooks/useBudget';
 import { useSetLimits } from '../hooks/useSetLimits';
 
 /**
@@ -21,9 +22,21 @@ export function LimitChangeContainer({
 }) {
   const router = useRouter();
   const raise = useSetLimits();
+  const budget = useBudget().data;
   const [state, setState] = useState<'open' | 'done' | 'dropped'>('open');
-  if (state === 'dropped') return null;
-  if (state === 'done') {
+  // A card from the history is pressable only while the limit is still its "before": once the
+  // limit is its "after" it was applied (the done line), and any other value makes it outdated
+  // (nothing to press, browser QA).
+  const now =
+    budget === undefined
+      ? undefined
+      : parseAokrw(card.field === 'perOrder' ? budget.perOrderLimit : budget.myPeriodicLimit);
+  const from = parseAokrw(card.from);
+  const to = parseAokrw(card.to);
+  const applied = state === 'done' || (state === 'open' && now === to && !raise.isPending);
+  const outdated = state === 'open' && now !== undefined && now !== from && now !== to;
+  if (state === 'dropped' || outdated) return null;
+  if (applied) {
     return (
       <DragonLine
         text={
@@ -40,8 +53,8 @@ export function LimitChangeContainer({
   return (
     <LimitChangeCard
       field={card.field}
-      from={parseAokrw(card.from)}
-      to={parseAokrw(card.to)}
+      from={from}
+      to={to}
       needsReauth={card.needsReauth}
       rows={card.rows}
       status={raise.isPending ? 'confirming' : raise.isError ? 'failed' : 'idle'}

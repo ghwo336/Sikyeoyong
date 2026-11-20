@@ -8,11 +8,13 @@ import type { OrderView } from '../../../lib/api';
 import { BUDGET, ME } from '../../../lib/mock/fixtures';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
+const replace = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace }) }));
 
 const setLimits = vi.fn();
 const requoteOrder = vi.fn();
 const getBudget = vi.fn();
+const getOrder = vi.fn();
 const W12000 = okrwToAokrw(12_000n).toString();
 const waiting: OrderView = {
   id: 'o-bossam',
@@ -30,7 +32,7 @@ vi.mock('../../../lib/api', () => ({
   api: {
     getMe: () => Promise.resolve(ME),
     getBudget: () => getBudget() as unknown,
-    getOrder: () => Promise.resolve({ order: waiting }),
+    getOrder: () => getOrder() as unknown,
     setLimits: (b: unknown) => setLimits(b) as unknown,
     requoteOrder: (id: string) => requoteOrder(id) as unknown,
   },
@@ -48,6 +50,9 @@ function wrap(ui: ReactNode) {
 
 beforeEach(() => {
   push.mockReset();
+  replace.mockReset();
+  getOrder.mockReset();
+  getOrder.mockResolvedValue({ order: waiting });
   setLimits.mockReset();
   setLimits.mockResolvedValue({
     perOrderLimit: okrwToAokrw(15_000n).toString(),
@@ -138,5 +143,23 @@ describe('limit screens', () => {
     });
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.queryByRole('button', { name: /Face ID로 확인하고 바꾸기/ })).toBeNull();
+  });
+  it('an old raise link with the limit already there goes back to the chat, not a blank screen', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, perOrderLimit: okrwToAokrw(30_000n).toString() });
+    wrap(<RaiseContainer orderId="o-bossam" />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/');
+    });
+  });
+
+  it('a link to an order that is gone goes back to the chat', async () => {
+    getOrder.mockRejectedValue(new Error('404'));
+    wrap(<BlockedContainer orderId="o-gone" />);
+    await waitFor(
+      () => {
+        expect(replace).toHaveBeenCalledWith('/');
+      },
+      { timeout: 10_000 },
+    );
   });
 });
