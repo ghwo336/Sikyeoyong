@@ -97,8 +97,55 @@ describe('createHttpApi', () => {
 
   it('refuses what the server cannot do yet instead of pretending it worked', async () => {
     const api = createHttpApi(fakeFetch({}));
-    await expect(api.login('kakao')).rejects.toMatchObject({ code: 'INTERNAL' }); // no OAuth yet
-    await expect(api.claimTrialAllowance()).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(api.login('kakao')).rejects.toMatchObject({ code: 'INTERNAL' }); // no login yet
+  });
+
+  it('the wallet screen routes: paths, methods, bodies, and every answer checked by the shared schema', async () => {
+    const H = `0x${'c'.repeat(64)}`;
+    const f = fakeFetch({
+      'GET /api/wallet': {
+        body: JSON.stringify({ owner: W10000, pocket: '0', savedThisMonth: W10000 }),
+      },
+      'GET /api/me/id-card': {
+        body: JSON.stringify({ ownerName: '호재', ownerVerified: true, bornAt: 1 }),
+      },
+      'POST /api/agents/me/freeze': { body: JSON.stringify({ frozen: true, txHashes: [H] }) },
+      'POST /api/agents/me/unfreeze': { body: JSON.stringify({ frozen: false, txHashes: [H] }) },
+      'POST /api/agents/me/drain': { body: JSON.stringify({ refunded: W10000, txHashes: [H] }) },
+      'POST /api/signup/trial': { body: '{"granted":true}' },
+      'POST /api/orders/o%2F1/rating': { body: '' },
+    });
+    const api = createHttpApi(f);
+    expect(await api.getWallet()).toEqual({ owner: W10000, pocket: '0', savedThisMonth: W10000 });
+    expect((await api.getIdCard()).ownerName).toBe('호재');
+    await api.setFrozen(true);
+    await api.setFrozen(false);
+    await api.refundPocket();
+    await api.claimTrialAllowance();
+    await api.rateOrder('o/1', 'again');
+    const sent = f.mock.calls.map((c) => [c[1]?.method, c[0], c[1]?.body]);
+    expect(sent).toEqual([
+      ['GET', '/api/wallet', undefined],
+      ['GET', '/api/me/id-card', undefined],
+      ['POST', '/api/agents/me/freeze', undefined],
+      ['POST', '/api/agents/me/unfreeze', undefined],
+      ['POST', '/api/agents/me/drain', undefined],
+      ['POST', '/api/signup/trial', undefined],
+      ['POST', '/api/orders/o%2F1/rating', '{"value":"again"}'],
+    ]);
+    for (const c of f.mock.calls.slice(2)) {
+      expect((c[1]?.headers as Record<string, string>)['X-Requested-With']).toBe('fetch');
+    }
+  });
+
+  it('refuses wallet answers that break the schema (a number amount, a short tx hash)', async () => {
+    const bad = fakeFetch({
+      'GET /api/wallet': { body: '{"owner":81000,"pocket":"0","savedThisMonth":"0"}' },
+      'POST /api/agents/me/drain': { body: '{"refunded":"1","txHashes":["0x12"]}' },
+    });
+    const api = createHttpApi(bad);
+    await expect(api.getWallet()).rejects.toThrow();
+    await expect(api.refundPocket()).rejects.toThrow();
   });
 
   it('with a dev login key, login posts it to the dev login (as a cookie write)', async () => {

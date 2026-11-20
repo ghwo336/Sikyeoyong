@@ -90,7 +90,7 @@ export interface ApiClient {
   /** 용이 멈추기 / 깨우기 (user-flow 17). The owner's switch; never an LLM tool. */
   setFrozen(frozen: boolean): Promise<void>;
   /**
-   * Raise the dragon's level (user-flow 12, 13): the owner's button after re-auth (Q-36).
+   * Raise the dragon's level (user-flow 12, 13): the owner's button after re-auth (D-28).
    * Never an LLM tool; propose_limit_change only shows the card (D-21).
    */
   raiseLevel(level: 1 | 2 | 3): Promise<void>;

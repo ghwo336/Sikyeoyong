@@ -12,6 +12,11 @@ import {
   zChatEvent,
   zChatHistory,
   zCreateOrderResult,
+  zFreezeResult,
+  zIdCardView,
+  zRefundResult,
+  zTrialResult,
+  zWalletView,
   zMeView,
   zOrderResult,
   zSetLevelResult,
@@ -142,7 +147,9 @@ export function createHttpApi(
       zOrderResult.parse(await call('POST', `/orders/${encodeURIComponent(orderId)}/confirm`)),
     getOrder: async (orderId) =>
       zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),
-    rateOrder: () => notReady('taste rating'),
+    rateOrder: async (orderId, value) => {
+      await call('POST', `/orders/${encodeURIComponent(orderId)}/rating`, { value });
+    },
     getSignupConfig: async () => zSignupConfig.parse(await call('GET', '/signup/config')),
     login: async () => {
       if (devLoginKey === undefined) return notReady('login');
@@ -160,12 +167,18 @@ export function createHttpApi(
     setMonthlyBudget: async (amount) => {
       await call('PATCH', '/me', { monthlyBudgetOkrw: amount });
     },
-    claimTrialAllowance: () => notReady('trial allowance'),
-    // The API has no wallet, ID card, pause or refund routes yet (OwnerAuthority APIs, worklog).
-    getWallet: () => notReady('wallet'),
-    getIdCard: () => notReady('id card'),
-    setFrozen: () => notReady('pause'),
-    refundPocket: () => notReady('refund'),
+    claimTrialAllowance: async () => {
+      zTrialResult.parse(await call('POST', '/signup/trial'));
+    },
+    getWallet: async () => zWalletView.parse(await call('GET', '/wallet')),
+    getIdCard: async () => zIdCardView.parse(await call('GET', '/me/id-card')),
+    // The kill switch: the owner's button only, never an LLM tool (user-flow 17).
+    setFrozen: async (frozen) => {
+      zFreezeResult.parse(await call('POST', frozen ? '/agents/me/freeze' : '/agents/me/unfreeze'));
+    },
+    refundPocket: async () => {
+      zRefundResult.parse(await call('POST', '/agents/me/drain'));
+    },
     // D-28: the owner's button only (never an LLM tool); the server writes the chain limit first.
     raiseLevel: async (level) => {
       zSetLevelResult.parse(await call('POST', '/agents/me/level', { level }));
