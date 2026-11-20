@@ -1,5 +1,6 @@
 /* LimitChat.dc.html 40-44: the old amount struck through, an arrow, the new amount large. */
 .change {
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
@@ -24,7 +25,10 @@
 }
 
 .srOnly {
+  /* Visually hidden, pinned to the top left of its box so it never adds scroll height. */
   position: absolute;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;

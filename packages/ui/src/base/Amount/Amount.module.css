@@ -1,4 +1,5 @@
 .amount {
+  position: relative;
   display: inline-block;
   font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
@@ -53,10 +54,13 @@
 }
 
 .srOnly {
+  /* Visually hidden, pinned to the top left of its box so it never adds scroll height. */
   position: absolute;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
 }
