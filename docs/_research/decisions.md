@@ -304,3 +304,15 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
   - 표현(규칙 11): "한 번에 쓸 돈"과 "모두에게 같은 30일 상한"만 체인이 지킨다고 말한다. 내 30일 한도는 앱이 지킨다. 화면에는 블록체인 말을 쓰지 않고, 누가 지키는지는 "자세히 보기"에서만 구분한다.
 - 이유: 사용자가 자기 돈의 상한을 직접 정해야 "맡긴다"가 성립한다. 숫자는 두 개(한 번에, 30일에)로 줄인다(D-23). 30일 한도를 사람마다 체인이 지키게 하려면 컨트랙트 범위 정책이 사람마다 달라야 하는데 지금 PCL은 컨트랙트에 한 값만 건다 (확인, maroo-facts 3.3).
 - 영향: D-07(레벨표, 월 예산 행), D-12 장면 4, D-21(도구 입력, 키워드), D-28(레벨 올리기 → 한도 올리기), pitch.md, user-flow 4, 5, 12, 13, 14, tech-spec 3.2(`/agents/me/level`, `PATCH /me`, BudgetView), 3.3(도구), 5.4, policy.ts, agents·budget·orders·llm 모듈, ui limits·onboarding·wallet·dragon, Budget·Blocked·LimitChat·Cap·IdCard 시안. 여기까지의 D-07 레벨표와 D-21 `targetLevel`은 이 결정으로 대체된다.
+
+## D-32 용 종류별 앱 테마와 용이 모습 바꾸기 (2026-11-20, 호재 님 결정, 캔버스 2026-11-20 시안)
+- 배경: 캔버스 최신 시안이 고른 종(D-20)에 따라 앱 강조색과 용이 볏을 바꾸고, 깨어난 뒤에도 모습을 바꾸는 화면(Look)을 더했다. 색 비교는 `Themes.dc.html`.
+- 결정:
+  - **종별 테마 색**(`design/tokens.json`의 `dragonSpecies.<종>.theme`): 숲용 accent #2E7D4F, bg #F6F8F4, tint #E4F4E6, dark #1F5C3A, body #8FD694. 물용 #1F6A93, #F3F7FA, #E3F1F9, #154A68, #9AD3F0. 꽃용 #B03A64, #FAF4F6, #FBE6EE, #7D2846, #F7B7C8. 별용 #5F47A8, #F6F4FA, #ECE6FA, #43317A, #C9B8F2.
+  - **전환 방식**: 강조색은 CSS 변수로 두고 `<html data-species="forest|water|flower|star">`로 바꾼다. 테마를 따르는 것은 내 말풍선, 주요 버튼, 진행 막대, 선택 테두리, 지도 경로, 로딩 배경(과 화면 바탕 bg).
+  - **테마에서 빼고 고정하는 것(경고 계열)**: 예산 막대 노랑, 허락 필요 배지, 한도 초과, 30일 한도, 금액과 Face ID 확인 시트. 돈과 경고는 종이 바뀌어도 같은 색이어야 알아본다.
+  - **볏은 종마다**: 숲 잎사귀, 물 지느러미 귀와 물방울, 꽃 꽃잎 귀와 꽃 볏, 별 별 뿔. `Dragon`이 `species`로 그린다 (D-20 그림 기준 그대로).
+  - **알 고르기(Name)**: 고른 알에 따라 화면 색이 바로 바뀐다 (저장 전에도).
+  - **용이 모습 바꾸기(Look)**: `PATCH /agents/:id { dragonSpecies }`. 주인만, 체인에 기록하지 않는다. 이름, 지갑, 한도(D-31), 8004 등록은 그대로다. 바뀌는 것은 모습, 말버릇(종별 한 줄, tokens `line`), 앱 색. 입구는 용이 용돈(Wallet) 화면의 "용이 모습" 줄, 주소 `/dragon/look`(제안).
+- 이유: 내가 고른 용이 앱 전체에 드러나야 "내 용"이 된다(D-20의 연장). 경고색까지 바꾸면 돈 화면을 잘못 읽을 수 있어서 뺀다.
+- 영향: design/README, user-flow(15, 18), tokens.json, packages/ui 토큰과 Dragon, 웹 레이아웃(html 속성), agents 모듈(PATCH), tech-spec 3.2, 위키 ui/dragon, ui/base 토큰 문서.

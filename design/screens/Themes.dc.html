@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>용 종류별 색 비교</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1760px; height: 920px; box-sizing: border-box; background: #FFFFFF; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; padding: 20px 20px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 12px"><div style="font-size: 20px; font-weight: 700">숲용</div><dc-import name="Main" species="숲용" hint-size="390px,844px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><div style="font-size: 20px; font-weight: 700">물용</div><dc-import name="Main" species="물용" hint-size="390px,844px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><div style="font-size: 20px; font-weight: 700">꽃용</div><dc-import name="Main" species="꽃용" hint-size="390px,844px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><div style="font-size: 20px; font-weight: 700">별용</div><dc-import name="Main" species="별용" hint-size="390px,844px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1760,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

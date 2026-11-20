@@ -17,7 +17,7 @@ button:focus-visible,a:focus-visible{outline:2px solid #2E7D4F;outline-offset:2p
 a{color:#5D6660}a:hover{color:#1E2320}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; padding: 0 24px 32px; overflow: hidden">
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: {{sy_bg}}; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; padding: 0 24px 32px; overflow: hidden">
 
 <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px">
 <svg width="168" height="168" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="61" rx="15" ry="2" fill="#DCE3D9"></ellipse><g transform="translate(12 0.5) scale(0.62)"><path d="M27 15 C21 12 20 5 25 2 C29 5 30 11 27 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="2.3" stroke-linejoin="round"></path><path d="M26.5 13 L25 5" stroke="#1E2320" stroke-width="1.1" stroke-linecap="round"></path></g><g transform="translate(13 0.5) scale(0.62)"><path d="M37 15 C43 12 44 5 39 2 C35 5 34 11 37 15 Z" fill="#5DBB6A" stroke="#1E2320" stroke-width="2.3" stroke-linejoin="round"></path><path d="M37.5 13 L39 5" stroke="#1E2320" stroke-width="1.1" stroke-linecap="round"></path></g><path d="M32 8 C44 8 52 26 52 40 C52 52 43 60 32 60 C21 60 12 52 12 40 C12 26 20 8 32 8 Z" fill="#FFFDF6" stroke="#1E2320" stroke-width="1.4"></path><path d="M23.6 36.6 C21.4 34.4 22.2 31.4 25.1 31.4 C25.8 33.6 25.1 35.8 23.6 36.6 Z" fill="{{dragon}}"></path><path d="M39.5 47.3 C36.7 44.5 37.7 40.7 41.4 40.7 C42.3 43.5 41.4 46.3 39.5 47.3 Z" fill="{{dragon}}"></path><path d="M28.7 51.9 C27.1 50.3 27.7 48.1 29.8 48.1 C30.3 49.7 29.8 51.3 28.7 51.9 Z" fill="{{dragon}}"></path><path d="M40.7 28.9 C39.1 27.3 39.7 25.1 41.8 25.1 C42.3 26.7 41.8 28.3 40.7 28.9 Z" fill="{{dragon}}"></path><path d="M27 12 L30 16 L28 19 L32 22" fill="none" stroke="#1E2320" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -28,15 +28,32 @@ a{color:#5D6660}a:hover{color:#1E2320}
 </div>
 
 <div style="display: flex; flex-direction: column; gap: 10px">
-<button style="height: 56px; border: 0; border-radius: 16px; background: #FEE500; color: #191919; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z" fill="#191919"></path></svg>카카오로 시작하기</button>
-<button style="height: 56px; border: 1px solid #D5DDD3; border-radius: 16px; background: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4c-.2 1.2-.9 2.3-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4"></path><path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6C4.8 19.8 8.1 22 12 22z" fill="#34A853"></path><path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1C2.4 8.8 2 10.4 2 12s.4 3.2 1.1 4.6L6.4 14z" fill="#FBBC05"></path><path d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9C17 3 14.7 2 12 2 8.1 2 4.8 4.2 3.1 7.4L6.4 10C7.2 7.8 9.4 6 12 6z" fill="#EA4335"></path></svg>구글로 시작하기</button>
+<button style="height: 56px; border: 0; border-radius: 16px; background: {{sy_accent}}; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><path d="M4 7l8 6 8-6"></path></svg>이메일로 시작하기</button>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5D6660; text-align: center">처음이면 Face ID로 지갑을 만들어요. 비밀번호는 없어요.</p>
 <p style="margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: #5D6660; text-align: center">시작하면 <a href="#">이용약관</a>과 <a href="#">개인정보 처리방침</a>에 동의하게 돼요</p>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"dragon":{"editor":"color","default":"#8FD694","options":["#8FD694","#9AD3F0","#F7B7C8","#C9B8F2"]},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"species": {"editor": "enum", "default": "숲용", "options": ["숲용", "물용", "꽃용", "별용"]}, "$preview": {"width": 390, "height": 844}}'>
 class Component extends DCLogic {
+syT() {
+const KO = { '숲용': 'forest', '물용': 'water', '꽃용': 'flower', '별용': 'star' };
+const T = {
+forest: { name: '숲용', accent: '#2E7D4F', bg: '#F6F8F4', tint: '#E4F4E6', dark: '#1F5C3A', body: '#8FD694' },
+water: { name: '물용', accent: '#1F6A93', bg: '#F3F7FA', tint: '#E3F1F9', dark: '#154A68', body: '#9AD3F0' },
+flower: { name: '꽃용', accent: '#B03A64', bg: '#FAF4F6', tint: '#FBE6EE', dark: '#7D2846', body: '#F7B7C8' },
+star: { name: '별용', accent: '#5F47A8', bg: '#F6F4FA', tint: '#ECE6FA', dark: '#43317A', body: '#C9B8F2' }
+};
+const raw = (this.state && this.state.picked) || this.props.species || '숲용';
+return T[KO[raw] || raw] || T.forest;
+}
 renderVals() {
+const t = this.syT();
+const k = Object.keys({ forest: 1, water: 1, flower: 1, star: 1 }).find((x) => t.accent === ({ forest: '#2E7D4F', water: '#1F6A93', flower: '#B03A64', star: '#5F47A8' })[x]);
+const show = (x) => (x === k ? 'inline' : 'none');
+return Object.assign({}, this.syBase(), { sy_accent: t.accent, sy_bg: t.bg, sy_tint: t.tint, sy_dark: t.dark, sy_name: t.name, dragon: t.body, sy_c_forest: show('forest'), sy_c_water: show('water'), sy_c_flower: show('flower'), sy_c_star: show('star') });
+}
+syBase() {
 return { dragon: this.props.dragon ?? '#8FD694' };
 }
 }

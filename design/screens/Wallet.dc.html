@@ -12,11 +12,11 @@
 @font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
 body{margin:0}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
+button:focus-visible,a:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
 .num{font-variant-numeric:tabular-nums}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; padding: 8px 20px 24px; overflow: hidden">
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: {{sy_bg}}; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; padding: 8px 20px 24px; overflow: hidden">
 
 <div style="display: flex; align-items: center; height: 48px">
 <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">용이 용돈</div>
@@ -28,22 +28,22 @@ button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
 <span class="num" style="font-size: 34px; font-weight: 700; letter-spacing: -0.03em">81,000원</span>
 <span class="num" style="font-size: 13px; color: #5D6660">용이 주머니에 20,000원</span>
 </div>
-<button style="height: 44px; padding: 0 18px; border: 0; border-radius: 22px; background: #2E7D4F; color: #FFFFFF; font-size: 15px; font-weight: 600">채우기</button>
+<button style="height: 44px; padding: 0 18px; border: 0; border-radius: 22px; background: {{sy_accent}}; color: #FFFFFF; font-size: 15px; font-weight: 600">채우기</button>
 </div>
 
 <div style="height: 1px; background: #E3E8E2"></div>
 
 <div style="display: flex; flex-direction: column">
-<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">한 번에 쓸 수 있는 돈</span><span class="num" style="font-size: 15px; color: #5D6660">10,000원</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
-<div style="min-height: 56px; display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; font-size: 15px">30일 한도</span><span class="num" style="font-size: 15px; color: #5D6660">219,000 / 500,000원</span><span style="width: 16px"></span></div>
-<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">이번 달 예산</span><span class="num" style="font-size: 15px; color: #5D6660">300,000원</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
-<div style="min-height: 56px; display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; font-size: 15px">이번 달 아낀 돈</span><span class="num" style="font-size: 15px; font-weight: 600; color: #2E7D4F">32,000원</span><span style="width: 16px"></span></div>
+<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">한 번에 쓸 돈</span><span class="num" style="font-size: 15px; color: #5D6660">10,000원</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">30일에 쓸 돈</span><span class="num" style="font-size: 15px; color: #5D6660">219,000 / 300,000원</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<div style="min-height: 56px; display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; font-size: 15px">이번 달 아낀 돈</span><span class="num" style="font-size: 15px; font-weight: 600; color: {{sy_accent}}">32,000원</span><span style="width: 16px"></span></div>
 </div>
 
 <div style="height: 1px; background: #E3E8E2"></div>
 
 <div style="display: flex; flex-direction: column">
-<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">용이 신분증</span><span style="font-size: 15px; color: #5D6660">레벨 1</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<a href="Look.dc.html" style="min-height: 56px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1E2320"><span style="flex-grow: 1; font-size: 15px">용이 모습</span><span style="font-size: 15px; color: #5D6660">{{sy_name}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+<button style="min-height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left"><span style="flex-grow: 1; font-size: 15px">용이 신분증</span><span style="font-size: 15px; color: #5D6660">용이</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A938C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
 <div style="min-height: 56px; display: flex; align-items: center; gap: 8px">
 <span id="stop" style="flex-grow: 1; font-size: 15px">용이 멈추기</span>
 <button role="switch" aria-checked="{{stopOn}}" aria-labelledby="stop" onClick="{{toggleStop}}" style="{{stopTrack}}"><span style="{{stopKnob}}"></span></button>
@@ -56,11 +56,28 @@ button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"species": {"editor": "enum", "default": "숲용", "options": ["숲용", "물용", "꽃용", "별용"]}, "$preview": {"width": 390, "height": 844}}'>
 class Component extends DCLogic {
 constructor(p) { super(p); this.state = { stop: false, dev: false }; }
+syT() {
+const KO = { '숲용': 'forest', '물용': 'water', '꽃용': 'flower', '별용': 'star' };
+const T = {
+forest: { name: '숲용', accent: '#2E7D4F', bg: '#F6F8F4', tint: '#E4F4E6', dark: '#1F5C3A', body: '#8FD694' },
+water: { name: '물용', accent: '#1F6A93', bg: '#F3F7FA', tint: '#E3F1F9', dark: '#154A68', body: '#9AD3F0' },
+flower: { name: '꽃용', accent: '#B03A64', bg: '#FAF4F6', tint: '#FBE6EE', dark: '#7D2846', body: '#F7B7C8' },
+star: { name: '별용', accent: '#5F47A8', bg: '#F6F4FA', tint: '#ECE6FA', dark: '#43317A', body: '#C9B8F2' }
+};
+const raw = (this.state && this.state.picked) || this.props.species || '숲용';
+return T[KO[raw] || raw] || T.forest;
+}
 renderVals() {
-const track = (on) => 'width: 52px; height: 32px; border: 0; border-radius: 16px; padding: 3px; display: flex; justify-content: ' + (on ? 'flex-end' : 'flex-start') + '; background: ' + (on ? '#2E7D4F' : '#D5DDD3');
+const t = this.syT();
+const k = Object.keys({ forest: 1, water: 1, flower: 1, star: 1 }).find((x) => t.accent === ({ forest: '#2E7D4F', water: '#1F6A93', flower: '#B03A64', star: '#5F47A8' })[x]);
+const show = (x) => (x === k ? 'inline' : 'none');
+return Object.assign({}, this.syBase(), { sy_accent: t.accent, sy_bg: t.bg, sy_tint: t.tint, sy_dark: t.dark, sy_name: t.name, dragon: t.body, sy_c_forest: show('forest'), sy_c_water: show('water'), sy_c_flower: show('flower'), sy_c_star: show('star') });
+}
+syBase() {
+const track = (on) => 'width: 52px; height: 32px; border: 0; border-radius: 16px; padding: 3px; display: flex; justify-content: ' + (on ? 'flex-end' : 'flex-start') + '; background: ' + (on ? '' + this.syT().accent + '' : '#D5DDD3');
 const knob = 'display: block; width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF';
 return {
 stopOn: this.state.stop ? 'true' : 'false',

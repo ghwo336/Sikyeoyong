@@ -17,13 +17,13 @@ button:focus-visible,input:focus-visible{outline:2px solid #2E7D4F;outline-offse
 .num{font-variant-numeric:tabular-nums}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F8F4; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; gap: 22px; padding: 8px 20px 32px; overflow: hidden">
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: {{sy_bg}}; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; gap: 22px; padding: 8px 20px 32px; overflow: hidden">
 
 <div style="display: flex; align-items: center; gap: 8px; height: 48px">
 <button aria-label="뒤로" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
 <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px" aria-label="3단계 중 2단계">
-<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
-<div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+<div style="height: 4px; border-radius: 2px; background: {{sy_accent}}"></div>
+<div style="height: 4px; border-radius: 2px; background: {{sy_accent}}"></div>
 <div style="height: 4px; border-radius: 2px; background: #E3E8E2"></div>
 </div>
 </div>
@@ -52,16 +52,33 @@ button:focus-visible,input:focus-visible{outline:2px solid #2E7D4F;outline-offse
 <input id="dn" value="용이" maxlength="8" style="height: 52px; box-sizing: border-box; padding: 0 16px; border: 1px solid #D5DDD3; border-radius: 14px; background: #FFFFFF; font: inherit; font-size: 17px; font-weight: 600; color: #1E2320">
 </div>
 
-<p class="num" style="margin: -12px 0 0; font-size: 14px; color: #5D6660">레벨 1로 태어나요. 한 번에 10,000원까지.</p>
+<p class="num" style="margin: -12px 0 0; font-size: 14px; color: #5D6660">처음엔 한 번에 10,000원까지. 깨어나면 바꿀 수 있어요.</p>
 
 <div style="flex-grow: 1"></div>
-<button style="height: 56px; border: 0; border-radius: 18px; background: #2E7D4F; color: #FFFFFF; font-size: 17px; font-weight: 700">알 깨우기</button>
+<button style="height: 56px; border: 0; border-radius: 18px; background: {{sy_accent}}; color: #FFFFFF; font-size: 17px; font-weight: 700">알 깨우기</button>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"species": {"editor": "enum", "default": "숲용", "options": ["숲용", "물용", "꽃용", "별용"]}, "$preview": {"width": 390, "height": 844}}'>
 class Component extends DCLogic {
 constructor(p) { super(p); this.state = { picked: 'forest' }; }
+syT() {
+const KO = { '숲용': 'forest', '물용': 'water', '꽃용': 'flower', '별용': 'star' };
+const T = {
+forest: { name: '숲용', accent: '#2E7D4F', bg: '#F6F8F4', tint: '#E4F4E6', dark: '#1F5C3A', body: '#8FD694' },
+water: { name: '물용', accent: '#1F6A93', bg: '#F3F7FA', tint: '#E3F1F9', dark: '#154A68', body: '#9AD3F0' },
+flower: { name: '꽃용', accent: '#B03A64', bg: '#FAF4F6', tint: '#FBE6EE', dark: '#7D2846', body: '#F7B7C8' },
+star: { name: '별용', accent: '#5F47A8', bg: '#F6F4FA', tint: '#ECE6FA', dark: '#43317A', body: '#C9B8F2' }
+};
+const raw = (this.state && this.state.picked) || this.props.species || '숲용';
+return T[KO[raw] || raw] || T.forest;
+}
 renderVals() {
+const t = this.syT();
+const k = Object.keys({ forest: 1, water: 1, flower: 1, star: 1 }).find((x) => t.accent === ({ forest: '#2E7D4F', water: '#1F6A93', flower: '#B03A64', star: '#5F47A8' })[x]);
+const show = (x) => (x === k ? 'inline' : 'none');
+return Object.assign({}, this.syBase(), { sy_accent: t.accent, sy_bg: t.bg, sy_tint: t.tint, sy_dark: t.dark, sy_name: t.name, dragon: t.body, sy_c_forest: show('forest'), sy_c_water: show('water'), sy_c_flower: show('flower'), sy_c_star: show('star') });
+}
+syBase() {
 const list = [
 { k: 'forest', name: '숲용', line: '천천히 먹어용' },
 { k: 'water', name: '물용', line: '국물이 최고예용' },
@@ -75,7 +92,7 @@ list.forEach((x) => {
 const on = x.k === picked;
 out['show_' + x.k] = on ? 'block' : 'none';
 out['on_' + x.k] = on ? 'true' : 'false';
-out['ring_' + x.k] = 'width: 60px; height: 60px; border-radius: 30px; background: ' + (on ? '#FFFFFF' : 'transparent') + '; display: flex; align-items: center; justify-content: center; border: 2px solid ' + (on ? '#2E7D4F' : 'transparent');
+out['ring_' + x.k] = 'width: 60px; height: 60px; border-radius: 30px; background: ' + (on ? '#FFFFFF' : 'transparent') + '; display: flex; align-items: center; justify-content: center; border: 2px solid ' + (on ? '' + this.syT().accent + '' : 'transparent');
 out['pick_' + x.k] = () => this.setState({ picked: x.k });
 });
 return out;
