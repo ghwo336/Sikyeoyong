@@ -7,16 +7,22 @@ import '@fontsource/gowun-dodum/korean-400.css';
 import '@fontsource/gowun-dodum/latin-400.css';
 import './globals.css';
 import { QueryProvider } from '../lib/query-provider';
+import tokens from '../../../design/tokens.json';
 
 export const metadata: Metadata = {
   title: '시켜용',
   description: '배달을 대신 시켜 주는 아기 드래곤',
+  // iOS: opened from the home screen, no Safari bar (D-23, looks like an app).
+  // public/manifest.webmanifest: display standalone. Its colors repeat design/tokens.json ground.
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: '시켜용', statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: tokens.color.ground,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
