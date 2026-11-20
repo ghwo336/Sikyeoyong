@@ -15,6 +15,9 @@ describe('SYSTEM_PROMPT (agent-runtime.md)', () => {
 
   it('keeps the money rules and has no dashes or dates (stable cache prefix, CLAUDE.md 1)', () => {
     expect(SYSTEM_PROMPT).toContain('결제는 사용자가 카드 버튼을 누를 때 서버가 한다');
+    // QA 2026-11-20: after APPROVAL_REQUIRED the dragon said it had approved and made the card.
+    expect(SYSTEM_PROMPT).toContain('도구 결과에 없는 일은 했다고 말하지 않는다');
+    expect(SYSTEM_PROMPT).toContain('APPROVAL_REQUIRED면 확인 카드는 만들어지지 않았다');
     for (const code of [0x2013, 0x2014]) {
       expect(SYSTEM_PROMPT).not.toContain(String.fromCharCode(code));
     }
