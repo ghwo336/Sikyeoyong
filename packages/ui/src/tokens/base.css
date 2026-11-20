@@ -8,8 +8,9 @@
   --font-ui: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
   --font-dragon: 'Gowun Dodum', 'Pretendard Variable', sans-serif;
   --font-code: ui-monospace, monospace;
-  /* motion.screen "220ms ease-out", motion.number "400ms" */
+  /* motion.screen "220ms ease-out", motion.number "400ms", motion.typing "1200ms" */
   --motion-screen: 220ms;
   --motion-screen-easing: ease-out;
   --motion-number: 400ms;
+  --motion-typing: 1200ms;
 }

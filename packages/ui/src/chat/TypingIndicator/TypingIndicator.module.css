@@ -1,0 +1,46 @@
+/* Same row as the chat DragonLine (Main.dc.html): 32px dragon, 10 apart, dots where words go. */
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--size-dragon-chat-gap);
+}
+
+.dots {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: 50%;
+  background: var(--color-ink-muted);
+  animation: blink var(--motion-typing) ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: calc(var(--motion-typing) / 6);
+}
+
+.dot:nth-child(3) {
+  animation-delay: calc(var(--motion-typing) / 3);
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* motion.reduceMotion: nothing moves; the dots stay, half visible. */
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}

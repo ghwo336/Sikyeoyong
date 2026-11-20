@@ -27,6 +27,7 @@ export * from './chat/ChatInput';
 export * from './chat/ChatLayout';
 export * from './chat/ChatThread';
 export * from './chat/QuickReplies';
+export * from './chat/TypingIndicator';
 export * from './chat/UserBubble';
 export * from './dragon/Dragon';
 export * from './dragon/Egg';

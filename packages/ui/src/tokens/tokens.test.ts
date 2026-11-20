@@ -96,6 +96,8 @@ describe('base.css (hand-maintained)', () => {
     expect(tokens.motion.screen).toBe('220ms ease-out');
     expect(vars.get('motion-screen')).toBe('220ms');
     expect(vars.get('motion-screen-easing')).toBe('ease-out');
+    expect(tokens.motion.typing).toMatch(/^1200ms,/);
+    expect(vars.get('motion-typing')).toBe('1200ms');
     expect(tokens.motion.number).toContain('400ms');
     expect(vars.get('motion-number')).toBe('400ms');
   });
