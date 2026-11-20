@@ -48,18 +48,16 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     expect(onPress).toHaveBeenCalledTimes(2);
   });
 
-  // Design values: Main quick reply 36px pill 14px, Budget and Arrived 52px tile radius 14,
+  // Design values: Main quick reply 36px pill 14px, Arrived 52px tile radius 14,
   // selected 2px leaf border on leaf tint.
   it('matches the design sizes and the selected look', () => {
     expect(rule('.sm')).toMatch(/height:\s*var\(--size-chip\)/);
     expect(rule('.sm')).toMatch(/font-size:\s*var\(--type-chip-size\)/);
-    expect(rule('.lg')).toMatch(/min-height:\s*var\(--size-input\)/);
-    expect(rule('.lg')).toMatch(/border-radius:\s*var\(--radius-input\)/);
     expect(rule('.chip[data-selected]')).toMatch(/border:\s*2px solid var\(--theme-accent\)/);
     expect(rule('.chip[data-selected]')).toMatch(/background:\s*var\(--theme-tint\)/);
   });
 
-  it.each(['sm', 'lg', 'tile'] as const)('puts the %s class on the chip', (size) => {
+  it.each(['sm', 'tile'] as const)('puts the %s class on the chip', (size) => {
     render(
       <Chip size={size} onPress={vi.fn()}>
         또 먹을래
@@ -67,19 +65,18 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     );
     const chip = screen.getByRole('button', { name: '또 먹을래' });
     expect(chip.className).toContain(styles[size]);
-    for (const other of (['sm', 'lg', 'tile'] as const).filter((s) => s !== size)) {
+    for (const other of (['sm', 'tile'] as const).filter((s) => s !== size)) {
       expect(chip.className).not.toContain(styles[other]);
     }
   });
 
-  it('matches every design value per size (Main, Budget, Arrived)', () => {
+  it('matches every design value per size (Main, Arrived)', () => {
     // Main quick reply: padding 0 14px, 1px line-strong border on white
     expect(rule('.sm')).toMatch(/padding:\s*0 var\(--size-chip-padding-x\)/);
     expect(rule('.chip')).toMatch(/border:\s*1px solid var\(--color-line-strong\)/);
     expect(rule('.chip')).toMatch(/background:\s*var\(--color-surface\)/);
-    // Budget choice 16/600, Arrived tile 15/400
-    expect(rule('.lg')).toMatch(/font-size:\s*var\(--type-row-size\)/);
-    expect(rule('.lg')).toMatch(/font-weight:\s*var\(--type-row-weight\)/);
+    // Arrived tile 15/400; no lg size any more (its Budget choice went with D-31)
+    expect(rule('.lg')).toBe('');
     expect(rule('.tile')).toMatch(/min-height:\s*var\(--size-input\)/);
     expect(rule('.tile')).toMatch(/border-radius:\s*var\(--radius-input\)/);
     expect(rule('.tile')).toMatch(/font-size:\s*var\(--type-body-size\)/);
@@ -98,12 +95,12 @@ describe('Chip (Chip.md 테스트 기준)', () => {
 
   it('puts the size, selected and numeric marks on the element', () => {
     render(
-      <Chip size="lg" numeric selected onPress={() => undefined}>
+      <Chip size="tile" numeric selected onPress={() => undefined}>
         300,000원
       </Chip>,
     );
     const el = screen.getByRole('radio');
-    expect(el.classList).toContain('lg');
+    expect(el.classList).toContain('tile');
     expect(el.classList).toContain('numeric');
     expect(el).toHaveAttribute('data-selected', 'true');
     expect(rule('.numeric')).toMatch(/tabular-nums/);

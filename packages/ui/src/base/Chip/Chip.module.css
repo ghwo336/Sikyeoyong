@@ -34,16 +34,7 @@
   inset: calc((var(--size-touch-min) - var(--size-chip)) / -2) 0;
 }
 
-/* Budget.dc.html: 52px choice, radius 14, 16px semibold. */
-.lg {
-  min-height: var(--size-input);
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-input);
-  font-size: var(--type-row-size);
-  font-weight: var(--type-row-weight);
-}
-
-/* Arrived.dc.html taste rating: same 52px tile, 15px regular. */
+/* Arrived.dc.html taste rating: 52px tile, radius 14, 15px regular. */
 .tile {
   min-height: var(--size-input);
   padding: 0 var(--space-4);

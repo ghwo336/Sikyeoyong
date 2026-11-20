@@ -65,11 +65,11 @@ function NumericPicker() {
         width: 342,
       }}
     >
-      {/* Budget.dc.html labels; the short won format is open question Q-23. */}
+      {/* Amount labels; the short won format is open question Q-23. */}
       {['20만 원', '30만 원', '50만 원'].map((label) => (
         <Chip
           key={label}
-          size="lg"
+          size="tile"
           numeric
           selected={picked === label}
           onPress={() => {
@@ -86,5 +86,5 @@ function NumericPicker() {
 /** 선택됨 (Arrived 맛 평가) */
 export const Selected: Story = { render: () => <TastePicker /> };
 
-/** 고정폭 숫자 (금액 칩, 옛 Budget 예산 고르기 모양) */
+/** 고정폭 숫자 (금액 칩) */
 export const Numeric: Story = { render: () => <NumericPicker /> };

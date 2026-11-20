@@ -6,22 +6,22 @@ import { PRESS, PRESS_SPRING } from '../press';
 import { useShouldReduceMotion } from '../reduced-motion';
 import styles from './Chip.module.css';
 
-export type ChipSize = 'sm' | 'lg' | 'tile';
+export type ChipSize = 'sm' | 'tile';
 
 export interface ChipProps {
   /**
-   * Set when the chip is one choice of a group (Budget, Arrived): it becomes a radio
+   * Set when the chip is one choice of a group (Arrived): it becomes a radio
    * with aria-checked. Leave undefined for plain quick replies (Main).
    */
   readonly selected?: boolean;
   readonly onPress: () => void;
   readonly children: ReactNode;
   /**
-   * sm: 36px pill, 14px (Main quick replies). lg: 52px choice, 16/600 (Budget).
+   * sm: 36px pill, 14px (Main quick replies).
    * tile: 52px, 15/400 (Arrived taste rating). Default sm.
    */
   readonly size?: ChipSize;
-  /** Tabular numbers for amounts (Budget "num" chips). */
+  /** Tabular numbers for amounts ("num" chips). */
   readonly numeric?: boolean;
   /** Set by radio groups (base/radio-group.ts) so Tab enters the group once. */
   readonly tabIndex?: number;
