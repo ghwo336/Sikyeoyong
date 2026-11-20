@@ -15,6 +15,12 @@ import { ChatRepository } from './chat.repository.js';
 import { LLM_PROVIDER, type LlmProvider } from './llm-provider.js';
 import { AgentRuntime, type RuntimeEvent } from './runtime.js';
 import { LlmToolHandlers } from './tools/handlers.js';
+import type { ToolCard, ToolName } from './tools/index.js';
+
+/** The one card type each tool may put on screen (tech-spec 2.4). Others are dropped. */
+export const CARD_OF_TOOL: Partial<Record<ToolName, ChatEvent['type']>> = {
+  recommend_merchants: 'recommendations',
+};
 
 /** Said when the model refuses (D-22 left fallbacks to the server). Plain text, no claims. */
 export const REFUSAL_LINE = '그건 제가 도와드리기 어려워용. 다른 걸 시켜 주세용.';
@@ -167,7 +173,10 @@ export class ChatService {
           send({ type: 'tool_status', tool: e.tool, state: e.state });
           return;
         case 'tool_output':
-          // Cards (recommendations, order_confirm, limit_change_card) map here as their modules land.
+          if (e.card !== undefined) {
+            const card = this.cardEvent(e.tool, e.card);
+            if (card !== null) send(card);
+          }
           return;
         case 'stopped':
           if (e.reason === 'refusal') turn.refused = true;
@@ -226,6 +235,26 @@ export class ChatService {
         createdAt: Date.now(),
       });
     });
+  }
+
+  /**
+   * A tool's screen card as a ChatEvent, or null to drop it. Only the card type
+   * that tool owns (CARD_OF_TOOL) and only shapes zChatEvent accepts reach the
+   * screen; anything else is a server bug, logged and dropped without the card's
+   * content so the turn and its words still go on.
+   */
+  private cardEvent(tool: ToolName, card: ToolCard): ChatEvent | null {
+    if (CARD_OF_TOOL[tool] !== card.type) {
+      this.logger.error(`dropped a ${card.type} card from ${tool}: not its card type`);
+      return null;
+    }
+    const checked = zChatEvent.safeParse(card);
+    if (!checked.success) {
+      const paths = checked.error.issues.map((i) => i.path.join('.') || '(root)').join(', ');
+      this.logger.error(`dropped a ${card.type} card from ${tool}: invalid at ${paths}`);
+      return null;
+    }
+    return checked.data;
   }
 
   /** The answer is already on screen; a storage failure is logged, never thrown into the closed stream. */
