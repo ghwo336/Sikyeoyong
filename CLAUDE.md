@@ -81,6 +81,7 @@
 | `pnpm contracts:build` / `pnpm contracts:test` | `forge build` / `forge test` |
 | `pnpm contracts:deploy:testnet` | PCL 프록시로 테스트넷 배포 |
 | `pnpm policy:apply` | `packages/shared/src/config/policy.ts` 값(프로필별)을 컨트랙트 범위 정책에 반영. `changeContractPolicies`는 전체 교체라 현재 값을 읽고 전체를 다시 쓴다 |
+| `pnpm merchants:balances` / `pnpm merchants:sweep --to <주소> (--merchant <키>\|--all) [--dry-run]` | 가게 지갑 잔액 보기 / 주인이 손으로 돌리는 가게 지갑 회수 (D-33). 키는 `seed/.keys`(보관본 `archive/`), LLM과 서버 API에는 없다 |
 | `pnpm demo:rehearse` | 데모 장면 1~8 자동 리허설 |
 | `pnpm check:dash` | em dash, en dash 검사 |
 | `pnpm verify` | 커밋 게이트 (`python3 -I scripts/verify.py`, 커밋 전에는 `pnpm verify --precommit`). 자체 테스트는 `pnpm verify:test` |
