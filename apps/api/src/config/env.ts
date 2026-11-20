@@ -44,6 +44,8 @@ const schema = z.object({
   LLM_MODEL: optionalText,
   LLM_EFFORT: z.enum(LLM_EFFORTS).default('medium'),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
+  /** D-16: kakao now; mock when Maroo switches to Mock KYC. */
+  VERIFY_MODE: z.enum(['kakao', 'mock']).default('kakao'),
   MAROO_RPC_URL: optionalText,
   CHAIN_ID: int(1).optional(),
   OKRW_DENOM: optionalText,
@@ -68,6 +70,8 @@ export interface AppConfig {
   readonly publicBaseUrl: string;
   readonly databaseUrl: string;
   readonly demo: { readonly enabled: boolean; readonly bypassServerLimit: boolean };
+  /** Identity step on sign-up (D-16). */
+  readonly verifyMode: 'kakao' | 'mock';
   readonly chain: ChainConfig;
   readonly policy: PolicyConfig;
   readonly payment: {
@@ -158,6 +162,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
       rpcUrl: env.MAROO_RPC_URL,
       okrwDenom: env.OKRW_DENOM,
     }),
+    verifyMode: env.VERIFY_MODE,
     policy: getPolicy(env.POLICY_PROFILE),
     payment: {
       path: env.PAYMENT_PATH,

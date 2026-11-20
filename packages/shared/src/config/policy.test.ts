@@ -131,6 +131,14 @@ describe('monthly budget options (D-21, Budget.dc.html)', () => {
   });
 });
 
+describe('trial allowance (Budget.dc.html, user-flow 5)', () => {
+  it('is 100,000 won in every profile', () => {
+    for (const profile of ['default', 'demo'] as const) {
+      expect(getPolicy(profile).trialAllowanceAokrw).toBe(100_000n * OKRW);
+    }
+  });
+});
+
 describe('hasLimitIntent (D-21 injection gate)', () => {
   it('reads decomposed (NFD) Korean the same as composed text', () => {
     const nfd = '5만 원까지 올려 줘'.normalize('NFD');

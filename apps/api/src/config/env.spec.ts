@@ -41,6 +41,8 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
     });
     expect(c.llm.weatherProvider).toBe('static');
     expect(c.llm.effort).toBe('medium');
+    expect(c.verifyMode).toBe('kakao');
+    expect(c.policy.trialAllowanceAokrw).toBe(100_000n * OKRW);
   });
 
   it('resolves chain and policy through shared config', () => {
@@ -66,6 +68,7 @@ describe('loadConfig overrides', () => {
       DEMO_BYPASS_SERVER_LIMIT: 'true',
       WEATHER_PROVIDER: 'openmeteo',
       LLM_EFFORT: 'low',
+      VERIFY_MODE: 'mock',
     });
     expect(c.port).toBe(9000);
     expect(c.chain.chainId).toBe(777);
@@ -77,6 +80,7 @@ describe('loadConfig overrides', () => {
     expect(c.payment.submittingAlertMs).toBe(120_000);
     expect(c.demo).toEqual({ enabled: true, bypassServerLimit: true });
     expect(c.llm.effort).toBe('low');
+    expect(c.verifyMode).toBe('mock');
   });
 
   it('treats empty values as not set (.env.example style)', () => {
@@ -99,6 +103,7 @@ describe('loadConfig rejects bad values without leaking them', () => {
     ['NODE_ENV', 'staging'],
     ['POLICY_PROFILE', 'prod'],
     ['OKRW_DENOM', 'X'],
+    ['VERIFY_MODE', 'sms'],
     ['MAROO_RPC_URL', 'http://'],
   ])('%s=%s', (name, value) => {
     const r = codeAndVars(() => loadConfig({ [name]: value }));

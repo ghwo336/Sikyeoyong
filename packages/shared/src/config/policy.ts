@@ -44,6 +44,8 @@ export interface PolicyConfig {
    * the server turns it into an amount.
    */
   readonly monthlyBudgetOptions: readonly MonthlyBudgetOption[];
+  /** Trial allowance shown on sign-up (Budget.dc.html "체험용 용돈 100,000원", user-flow 5). */
+  readonly trialAllowanceAokrw: bigint;
 }
 
 export type MonthlyBudgetOptionId = 'small' | 'medium' | 'large';
@@ -114,6 +116,7 @@ export function getPolicy(profile: PolicyProfile): PolicyConfig {
       { id: 'medium', amountAokrw: okrwToAokrw(300_000n) },
       { id: 'large', amountAokrw: okrwToAokrw(500_000n) },
     ],
+    trialAllowanceAokrw: okrwToAokrw(100_000n),
   };
 }
 
