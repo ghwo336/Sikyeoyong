@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DRAGON_MOODS } from '../domain/dragon-mood.js';
 import { zChatEvent, zChatHistory, zChatHistoryQuery, zSendChatMessageBody } from './chat.js';
-import { zAgentSetupView, zCreateAgentBody, zMeView, zSignupConfig } from './me.js';
+import { zAgentSetupView, zCreateAgentBody, zMeView, zPatchMeBody, zSignupConfig } from './me.js';
 import {
   ORDER_STATUSES,
   zCreateOrderBody,
@@ -204,6 +204,16 @@ describe('me and sign-up schemas', () => {
     expect(zMeView.parse(me)).toEqual(me);
     expect(zMeView.safeParse({ ...me, level: 4 }).success).toBe(false);
     expect(zMeView.safeParse({ ...me, dragonSpecies: 'fire' }).success).toBe(false);
+  });
+
+  it('takes only an aokrw budget in PATCH /me', () => {
+    expect(zPatchMeBody.parse({ monthlyBudgetOkrw: W10000 })).toEqual({
+      monthlyBudgetOkrw: W10000,
+    });
+    expect(zPatchMeBody.safeParse({ monthlyBudgetOkrw: 200000 }).success).toBe(false);
+    expect(zPatchMeBody.safeParse({ monthlyBudgetOkrw: W10000, role: 'operator' }).success).toBe(
+      false,
+    );
   });
 
   it('names a dragon with 1 to 8 letters after trimming', () => {

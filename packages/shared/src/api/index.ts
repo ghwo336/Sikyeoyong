@@ -21,10 +21,14 @@ export {
   zAgentSetupView,
   zCreateAgentBody,
   zMeView,
+  zPatchMeBody,
+  zUserView,
   zSignupConfig,
   type AgentSetupView,
   type CreateAgentBody,
   type MeView,
+  type PatchMeBody,
+  type UserView,
   type SignupConfig,
 } from './me.js';
 export {

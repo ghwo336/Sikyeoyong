@@ -16,6 +16,8 @@ export class AgentsRepository {
         level: agents.level,
         status: agents.status,
         walletAddress: agents.walletAddress,
+        dragonName: agents.dragonName,
+        dragonSpecies: agents.dragonSpecies,
       })
       .from(agents)
       .where(eq(agents.userId, userId))

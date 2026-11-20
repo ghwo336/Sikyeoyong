@@ -17,6 +17,22 @@ export class UsersRepository {
       .get()?.monthlyBudgetAokrw;
   }
 
+  findProfile(userId: string): { nickname: string; monthlyBudgetAokrw: string } | undefined {
+    return this.handle.db
+      .select({ nickname: users.nickname, monthlyBudgetAokrw: users.monthlyBudgetAokrw })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+  }
+
+  setMonthlyBudget(userId: string, aokrw: string): void {
+    this.handle.db
+      .update(users)
+      .set({ monthlyBudgetAokrw: aokrw })
+      .where(eq(users.id, userId))
+      .run();
+  }
+
   /** undefined: no such user; null: the user has not set an address yet. */
   findAddressDong(userId: string): string | null | undefined {
     const row = this.handle.db

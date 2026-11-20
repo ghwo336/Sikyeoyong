@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AppError, type AgentLevel } from '@sikyeoyong/shared';
+import { AppError, type AgentLevel, type DragonSpecies } from '@sikyeoyong/shared';
 import { AgentsRepository } from './agents.repository.js';
 
 export interface AgentSummary {
@@ -9,6 +9,8 @@ export interface AgentSummary {
   readonly frozen: boolean;
   /** Agent wallet, null until the wallet is created (status PENDING). */
   readonly wallet: `0x${string}` | null;
+  readonly dragonName: string;
+  readonly dragonSpecies: DragonSpecies;
 }
 
 function asWallet(value: string | null): `0x${string}` | null {
@@ -32,6 +34,8 @@ export class AgentsService {
       level: row.level,
       frozen: row.status === 'FROZEN',
       wallet: asWallet(row.walletAddress),
+      dragonName: row.dragonName,
+      dragonSpecies: row.dragonSpecies,
     };
   }
 }

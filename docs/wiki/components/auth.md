@@ -20,7 +20,7 @@ children: []
 - 웹: 로그인 버튼은 API의 `/api/auth/oauth/:provider/start`로 이동만 한다. 웹 코드는 토큰을 만지지 않는다.
 - API(NestJS auth 모듈): Passport 카카오·구글 전략으로 인가 코드를 교환하고(PKCE, state), 공급자 토큰을 검증한 뒤 자체 세션을 발급하고 웹으로 돌려보낸다. 흐름은 tech-spec "2.3 인증 흐름", 엔드포인트는 "3.2 REST API", 테이블은 "4. 데이터 모델".
 - 세션 저장: httpOnly, Secure, SameSite=Lax 쿠키. 웹과 API가 같은 도메인이라 CORS가 필요 없다.
-- 코드: `modules/auth/auth.service.ts`의 `AuthService`(발급 `issue`, 확인 `resolve`, 폐기 `revoke`, 최근 로그인 `isRecentLogin`)와 `common/guards/session.guard.ts`의 `SessionGuard`, `@CurrentUser()`. 가드는 `sid` 쿠키(웹)나 `Bearer`(네이티브, 스킴 대소문자 무시)를 읽고, 쿠키로 오는 쓰기 요청에는 `X-Requested-With`를 요구한다. `sid` 쿠키가 둘 이상 오면 401이다 (쿠키 심기 방지). 그래서 로그인 라우트를 만들 때 쿠키는 `Path=/` 하나로 고정하고 이전 `sid`를 만료시킨다. 컨트롤러와 도구 핸들러는 사용자를 `@CurrentUser()`에서만 받는다. 세션 발급 시각은 따로 저장하지 않고 `expires_at - 30일`로 계산한다. 카카오·구글 OAuth는 시크릿이 준비되면 같은 모듈에 붙인다.
+- 코드: `modules/auth/auth.service.ts`의 `AuthService`(발급 `issue`, 확인 `resolve`, 폐기 `revoke`, 최근 로그인 `isRecentLogin`)와 `common/guards/session.guard.ts`의 `SessionGuard`, `@CurrentUser()`. 가드는 `sid` 쿠키(웹)나 `Bearer`(네이티브, 스킴 대소문자 무시)를 읽고, 쿠키로 오는 쓰기 요청에는 `X-Requested-With`를 요구한다. `sid` 쿠키가 둘 이상 오면 401이다 (쿠키 심기 방지). 그래서 로그인 라우트를 만들 때 쿠키는 `Path=/` 하나로 고정하고 이전 `sid`를 만료시킨다. 컨트롤러와 도구 핸들러는 사용자를 `@CurrentUser()`에서만 받는다. 세션 발급 시각은 따로 저장하지 않고 `expires_at - 30일`로 계산한다. 카카오·구글 OAuth는 시크릿이 준비되면 같은 모듈에 붙인다. 내 정보는 `modules/users`의 `MeController`(`GET /me`는 용 요약, 용이 없으면 404, `PATCH /me`는 월 예산을 정책 선택지 값으로만 바로 바꿈, D-21)와 `SignupController`(`GET /signup/config`, 공개, `VERIFY_MODE`와 체험용 용돈).
 
 ## 반드시 지킬 규칙 (MUST)
 - OAuth는 PKCE와 state 검증을 한다.

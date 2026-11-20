@@ -18,6 +18,19 @@ export const zMeView = z
   .strict();
 export type MeView = z.infer<typeof zMeView>;
 
+/**
+ * PATCH /me body (tech-spec 3.2). Only the monthly budget for now; the server
+ * accepts only one of the policy options (D-21), never a free amount.
+ */
+export const zPatchMeBody = z.object({ monthlyBudgetOkrw: zAokrwString }).strict();
+export type PatchMeBody = z.infer<typeof zPatchMeBody>;
+
+/** PATCH /me answer. */
+export const zUserView = z
+  .object({ user: z.object({ nickname: z.string(), monthlyBudget: zAokrwString }).strict() })
+  .strict();
+export type UserView = z.infer<typeof zUserView>;
+
 /** GET /signup/config (tech-spec 3.2). The identity step is a server setting (D-16). */
 export const zSignupConfig = z
   .object({ verifyMode: z.enum(['kakao', 'mock']), trialAllowance: zAokrwString })

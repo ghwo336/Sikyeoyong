@@ -42,7 +42,14 @@ describe('AgentsService', () => {
   it('returns the level and not frozen for an active dragon', () => {
     const { h, s } = setup();
     h.db.update(agents).set({ status: 'ACTIVE' }).where(eq(agents.id, 'a1')).run();
-    expect(s.getForUser('u1')).toEqual({ id: 'a1', level: 2, frozen: false, wallet: null });
+    expect(s.getForUser('u1')).toEqual({
+      id: 'a1',
+      level: 2,
+      frozen: false,
+      wallet: null,
+      dragonName: '용이',
+      dragonSpecies: 'water',
+    });
   });
 
   it.each([

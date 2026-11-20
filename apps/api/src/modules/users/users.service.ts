@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { AppError, parseAokrw } from '@sikyeoyong/shared';
+import { Inject, Injectable } from '@nestjs/common';
+import { AppError, aokrwToString, parseAokrw, type UserView } from '@sikyeoyong/shared';
+import { APP_CONFIG } from '../../config/config.module.js';
+import type { AppConfig } from '../../config/env.js';
 import { UsersRepository } from './users.repository.js';
 
 /** The user's own settings. Other modules read users only through this service. */
 @Injectable()
 export class UsersService {
-  constructor(private readonly repo: UsersRepository) {}
+  constructor(
+    private readonly repo: UsersRepository,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   /** Personal monthly budget in aokrw (server-side only, D-07). */
   getMonthlyBudgetAokrw(userId: string): bigint {
@@ -19,5 +24,30 @@ export class UsersService {
     const dong = this.repo.findAddressDong(userId);
     if (dong === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
     return dong;
+  }
+
+  /**
+   * PATCH /me monthly budget (D-21): only one of the policy options, applied at
+   * once (the budget is an in-app limit, not a chain one). Any other amount is 400.
+   */
+  setMonthlyBudget(userId: string, aokrw: bigint): UserView {
+    const allowed = this.config.policy.monthlyBudgetOptions.some((o) => o.amountAokrw === aokrw);
+    if (!allowed) {
+      throw new AppError('VALIDATION_FAILED', {
+        public: {
+          issues: [{ path: 'monthlyBudgetOkrw', message: 'not one of the budget options' }],
+        },
+      });
+    }
+    if (this.repo.findProfile(userId) === undefined)
+      throw new AppError('NOT_FOUND', { reason: 'user not found' });
+    this.repo.setMonthlyBudget(userId, aokrwToString(aokrw));
+    return this.view(userId);
+  }
+
+  private view(userId: string): UserView {
+    const profile = this.repo.findProfile(userId);
+    if (profile === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
+    return { user: { nickname: profile.nickname, monthlyBudget: profile.monthlyBudgetAokrw } };
   }
 }
