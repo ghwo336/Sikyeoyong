@@ -210,7 +210,7 @@ children: []
 - 판단 (명세가 비었거나 달라 보수적으로 정함, recommend-and-nag.md "추천 점수 규칙"):
   - 한도 넘는 메뉴는 craving이 맞을 때만 승인 필요로 넣고 한도 안 메뉴 뒤에. 개인 예산 넘는 메뉴는 승인 필요 표시만. 30일 상한을 넘게 되는 메뉴는 제외.
   - craving이 맞으면 맞은 메뉴만, 아니면 가게마다 메뉴 하나.
-  - 보이는 가게는 DB `verified`와 `active`만으로 (open-questions Q-30, `onchain_id`는 체인 등록 스크립트 뒤).
+  - 보이는 가게는 DB `verified`와 `active`만으로 (open-questions Q-34, `onchain_id`는 체인 등록 스크립트 뒤).
   - 목 가게 `etaMin`은 배달 타이머 기본값 합 3분 (시안과 웹 목은 20~35분).
 - 막힌 것 (다른 작업자 몫):
   - orders 모듈이 최근 주문 읽기 함수(`OrdersService`에서 사용자, 시각 이후, paid 이상, `{ merchantId, createdAtMs }`)를 내보내야 추천의 선호와 새로움이 살아난다. 그때 `RECENT_ORDERS` 바인딩만 바꾼다.

@@ -283,7 +283,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 결론: (a). Claude에 카드만 띄우는 `propose_limit_change`를 더한다. 금액 없이 레벨이나 예산 선택지만 받고, 사용자 메시지에 의도가 없으면 서버가 카드를 버린다. 확정은 버튼으로만 (레벨 올리기는 재인증, 예산 변경과 내리기는 바로) (2026-11-19 호재 님, decisions D-21).
 - 반영한 곳: decisions D-21, CLAUDE.md 절대 규칙 3, tech-spec 3.3과 9.2, agent-runtime.md, security.md, LimitChangeCard.md
 
-### Q-30 보이는 가게 판정에 `onchain_id`를 언제부터 넣나?
+### Q-34 보이는 가게 판정에 `onchain_id`를 언제부터 넣나?
 - 상태: 열림
 - 우선순위: P1
 - 배경: merchants.md MUST는 "온체인 등록이 성공하고 Active인 가게만 추천·주문 대상"이다. 그런데 체인 등록 스크립트(`infra/scripts/seed-merchants.ts`)가 아직 없어 시드 가게는 모두 `onchain_id=null`이다. 지금 `MerchantsService`는 DB의 `verified`와 `active`만 본다 (2026-11-20).

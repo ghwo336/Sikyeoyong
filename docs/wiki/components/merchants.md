@@ -42,7 +42,7 @@ children: []
 8. 메뉴 등록, 영업 시작.
 
 ## 반드시 지킬 규칙 (MUST)
-- 온체인 등록이 성공하고 Active인 가게만 추천·주문 대상이다. DB에만 있고 체인에 없거나 Active가 아닌 가게는 숨긴다. 지금 코드는 DB의 `verified=true`와 `active=true`로만 판정한다. 시드 가게는 체인 등록 스크립트(`infra/scripts/seed-merchants.ts`)가 아직 없어 모두 `onchain_id=null`이라, `onchain_id` 조건을 넣으면 가게가 하나도 안 보인다. 체인 등록 스크립트가 생기면 `onchain_id`가 있어야 보이게 바꾼다 (open-questions Q-30).
+- 온체인 등록이 성공하고 Active인 가게만 추천·주문 대상이다. DB에만 있고 체인에 없거나 Active가 아닌 가게는 숨긴다. 지금 코드는 DB의 `verified=true`와 `active=true`로만 판정한다. 시드 가게는 체인 등록 스크립트(`infra/scripts/seed-merchants.ts`)가 아직 없어 모두 `onchain_id=null`이라, `onchain_id` 조건을 넣으면 가게가 하나도 안 보인다. 체인 등록 스크립트가 생기면 `onchain_id`가 있어야 보이게 바꾼다 (open-questions Q-34).
 - 메뉴 가격의 기준은 서버 DB다. LLM이나 앱이 준 가격은 쓰지 않는다.
 - 판매자는 자기 가게 주문만 본다. 판매자 API는 `merchant` 역할 + 가게 소유 확인.
 - payout 주소 변경은 운영자 확인과 재등록 절차를 거친다 (돈이 새는 길).
@@ -64,7 +64,7 @@ children: []
 
 ## 열린 질문
 - D-11 #7 KYB EAS 스키마를 우리가 만들어도 되나, attester는 누구
-- Q-30 보이는 가게 판정에 `onchain_id`를 언제부터 넣나 (체인 등록 스크립트 뒤)
+- Q-34 보이는 가게 판정에 `onchain_id`를 언제부터 넣나 (체인 등록 스크립트 뒤)
 
 ## 관련 문서
 - `docs/tech-spec.md` "6. 판매자 백엔드", "7. 가게 등록 받는 법"
