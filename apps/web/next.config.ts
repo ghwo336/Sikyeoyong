@@ -18,8 +18,14 @@ const API_DEV_ORIGIN =
   set(rootEnv.API_DEV_ORIGIN) ??
   `http://localhost:${set(rootEnv.PORT) ?? '8787'}`;
 
+// mock (default) or http: which ApiClient the screens use (lib/api/index.ts). Read like
+// API_DEV_ORIGIN so the root .env works; inlined into the bundle at build time.
+const API_MODE =
+  set(process.env.NEXT_PUBLIC_API_MODE) ?? set(rootEnv.NEXT_PUBLIC_API_MODE) ?? 'mock';
+
 const config: NextConfig = {
   reactStrictMode: true,
+  env: { NEXT_PUBLIC_API_MODE: API_MODE },
   // packages/ui ships TypeScript and CSS sources (architecture.md).
   transpilePackages: ['@sikyeoyong/ui'],
   poweredByHeader: false,

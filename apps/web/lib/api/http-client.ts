@@ -1,0 +1,143 @@
+// The ApiClient over HTTP. Same origin: in production Caddy sends /api to the API server,
+// in development next.config.ts rewrites it (D-03), so the session cookie just rides along.
+// Every answer is checked against the shared zod schema the server also uses; an error body
+// ({ error: { code, message, dragonLine } }, server-api.md) becomes an AppError.
+import {
+  APP_ERROR_CODES,
+  AppError,
+  type AppErrorCode,
+  type ChatEvent,
+  zAgentSetupView,
+  zBudgetView,
+  zChatEvent,
+  zChatHistory,
+  zCreateOrderResult,
+  zMeView,
+  zOrderResult,
+  zSignupConfig,
+} from '@sikyeoyong/shared';
+import type { ApiClient } from './types';
+
+/** What the screens may show from a refused call (never the server's internals). */
+export interface ApiErrorDetail {
+  readonly status: number;
+  readonly message?: string;
+  readonly dragonLine?: string;
+}
+
+interface ErrorBody {
+  readonly code?: unknown;
+  readonly message?: unknown;
+  readonly dragonLine?: unknown;
+}
+
+function errorOf(body: unknown): ErrorBody {
+  if (typeof body !== 'object' || body === null || !('error' in body)) return {};
+  const e = body.error;
+  return typeof e === 'object' && e !== null ? e : {};
+}
+
+/** POST /agents answer: { agent: { id, status: 'PENDING' } } (agents.controller). */
+function agentCreated(body: unknown): { agent: { id: string; status: 'PENDING' } } {
+  const agent = typeof body === 'object' && body !== null && 'agent' in body ? body.agent : null;
+  if (
+    typeof agent === 'object' &&
+    agent !== null &&
+    'id' in agent &&
+    typeof agent.id === 'string' &&
+    agent.id !== '' &&
+    'status' in agent &&
+    agent.status === 'PENDING'
+  ) {
+    return { agent: { id: agent.id, status: 'PENDING' } };
+  }
+  throw new AppError('INTERNAL', { status: 200, message: 'unexpected POST /agents answer' });
+}
+
+function toAppError(status: number, body: unknown): AppError {
+  const e = errorOf(body);
+  const known =
+    typeof e.code === 'string' && (APP_ERROR_CODES as readonly string[]).includes(e.code)
+      ? (e.code as AppErrorCode)
+      : 'INTERNAL';
+  const detail: ApiErrorDetail = {
+    status,
+    ...(typeof e.message === 'string' ? { message: e.message } : {}),
+    ...(typeof e.dragonLine === 'string' ? { dragonLine: e.dragonLine } : {}),
+  };
+  return new AppError(known, detail);
+}
+
+/** Not on the server yet: refuse plainly instead of pretending (no fake success). */
+function notReady(what: string): Promise<never> {
+  return Promise.reject(new AppError('INTERNAL', { status: 0, message: `${what} is not ready` }));
+}
+
+/** Splits an SSE body into ChatEvents (`data: <json>` frames, blank-line separated). */
+export function parseSseEvents(text: string): ChatEvent[] {
+  return text
+    .split('\n\n')
+    .map((frame) => frame.trim())
+    .filter((frame) => frame.startsWith('data: '))
+    .map((frame) => zChatEvent.parse(JSON.parse(frame.slice('data: '.length))));
+}
+
+export function createHttpApi(fetchImpl: typeof fetch = fetch, base = '/api'): ApiClient {
+  async function call(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown) {
+    const res = await fetchImpl(`${base}${path}`, {
+      method,
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        // CSRF guard on cookie writes (tech-spec 9.4); harmless on reads.
+        'X-Requested-With': 'fetch',
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    const text = await res.text();
+    const json: unknown = text === '' ? undefined : JSON.parse(text);
+    if (!res.ok) throw toAppError(res.status, json);
+    return json;
+  }
+
+  return {
+    getMe: async () => zMeView.parse(await call('GET', '/me')),
+    getBudget: async () => zBudgetView.parse(await call('GET', '/budget')),
+    getChatHistory: async () => zChatHistory.parse(await call('GET', '/chat/history')),
+    sendChatMessage: async (body) => {
+      const res = await fetchImpl(`${base}/chat/messages`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'text/event-stream',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'fetch',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw toAppError(res.status, text === '' ? undefined : JSON.parse(text));
+      }
+      return parseSseEvents(await res.text());
+    },
+    createOrder: async (body) => zCreateOrderResult.parse(await call('POST', '/orders', body)),
+    confirmOrder: async (orderId) =>
+      zOrderResult.parse(await call('POST', `/orders/${encodeURIComponent(orderId)}/confirm`)),
+    getOrder: async (orderId) =>
+      zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),
+    getSignupConfig: async () => zSignupConfig.parse(await call('GET', '/signup/config')),
+    login: () => notReady('login'),
+    verifyIdentity: () => notReady('identity check'),
+    createAgent: async (body) => agentCreated(await call('POST', '/agents', body)),
+    getAgentSetup: async () => zAgentSetupView.parse(await call('GET', '/agents/me')),
+    retryAgentSetup: async () => {
+      await call('POST', '/agents/me/setup/retry');
+    },
+    setMonthlyBudget: async (amount) => {
+      await call('PATCH', '/me', { monthlyBudgetOkrw: amount });
+    },
+    claimTrialAllowance: () => notReady('trial allowance'),
+  };
+}
