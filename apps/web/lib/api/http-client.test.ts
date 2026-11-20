@@ -97,9 +97,30 @@ describe('createHttpApi', () => {
 
   it('refuses what the server cannot do yet instead of pretending it worked', async () => {
     const api = createHttpApi(fakeFetch({}));
-    await expect(api.login('kakao')).rejects.toMatchObject({ code: 'INTERNAL' });
-    await expect(api.verifyIdentity()).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(api.login('kakao')).rejects.toMatchObject({ code: 'INTERNAL' }); // no OAuth yet
     await expect(api.claimTrialAllowance()).rejects.toMatchObject({ code: 'INTERNAL' });
+  });
+
+  it('with a dev login key, login posts it to the dev login (as a cookie write)', async () => {
+    // The API answers 204; a test Response cannot carry 204 with a body, so 200 with none.
+    const f = fakeFetch({ 'POST /api/auth/dev-login': { body: '' } });
+    await createHttpApi(f, '/api', 'local').login('kakao');
+    expect(f.mock.calls[0]?.[1]?.body).toBe('{"key":"local"}');
+    expect((f.mock.calls[0]?.[1]?.headers as Record<string, string>)['X-Requested-With']).toBe(
+      'fetch',
+    );
+  });
+
+  it('the identity check posts to /api/identity/verify; a refusal stays a refusal', async () => {
+    const ok = fakeFetch({ 'POST /api/identity/verify': { body: '{"verified":true}' } });
+    expect(await createHttpApi(ok).verifyIdentity()).toEqual({ verified: true });
+    const no = fakeFetch({
+      'POST /api/identity/verify': {
+        status: 500,
+        body: JSON.stringify({ error: { code: 'INTERNAL', message: '잠시 문제가 있어요' } }),
+      },
+    });
+    await expect(createHttpApi(no).verifyIdentity()).rejects.toMatchObject({ code: 'INTERNAL' });
   });
 
   it('collects the chat SSE stream into events', async () => {

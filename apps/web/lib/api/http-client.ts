@@ -92,7 +92,15 @@ export function parseSseEvents(text: string): ChatEvent[] {
     .map((frame) => zChatEvent.parse(JSON.parse(frame.slice('data: '.length))));
 }
 
-export function createHttpApi(fetchImpl: typeof fetch = fetch, base = '/api'): ApiClient {
+/**
+ * devLoginKey: with a key, login() uses the local dev login (POST /api/auth/dev-login,
+ * open only when the API runs with DEV_LOGIN=true). Without one, login waits for OAuth.
+ */
+export function createHttpApi(
+  fetchImpl: typeof fetch = fetch,
+  base = '/api',
+  devLoginKey?: string,
+): ApiClient {
   async function call(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown) {
     const res = await fetchImpl(`${base}${path}`, {
       method,
@@ -134,8 +142,14 @@ export function createHttpApi(fetchImpl: typeof fetch = fetch, base = '/api'): A
     getOrder: async (orderId) =>
       zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),
     getSignupConfig: async () => zSignupConfig.parse(await call('GET', '/signup/config')),
-    login: () => notReady('login'),
-    verifyIdentity: () => notReady('identity check'),
+    login: async () => {
+      if (devLoginKey === undefined) return notReady('login');
+      await call('POST', '/auth/dev-login', { key: devLoginKey });
+    },
+    verifyIdentity: async () => {
+      await call('POST', '/identity/verify');
+      return { verified: true };
+    },
     createAgent: async (body) => agentCreated(await call('POST', '/agents', body)),
     getAgentSetup: async () => zAgentSetupView.parse(await call('GET', '/agents/me')),
     retryAgentSetup: async () => {

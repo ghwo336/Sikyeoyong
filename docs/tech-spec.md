@@ -870,6 +870,7 @@ DEV_LOGIN=false           # 개발 때만 POST /api/auth/dev-login (production�
 # 웹 (개발 때만, next dev의 /api 전달 대상. 비우면 http://localhost:<PORT>. 운영은 Caddy)
 API_DEV_ORIGIN=
 NEXT_PUBLIC_API_MODE=     # 화면이 쓰는 API: 비우거나 mock이면 서버 없이 도는 흉내, http면 /api 실제 서버
+NEXT_PUBLIC_DEV_LOGIN_KEY= # 개발 때만: http 모드 로그인 버튼이 이 키로 개발용 로그인
 
 # 로그인
 KAKAO_REST_API_KEY=

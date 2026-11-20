@@ -25,7 +25,11 @@ const API_MODE =
 
 const config: NextConfig = {
   reactStrictMode: true,
-  env: { NEXT_PUBLIC_API_MODE: API_MODE },
+  env: {
+    NEXT_PUBLIC_API_MODE: API_MODE,
+    NEXT_PUBLIC_DEV_LOGIN_KEY:
+      set(process.env.NEXT_PUBLIC_DEV_LOGIN_KEY) ?? set(rootEnv.NEXT_PUBLIC_DEV_LOGIN_KEY) ?? '',
+  },
   // packages/ui ships TypeScript and CSS sources (architecture.md).
   transpilePackages: ['@sikyeoyong/ui'],
   poweredByHeader: false,
