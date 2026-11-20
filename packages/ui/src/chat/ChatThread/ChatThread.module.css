@@ -8,6 +8,12 @@
   padding: var(--space-5) var(--space-5) var(--space-3);
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* An app, not a web page (D-23): it scrolls without a grey bar at the side. */
+  scrollbar-width: none;
+}
+
+.thread::-webkit-scrollbar {
+  display: none;
 }
 
 /* The thread scrolls; its messages never shrink to fit (a card would be cut, it hides overflow). */

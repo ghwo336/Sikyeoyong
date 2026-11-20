@@ -122,4 +122,9 @@ describe('ChatThread (ChatThread.md 테스트 기준)', () => {
   it('never shrinks a message to fit the scrolling thread (a card would be cut)', () => {
     expect(css).toMatch(/\.thread > \* \{\s*flex-shrink: 0;\s*\}/);
   });
+
+  it('scrolls without a scrollbar at the side, like an app (D-23)', () => {
+    expect(rule('.thread')).toMatch(/scrollbar-width:\s*none/);
+    expect(css).toMatch(/\.thread::-webkit-scrollbar\s*\{\s*display:\s*none;/);
+  });
 });
