@@ -1,7 +1,13 @@
 import { AppError } from '@sikyeoyong/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { ScriptedProvider, type ScriptedTurn } from './harness/scripted-provider.js';
-import { AgentRuntime, type RuntimeEvent, type ToolHandlers, wrapData } from './runtime.js';
+import {
+  AgentRuntime,
+  type RuntimeEvent,
+  type ToolHandlers,
+  wrapData,
+  screenText,
+} from './runtime.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
 import { TOOL_DEFINITIONS, TOOL_INPUTS } from './tools/index.js';
 
@@ -414,5 +420,15 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     const { events, provider } = await run(loop, '날씨');
     expect(provider.requests).toHaveLength(10);
     expect(events.at(-1)).toEqual({ type: 'stopped', reason: 'limit' });
+  });
+});
+
+describe('screenText (CLAUDE.md 1)', () => {
+  it('turns any em dash or en dash a model writes into a comma, so none reaches the screen', () => {
+    const em = String.fromCharCode(0x2014);
+    const en = String.fromCharCode(0x2013);
+    expect(screenText(`마루국밥 ${em} 돼지국밥`)).toBe('마루국밥, 돼지국밥');
+    expect(screenText(`9,000${en}9,500원`)).toBe('9,000, 9,500원');
+    expect(screenText('그대로예용.')).toBe('그대로예용.');
   });
 });
