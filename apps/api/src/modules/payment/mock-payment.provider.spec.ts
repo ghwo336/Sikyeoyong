@@ -69,6 +69,7 @@ describe('MockPaymentProvider (refusals follow chain-and-pcl.md)', () => {
       stage: 'execution',
       error: { code: 'INTERNAL' },
     });
+    expect(await p.balanceOf(agent.address)).toBe(won(11_000n));
     expect(await p.findPaid(REF(2))).toBeNull();
   });
 
@@ -208,23 +209,41 @@ describe('MockPaymentProvider refusal order when reasons overlap ((추론), paym
     });
   });
 
-  it('the 30-day cap comes before a used orderRef, which comes before a pause', async () => {
+  it('the 30-day cap (preCall) comes before a pause (body)', async () => {
     const { p } = setup('demo');
     const agent = await ready(p, won(50_000n), won(200_000n));
     expect((await p.pay(req(agent, won(50_000n), 1))).ok).toBe(true);
     await p.freeze(agent);
-    expect(await p.preflight(req(agent, won(20_000n), 1))).toEqual({
+    expect(await p.preflight(req(agent, won(20_000n), 2))).toEqual({
       ok: false,
       error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: '12월 1일 오후 1시' } },
     });
+  });
+
+  // tech-spec 5.2 placeOrder body: AgentIsPaused, then BadAmount, then OrderExists.
+  it('in the body, a pause comes before a used orderRef and before a zero amount', async () => {
+    const { p } = setup();
+    const agent = await ready(p, won(10_000n), won(50_000n));
+    expect((await p.pay(req(agent, won(1_000n), 1))).ok).toBe(true);
+    await p.freeze(agent);
     expect(await p.preflight(req(agent, won(1_000n), 1))).toEqual({
-      ok: false,
-      error: { code: 'INTERNAL' },
-    });
-    expect(await p.preflight(req(agent, won(1_000n), 2))).toEqual({
       ok: false,
       error: { code: 'CHAIN_AGENT_PAUSED' },
     });
+    expect(await p.preflight(req(agent, 0n, 2))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_AGENT_PAUSED' },
+    });
+    await p.unfreeze(agent);
+    expect(await p.preflight(req(agent, 0n, 1))).toEqual({
+      ok: false,
+      error: { code: 'INTERNAL' },
+    }); // BadAmount
+    expect(await p.preflight(req(agent, won(1_000n), 1))).toEqual({
+      ok: false,
+      error: { code: 'INTERNAL' },
+    }); // OrderExists
+    expect((await p.preflight(req(agent, won(1_000n), 2))).ok).toBe(true);
   });
 });
 

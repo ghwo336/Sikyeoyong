@@ -45,6 +45,22 @@ describe('RateLimiter', () => {
     expect(r.allow('long', LONG, SWEEP_EVERY_MS + 2)).toBe(false);
   });
 
+  it('sweeps at most once a minute, not on every call', () => {
+    const r = new RateLimiter();
+    const SHORT = { limit: 3, windowMs: 1_000 };
+    r.allow('x', RULE, 0); // sweep at 0
+    r.allow('quiet', SHORT, 10);
+    r.allow('y', RULE, 5_000); // quiet is past its 1s window, but no sweep within a minute
+    expect(r.size).toBe(3);
+  });
+
+  it('drops a key whose newest hit sits exactly on the window edge', () => {
+    const r = new RateLimiter();
+    r.allow('edge', RULE, 0);
+    r.allow('z', RULE, SWEEP_EVERY_MS); // sweep at 60,000: newest 0 <= 60,000 - 60,000
+    expect(r.size).toBe(1);
+  });
+
   it('keeps keys apart', () => {
     const r = new RateLimiter();
     for (const t of [0, 1, 2]) r.allow('chat:u1', RULE, t);

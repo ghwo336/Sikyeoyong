@@ -25,6 +25,7 @@ children: []
 - 상태: 열림
 - 종류: 문서 누락 (기능 요청 가능성)
 - 발견: 2026-11-18 기획 세션. `/apis/maws`, `/concepts/agents/maws-architecture-overview`, `/concepts/agents/agent-policy-semantics` 어디에도 calldata 지원 언급 없음. `transfer.send`는 주소로 OKRW 송금만 설명.
+- 갱신 2026-11-20: MCP 부분은 F-13으로 확인 (도구 스키마에 calldata 칸 없음, `docs/_research/spikes/S1.md`). WaaS API 부분은 여전히 열림.
 - 영향: 결제 경로 A/B/C 결정이 막힘 (decisions D-05). 에이전트가 dApp 컨트랙트를 쓰는 대부분의 사용 사례가 여기에 걸림.
 - 제안: 지원하면 문서화와 예제, 안 하면 로드맵 공유.
 
@@ -38,6 +39,7 @@ children: []
 ### F-03 MAWS 규칙의 온체인 강제 여부가 페이지마다 다름
 - 상태: 열림
 - 종류: 문서 불일치
+- 근거 추가 2026-11-20: F-14 (MCP 도구 설명이 "WaaS does not enforce that policy itself"라고 씀, spikes/S1).
 - 발견: 2026-11-18. `agent-policy-semantics`는 "오프체인 검사를 우회해도 합의 단계에서 차단"이라고 쓰고, `two-layer-policy-model`과 `/concepts/agents`는 `spendingLimit`, `allowedTargets`, `status`를 체인이 읽지 않는다고 씀.
 - 영향: 개발자가 MAWS 한도를 체인 보호로 오해할 수 있음 (보안 문제).
 - 제안: agent-policy-semantics 문장 수정. "체인이 강제하는 것은 TransferLimit(정책이 걸린 경우)과 PCL 정책뿐" 명시.

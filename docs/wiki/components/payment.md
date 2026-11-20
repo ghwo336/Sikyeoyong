@@ -36,12 +36,12 @@ interface PaymentProvider {
 ```
 구현체는 경로별로 하나씩 (`pathA`, `pathB`, `pathC`, 테스트용 mock). 선택은 `PAYMENT_PATH` 환경 변수. 타입은 `packages/shared/src/payment`. 다른 모듈은 `modules/payment/payment.service.ts`의 `PAYMENT_PROVIDER` 토큰으로만 받는다 (llm은 payment를 import하지 못한다, 린트 경계).
 - 부화(user-flow 4)는 `modules/agents/agent-setup.service.ts`: `createAgent`(지갑과 8004 등록) 뒤 `setTransferLimit`(레벨 건당 한도)를 기록하고 `agent_limit_history`와 ACTIVE를 한 트랜잭션으로 남긴다. 단계는 `agents.setup_step`(wallet, identity, limit, done, failed, 마이그레이션 0003). 실패하면 PENDING에 failed로 멈추고 `POST /agents/me/setup/retry`가 멈춘 자리부터 다시 한다. 아직: 본인 인증(D-16) 확인 뒤에만 부화, 프로세스가 죽었을 때 PENDING 이어 하기.
-- `PAYMENT_PATH=mock`: `MockPaymentProvider`는 메모리 안의 흉내 체인이다 (개발·테스트 전용, production 설정은 거절). 지갑 잔액, TransferLimit, 30일 고정 창(첫 주문부터, (추론)), 동결, orderRef 한 번만을 흉내 낸다. 거절 순서는 실제 결제가 실패하는 순서로 정했다 ((추론)): 제출 단계(0원 이하는 `BadAmount`라 `INTERNAL`, 잔액 부족은 `CHAIN_INSUFFICIENT_FUNDS`) → 프록시 preCall(한도 미설정, 건당 한도, 30일 상한) → 컨트랙트 본문(`OrderExists`는 매핑 표에 없어 `INTERNAL`, 동결). 코드는 `chain-and-pcl.md` revert 매핑과 같다. 흉내 범위 밖: 가게 활성 여부(`MerchantNotActive`), 가스. 프로세스를 다시 띄우면 흉내 체인이 통째로 빈다: 지갑 잔액, TransferLimit, 30일 창, 결제 기록이 모두 사라진다. 그래서 `findPaid`가 재시작 전 결제를 모르며, 재시작 뒤 같은 주문의 재시도는 흉내 체인에서 다시 결제될 수 있다 (실제 체인에서는 `OrderExists`로 막힌다). 경로 A, B, C는 붙이기 전까지 모든 호출이 `INTERNAL`로 실패한다 (결제하지 않음).
+- `PAYMENT_PATH=mock`: `MockPaymentProvider`는 메모리 안의 흉내 체인이다 (개발·테스트 전용, production 설정은 거절). 지갑 잔액, TransferLimit, 30일 고정 창(첫 주문부터, (추론)), 동결, orderRef 한 번만을 흉내 낸다. 거절 순서는 실제 결제가 실패하는 순서다: 제출(잔액 부족은 `CHAIN_INSUFFICIENT_FUNDS`, 아무것도 실행되지 않음) → 프록시 preCall(한도 미설정, 건당 한도, 30일 상한. 본문보다 먼저라는 것은 maroo-facts 3.5 preCall에서 (추론)) → 컨트랙트 본문, tech-spec 5.2 `placeOrder` 의사 코드 순서대로 동결(`AgentIsPaused`), `BadAmount`(0원 이하, 표에 없어 `INTERNAL`), `OrderExists`(표에 없어 `INTERNAL`). `AgentNotBound`와 `MerchantNotActive`는 흉내 내지 않는다. 코드는 `chain-and-pcl.md` revert 매핑과 같다. 흉내 범위 밖: 가게 활성 여부(`MerchantNotActive`), 가스. 프로세스를 다시 띄우면 흉내 체인이 통째로 빈다: 지갑 잔액, TransferLimit, 30일 창, 결제 기록이 모두 사라진다. 그래서 `findPaid`가 재시작 전 결제를 모르며, 재시작 뒤 같은 주문의 재시도는 흉내 체인에서 다시 결제될 수 있다 (실제 체인에서는 `OrderExists`로 막힌다). 경로 A, B, C는 붙이기 전까지 모든 호출이 `INTERNAL`로 실패한다 (결제하지 않음).
 
 ## 경로 (D-05, 1단계는 B로 확정 D-25)
 | 경로 | 조건 | PCL 적용 | 가스 |
 | --- | --- | --- | --- |
-| A (기본안) | MAWS가 컨트랙트 함수 호출(calldata) 지원 (미확인, Q-01) | 에이전트가 직접 sender. 컨트랙트 범위 정책 전부. 단 AA(EntryPoint 경유)에서 sender 귀속은 미확인 (Q-12, S12) | PAYMASTER (테스트넷 미확인, Q-03) |
+| A | MAWS가 컨트랙트 함수 호출(calldata) 지원. MCP로는 불가 (확인, D-25, spikes/S1), WaaS API 직접 호출은 (미확인, Q-01) | 에이전트가 직접 sender. 컨트랙트 범위 정책 전부. 단 AA(EntryPoint 경유)에서 sender 귀속은 미확인 (Q-12, S12) | PAYMASTER (테스트넷 미확인, Q-03) |
 | B (A 불가 시 1순위) | 서버가 에이전트 EOA 키를 암호화 저장(`AGENT_KEY_ENCRYPTION_KEY`, 2단계 KMS), 8004에 등록 | A와 같음 | 에이전트 지갑의 OKRW |
 | C (최후) | `transfer.send`로 컨트랙트에 송금 + 서버가 등록한 intent와 매칭 | 셀렉터 없는 호출의 정책 적용 미확인 | PAYMASTER |
 | mock | 단위 테스트, 앱 개발 | 없음 | 없음 |

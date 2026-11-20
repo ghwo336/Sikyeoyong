@@ -129,17 +129,18 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   /**
-   * The order a real payment would fail in (추론, payment.md mock 절):
-   * 1. submit: an amount the wallet cannot send (0 or negative is the contract's
-   *    BadAmount; a short balance fails before execution);
-   * 2. proxy preCall (PCL): TransferLimit unset, per-order limit, 30-day volume;
-   * 3. contract body: OrderExists(orderRef), AgentIsPaused.
-   * Codes follow the chain-and-pcl.md revert table; anything not in it is INTERNAL.
+   * The order a real payment fails in:
+   * 1. submit: the wallet cannot cover msg.value, so nothing executes;
+   * 2. proxy preCall (PCL, before the body runs; (추론) from maroo-facts 3.5 preCall):
+   *    TransferLimit unset, per-order limit, 30-day volume;
+   * 3. contract body, in tech-spec 5.2 placeOrder order: AgentIsPaused, BadAmount
+   *    (0 or less), OrderExists. AgentNotBound and MerchantNotActive are not simulated.
+   * Codes follow the chain-and-pcl.md revert table; BadAmount and OrderExists are not in it,
+   * so they are INTERNAL (confirm asks findPaid before a retry, D-19).
    */
   private refusal(
     req: PayRequest,
   ): { stage: 'submit' | 'execution'; error: DecodedChainError } | null {
-    if (req.amount <= 0n) return { stage: 'execution', error: { code: 'INTERNAL' } };
     const w = this.wallets.get(req.agent.address);
     if ((w?.balance ?? 0n) < req.amount) {
       return { stage: 'submit', error: { code: 'CHAIN_INSUFFICIENT_FUNDS' } };
@@ -163,9 +164,9 @@ export class MockPaymentProvider implements PaymentProvider {
         error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: formatKstDateTime(resetMs) } },
       };
     }
-    // OrderExists is not in the revert table, so it is INTERNAL; confirm asks findPaid first (D-19).
-    if (this.paid.has(req.orderRef)) return { stage: 'execution', error: { code: 'INTERNAL' } };
     if (w.paused) return { stage: 'execution', error: { code: 'CHAIN_AGENT_PAUSED' } };
+    if (req.amount <= 0n) return { stage: 'execution', error: { code: 'INTERNAL' } };
+    if (this.paid.has(req.orderRef)) return { stage: 'execution', error: { code: 'INTERNAL' } };
     return null;
   }
 

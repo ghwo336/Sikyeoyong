@@ -13,7 +13,7 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, chatMessages, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
-import { HISTORY_PAGE_ROWS } from './chat-history.service.js';
+import { ChatHistoryService, HISTORY_PAGE_ROWS } from './chat-history.service.js';
 import { LlmModule } from './llm.module.js';
 
 const open: { app: INestApplication; h: DbHandle }[] = [];
@@ -89,7 +89,8 @@ async function setup() {
       .get(`/api/chat/history${query}`)
       .set('Cookie', `sid=${tokens[who]}`);
   const anon = () => request(app.getHttpServer() as Server).get('/api/chat/history');
-  return { h, get, anon };
+  const history = moduleRef.get(ChatHistoryService);
+  return { h, get, anon, history };
 }
 
 const words = (history: ChatHistory) =>
@@ -162,9 +163,10 @@ describe('GET /api/chat/history', () => {
     const { h, get } = await setup();
     // 61 user rows, 7 per millisecond, so page edges fall inside groups of equal created_at.
     const inserted: string[] = [];
-    for (let i = 0; i < 61; i += 1) {
+    // Inserted newest first, so storage order differs from id order and only ORDER BY id keeps it.
+    for (let i = 60; i >= 0; i -= 1) {
       const id = `u1-t${String(i).padStart(3, '0')}`;
-      inserted.push(id);
+      inserted.unshift(id);
       h.db
         .insert(chatMessages)
         .values({
@@ -190,6 +192,34 @@ describe('GET /api/chat/history', () => {
     }
     expect(pages).toBe(3);
     expect(seen).toEqual(inserted);
+  });
+
+  it('stamps the page with the first message it shows, skipping unreadable rows', async () => {
+    const { h, history } = await setup();
+    h.db
+      .insert(chatMessages)
+      .values({
+        id: 'u1-bad',
+        userId: 'u1',
+        role: 'user',
+        contentJson: '{oops',
+        clientMessageId: 'b',
+        createdAt: 900,
+      })
+      .run();
+    seedTurns(h, 'u1', 1, 1000); // user row at 1000, dragon row at 1001
+    const page = history.page('u1', undefined, 9_999);
+    expect(page.messages.map((m) => m.id)).toEqual(['u1-000', 'u1-000-r']);
+    expect(page.startedAt).toBe(1000);
+  });
+
+  it('stamps an empty page with now', async () => {
+    const { history } = await setup();
+    expect(history.page('u2', undefined, 1_767_000_000_000)).toEqual({
+      startedAt: 1_767_000_000_000,
+      messages: [],
+      nextCursor: null,
+    });
   });
 
   it('refuses a cursor that is not one of my messages (400), so ids do not leak', async () => {

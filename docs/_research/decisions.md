@@ -63,7 +63,7 @@ sikyeoyong/
 
 ## D-05 결제 경로 (2026-11-18, 미확정 1건 포함)
 MAWS가 컨트랙트 함수를 호출할 수 있는지가 미확인이다. 세 경로를 정해 두고 첫 주에 고른다.
-- **경로 A (기본안)**: MAWS 에이전트가 `SikyeoyongOrders.placeOrder()`를 직접 호출. 에이전트가 직접 sender라 컨트랙트 범위 PCL(TransferLimit, 30일 누적)이 모두 적용된다. MAWS가 calldata를 지원해야 함.
+- **경로 A (처음 기본안, D-25로 1단계는 B)**: MAWS 에이전트가 `SikyeoyongOrders.placeOrder()`를 직접 호출. 에이전트가 직접 sender라 컨트랙트 범위 PCL(TransferLimit, 30일 누적)이 모두 적용된다. MAWS가 calldata를 지원해야 함.
 - **경로 B (MAWS가 calldata 미지원일 때 1순위)**: 백엔드가 에이전트 전용 EOA 키를 KMS(또는 암호화 저장)로 관리하고, 그 주소를 8004에 에이전트로 등록. 에이전트가 직접 sender라 PCL은 경로 A와 같다. MAWS의 AA 지갑·페이마스터는 못 씀. MAWS 팀에 calldata 지원을 피드백으로 전달.
 - **경로 C (최후)**: 에이전트가 `transfer.send`로 주문 컨트랙트에 OKRW를 보내고, 컨트랙트 `receive()`가 백엔드가 미리 등록한 주문 의도(intent)와 맞춰 처리. 셀렉터 없는 호출에 컨트랙트 범위 정책이 어떻게 걸리는지 확인 필요.
 - 모든 경로 공통: 서버 코드는 `PaymentProvider` 인터페이스로 감싸서 경로를 바꿔도 위쪽 코드는 그대로.
