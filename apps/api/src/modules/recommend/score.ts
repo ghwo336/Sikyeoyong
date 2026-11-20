@@ -230,6 +230,7 @@ export function rank(input: RankInput): RankResult {
         weights.craving * fits.craving;
       const overLimit = cost > input.perOrderLimitAokrw;
       // Same rule as the order check: the owner's limit is the server's only below the chain cap.
+      // The cap test documents D-31; results match either way (cap overrun is refused first).
       const overMonth =
         input.myPeriodicLimitAokrw < input.chainCapAokrw &&
         input.chainUsedAokrw + cost > input.myPeriodicLimitAokrw;

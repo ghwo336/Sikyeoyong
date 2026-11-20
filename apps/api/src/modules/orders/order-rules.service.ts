@@ -74,6 +74,7 @@ export class OrderRules {
     if (!seen) return 'SERVER_NEW_MERCHANT';
     if (budgetApproved) return null;
     const mine = this.users.getMyPeriodicLimitAokrw(userId);
+    // The cap test documents D-31 (at the cap the chain keeps it); results match either way.
     if (mine < this.config.policy.periodicCapAokrw && periodUsed + amount > mine) {
       return 'SERVER_BUDGET_OVER';
     }

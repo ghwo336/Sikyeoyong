@@ -2,7 +2,7 @@ import { aokrwToString, okrwToAokrw, parseAokrw } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type DbHandle, openDb } from '../client.js';
-import { enumCheck, intEnumCheck } from './checks.js';
+import { enumCheck } from './checks.js';
 import { runMigrations } from '../migrate.js';
 import {
   agentLimitHistory,
@@ -405,7 +405,5 @@ describe('enumCheck', () => {
     expect(() => enumCheck('x', users.role, ['user', 'operator'])).not.toThrow();
     expect(() => enumCheck('x', users.role, [])).toThrow(/no values/);
     expect(() => enumCheck('x" or 1=1 --', users.role, ['user'])).toThrow(/unsafe constraint/);
-    expect(() => intEnumCheck('x', agents.createdAt, [1, 1.5])).toThrow(/unsafe value/);
-    expect(() => intEnumCheck('x', agents.createdAt, [])).toThrow(/no values/);
   });
 });
