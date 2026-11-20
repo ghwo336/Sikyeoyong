@@ -44,7 +44,7 @@ children: []
 ## revert 매핑 (tech-spec 3.6과 같은 코드. 문구와 HTTP 상태의 원본은 `packages/shared` `APP_ERRORS`)
 | revert | AppErrorCode | 사용자에게 |
 | --- | --- | --- |
-| `ExceededAgentTransferLimit(maxLimit, value)` | `CHAIN_AGENT_LIMIT` | 건당 한도 초과, 승인 요청(레벨 상향) |
+| `ExceededAgentTransferLimit(maxLimit, value)` | `CHAIN_AGENT_LIMIT` | 건당 한도 초과, 승인 요청(건당 한도 올리기, D-31) |
 | `ExceededPeriodicVolume(maxLimit, value, resetAt)` | `CHAIN_PERIODIC_LIMIT` | 30일 상한, `resetAt`을 Asia/Seoul로 표시 |
 | `AgentTransferLimitMetadataInvalid(reason)` | `CHAIN_AGENT_LIMIT_UNSET` | 설정 미완료. 서버가 TransferLimit 재기록 후 1회 재시도, 실패 시 운영자 알림 |
 | 전역 KYC 한도 거절 (에러 이름 미확인) | `CHAIN_KYC_LIMIT` | 소유자 KYC 필요 |
