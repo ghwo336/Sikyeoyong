@@ -62,12 +62,21 @@ describe('threadRows', () => {
     expect(rows.map((r) => r.last)).toEqual([false, false, true]);
   });
 
-  it('keeps recommendations alone when no dragon line comes just before', () => {
+  it('a card sent just before the line rides with that line too (tool first, then words)', () => {
     const rows = threadRows([user('u'), recs('r'), dragon('d')]);
     expect(rows.map((r) => [r.entry.id, r.cards?.id])).toEqual([
       ['u', undefined],
+      ['d', 'r'],
+    ]);
+    expect(rows[1]?.last).toBe(true);
+  });
+
+  it('a card with no dragon line next to it stands alone', () => {
+    const rows = threadRows([user('u'), recs('r'), user('u2')]);
+    expect(rows.map((r) => [r.entry.id, r.cards?.id])).toEqual([
+      ['u', undefined],
       ['r', undefined],
-      ['d', undefined],
+      ['u2', undefined],
     ]);
   });
 

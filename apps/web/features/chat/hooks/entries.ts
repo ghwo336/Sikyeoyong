@@ -107,8 +107,10 @@ export interface ThreadRow {
 }
 
 /**
- * Rows the thread draws: a recommendations card right after a dragon line rides with that line
- * (Main.dc.html puts it under the words, not at the screen edge). Any other card stands alone.
+ * Rows the thread draws: a recommendations card rides with its dragon line, under the words
+ * (Main.dc.html), whether the stream sent the card just after the line or just before it (a
+ * turn that runs the tool first, like the replay and many Claude turns). Any other card
+ * stands alone.
  */
 export function threadRows(entries: readonly ChatEntry[]): ThreadRow[] {
   const rows: ThreadRow[] = [];
@@ -117,6 +119,11 @@ export function threadRows(entries: readonly ChatEntry[]): ThreadRow[] {
     const next = entries[i + 1];
     if (entry.kind === 'dragon' && next?.kind === 'recommendations') {
       rows.push({ entry, cards: next, last: i + 1 === entries.length - 1 });
+      i++;
+      continue;
+    }
+    if (entry.kind === 'recommendations' && next?.kind === 'dragon') {
+      rows.push({ entry: next, cards: entry, last: i + 1 === entries.length - 1 });
       i++;
       continue;
     }
