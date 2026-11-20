@@ -5,6 +5,7 @@ import type { AppConfig } from '../../config/env.js';
 import type { AgentSummary } from '../agents/agents.service.js';
 import { ApprovalsService } from '../approvals/approvals.service.js';
 import { CHAIN_READER, type ChainReader } from '../chain/chain.service.js';
+import { MerchantsService } from '../merchants/merchants.service.js';
 import { UsersService } from '../users/users.service.js';
 import { OrdersRepository } from './orders.repository.js';
 import { OrderSpend, SPENT_STATUSES } from './order-spend.service.js';
@@ -23,6 +24,7 @@ export class OrderRules {
     private readonly spend: OrderSpend,
     private readonly users: UsersService,
     private readonly approvals: ApprovalsService,
+    private readonly merchants: MerchantsService,
   ) {}
 
   /**
@@ -63,6 +65,8 @@ export class OrderRules {
     const policy = this.config.policy;
     if (amount > policy.perOrderLimitAokrw[agent.level]) return 'SERVER_OVER_LEVEL';
     const seen =
+      // D-27: in demo mode the seeded mock stores count as allowed (the first order is a plain one).
+      (this.config.demo.enabled && this.merchants.isSeeded(merchantId)) ||
       this.approvals.isMerchantAllowed(userId, merchantId) ||
       this.repo.hasOrderAt(userId, merchantId, SPENT_STATUSES);
     if (!seen) return 'SERVER_NEW_MERCHANT';

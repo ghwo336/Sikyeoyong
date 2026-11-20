@@ -44,6 +44,7 @@ export class DbMerchantSource implements MerchantSource {
     return {
       id: r.id,
       onchainId: r.onchainId,
+      source: r.source,
       name: r.name,
       category: r.category,
       tags: this.json(zTags, r.tagsJson, [], `merchant ${r.id} tags`),

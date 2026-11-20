@@ -34,7 +34,10 @@ afterEach(async () => {
   }
 });
 
-async function setup(volume: PeriodicVolume = { usedAokrw: 0n, resetAtSec: null }) {
+async function setup(
+  volume: PeriodicVolume = { usedAokrw: 0n, resetAtSec: null },
+  env: Record<string, string> = {},
+) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
   const h = openDb(':memory:');
@@ -51,7 +54,7 @@ async function setup(volume: PeriodicVolume = { usedAokrw: 0n, resetAtSec: null 
   insertMenu(h.db, 'x-offmenu', 'm-off', 1_000n);
   h.db.insert(allowedMerchants).values({ userId: 'u1', merchantId: 'm1', approvedAt: 1 }).run();
   const moduleRef = await Test.createTestingModule({ imports: [OrdersModule] })
-    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig({}) : undefined))
+    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))
     .overrideProvider(CHAIN_READER)
     .useValue({ periodicVolume: () => Promise.resolve(volume) })
     .compile();
@@ -270,6 +273,24 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
   it('another user having paid at a store does not make it known to this one', async () => {
     const { h, as } = await setup();
     paidOrder(h, 'p2', 'm2', '7000', NOW, { userId: 'u2' });
+    const r = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2'))).body,
+    );
+    expect(r.order.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()?.reason).toBe('NEW_MERCHANT');
+  });
+
+  it('in demo mode a seeded store counts as allowed (D-27): the first order is a plain quote', async () => {
+    const { h, as } = await setup(undefined, { DEMO_MODE: 'true' });
+    const r = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2'))).body,
+    );
+    expect(r.order.status).toBe('quoted');
+    expect(h.db.select().from(approvals).all()).toHaveLength(0);
+  });
+
+  it('outside demo mode the same seeded store is still new (D-07 unchanged)', async () => {
+    const { h, as } = await setup(undefined, {});
     const r = zCreateOrderResult.parse(
       (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2'))).body,
     );

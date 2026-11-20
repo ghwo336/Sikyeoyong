@@ -33,6 +33,7 @@ describe('MerchantsRepository and DbMerchantSource', () => {
     expect(source.get('m1')).toEqual({
       id: 'm1',
       onchainId: null,
+      source: 'seed',
       name: '마루국밥',
       category: '한식',
       tags: ['국물'],

@@ -7,6 +7,8 @@
 export interface MerchantRecord {
   readonly id: string;
   readonly onchainId: string | null;
+  /** seed: the mock stores (tech-spec 7.1); console: registered by a store (phase 2). */
+  readonly source: 'seed' | 'console';
   readonly name: string;
   readonly category: string;
   readonly tags: readonly string[];

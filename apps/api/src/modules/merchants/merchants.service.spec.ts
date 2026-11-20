@@ -10,6 +10,7 @@ function merchant(id: string, patch: Partial<MerchantRecord> = {}): MerchantReco
   return {
     id,
     onchainId: null,
+    source: 'seed',
     name: id,
     category: '한식',
     tags: [],

@@ -133,6 +133,11 @@ export class MerchantsService {
     };
   }
 
+  /** Whether this is one of the seeded mock stores (D-27: demo mode treats them as allowed). */
+  isSeeded(id: string): boolean {
+    return this.source.get(id)?.source === 'seed';
+  }
+
   /** For the orders module: can this merchant take an order now, and its menu prices. */
   lookupForOrder(merchantId: string, nowMs: number = Date.now()): OrderLookup {
     const m = this.source.get(merchantId);
