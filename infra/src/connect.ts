@@ -81,10 +81,14 @@ export class SpendGuard {
 
   /** Throws if the worst case of this write (gas limit times price) would pass the budget. */
   assertCanSpend(currentBalance: bigint, gasLimit: bigint, gasPrice: bigint): void {
-    const worst = gasLimit * gasPrice;
+    this.assertCanSpendAmount(currentBalance, gasLimit * gasPrice);
+  }
+
+  /** Throws if spent so far plus this extra outflow (aokrw, gas or gas money sent) passes the budget. */
+  assertCanSpendAmount(currentBalance: bigint, extra: bigint): void {
     const spent = this.spent(currentBalance);
-    if (spent + worst > this.budgetAokrw) {
-      const text = [spent, worst, this.budgetAokrw].map((v) => formatEther(v));
+    if (spent + extra > this.budgetAokrw) {
+      const text = [spent, extra, this.budgetAokrw].map((v) => formatEther(v));
       throw new Error(
         `gas budget: spent ${text[0]} + worst case ${text[1]} passes ${text[2]} OKRW`,
       );

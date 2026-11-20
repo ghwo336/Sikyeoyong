@@ -129,4 +129,17 @@ describe('record file', () => {
     writeFileSync(onchainRecordPath(root, CHAIN, 'demo'), '{"chainId": 1}');
     expect(() => readOnchainRecord(onchainRecordPath(root, CHAIN, 'demo'))).toThrow();
   });
+
+  it('rejects a record whose chain id differs from its file name', () => {
+    const root = mkdtempSync(join(tmpdir(), 'onchain-sync-'));
+    cleanup.push(() => {
+      rmSync(root, { recursive: true, force: true });
+    });
+    mkdirSync(join(root, 'seed/onchain'), { recursive: true });
+    writeFileSync(
+      onchainRecordPath(root, CHAIN + 1, 'demo'),
+      JSON.stringify(record([entry('a', '3', A)])),
+    );
+    expect(() => readOnchainRecord(onchainRecordPath(root, CHAIN + 1, 'demo'))).toThrow(AppError);
+  });
 });

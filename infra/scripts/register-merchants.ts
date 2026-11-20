@@ -35,7 +35,7 @@ import {
   type Hash,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { connect, type SpendGuard as Guard } from '../src/connect.ts';
+import { SpendGuard, connect } from '../src/connect.ts';
 import { REPO_ROOT } from '../src/record.ts';
 import {
   MERCHANT_ABI,
@@ -90,14 +90,10 @@ async function main(): Promise<void> {
   const done = new Set(record.merchants.map((m) => m.merchantKey));
 
   const startBalance = await publicClient.getBalance({ address: operator.address });
-  const budget = okrwToAokrw(args.maxSpendOkrw);
+  const guard = new SpendGuard(startBalance, okrwToAokrw(args.maxSpendOkrw));
   // Everything the operator pays out counts: gas for its own writes and the gas money it sends.
   const assertBudget = async (extra: bigint): Promise<void> => {
-    const now = await publicClient.getBalance({ address: operator.address });
-    if (startBalance - now + extra > budget)
-      throw new Error(
-        `budget: spent ${formatEther(startBalance - now)} + ${formatEther(extra)} passes ${args.maxSpendOkrw} OKRW`,
-      );
+    guard.assertCanSpendAmount(await publicClient.getBalance({ address: operator.address }), extra);
   };
   log(`network ${chainConfig.key}, profile ${args.profile}, proxy ${proxy}`);
   log(
@@ -300,5 +296,3 @@ main().catch((error: unknown) => {
   );
   process.exit(1);
 });
-
-export type { Guard };

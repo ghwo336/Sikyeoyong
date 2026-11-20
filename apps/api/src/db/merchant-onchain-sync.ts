@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { AppError, parseMerchantOnchain, type MerchantOnchainRecord } from '@sikyeoyong/shared';
 import { eq, sql } from 'drizzle-orm';
 import { loadConfig } from '../config/env.js';
@@ -56,7 +56,17 @@ export function syncOnchainIds(db: Db, record: MerchantOnchainRecord): OnchainSy
 
 export function readOnchainRecord(path: string): MerchantOnchainRecord | null {
   if (!existsSync(path)) return null;
-  return parseMerchantOnchain(JSON.parse(readFileSync(path, 'utf8')));
+  const record = parseMerchantOnchain(JSON.parse(readFileSync(path, 'utf8')));
+  // The file name is `<chainId>.<profile>.json`; a record under the wrong name is never applied.
+  const expected = `${record.chainId}.${record.profile}.json`;
+  if (basename(path) !== expected) {
+    throw new AppError('INTERNAL', {
+      reason: 'onchain record does not match its file name',
+      file: basename(path),
+      expected,
+    });
+  }
+  return record;
 }
 
 export function onchainRecordPath(root: string, chainId: number, profile: string): string {

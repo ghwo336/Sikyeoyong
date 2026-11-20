@@ -79,6 +79,30 @@ describe('SpendGuard', () => {
   });
 });
 
+describe('SpendGuard.assertCanSpendAmount', () => {
+  it('passes exactly at the budget and stops one aokrw over', () => {
+    const g = new SpendGuard(1_000n, 100n);
+    expect(() => {
+      g.assertCanSpendAmount(960n, 60n);
+    }).not.toThrow();
+    expect(() => {
+      g.assertCanSpendAmount(960n, 61n);
+    }).toThrow(/gas budget/);
+  });
+
+  it('is exact for amounts of 10^24 aokrw and more', () => {
+    const start = 5n * 10n ** 25n;
+    const g = new SpendGuard(start, 3n * 10n ** 24n + 1n);
+    const now = start - 10n ** 24n;
+    expect(() => {
+      g.assertCanSpendAmount(now, 2n * 10n ** 24n + 1n);
+    }).not.toThrow();
+    expect(() => {
+      g.assertCanSpendAmount(now, 2n * 10n ** 24n + 2n);
+    }).toThrow(/gas budget/);
+  });
+});
+
 describe('worstCaseGas', () => {
   it('doubles the estimate (half of the limit is charged even when unused)', () => {
     expect(worstCaseGas(0n)).toBe(0n);
