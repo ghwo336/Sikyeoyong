@@ -19,6 +19,7 @@ import {
   zWalletView,
   zMeView,
   zOrderResult,
+  zPouchiLoginConfig,
   zSetLevelResult,
   zSignupConfig,
 } from '@sikyeoyong/shared';
@@ -151,9 +152,18 @@ export function createHttpApi(
       await call('POST', `/orders/${encodeURIComponent(orderId)}/rating`, { value });
     },
     getSignupConfig: async () => zSignupConfig.parse(await call('GET', '/signup/config')),
+    // Without a dev key the login is the Pouchi vault (lib/session/entry.ts), not this.
     login: async () => {
-      if (devLoginKey === undefined) return notReady('login');
+      if (devLoginKey === undefined) return notReady('direct login');
       await call('POST', '/auth/dev-login', { key: devLoginKey });
+    },
+    getPouchiLoginConfig: async () =>
+      zPouchiLoginConfig.parse(await call('GET', '/auth/pouchi/config')),
+    pouchiBind: async (body) => {
+      await call('POST', '/auth/pouchi/bind', body);
+    },
+    pouchiComplete: async (body) => {
+      await call('POST', '/auth/pouchi/complete', body);
     },
     verifyIdentity: async () => {
       await call('POST', '/identity/verify');

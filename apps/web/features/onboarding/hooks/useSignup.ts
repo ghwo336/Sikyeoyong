@@ -1,5 +1,6 @@
 'use client';
 
+import { startSession } from '../../../lib/session/entry';
 import type { DragonSpecies } from '@sikyeoyong/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type AokrwString } from '../../../lib/api';
@@ -14,7 +15,8 @@ export function useSignupConfig() {
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (provider: 'kakao' | 'google') => api.login(provider),
+    // The one session entry (D-29): the vault or the direct login, decided in lib/session.
+    mutationFn: () => startSession(),
     // A 401 kept from before the login must not send the front door back to Start.
     onSuccess: () => {
       qc.removeQueries({ queryKey: ['me'] });

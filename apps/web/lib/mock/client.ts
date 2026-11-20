@@ -406,6 +406,11 @@ export const mockApi: ApiClient = {
     saveSession();
     return later(undefined);
   },
+  // The mock never opens the vault: lib/session/entry.ts uses login() in mock mode.
+  getPouchiLoginConfig: () =>
+    Promise.reject(new AppError('INTERNAL', { reason: 'mock: no vault' })),
+  pouchiBind: () => Promise.reject(new AppError('INTERNAL', { reason: 'mock: no vault' })),
+  pouchiComplete: () => Promise.reject(new AppError('INTERNAL', { reason: 'mock: no vault' })),
   verifyIdentity: () => later({ verified: true }),
   createAgent: ({ dragonName, dragonSpecies }) => {
     session = {

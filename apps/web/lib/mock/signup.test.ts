@@ -28,13 +28,13 @@ describe('mock sign-up', () => {
     // Catch first: the rejection happens while settle runs the fake timers.
     const out = mockApi.getMe().catch((e: unknown) => e);
     expect(await settle(out)).toMatchObject({ code: 'UNAUTHENTICATED' });
-    await settle(mockApi.login('kakao'));
+    await settle(mockApi.login());
     const noDragon = mockApi.getMe().catch((e: unknown) => e);
     expect(await settle(noDragon)).toMatchObject({ code: 'NOT_FOUND' });
   });
 
   it('hatches step by step: waiting, then doing to done, then ACTIVE', async () => {
-    await settle(mockApi.login('kakao'));
+    await settle(mockApi.login());
     const before = await settle(mockApi.getAgentSetup());
     expect(before.status).toBe('PENDING');
     expect(before.steps.map((s) => s.status)).toEqual(['waiting', 'waiting', 'waiting']);

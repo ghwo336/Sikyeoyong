@@ -97,7 +97,7 @@ describe('createHttpApi', () => {
 
   it('refuses what the server cannot do yet instead of pretending it worked', async () => {
     const api = createHttpApi(fakeFetch({}));
-    await expect(api.login('kakao')).rejects.toMatchObject({ code: 'INTERNAL' }); // no login yet
+    await expect(api.login()).rejects.toMatchObject({ code: 'INTERNAL' }); // no login yet
   });
 
   it('the wallet screen routes: paths, methods, bodies, and every answer checked by the shared schema', async () => {
@@ -154,10 +154,42 @@ describe('createHttpApi', () => {
     await expect(api.getIdCard()).rejects.toThrow();
   });
 
+  it('the Pouchi login calls: public config checked by the schema, bind and complete as cookie writes', async () => {
+    const f = fakeFetch({
+      'GET /api/auth/pouchi/config': {
+        body: JSON.stringify({
+          vaultUrl: 'https://auth.pouchi.io',
+          appId: 'sikyeoyong',
+          callbackUrl: 'http://localhost:3000/pouchi/callback',
+        }),
+      },
+      'POST /api/auth/pouchi/bind': { body: '' },
+      'POST /api/auth/pouchi/complete': { body: '' },
+    });
+    const api = createHttpApi(f);
+    expect((await api.getPouchiLoginConfig()).appId).toBe('sikyeoyong');
+    await api.pouchiBind({ requestId: 'r1', codeChallenge: 'c', flow: 'signup' });
+    await api.pouchiComplete({ envelope: 'e', codeVerifier: 'v'.repeat(43), requestId: 'r1' });
+    expect(f.mock.calls[1]?.[1]?.body).toBe(
+      '{"requestId":"r1","codeChallenge":"c","flow":"signup"}',
+    );
+    for (const i of [1, 2]) {
+      expect((f.mock.calls[i]?.[1]?.headers as Record<string, string>)['X-Requested-With']).toBe(
+        'fetch',
+      );
+    }
+    const keyed = fakeFetch({
+      'GET /api/auth/pouchi/config': {
+        body: '{"vaultUrl":"https://auth.pouchi.io","appId":"a","callbackUrl":"https://x.example/cb","appKey":"k"}',
+      },
+    });
+    await expect(createHttpApi(keyed).getPouchiLoginConfig()).rejects.toThrow();
+  });
+
   it('with a dev login key, login posts it to the dev login (as a cookie write)', async () => {
     // The API answers 204; a test Response cannot carry 204 with a body, so 200 with none.
     const f = fakeFetch({ 'POST /api/auth/dev-login': { body: '' } });
-    await createHttpApi(f, '/api', 'local').login('kakao');
+    await createHttpApi(f, '/api', 'local').login();
     expect(f.mock.calls[0]?.[1]?.body).toBe('{"key":"local"}');
     expect((f.mock.calls[0]?.[1]?.headers as Record<string, string>)['X-Requested-With']).toBe(
       'fetch',

@@ -26,10 +26,12 @@ vi.mock('../../../lib/api', () => ({
     verifyIdentity: () => verifyIdentity() as unknown,
     setMonthlyBudget: (a: string) => setMonthlyBudget(a) as unknown,
     claimTrialAllowance: () => claimTrialAllowance() as unknown,
-    login: (p: string) => login(p) as unknown,
+    login: () => login() as unknown,
     getAgentSetup: () => getAgentSetup() as unknown,
     retryAgentSetup: () => Promise.resolve(),
   },
+  // The direct login (mock or dev key); the vault path is lib/session/entry.test.ts.
+  loginKind: 'direct',
 }));
 
 const { NameContainer } = await import('./NameContainer');
@@ -178,14 +180,14 @@ describe('VerifyContainer', () => {
 });
 
 describe('StartContainer', () => {
-  it('draws the Start design: the forest egg, the title and the two sign-ins', async () => {
+  it('draws the Start design: the forest egg, the title and the one start button (D-29)', async () => {
     login.mockResolvedValue(undefined);
     const { container } = wrap(<StartContainer />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('배달은용이한테 시켜용');
     expect(container.querySelector('svg[data-species="forest"][width="168"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: /카카오로 시작하기/ })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /구글로 시작하기/ }));
-    expect(login).toHaveBeenCalledWith('google');
+    expect(screen.queryByRole('button', { name: /카카오로 시작하기/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
+    expect(login).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/verify');
     });
@@ -198,7 +200,7 @@ describe('StartContainer and the me cache', () => {
     const qc = newClient();
     qc.setQueryData(['me'], { stale: 'signed out' });
     wrap(<StartContainer />, qc);
-    await userEvent.click(screen.getByRole('button', { name: /카카오로 시작하기/ }));
+    await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/verify');
     });

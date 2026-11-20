@@ -1,6 +1,7 @@
 // API shapes come from packages/shared/src/api (zod schemas the server also uses). This file
 // only re-exports them under the names screens already use, and defines the ApiClient the
 // screens call. Amounts are aokrw integer strings, as on the wire (CLAUDE.md rule 4).
+import type { PouchiBindBody, PouchiCompleteBody, PouchiLoginConfig } from '@sikyeoyong/shared';
 import type {
   AGENT_SETUP_STEP_KEYS,
   AgentSetupView,
@@ -67,7 +68,18 @@ export interface ApiClient {
 
   getSignupConfig(): Promise<SignupConfig>;
   /** Starts OAuth. The real one redirects to the provider; the API sets the session cookie. */
-  login(provider: 'kakao' | 'google'): Promise<void>;
+  /**
+   * The direct login without the vault: the mock's, or the API dev login (DEV_LOGIN, a
+   * NEXT_PUBLIC_DEV_LOGIN_KEY). The real login (Pouchi vault, D-29) goes through
+   * lib/session/entry.ts, which uses the three calls below.
+   */
+  login(): Promise<void>;
+  /** D-29 Pouchi login: the public vault config (GET /auth/pouchi/config). */
+  getPouchiLoginConfig(): Promise<PouchiLoginConfig>;
+  /** Binds one vault request on the server before the vault opens. */
+  pouchiBind(body: PouchiBindBody): Promise<void>;
+  /** Redeems the vault's result once; the server sets the session cookie. */
+  pouchiComplete(body: PouchiCompleteBody): Promise<void>;
   /** Kakao identity check (or the trial check in mock mode). Only the result is kept. */
   verifyIdentity(): Promise<{ readonly verified: boolean }>;
   /** POST /agents. */
