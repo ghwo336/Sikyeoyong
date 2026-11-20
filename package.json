@@ -29,7 +29,8 @@
     "merchants:sweep": "pnpm --filter @sikyeoyong/api build && node apps/api/dist/db/merchant-keys/cli.js sweep",
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts",
-    "contracts:deploy:testnet": "sh contracts/script/deploy-testnet.sh"
+    "contracts:deploy:testnet": "node --env-file-if-exists=.env infra/scripts/deploy-orders.ts",
+    "policy:apply": "node --env-file-if-exists=.env infra/scripts/apply-policy.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -1,0 +1,22 @@
+{
+  "name": "@sikyeoyong/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "deploy:orders": "node scripts/deploy-orders.ts",
+    "policy:apply": "node scripts/apply-policy.ts"
+  },
+  "dependencies": {
+    "@maroo-chain/viem": "0.5.0",
+    "@sikyeoyong/shared": "workspace:*",
+    "viem": "2.57.20"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "vitest": "5.1.0"
+  }
+}

@@ -328,6 +328,25 @@ importers:
         specifier: 5.1.0
         version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15))
 
+  infra:
+    dependencies:
+      '@maroo-chain/viem':
+        specifier: 0.5.0
+        version: 0.5.0(typescript@6.0.3)(viem@2.57.20(typescript@6.0.3)(zod@4.6.7))(zod@4.6.7)
+      '@sikyeoyong/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
+      viem:
+        specifier: 2.57.20
+        version: 2.57.20(typescript@6.0.3)(zod@4.6.7)
+    devDependencies:
+      '@types/node':
+        specifier: 22.20.5
+        version: 22.20.5
+      vitest:
+        specifier: 5.1.0
+        version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15))
+
   packages/shared:
     dependencies:
       zod:
@@ -1413,6 +1432,15 @@ packages:
   '@lukeed/csprng@1.1.0':
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
+
+  '@maroo-chain/contracts@0.1.0':
+    resolution: {integrity: sha512-jc73jqReJBLZCVsAspsjPENMlYxjvpp44wnBXU089SvDl7v/kpIETuX6+GMzUpDaFEvbxXOD7I1SvDIyM8hWNw==}
+
+  '@maroo-chain/viem@0.5.0':
+    resolution: {integrity: sha512-iWhPIu92OE/6mMA39LZNQSSFRo1yySSxlDa8WPJynJKHgSzSmzqn7TUVmVREFETMybLzud2G2u9Dz/ph7FfsXg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      viem: ^2.41.2
 
   '@napi-rs/wasm-runtime@1.2.6':
     resolution: {integrity: sha512-mRyDmEw9/fCDXCGfL1sbgIw/GUK0PVxRW4YwgPN61F3LQ+fSyoBFarJVzgGyhF6kRzEQZ0FejDqm4WLXSeqQmw==}
@@ -5108,6 +5136,17 @@ snapshots:
   '@keyv/serialize@1.1.1': {}
 
   '@lukeed/csprng@1.1.0': {}
+
+  '@maroo-chain/contracts@0.1.0': {}
+
+  '@maroo-chain/viem@0.5.0(typescript@6.0.3)(viem@2.57.20(typescript@6.0.3)(zod@4.6.7))(zod@4.6.7)':
+    dependencies:
+      '@maroo-chain/contracts': 0.1.0
+      abitype: 1.2.3(typescript@6.0.3)(zod@4.6.7)
+      viem: 2.57.20(typescript@6.0.3)(zod@4.6.7)
+    transitivePeerDependencies:
+      - typescript
+      - zod
 
   '@napi-rs/wasm-runtime@1.2.6(@emnapi/core@1.11.0)(@emnapi/runtime@1.11.0)':
     dependencies:
