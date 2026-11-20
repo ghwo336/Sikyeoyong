@@ -75,6 +75,10 @@ describe('orderHref and historyLabel (주문 내역)', () => {
     }
     const within = { ...view('o1', 'pending_approval'), amount: okrwToAokrw(9_000n).toString() };
     expect(orderHref(within, limit)).toBeUndefined();
+    // Exactly the limit fits it, so the wait is for another reason.
+    const exactly = { ...view('o1', 'pending_approval'), amount: limit.toString() };
+    expect(orderHref(exactly, limit)).toBeUndefined();
+    expect(orderHref({ ...exactly, amount: (limit + 1n).toString() }, limit)).toBe('/limit/o1');
     // Without the limit known it cannot tell, so it does not send to the limit screen.
     const over = { ...view('o1', 'pending_approval'), amount: okrwToAokrw(12_000n).toString() };
     expect(orderHref(over, undefined)).toBeUndefined();

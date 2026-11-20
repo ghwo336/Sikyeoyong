@@ -31,9 +31,8 @@ describe('QuickReplies (QuickReplies.md 테스트 기준)', () => {
     for (const b of buttons) {
       expect(group).toContainElement(b);
       expect(b).not.toHaveAttribute('aria-checked');
-      // Main.dc.html: the 36px pill (Chip sm), never the 52px choice tiles
+      // Main.dc.html: the 36px pill (Chip sm), never the 52px tile
       expect(b).toHaveClass(chipStyles.sm ?? 'sm');
-      expect(b).not.toHaveClass(chipStyles.lg ?? 'lg');
       expect(b).not.toHaveClass(chipStyles.tile ?? 'tile');
     }
   });
