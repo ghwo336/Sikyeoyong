@@ -1057,7 +1057,7 @@ BIZNO_HMAC_KEY=
 | S11 | **(신규) 8004 소유 관계 조회와 setMetadata 시그니처** | `IAgent.getAgentIds(wallet, page)` 호출 형식, IdentityRegistry `ownerOf`, `setMetadata` ABI를 Explorer 검증 소스에서 확인 (IdentityRegistry는 소스 검증됨 ✓ [deployed-contracts](https://docs.maroo.io/resources/contracts/deployed-contracts)) | ABI 확정 | `bindAgentByOperator` 사용 |
 | S12 | **(신규) MAWS AA 지갑(EntryPoint 경유)에서 컨트랙트 범위 TransferLimit가 에이전트를 sender로 보는가** | 경로 A가 가능할 때만: MAWS 에이전트로 정책 걸린 `placeOrder` 한도 초과 호출 | revert | 경로 B 고려 |
 | S13 | **(신규, D-16) 주인 KYC를 컨트랙트 정책으로 검사할 수 있나** | `FOR_EACH_POLICY{AgentOwners, child=EAS_POLICY(카카오 스키마)}`를 테스트 셀렉터에 걸고, KYC 있는 주인과 없는 주인의 에이전트로 호출. 마루 폴리시 빌더의 "말로 만들기"로 같은 규칙을 만들 수 있는지도 확인 | KYC 있는 주인의 에이전트만 통과 | 서버 검사로 대체, 문서 질의 |
-| S14 | **(신규, D-24) 파우치 지갑으로 PouchOwner를 앞당길 수 있나, 결제를 파우치 위임으로 옮길 수 있나** | 임베디드 로그인으로 지갑 생성, `useSessionApproval`로 `placeOrder`만 허용(`maxValuePerCallWei` = 레벨 한도) 한도 안과 밖 실행, 영수증의 sender와 PCL 귀속 확인, 8004 붙일 자리 비교 | 한도 밖 실패, sender와 PCL 귀속 확인 | 경로 B 유지, 소유자 일만 파우치로. 진행 중 (spikes/S14.md) |
+| S14 | **(신규, D-24) 파우치 지갑으로 PouchOwner를 앞당길 수 있나, 결제를 파우치 위임으로 옮길 수 있나** | 임베디드 로그인으로 지갑 생성, `useSessionApproval`로 `placeOrder`만 허용(`maxValuePerCallWei` = 레벨 한도) 한도 안과 밖 실행, 영수증의 sender와 PCL 귀속 확인, 앱 서버 대리인(`executeDelegatedPolicy`) 가능 여부, 8004 붙일 자리 비교 | 한도 밖 실패, sender와 PCL 귀속 확인 | 경로 B 유지, 소유자 일만 파우치로. 진행 중 (spikes/S14.md) |
 
 스파이크 우선순위: S1 → S11 → S10 → S4 → S7 → S3 → S5 → S2 → S6 → S12. S1, S10, S11 결과가 나오면 결제 경로와 컨트랙트 모드를 확정한다.
 

@@ -128,12 +128,12 @@ children: []
 - 영향: 개발자가 낡은 SDK와 해시로 설치하고 README beta.8의 서명 동작(승인 창 없이 서명)과 다르게 본다.
 - 제안: 버전과 해시는 manifest 한 곳만 가리키게.
 
-### F-16 세션 키(useSessionApproval)가 현재 웹 SDK에 없고 React SDK에만 있음
+### F-16 "사용 가능"인 세션 키(useSessionApproval)가 이전 연동 SDK에만 있음
 - 상태: 열림
-- 종류: 문서 누락, 기능 위치
-- 발견: 2026-11-20 (spikes/S14). delegation 문서의 "브라우저 세션 키"는 `@shard-lab/nc-waas-react`(GitHub Packages)의 훅이다. 현재 권장 SDK `@nc-waas/sdk/browser`(`pouchiEmbedded`)에는 세션 키가 없다. 두 SDK를 함께 쓰는지, 어느 쪽이 앞으로의 길인지 문서에 없다.
-- 영향: 임베디드 로그인과 세션 키 위임을 한 앱에서 같이 쓰려는 디앱(에이전트 결제)이 길을 고르지 못한다.
-- 제안: SDK별 기능 표, 세션 키의 웹 SDK 지원 일정.
+- 종류: 문서 모순, 기능 위치
+- 발견: 2026-11-20 (spikes/S14). sdk.md는 "새 웹 연동은 현재 Browser SDK와 앱 서버로 시작하세요"라고 쓰고 React/Provider 예제를 "호환 자료"로 둔다. 그런데 delegation 문서가 "사용 가능"이라고 한 브라우저 세션 키(`useSessionApproval`)는 그 이전 연동 SDK `@shard-lab/nc-waas-react`(GitHub Packages)에만 있다. 현재 Browser SDK `@nc-waas/sdk` beta.8의 타입 선언에는 없다. 카카오 같은 OAuth 로그인도 React SDK에만 있고 현재 금고는 이메일과 패스키만 된다.
+- 영향: 새 앱이 권장 길(Browser SDK)을 따르면 세션 키 위임을 쓸 수 없고, 세션 키를 쓰려면 이전 연동을 골라야 한다.
+- 제안: SDK별 기능 표, 세션 키와 소셜 로그인의 Browser SDK 지원 일정.
 
 ### F-17 파우치 지갑 종류와 컨트랙트 호출의 msg.sender가 문서에 직접 없음
 - 상태: 열림
@@ -148,3 +148,10 @@ children: []
 - 발견: 2026-11-20 (spikes/S14). `auth.pouchi.io/downloads/manifest.json`의 provenance에 개발자 PC의 절대 경로(사용자 이름 포함)가 있다.
 - 영향: 내부 정보 노출 (작지만 공개 배포물).
 - 제안: manifest 생성 시 로컬 경로를 빼거나 상대 경로로.
+
+### F-19 localhost 출처를 두고 CLI 문서와 임베디드 시작 문서가 다름
+- 상태: 열림
+- 종류: 문서 불일치
+- 발견: 2026-11-20 (spikes/S14). cli.md는 테스트 체인에서 `http://localhost:5173` 같은 루프백 출처를 허용한다고 쓴다. sdk/embedded-start.md는 "`http://localhost`는 운영 중인 Pouchi SDK와 연결하는 배포 경로가 아니에요"라며 HTTPS 배포를 먼저 하라고 쓴다.
+- 영향: 로컬 개발로 시작하려는 개발자가 어느 쪽을 믿어야 할지 모른다.
+- 제안: 테스트넷 로컬 개발이 되는 범위(로그인만, 서명까지 등)를 한 곳에 적기.
