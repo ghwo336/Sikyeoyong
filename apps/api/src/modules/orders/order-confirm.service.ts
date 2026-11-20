@@ -49,11 +49,10 @@ export class OrderConfirmService {
     if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'order not found' });
     const toSubmitting = {
       status: 'submitting',
-      attempt: row.attempt + 1,
       errorCode: null,
     } as const;
     if (row.status === 'quoted') {
-      if (this.repo.transition(row.id, 'quoted', toSubmitting, nowMs)) {
+      if (this.repo.transition(row.id, 'quoted', toSubmitting, nowMs, { bumpAttempt: true })) {
         await this.payOnce(userId, row, nowMs);
       }
     } else if (row.status === 'failed' && this.mayRetry(row)) {
@@ -66,7 +65,9 @@ export class OrderConfirmService {
           { status: 'paid', txHash: paid.txHash, errorCode: null },
           nowMs,
         );
-      } else if (this.repo.transition(row.id, 'failed', toSubmitting, nowMs)) {
+      } else if (
+        this.repo.transition(row.id, 'failed', toSubmitting, nowMs, { bumpAttempt: true })
+      ) {
         await this.payOnce(userId, row, nowMs);
       }
     }
@@ -114,8 +115,11 @@ export class OrderConfirmService {
       }
       this.settle(userId, row, result.error.code, true, nowMs);
     } catch (e) {
-      // A throw after the marker is a timeout or a lost answer: the result is unknown.
-      this.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', marked, nowMs);
+      // After the marker a throw is a timeout or a lost answer, whatever its code: the
+      // payment may be out, so the order stays submitting (D-19 "결과 모름"). Only a
+      // returned PayResult settles it. Before the marker no payment went out.
+      if (marked) return;
+      this.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', false, nowMs);
     }
   }
 

@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import {
+  AppError,
   type AgentWallet,
   type Hex,
   type OwnerAuthority,
@@ -48,6 +49,7 @@ async function setup(
 ) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
+  const chainUsed = { value: 0n };
   const h = openDb(':memory:');
   runMigrations(h.db);
   insertUser(h.db, 'u1', { dong: '역삼동' });
@@ -64,7 +66,9 @@ async function setup(
           : undefined,
     )
     .overrideProvider(CHAIN_READER)
-    .useValue({ periodicVolume: () => Promise.resolve({ usedAokrw: 0n, resetAtSec: null }) });
+    .useValue({
+      periodicVolume: () => Promise.resolve({ usedAokrw: chainUsed.value, resetAtSec: null }),
+    });
   if (opts.owner !== undefined)
     builder = builder.overrideProvider(OWNER_AUTHORITY).useValue(opts.owner);
   const moduleRef = await builder.compile();
@@ -108,7 +112,16 @@ async function setup(
     ).order.id;
   const confirm = (id: string, who: 'u1' | 'u2' = 'u1') => post(who, `/api/orders/${id}/confirm`);
   const row = (id: string) => h.db.select().from(orders).where(eq(orders.id, id)).get();
-  return { h, payment, wallet, quote, confirm, row, repo: moduleRef.get(OrdersRepository) };
+  return {
+    h,
+    payment,
+    wallet,
+    quote,
+    confirm,
+    row,
+    chainUsed,
+    repo: moduleRef.get(OrdersRepository),
+  };
 }
 
 describe('POST /api/orders/:id/confirm: pays once, only here', () => {
@@ -282,6 +295,53 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(row(id)).toMatchObject({ status: 'submitting', submitStartedAt: NOW });
     await confirm(id);
     expect(pay).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['CHAIN_MERCHANT_INACTIVE', 'CHAIN_AGENT_PAUSED'] as const)(
+    'a %s thrown (not returned) after the marker stays submitting: it may be out already',
+    async (code) => {
+      const { payment, quote, confirm, row } = await setup();
+      const pay = vi.spyOn(payment, 'pay').mockRejectedValueOnce(new AppError(code));
+      const id = await quote();
+      expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('submitting');
+      expect(row(id)).toMatchObject({
+        status: 'submitting',
+        errorCode: null,
+        submitStartedAt: NOW,
+      });
+      await confirm(id);
+      expect(pay).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('the 30-day cap is checked again at the press: over it fails retryably with no top-up or payment', async () => {
+    const { payment, quote, confirm, chainUsed } = await setup();
+    const fund = vi.spyOn(payment, 'fund');
+    const pay = vi.spyOn(payment, 'pay');
+    const id = await quote();
+    chainUsed.value = A('491001'); // other orders since the quote: 491,001 + 9,000 > 500,000
+    expect(zOrderResult.parse((await confirm(id)).body).order).toMatchObject({
+      status: 'failed',
+      errorCode: 'CHAIN_PERIODIC_LIMIT',
+    });
+    expect(fund).not.toHaveBeenCalled();
+    expect(pay).not.toHaveBeenCalled();
+    chainUsed.value = A('491000'); // exactly the cap with this order
+    expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('paid');
+  });
+
+  it('if the move to pending_approval loses, no approval row is left behind (one transaction)', async () => {
+    const { h, quote, confirm, row, repo } = await setup({ limitWon: '5000' });
+    const real = repo.transition.bind(repo);
+    vi.spyOn(repo, 'transition').mockImplementation((id, from, set, nowMs, opts) =>
+      from === 'submitting' && set.status === 'pending_approval'
+        ? false
+        : real(id, from, set, nowMs, opts),
+    );
+    const id = await quote();
+    await confirm(id);
+    expect(h.db.select().from(approvals).all()).toHaveLength(0);
+    expect(row(id)?.status).not.toBe('pending_approval');
   });
 
   it('an INTERNAL answer after the marker also stays submitting (never a new quote)', async () => {

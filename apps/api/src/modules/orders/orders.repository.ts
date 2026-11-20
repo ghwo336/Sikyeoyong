@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gte, inArray, lt } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { ORDER_STATUSES, orders } from '../../db/schema/index.js';
@@ -88,12 +88,18 @@ export class OrdersRepository {
   transition(
     id: string,
     from: OrderStatus,
-    set: Partial<Pick<OrderRow, 'status' | 'attempt' | 'errorCode' | 'txHash' | 'submitStartedAt'>>,
+    set: Partial<Pick<OrderRow, 'status' | 'errorCode' | 'txHash' | 'submitStartedAt'>>,
     nowMs: number,
+    opts: { bumpAttempt?: boolean } = {},
   ): boolean {
     const r = this.handle.db
       .update(orders)
-      .set({ ...set, updatedAt: nowMs })
+      .set({
+        ...set,
+        // A person started paying: counted in SQL, never from a value read earlier.
+        ...(opts.bumpAttempt === true ? { attempt: sql`${orders.attempt} + 1` } : {}),
+        updatedAt: nowMs,
+      })
       .where(and(eq(orders.id, id), eq(orders.status, from)))
       .run();
     return r.changes === 1;
