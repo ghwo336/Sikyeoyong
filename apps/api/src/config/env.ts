@@ -55,7 +55,8 @@ const schema = z.object({
   KYB_SCHEMA_UID: optionalText,
   OPERATOR_KEY: optionalText,
   CONFIRMATIONS: int(1).default(1),
-  PAYMENT_PATH: z.enum(['A', 'B', 'C']).default('B'),
+  /** mock: in-memory chain for development and tests, refused in production. */
+  PAYMENT_PATH: z.enum(['A', 'B', 'C', 'mock']).default('B'),
   WAAS_AUTH_TOKEN: optionalText,
   AGENT_KEY_ENCRYPTION_KEY: optionalText,
   AGENT_FLOAT_MULTIPLIER: int(1).default(2),
@@ -75,7 +76,7 @@ export interface AppConfig {
   readonly chain: ChainConfig;
   readonly policy: PolicyConfig;
   readonly payment: {
-    readonly path: 'A' | 'B' | 'C';
+    readonly path: 'A' | 'B' | 'C' | 'mock';
     readonly floatMultiplier: bigint;
     readonly submittingAlertMs: number;
     readonly confirmations: number;
@@ -115,7 +116,9 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
   need('ORDERS_CONTRACT', env.ORDERS_CONTRACT !== undefined);
   if (env.PAYMENT_PATH === 'B')
     need('AGENT_KEY_ENCRYPTION_KEY', env.AGENT_KEY_ENCRYPTION_KEY !== undefined);
-  if (env.PAYMENT_PATH !== 'B') need('WAAS_AUTH_TOKEN', env.WAAS_AUTH_TOKEN !== undefined);
+  if (env.PAYMENT_PATH === 'A' || env.PAYMENT_PATH === 'C')
+    need('WAAS_AUTH_TOKEN', env.WAAS_AUTH_TOKEN !== undefined);
+  if (env.PAYMENT_PATH === 'mock') missing.push('PAYMENT_PATH=mock (production에서 금지)');
   if (env.DEMO_BYPASS_SERVER_LIMIT) missing.push('DEMO_BYPASS_SERVER_LIMIT (production에서 금지)');
   return missing;
 }

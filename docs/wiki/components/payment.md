@@ -31,7 +31,8 @@ interface PaymentProvider {
   pay(req: PayRequest): Promise<PayResult>;                 // placeOrder{value}
 }
 ```
-구현체는 경로별로 하나씩 (`pathA`, `pathB`, `pathC`, 테스트용 mock). 선택은 `PAYMENT_PATH` 환경 변수.
+구현체는 경로별로 하나씩 (`pathA`, `pathB`, `pathC`, 테스트용 mock). 선택은 `PAYMENT_PATH` 환경 변수. 타입은 `packages/shared/src/payment`. 다른 모듈은 `modules/payment/payment.service.ts`의 `PAYMENT_PROVIDER` 토큰으로만 받는다 (llm은 payment를 import하지 못한다, 린트 경계).
+- `PAYMENT_PATH=mock`: `MockPaymentProvider`는 메모리 안의 흉내 체인이다 (개발·테스트 전용, production 설정은 거절). 지갑 잔액, TransferLimit, 30일 고정 창(첫 주문부터, (추론)), 동결, orderRef 한 번만을 흉내 내고, 막는 사유와 에러 코드는 아래 revert 매핑과 같다. 프로세스를 다시 띄우면 흉내 체인이 비어 TransferLimit이 없어지는데, 이것은 실제 `CHAIN_AGENT_LIMIT_UNSET` 복구 경로(재기록 후 1회 재시도)를 그대로 탄다. 경로 A, B, C는 컨트랙트와 체인 작업 때 붙이며, 그 전에는 모든 호출이 `INTERNAL`로 실패한다 (결제하지 않음).
 
 ## 경로 (D-05)
 | 경로 | 조건 | PCL 적용 | 가스 |

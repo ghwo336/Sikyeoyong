@@ -169,6 +169,15 @@ describe('loadConfig in production', () => {
     },
   );
 
+  it('never pays through the mock path', () => {
+    const r = codeAndVars(() => loadConfig({ ...PROD, PAYMENT_PATH: 'mock' }));
+    expect(r.variables).toEqual(['PAYMENT_PATH=mock (production에서 금지)']);
+  });
+
+  it('accepts the mock path outside production', () => {
+    expect(loadConfig({ PAYMENT_PATH: 'mock' }).payment.path).toBe('mock');
+  });
+
   it('never allows the demo server-limit bypass', () => {
     const r = codeAndVars(() =>
       loadConfig({ ...PROD, DEMO_MODE: 'true', DEMO_BYPASS_SERVER_LIMIT: 'true' }),
