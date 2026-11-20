@@ -78,6 +78,7 @@ describe('migrations (data.md: apply to an empty DB from scratch)', () => {
       'oauth_accounts',
       'order_events',
       'orders',
+      'owner_allowance_entries',
       'sessions',
       'users',
     ]);

@@ -16,6 +16,8 @@ const UI_AREAS = ['base', 'dragon', 'chat', 'order', 'limits', 'onboarding', 'wa
 const API_MODULES = [
   'auth',
   'identity',
+  'allowance',
+  'wallet',
   'users',
   'agents',
   'payment',

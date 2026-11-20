@@ -237,6 +237,7 @@ apps/api/src/
 | POST | `/agents/me/fund` | user | `{ amount }` (aokrw 문자열) | `{ txHash }` |
 | POST | `/agents/me/drain` | user | | `{ txHashes }` |
 | GET | `/budget` | user | | `BudgetView` (아래) |
+| GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 이번 달 예산에서 쓴 돈을 뺀 값(0 아래로 안 감, Q-37). 용이 없으면 404 |
 | POST | `/chat/messages` | user | `{ text, clientMessageId }` | SSE `ChatEvent` 스트림 |
 | GET | `/chat/history` | user | `?cursor` | `ChatHistory` (`{ startedAt, messages, nextCursor }`, `api/chat.ts`). 용의 말은 그 말을 만든 `ChatEvent` 목록으로 돌려준다 |
 | GET | `/merchants` | user | `?category&verified` | `{ merchants: MerchantCard[] }` (`MerchantCard` = `{ id, name, category, tags, verified, openNow, etaMin }`, `api/merchants.ts`). 미인증·비활성 가게는 나오지 않는다. `verified`는 `true`만 받고 그 밖은 400. 2026-11-20 |
@@ -499,6 +500,7 @@ score(merchant, menu) =
 | --- | --- | --- |
 | `users` | id, nickname, address_text, address_dong, monthly_budget, role(`user`/`operator`/`merchant`), created_at | |
 | `identity_checks` | user_id(PK, users), method(`kakao`/`mock`), verified_at | 본인 인증 통과 기록만. 인증 원문은 저장하지 않는다 (마이그레이션 0005) |
+| `owner_allowance_entries` | id(uuidv7), user_id(users), kind(`trial`/`fund`/`refund`), amount_aokrw(0보다 큼), tx_hash, created_at. `trial`은 사용자당 하나(부분 유일 색인) | 주인 용돈 장부 (D-24 수탁 동안 운영자가 맡은 돈 중 이 사용자 몫 = trial + refund - fund). `OWNER_MODE=pouch`면 사용자 지갑의 체인 잔액으로 바뀐다 (마이그레이션 0006) |
 | `oauth_accounts` | id, user_id → users, provider(`kakao`/`google`/`apple`), provider_user_id, email?, created_at | 유니크(provider, provider_user_id) |
 | `sessions` | id(토큰 해시), user_id, platform(`web`/`native`), expires_at, revoked_at | 인덱스(user_id) |
 | `agents` | id, user_id(1:1), dragon_name, dragon_species(`forest`/`water`/`flower`/`star`, D-20), status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, level, created_at | 유니크(user_id), 유니크(wallet_address) |

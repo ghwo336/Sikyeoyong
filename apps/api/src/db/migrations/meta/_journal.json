@@ -43,6 +43,13 @@
       "when": 1795148632911,
       "tag": "0005_identity_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795155962122,
+      "tag": "0006_owner_allowance",
+      "breakpoints": true
     }
   ]
 }
