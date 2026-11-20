@@ -1,6 +1,6 @@
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
-import { amountRatioText, chatStamp, minutes, routeLine, withEunNeun } from './format';
+import { amountRatioText, chatStamp, minutes, routeLine, withEunNeun, withRo } from './format';
 
 // Written by hand: 2026-11-19 03:28 UTC is 12:28 KST on the 19th.
 const NOON_KST = Date.UTC(2026, 10, 19, 3, 28);
@@ -40,5 +40,26 @@ describe('withEunNeun', () => {
     expect(withEunNeun('피자')).toBe('피자는');
     expect(withEunNeun('보쌈 대(大)')).toBe('보쌈 대(大)는');
     expect(withEunNeun('')).toBe('는');
+  });
+});
+
+describe('withRo (browser QA: "집로")', () => {
+  it('으로 after a final consonant, 로 after a vowel or ㄹ', () => {
+    expect(withRo('집')).toBe('집으로');
+    expect(withRo('회사')).toBe('회사로');
+    expect(withRo('서울')).toBe('서울로');
+    expect(withRo('역삼동')).toBe('역삼동으로');
+  });
+
+  it('judges the word before a note in parentheses; not Hangul takes 로', () => {
+    expect(withRo('회사(역삼동)')).toBe('회사(역삼동)로');
+    expect(withRo('집 (101동)')).toBe('집 (101동)으로');
+    expect(withRo('A동')).toBe('A동으로');
+    expect(withRo('B')).toBe('B로');
+    expect(withRo('')).toBe('로');
+  });
+
+  it('routeLine uses it', () => {
+    expect(routeLine('한상보쌈', '집')).toBe('한상보쌈에서 집으로');
   });
 });

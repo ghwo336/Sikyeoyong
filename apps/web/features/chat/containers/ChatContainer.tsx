@@ -20,6 +20,7 @@ import { needsApprovalNow } from '../../limits/fit';
 import { useMe } from '../../me/hooks/useMe';
 import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
+import { useOrders } from '../../orders/hooks/useOrders';
 import { type ChatEntry, lastSent, threadRows } from '../hooks/entries';
 import { useChat } from '../hooks/useChat';
 
@@ -41,6 +42,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
   const chat = useChat();
   const me = useMe().data;
   const budget = useBudget().data;
+  // Main.dc.html's "오늘 저녁도 부탁해" assumes earlier orders; a first owner gets a plain ask.
+  const ordered = (useOrders().data?.orders.length ?? 0) > 0;
   const createOrder = useCreateOrder();
   const [draft, setDraft] = useState('');
   const entries = chat.thread?.entries ?? [];
@@ -103,7 +106,7 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
               chat.send(text);
               setDraft('');
             }}
-            placeholder="오늘 저녁도 부탁해"
+            placeholder={ordered ? '오늘 저녁도 부탁해' : '뭐 먹고 싶은지 말해 줘'}
             sending={chat.sending}
             // Frozen.dc.html: while the dragon sleeps nothing is ordered, so nothing is sent.
             disabled={frozen}

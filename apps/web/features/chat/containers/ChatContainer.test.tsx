@@ -146,4 +146,8 @@ describe('ChatContainer', () => {
     });
     expect(screen.getByText('용이가 자고 있어요')).toBeInTheDocument();
   });
+  it('a first owner (no orders yet) gets a plain placeholder, not "오늘 저녁도"', async () => {
+    setup();
+    expect(await screen.findByPlaceholderText('뭐 먹고 싶은지 말해 줘')).toBeInTheDocument();
+  });
 });
