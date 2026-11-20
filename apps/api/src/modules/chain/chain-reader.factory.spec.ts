@@ -6,6 +6,10 @@ import { createChainReader } from './chain-reader.factory.js';
 const PROD = {
   NODE_ENV: 'production',
   REAUTH_MODE: 'pouch',
+  POUCHI_API_URL: 'https://pouchi.example',
+  POUCHI_TENANT_ID: 'tenant_test',
+  POUCHI_APP_KEY: 'test-app-key',
+  POUCHI_APP_ID: 'app-test',
   SESSION_SECRET: 'x'.repeat(32),
   ANTHROPIC_API_KEY: 'k',
   LLM_MODEL: 'm',

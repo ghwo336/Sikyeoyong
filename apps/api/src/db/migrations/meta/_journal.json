@@ -57,6 +57,13 @@
       "when": 1795157702649,
       "tag": "0007_order_ratings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795159908954,
+      "tag": "0008_pouchi_accounts",
+      "breakpoints": true
     }
   ]
 }

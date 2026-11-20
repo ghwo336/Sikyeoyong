@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
-import { users } from '../../db/schema/index.js';
+import { pouchiAccounts, users } from '../../db/schema/index.js';
 
 /** Queries on users only (architecture.md: repositories hold no rules). */
 @Injectable()
@@ -17,6 +17,31 @@ export class UsersRepository {
     createdAt: number;
   }): void {
     this.handle.db.insert(users).values(row).onConflictDoNothing().run();
+  }
+
+  /**
+   * The user for a Pouchi wallet: the linked one, or a new user and link made in one
+   * transaction (a second login for the same wallet finds the first).
+   */
+  ensurePouchiUser(
+    walletId: string,
+    walletAddress: string,
+    fresh: { id: string; nickname: string; monthlyBudgetAokrw: string; createdAt: number },
+  ): string {
+    return this.handle.sqlite.transaction(() => {
+      const found = this.handle.db
+        .select({ userId: pouchiAccounts.userId })
+        .from(pouchiAccounts)
+        .where(eq(pouchiAccounts.walletId, walletId))
+        .get();
+      if (found !== undefined) return found.userId;
+      this.handle.db.insert(users).values(fresh).run();
+      this.handle.db
+        .insert(pouchiAccounts)
+        .values({ walletId, userId: fresh.id, walletAddress, createdAt: fresh.createdAt })
+        .run();
+      return fresh.id;
+    })();
   }
 
   findMonthlyBudget(userId: string): string | undefined {

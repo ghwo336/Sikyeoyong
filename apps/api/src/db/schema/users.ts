@@ -80,3 +80,18 @@ export const identityChecks = sqliteTable(
   },
   (t) => [enumCheck('identity_checks_method_check', t.method, IDENTITY_METHODS)],
 );
+
+/**
+ * D-29 Pouchi login: one Pouchi app wallet per user. wallet_id is Pouchi's id for the user's
+ * app wallet (the login identity); wallet_address is that smart wallet (the owner wallet once
+ * OWNER_MODE=pouch, D-24). No email or other Pouchi profile data is kept.
+ */
+export const pouchiAccounts = sqliteTable('pouchi_accounts', {
+  walletId: text('wallet_id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  walletAddress: text('wallet_address').notNull(),
+  createdAt: integer('created_at').notNull(),
+});

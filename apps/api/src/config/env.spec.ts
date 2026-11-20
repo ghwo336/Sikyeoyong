@@ -8,6 +8,10 @@ const OKRW = 10n ** 18n;
 const PROD: RawEnv = {
   NODE_ENV: 'production',
   REAUTH_MODE: 'pouch',
+  POUCHI_API_URL: 'https://pouchi.example',
+  POUCHI_TENANT_ID: 'tenant_test',
+  POUCHI_APP_KEY: 'test-app-key',
+  POUCHI_APP_ID: 'app-test',
   SESSION_SECRET: 'x'.repeat(32),
   ANTHROPIC_API_KEY: 'test-key',
   LLM_MODEL: 'test-model',
@@ -200,5 +204,44 @@ describe('loadConfig in production', () => {
     const r = codeAndVars(() => loadConfig({ ...PROD, REAUTH_MODE: 'none' }));
     expect(r.variables).toEqual(['REAUTH_MODE=none (production에서 금지)']);
     expect(loadConfig(PROD).reauthMode).toBe('pouch');
+  });
+});
+
+describe('Pouchi login config (D-29)', () => {
+  it('is off when POUCHI_API_URL is unset, and the app key never sits in the public part', () => {
+    expect(loadConfig({}).pouchi).toBeUndefined();
+    const c = loadConfig({
+      POUCHI_API_URL: 'https://pouchi.example',
+      POUCHI_TENANT_ID: 't1',
+      POUCHI_APP_KEY: 'secret-key',
+      POUCHI_APP_ID: 'app1',
+    });
+    expect(c.pouchi).toEqual({
+      apiUrl: 'https://pouchi.example',
+      tenantId: 't1',
+      appId: 'app1',
+      vaultUrl: 'https://auth.pouchi.io',
+      bridgeIssuer: 'https://auth.pouchi.io',
+      environment: 'sandbox',
+    });
+    expect(JSON.stringify(c.pouchi)).not.toContain('secret-key');
+    expect(c.secrets.pouchiAppKey).toBe('secret-key');
+  });
+
+  it('a URL without the tenant, key or app id stops the server, naming variables only', () => {
+    try {
+      loadConfig({ POUCHI_API_URL: 'https://pouchi.example', POUCHI_APP_KEY: 'secret-key' });
+      expect.unreachable();
+    } catch (e) {
+      expect(JSON.stringify((e as { detail: unknown }).detail)).not.toContain('secret-key');
+      expect((e as { detail: { variables: string[] } }).detail.variables).toContain(
+        'POUCHI_TENANT_ID',
+      );
+    }
+  });
+
+  it('production needs POUCHI_API_URL', () => {
+    const { POUCHI_API_URL: _drop, ...rest } = PROD;
+    expect(() => loadConfig(rest)).toThrow();
   });
 });

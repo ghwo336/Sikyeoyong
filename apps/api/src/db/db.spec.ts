@@ -80,6 +80,7 @@ describe('migrations (data.md: apply to an empty DB from scratch)', () => {
       'order_ratings',
       'orders',
       'owner_allowance_entries',
+      'pouchi_accounts',
       'sessions',
       'users',
     ]);

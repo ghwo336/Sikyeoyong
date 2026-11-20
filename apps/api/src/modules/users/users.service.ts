@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AppError, aokrwToString, parseAokrw, type UserView } from '@sikyeoyong/shared';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
+import { uuidv7 } from '../../common/ids.js';
 import { UsersRepository } from './users.repository.js';
 
 /** The user's own settings. Other modules read users only through this service. */
@@ -25,6 +26,19 @@ export class UsersService {
       createdAt: nowMs,
     });
     return id;
+  }
+
+  /**
+   * D-29: the user behind a Pouchi app wallet, made on the first login with the policy's
+   * default monthly budget. Pouchi gives no name, so the owner is "주인님" until one is set.
+   */
+  ensurePouchiUser(walletId: string, walletAddress: string, nowMs: number = Date.now()): string {
+    return this.repo.ensurePouchiUser(walletId, walletAddress, {
+      id: uuidv7(nowMs),
+      nickname: '주인님',
+      monthlyBudgetAokrw: aokrwToString(this.config.policy.defaultMonthlyBudgetAokrw),
+      createdAt: nowMs,
+    });
   }
 
   /** The name the ID card shows for the owner (users.nickname). */

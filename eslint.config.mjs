@@ -18,6 +18,7 @@ const API_MODULES = [
   'identity',
   'allowance',
   'wallet',
+  'pouchi',
   'users',
   'agents',
   'payment',

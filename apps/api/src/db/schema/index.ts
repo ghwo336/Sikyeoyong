@@ -12,4 +12,4 @@ export {
   orderRatings,
   orders,
 } from './orders.js';
-export { identityChecks, oauthAccounts, sessions, users } from './users.js';
+export { identityChecks, oauthAccounts, pouchiAccounts, sessions, users } from './users.js';

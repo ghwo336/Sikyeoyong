@@ -106,3 +106,11 @@ export {
   type TrialResult,
   type WalletView,
 } from './wallet.js';
+export {
+  zPouchiBindBody,
+  zPouchiCompleteBody,
+  zPouchiLoginConfig,
+  type PouchiBindBody,
+  type PouchiCompleteBody,
+  type PouchiLoginConfig,
+} from './auth.js';

@@ -40,6 +40,14 @@ const schema = z.object({
   DEV_LOGIN: bool.default(false),
   /** D-28: none = testnet demo, a level raise by the button alone (refused in production); pouch = the owner's wallet signs (Q-30). */
   REAUTH_MODE: z.enum(['none', 'pouch']).default('none'),
+  /** D-29: Pouchi login (the only login). Unset POUCHI_API_URL turns it off. */
+  POUCHI_API_URL: z.url().optional(),
+  POUCHI_TENANT_ID: optionalText,
+  POUCHI_APP_KEY: optionalText,
+  POUCHI_APP_ID: optionalText,
+  POUCHI_VAULT_URL: z.url().default('https://auth.pouchi.io'),
+  POUCHI_BRIDGE_ISSUER: z.url().default('https://auth.pouchi.io'),
+  POUCHI_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   KAKAO_REST_API_KEY: optionalText,
   KAKAO_CLIENT_SECRET: optionalText,
   GOOGLE_CLIENT_ID_WEB: optionalText,
@@ -89,6 +97,20 @@ export interface AppConfig {
   /** D-28: how a level raise is re-authenticated. */
   readonly reauthMode: 'none' | 'pouch';
   readonly chain: ChainConfig;
+  /**
+   * D-29 Pouchi login. undefined when POUCHI_API_URL is unset (login refuses). The app key is
+   * in secrets, never here: this part may go to the web as the login config.
+   */
+  readonly pouchi:
+    | {
+        readonly apiUrl: string;
+        readonly tenantId: string;
+        readonly appId: string;
+        readonly vaultUrl: string;
+        readonly bridgeIssuer: string;
+        readonly environment: 'sandbox' | 'production';
+      }
+    | undefined;
   readonly policy: PolicyConfig;
   readonly payment: {
     readonly path: 'A' | 'B' | 'C' | 'mock';
@@ -111,6 +133,7 @@ export interface AppConfig {
   readonly secrets: {
     readonly sessionSecret: string | undefined;
     readonly anthropicApiKey: string | undefined;
+    readonly pouchiAppKey: string | undefined;
     readonly operatorKey: string | undefined;
     readonly waasAuthToken: string | undefined;
     readonly agentKeyEncryptionKey: string | undefined;
@@ -142,6 +165,7 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
   if (env.DEMO_BYPASS_SERVER_LIMIT) missing.push('DEMO_BYPASS_SERVER_LIMIT (production에서 금지)');
   if (env.DEV_LOGIN) missing.push('DEV_LOGIN (production에서 금지)');
   if (env.REAUTH_MODE === 'none') missing.push('REAUTH_MODE=none (production에서 금지)');
+  need('POUCHI_API_URL', env.POUCHI_API_URL !== undefined);
   return missing;
 }
 
@@ -170,6 +194,17 @@ export function loadConfig(raw: RawEnv): AppConfig {
       variables: ['POLICY_PROFILE'],
     });
   }
+  if (
+    env.POUCHI_API_URL !== undefined &&
+    (env.POUCHI_TENANT_ID === undefined ||
+      env.POUCHI_APP_KEY === undefined ||
+      env.POUCHI_APP_ID === undefined)
+  ) {
+    throw new AppError('INTERNAL', {
+      reason: 'POUCHI_API_URL needs the tenant, app key and app id',
+      variables: ['POUCHI_TENANT_ID', 'POUCHI_APP_KEY', 'POUCHI_APP_ID'],
+    });
+  }
   if (env.DEMO_BYPASS_SERVER_LIMIT && !env.DEMO_MODE) {
     throw new AppError('INTERNAL', {
       reason: 'DEMO_BYPASS_SERVER_LIMIT needs DEMO_MODE',
@@ -187,6 +222,17 @@ export function loadConfig(raw: RawEnv): AppConfig {
       rpcUrl: env.MAROO_RPC_URL,
       okrwDenom: env.OKRW_DENOM,
     }),
+    pouchi:
+      env.POUCHI_API_URL === undefined
+        ? undefined
+        : {
+            apiUrl: env.POUCHI_API_URL,
+            tenantId: env.POUCHI_TENANT_ID ?? '',
+            appId: env.POUCHI_APP_ID ?? '',
+            vaultUrl: env.POUCHI_VAULT_URL,
+            bridgeIssuer: env.POUCHI_BRIDGE_ISSUER,
+            environment: env.POUCHI_ENVIRONMENT,
+          },
     verifyMode: env.VERIFY_MODE,
     devLogin: env.DEV_LOGIN,
     reauthMode: env.REAUTH_MODE,
@@ -208,6 +254,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
     secrets: {
       sessionSecret: env.SESSION_SECRET,
       anthropicApiKey: env.ANTHROPIC_API_KEY,
+      pouchiAppKey: env.POUCHI_APP_KEY,
       operatorKey: env.OPERATOR_KEY,
       waasAuthToken: env.WAAS_AUTH_TOKEN,
       agentKeyEncryptionKey: env.AGENT_KEY_ENCRYPTION_KEY,

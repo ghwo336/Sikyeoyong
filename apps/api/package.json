@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.10.0",
+    "@nc-waas/sdk": "https://auth.pouchi.io/downloads/npm/nc-waas-sdk-0.1.0-beta.8.tgz",
     "@nestjs/common": "12.5.1",
     "@nestjs/core": "12.5.1",
     "@nestjs/platform-express": "12.5.1",

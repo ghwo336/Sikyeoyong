@@ -224,6 +224,9 @@ apps/api/src/
 | --- | --- | --- | --- | --- |
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
+| GET | `/auth/pouchi/config` | 공개 | | `PouchiLoginConfig` (`api/auth.ts`, D-29): 금고 주소, 앱 ID, 콜백. 파우치 로그인이 꺼져 있으면 404 |
+| POST | `/auth/pouchi/bind` | 공개(`X-Requested-With`) | `{ requestId, codeChallenge, flow: signup \| login }` | 204. 금고를 열기 전 요청을 서버에 묶는다 (10분, 한 번) |
+| POST | `/auth/pouchi/complete` | 공개(`X-Requested-With`) | `{ envelope, codeVerifier, requestId, state? }` | 204와 세션 쿠키. 묶은 요청으로만 한 번, SDK로 결과 서명과 기기 확인. 실패는 401. 2026-11-20 구현 |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |
 | POST | `/signup/trial` | user | | `TrialResult` (`{ granted }`, `api/wallet.ts`). 본인 인증을 마친 주인만(아니면 403). 체험용 용돈(정책 `trialAllowanceAokrw`, 기본 100,000원)을 주인 용돈 장부에 한 번만 넣는다. 두 번째부터는 200 `granted: false`(동시에 와도 하나만, 부분 유일 색인). 수탁(D-24) 동안은 장부만 쓰고 체인에서는 아무것도 옮기지 않는다. 2026-11-20 추가 (allowance 모듈) |
 | POST | `/identity/verify` | user | | `{ verified: true }`. 본인 인증(D-16). `VERIFY_MODE=mock`이면 통과를 기록, `kakao`는 Q-19가 풀릴 때까지 500 `INTERNAL`. 통과한 사실, 방법, 시각만 남긴다. 인증 전의 `POST /agents`는 403 (2026-11-20) |
@@ -504,6 +507,7 @@ score(merchant, menu) =
 | `users` | id, nickname, address_text, address_dong, monthly_budget, role(`user`/`operator`/`merchant`), created_at | |
 | `identity_checks` | user_id(PK, users), method(`kakao`/`mock`), verified_at | 본인 인증 통과 기록만. 인증 원문은 저장하지 않는다 (마이그레이션 0005) |
 | `order_ratings` | order_id(PK, orders), user_id(users), value(`again`/`okay`/`meh`), rated_at | 맛 평가. 주문당 하나, 다시 평가하면 바꾼다 (마이그레이션 0007) |
+| `pouchi_accounts` | wallet_id(PK, 파우치 앱 지갑 ID), user_id(users, 유일), wallet_address, created_at | D-29 파우치 로그인 계정 연결. 지갑 ID가 로그인 신원, 주소는 사용자 스마트 지갑(D-24 pouch 때 소유자 지갑). 프로필은 저장하지 않는다 (마이그레이션 0008) |
 | `owner_allowance_entries` | id(uuidv7), user_id(users), kind(`trial`/`fund`/`refund`), amount_aokrw(0보다 큼), tx_hash, created_at. `trial`은 사용자당 하나(부분 유일 색인) | 주인 용돈 장부 (D-24 수탁 동안 운영자가 맡은 돈 중 이 사용자 몫 = trial + refund - fund). `OWNER_MODE=pouch`면 사용자 지갑의 체인 잔액으로 바뀐다 (마이그레이션 0006) |
 | `oauth_accounts` | id, user_id → users, provider(`kakao`/`google`/`apple`), provider_user_id, email?, created_at | 유니크(provider, provider_user_id) |
 | `sessions` | id(토큰 해시), user_id, platform(`web`/`native`), expires_at, revoked_at | 인덱스(user_id) |
@@ -883,7 +887,15 @@ API_DEV_ORIGIN=
 NEXT_PUBLIC_API_MODE=     # 화면이 쓰는 API: 비우거나 mock이면 서버 없이 도는 흉내, http면 /api 실제 서버
 NEXT_PUBLIC_DEV_LOGIN_KEY= # 개발 때만: http 모드 로그인 버튼이 이 키로 개발용 로그인
 
-# 로그인
+# 로그인 (D-29: 파우치 로그인 하나. 값은 `pouchi keys create`가 만든 .env.pouchi에서 옮긴다)
+POUCHI_API_URL=                       # 비우면 파우치 로그인 꺼짐 (예: https://api.pouchi.io)
+POUCHI_TENANT_ID=
+POUCHI_APP_KEY=                       # 비밀. 서버에만, NEXT_PUBLIC_ 금지
+POUCHI_APP_ID=                        # pouchi apps origins add --app-id 값 (예: sikyeoyong)
+POUCHI_VAULT_URL=                     # 비우면 https://auth.pouchi.io
+POUCHI_BRIDGE_ISSUER=                 # 비우면 https://auth.pouchi.io
+POUCHI_ENVIRONMENT=sandbox            # sandbox | production (앱 키 환경과 같아야 한다)
+# 예전 계획(D-29 전): 카카오, 구글 OAuth
 KAKAO_REST_API_KEY=
 KAKAO_CLIENT_SECRET=
 GOOGLE_CLIENT_ID_WEB=
