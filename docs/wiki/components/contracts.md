@@ -76,6 +76,26 @@ children: []
 - 배포 순서 (tech-spec "5.5 PCL 프록시 배포 절차"): 구현 배포, `deployPclProxy`, `initialize(operator, owner, vaultMode=false)`, **같은 스크립트에서 즉시 운영자 키로 `changeContractPolicies` 첫 호출** (최초 호출자가 정책 admin이 되고 한 번만 지정됨, 확인), 목 가게 등록, 주소를 `packages/shared/src/config/deployments/<chainId>.<profile>.json`에 기록.
 - 데모 프로필(D-12)은 별도 프록시로 배포한다. 운영 프로필과 주소가 다르다.
 - 테스트넷 배포 주소와 트랜잭션 해시를 worklog에 남긴다.
+- 실제 테스트넷 배포는 호재 님 승인 뒤에만 한다 (돈이 드는 체인 호출). `pnpm contracts:deploy:testnet`은 환경변수(`MAROO_RPC_URL`, `CHAIN_ID`, `POLICY_PROFILE`, `OPERATOR_KEY`)가 있는지만 보고 승인 뒤 실행할 명령을 안내한다. 값은 출력하지 않는다.
+
+### 배포 스크립트가 하는 일 (2026-11-20)
+- `contracts/script/Deploy.s.sol`은 위 순서의 첫 단계(구현 배포)와 배포 기록 쓰기만 한다. 체인 ID, RPC, 키는 환경변수와 명령 인자로만 받는다. `CHAIN_ID`가 연결된 RPC의 체인 ID와 다르면 아무것도 보내기 전에 `ChainIdMismatch`로 멈춘다. `POLICY_PROFILE`은 `default` 또는 `demo`만.
+- `deployPclProxy`, `initialize`, `changeContractPolicies` 첫 호출, `contractPolicies` 재조회는 `infra/scripts/deploy-orders.ts`(viem, tech-spec 5.9, 아직 없음) 몫이다. `deployPclProxy`의 kind 값, 구현 주소와 초기화 데이터를 넘기는 방법, PCL 프록시가 OZ `UUPSUpgradeable`의 `proxiableUUID` 검사와 맞는지, PolicySet 타입은 (미확인, Q-13). 프록시 배포와 `initialize` 사이에 남이 먼저 초기화하지 못하게, 초기화 데이터를 프록시 배포와 함께 넘기는 방법이 있으면 그것을 쓴다.
+- 목 가게 등록은 가게 payout 키가 직접 해야 해서(D-08 E-2) 배포 스크립트에 넣지 않는다 (`infra/scripts/seed-merchants.ts`).
+
+### 배포 기록
+`packages/shared/src/config/deployments/<chainId>.<profile>.json`. `forge script --broadcast`일 때만 쓰고(연습 실행은 쓰지 않음), 같은 파일이 있으면 덮어쓰지 않고 `DeploymentExists`로 멈춘다. forge는 실행을 흉내 낸 뒤 보내므로 기록이 전송보다 앞선다. 전송이 실패하면 기록을 지운다.
+```json
+{
+  "chainId": 0,
+  "profile": "default",
+  "implementation": "0x...",
+  "proxy": "0x0000000000000000000000000000000000000000",
+  "deployBlock": 0,
+  "policyHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+}
+```
+`proxy`, `deployBlock`(프록시 배포 블록, 인덱서 시작점 `ORDERS_DEPLOY_BLOCK`), `policyHash`가 0이면 아직 2단계 이후를 하지 않은 것이다. 서버는 `proxy`가 0인 기록을 배포 안 됨으로 다룬다.
 
 ## 하지 말 것 (MUST NOT)
 - 임의 주소로 보내는 관리자 함수(`sweep`, `rescue` 등)를 만들지 않는다. 불변식 1이 깨진다.
