@@ -512,6 +512,14 @@ describe('GET /api/orders/:id (status screens)', () => {
     );
   });
 
+  it('arrival counts from the press, not from the quote', async () => {
+    const { quote, confirm, view } = await setup();
+    const id = await quote();
+    vi.setSystemTime(NOW + 5 * 60_000); // pressed five minutes after the quote
+    await confirm(id);
+    expect(zOrderResult.parse((await view(id)).body).order.etaAt).toBe(NOW + 8 * 60_000);
+  });
+
   it('another user order is 404, and the read changes nothing', async () => {
     const { quote, view, row } = await setup();
     const id = await quote();
