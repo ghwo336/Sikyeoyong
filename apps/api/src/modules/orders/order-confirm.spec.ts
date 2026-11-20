@@ -187,6 +187,21 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
     expect(await payment.balanceOf(wallet.address)).toBe(0n);
   });
 
+  it('a provider with a gas reserve (path B) is topped up to amount plus the reserve', async () => {
+    const { payment, wallet, quote, confirm, allowance } = await setup();
+    Object.defineProperty(payment, 'gasReserveAokrw', { value: A('100') });
+    const fund = vi.spyOn(payment, 'fund');
+    await confirm(await quote());
+    expect(fund.mock.calls.map((c) => c[1])).toEqual([A('9100')]);
+    // The order spends 9,000; the reserve stays in the wallet for the next gas.
+    expect(await payment.balanceOf(wallet.address)).toBe(A('100'));
+    // A wallet already holding amount plus reserve takes no top-up.
+    fund.mockClear();
+    await confirm(await quote('c2'));
+    expect(fund.mock.calls.map((c) => c[1])).toEqual([A('9000')]);
+    expect(allowance.balanceAokrw('u1')).toBe(-A('18100'));
+  });
+
   it('a failed or unneeded top-up takes nothing from the owner allowance ledger', async () => {
     const { payment, wallet, quote, confirm, allowance } = await setup();
     vi.spyOn(payment, 'fund').mockRejectedValueOnce(new Error('rpc down'));

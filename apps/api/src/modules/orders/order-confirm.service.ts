@@ -203,17 +203,19 @@ export class OrderConfirmService {
     nowMs: number,
   ): Promise<void> {
     const balance = await this.payment.balanceOf(wallet.address);
-    if (balance >= amount) return;
+    // Path B has no paymaster: the wallet also keeps its gas share (D-25). Others reserve 0.
+    const need = amount + (this.payment.gasReserveAokrw ?? 0n);
+    if (balance >= need) return;
     const r = await runOwnerAction(this.owner, {
       kind: 'fund',
       agent: wallet,
-      amount: amount - balance,
+      amount: need - balance,
     });
     if (!r.done) throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
     // fund sends one transaction; its hash is the record's.
     const txHash = r.txHashes[0] ?? null;
     try {
-      this.allowance.record(userId, 'fund', amount - balance, txHash, nowMs);
+      this.allowance.record(userId, 'fund', need - balance, txHash, nowMs);
     } catch (e) {
       this.logger.error(
         `owner allowance fund not recorded: user ${userId} tx ${txHash ?? '-'} (${(e as Error).name})`,
