@@ -28,21 +28,27 @@ describe('parseMasterKey', () => {
     expect(parseMasterKey(randomBytes(32).toString('base64')).length).toBe(32);
   });
 
-  it.each([undefined, '', 'not-base64!!', randomBytes(16).toString('base64')])(
-    'refuses %j without echoing it',
-    (raw) => {
-      const err = (() => {
-        try {
-          parseMasterKey(raw);
-        } catch (e) {
-          return e;
-        }
-        return null;
-      })();
-      expect(err).toBeInstanceOf(AppError);
-      if (raw) expect(JSON.stringify((err as AppError).detail)).not.toContain(raw);
-    },
-  );
+  it.each([
+    undefined,
+    '',
+    'not-base64!!',
+    randomBytes(16).toString('base64'),
+    // 32 good bytes with junk characters mixed in: Buffer.from would skip them and accept.
+    `${randomBytes(32).toString('base64').slice(0, 20)}!!${randomBytes(32).toString('base64').slice(20)}`,
+    // non-canonical: the same 32 bytes with a stray newline and without padding
+    `${randomBytes(32).toString('base64')}\n`.replace('=', ''),
+  ])('refuses %j without echoing it', (raw) => {
+    const err = (() => {
+      try {
+        parseMasterKey(raw);
+      } catch (e) {
+        return e;
+      }
+      return null;
+    })();
+    expect(err).toBeInstanceOf(AppError);
+    if (raw) expect(JSON.stringify((err as AppError).detail)).not.toContain(raw);
+  });
 });
 
 describe('AgentKeyVault', () => {

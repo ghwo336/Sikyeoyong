@@ -28,7 +28,8 @@ const IV_BYTES = 12;
 /** Parses AGENT_KEY_ENCRYPTION_KEY (32 bytes, base64). The error names the variable, never the value. */
 export function parseMasterKey(raw: string | undefined): Buffer {
   const key = raw === undefined ? Buffer.alloc(0) : Buffer.from(raw, 'base64');
-  if (key.length !== 32) {
+  // Buffer.from skips bad characters; only the canonical encoding of the 32 bytes is accepted.
+  if (key.length !== 32 || key.toString('base64') !== raw) {
     throw new AppError('INTERNAL', {
       reason: 'AGENT_KEY_ENCRYPTION_KEY must be 32 bytes, base64',
       variables: ['AGENT_KEY_ENCRYPTION_KEY'],
