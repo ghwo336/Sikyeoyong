@@ -53,3 +53,6 @@ seed/.keys/
 
 # 서브에이전트 git worktree (Claude Code)
 .claude/worktrees/
+
+# spike vendor tarballs (downloaded and hash-checked, never committed)
+spikes/**/vendor/
