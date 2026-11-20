@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { type PaymentProvider, zSetLevelResult } from '@sikyeoyong/shared';
+import { type OwnerAuthority, type PaymentProvider, zSetLevelResult } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -15,7 +15,7 @@ import { runMigrations } from '../../db/migrate.js';
 import { agentLimitHistory, agents } from '../../db/schema/index.js';
 import { insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
-import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
+import { OWNER_AUTHORITY, PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { AgentsModule } from './agents.module.js';
 
 // D-07 by hand: level 1 10,000, level 2 30,000, level 3 50,000 (aokrw = won * 10^18).
@@ -60,7 +60,8 @@ async function setup(env: Record<string, string> = {}) {
       .send({ level });
   const row = () => h.db.select().from(agents).where(eq(agents.id, 'a-u1')).get();
   const history = () => h.db.select().from(agentLimitHistory).all();
-  return { h, http, setLevel, row, history, payment };
+  const owner = moduleRef.get<OwnerAuthority>(OWNER_AUTHORITY);
+  return { h, http, setLevel, row, history, payment, owner, token };
 }
 
 describe('POST /api/agents/me/level (D-21, D-28)', () => {
@@ -81,12 +82,44 @@ describe('POST /api/agents/me/level (D-21, D-28)', () => {
   });
 
   it('lowers without re-auth, even in pouch mode', async () => {
-    const { h, setLevel, row } = await setup({ REAUTH_MODE: 'pouch' });
+    const { h, setLevel, row, history, payment } = await setup({ REAUTH_MODE: 'pouch' });
     h.db.update(agents).set({ level: 3 }).where(eq(agents.id, 'a-u1')).run();
+    const write = vi.spyOn(payment, 'setTransferLimit');
     const res = await setLevel(2);
     expect(res.status).toBe(200);
-    expect(zSetLevelResult.parse(res.body).perOrderLimit).toBe(W('30000'));
+    const body = zSetLevelResult.parse(res.body);
+    expect(body.perOrderLimit).toBe(W('30000'));
+    expect(write.mock.calls[0]?.[1]).toBe(BigInt(W('30000')));
     expect(row()?.level).toBe(2);
+    expect(history().map((r) => [r.level, r.transferLimitAokrw, r.txHash])).toEqual([
+      [2, W('30000'), body.txHash],
+    ]);
+  });
+
+  it.each(['PENDING', 'REVOKED'] as const)(
+    'a %s dragon is CHAIN_AGENT_LIMIT_UNSET: no chain write, nothing changes',
+    async (status) => {
+      const { h, setLevel, row, history, payment } = await setup();
+      h.db.update(agents).set({ status }).where(eq(agents.id, 'a-u1')).run();
+      const write = vi.spyOn(payment, 'setTransferLimit');
+      const res = await setLevel(3);
+      expect((res.body as { error: { code: string } }).error.code).toBe('CHAIN_AGENT_LIMIT_UNSET');
+      expect(write).not.toHaveBeenCalled();
+      expect(row()?.level).toBe(1);
+      expect(history()).toHaveLength(0);
+    },
+  );
+
+  it('when the owner must sign (signer user), the level does not change before the signature', async () => {
+    const { setLevel, row, history, payment, owner } = await setup();
+    vi.spyOn(owner, 'prepare').mockImplementation((action) =>
+      Promise.resolve({ id: 'p1', action, signer: 'user' }),
+    );
+    const write = vi.spyOn(payment, 'setTransferLimit');
+    expect((await setLevel(2)).status).toBe(500);
+    expect(write).not.toHaveBeenCalled();
+    expect(row()?.level).toBe(1);
+    expect(history()).toHaveLength(0);
   });
 
   it('in pouch mode a raise waits for the owner wallet (Q-30): refused, nothing written', async () => {
@@ -118,9 +151,14 @@ describe('POST /api/agents/me/level (D-21, D-28)', () => {
   });
 
   it('takes 1 to 3 only, needs a session and the fetch header', async () => {
-    const { http, setLevel } = await setup();
+    const { http, setLevel, token } = await setup();
     expect((await setLevel(4)).status).toBe(400);
     expect((await setLevel('3')).status).toBe(400);
     expect((await http().post('/api/agents/me/level').send({ level: 3 })).status).toBe(401);
+    const noHeader = await http()
+      .post('/api/agents/me/level')
+      .set('Cookie', `sid=${token}`)
+      .send({ level: 3 });
+    expect(noHeader.status).toBe(403);
   });
 });
