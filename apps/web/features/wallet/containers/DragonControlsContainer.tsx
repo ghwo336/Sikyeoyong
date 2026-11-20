@@ -1,13 +1,13 @@
 'use client';
 
-import { ListRow, Switch } from '@sikyeoyong/ui';
+import { ListRow, SPECIES_INFO, Switch } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
 import { useDetailsMode } from '../hooks/useDetailsMode';
 import { useSetFrozen } from '../hooks/useWallet';
 
-/** Wallet.dc.html bottom rows: the ID card, the pause switch and 자세히 보기. */
+/** Wallet.dc.html bottom rows: the look (D-32), the ID card, the pause switch and 자세히 보기. */
 export function DragonControlsContainer() {
   const router = useRouter();
   const me = useMe().data;
@@ -17,6 +17,14 @@ export function DragonControlsContainer() {
   if (!me || !budget) return null;
   return (
     <>
+      <ListRow
+        label="용이 모습"
+        value={SPECIES_INFO[me.dragonSpecies].name}
+        trailing="chevron"
+        onPress={() => {
+          router.push('/dragon/look');
+        }}
+      />
       <ListRow
         label="용이 신분증"
         value={me.dragonName}

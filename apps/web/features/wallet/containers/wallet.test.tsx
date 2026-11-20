@@ -95,6 +95,15 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     });
   });
 
+  it('the 용이 모습 row shows the species name and opens Look (D-32)', async () => {
+    getMe.mockResolvedValue({ ...ME, dragonSpecies: 'flower' });
+    wrap(<DragonControlsContainer />);
+    const row = await screen.findByRole('button', { name: /용이 모습/ });
+    expect(row).toHaveTextContent('꽃용');
+    await userEvent.click(row);
+    expect(push).toHaveBeenCalledWith('/dragon/look');
+  });
+
   it('the ID row opens the ID card', async () => {
     wrap(<DragonControlsContainer />);
     await userEvent.click(await screen.findByRole('button', { name: /용이 신분증/ }));

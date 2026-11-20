@@ -80,6 +80,11 @@ body {
   margin-top: auto;
 }
 
+/* Look.dc.html: the same frame as sign-up, 20 between blocks (D-32). */
+.screen.onboarding.look {
+  gap: var(--space-5);
+}
+
 /* Verify.dc.html: 24 between blocks. */
 .screen.onboarding.verify {
   gap: var(--space-6);
