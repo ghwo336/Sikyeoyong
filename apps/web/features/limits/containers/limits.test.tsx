@@ -119,6 +119,14 @@ describe('limit screens', () => {
     expect(await screen.findByText(/다시 채워져요/)).toBeInTheDocument();
   });
 
+  it('Cap with no 30-day window yet (a direct visit) goes back to the chat, not a blank screen', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, chainResetAtSec: null });
+    wrap(<CapContainer />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/');
+    });
+  });
+
   it('an order within the limit (waiting for another reason) gets no raise offer', async () => {
     getBudget.mockResolvedValue({
       ...BUDGET,

@@ -5,6 +5,7 @@ import { CapReached, TopBar } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBudget } from '../../budget/hooks/useBudget';
+import { useBackToChat } from '../hooks/useBackToChat';
 
 /** Cap.dc.html: the 30-day cap is used up; when it refills (the chain's resetAt). */
 export function CapContainer() {
@@ -15,6 +16,9 @@ export function CapContainer() {
   const back = () => {
     router.push('/');
   };
+  // No 30-day window yet (no refill time): nothing to show, so a direct visit goes back to the
+  // chat instead of a blank screen (browser QA 2).
+  useBackToChat(budget !== undefined && budget.chainResetAtSec === null);
   if (!budget || budget.chainResetAtSec === null) {
     return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
   }
