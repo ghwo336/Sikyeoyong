@@ -11,7 +11,8 @@ import { agents, users } from '../../../db/schema/index.js';
 import { ScriptedProvider } from '../harness/scripted-provider.js';
 import { LlmModule } from '../llm.module.js';
 import { AgentRuntime } from '../runtime.js';
-import { budgetForModel, LlmToolHandlers, STATIC_WEATHER } from './handlers.js';
+import { STATIC_WEATHER } from '../../recommend/recommend.service.js';
+import { budgetForModel, LlmToolHandlers } from './handlers.js';
 
 const NOW = Date.parse('2026-12-10T03:28:00.000Z'); // 12:28 KST
 const s = (won: bigint) => okrwToAokrw(won).toString();

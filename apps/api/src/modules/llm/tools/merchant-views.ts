@@ -1,0 +1,88 @@
+import {
+  aokrwToString,
+  formatOkrw,
+  type MerchantDetail,
+  parseAokrw,
+  type RecommendationCard,
+} from '@sikyeoyong/shared';
+import type { Recommendation, RecommendResult } from '../../recommend/recommend.service.js';
+import { ToolReply } from './tool-reply.js';
+
+/*
+ * What recommend_merchants and get_menu give the model, and the screen card.
+ * The model gets display words only: prices as "9,000원" (formatOkrw), never
+ * aokrw integers (agent-runtime.md MUST). Merchant names and descriptions are
+ * merchant-written text, already clipped to tech-spec 9.2 caps by
+ * MerchantsService, and reach the model only inside the runtime's <data>.
+ */
+
+/** Server-made reasons the model may repeat; it never has to work them out from numbers. */
+function reasons(r: Recommendation): string[] {
+  const out: string[] = [];
+  if (r.fits.craving > 0) out.push('말한 것과 맞음');
+  if (r.fits.weather > 0) out.push('지금 날씨에 맞음');
+  if (r.fits.affordability === 100) out.push('남은 예산의 하루 몫 안');
+  if (r.fits.novelty === 100) out.push('최근 3일 안 시킨 가게');
+  return out;
+}
+
+export function recommendationsForModel(result: RecommendResult) {
+  return {
+    weather: result.weather,
+    frozen: result.frozen,
+    cravingMatched: result.cravingMatched,
+    candidates: result.items.map((r) => ({
+      merchantId: r.merchant.id,
+      store: r.merchant.name,
+      category: r.merchant.category,
+      menuId: r.menu.id,
+      menu: r.menu.name,
+      description: r.menu.description,
+      price: formatOkrw(r.menu.priceAokrw),
+      etaMin: r.merchant.etaMin,
+      needsApproval: r.approvalReason !== null,
+      approvalReason: r.approvalReason,
+      reasons: reasons(r),
+    })),
+  };
+}
+
+/** ChatEvent recommendations: aokrw strings and ids for the screen (zRecommendationCard). */
+export function recommendationCards(result: RecommendResult): RecommendationCard[] {
+  return result.items.map((r) => ({
+    id: r.menu.id,
+    merchantId: r.merchant.id,
+    menuId: r.menu.id,
+    store: r.merchant.name,
+    etaMin: r.merchant.etaMin,
+    menu: r.menu.name,
+    price: aokrwToString(r.menu.priceAokrw),
+    needsApproval: r.approvalReason !== null,
+  }));
+}
+
+export function recommendReply(result: RecommendResult): ToolReply {
+  return new ToolReply(recommendationsForModel(result), {
+    type: 'recommendations',
+    items: recommendationCards(result),
+  });
+}
+
+/** get_menu for the model: the merchant and every menu with a display price. No card. */
+export function menuForModel(detail: MerchantDetail) {
+  return {
+    merchantId: detail.merchant.id,
+    store: detail.merchant.name,
+    category: detail.merchant.category,
+    openNow: detail.merchant.openNow,
+    etaMin: detail.merchant.etaMin,
+    menus: detail.menus.map((m) => ({
+      menuId: m.id,
+      menu: m.name,
+      price: formatOkrw(parseAokrw(m.price)),
+      description: m.description,
+      tags: m.tags,
+      available: m.available,
+    })),
+  };
+}

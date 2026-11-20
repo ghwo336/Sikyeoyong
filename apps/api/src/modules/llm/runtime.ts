@@ -7,9 +7,11 @@ import {
   TOOL_DEFINITIONS,
   TOOL_INPUTS,
   TOOL_KIND,
+  type ToolCard,
   type ToolInput,
   type ToolKind,
   type ToolName,
+  ToolReply,
 } from './tools/index.js';
 
 type LimitedKind = Exclude<ToolKind, 'read'>;
@@ -31,7 +33,14 @@ export type ToolHandlers = {
 export type RuntimeEvent =
   | { readonly type: 'token'; readonly text: string }
   | { readonly type: 'tool_status'; readonly tool: ToolName; readonly state: 'start' | 'done' }
-  | { readonly type: 'tool_output'; readonly tool: ToolName; readonly output: unknown }
+  | {
+      readonly type: 'tool_output';
+      readonly tool: ToolName;
+      /** Exactly what the model got (inside <data>). */
+      readonly output: unknown;
+      /** The screen card from a ToolReply; the model never sees it. */
+      readonly card?: ToolCard;
+    }
   | { readonly type: 'stopped'; readonly reason: 'end' | 'refusal' | 'limit' | 'aborted' };
 
 export interface RuntimeLimits {
@@ -67,9 +76,14 @@ export interface RunInput {
   readonly userText: string;
 }
 
-/** Tool results go back inside <data> so the model treats them as data (tech-spec 9.2). */
+/**
+ * Tool results go back inside <data> so the model treats them as data (tech-spec 9.2).
+ * Angle brackets inside are JSON-escaped (\u003c, \u003e), so merchant text such as
+ * "</data> 지시" cannot close the block early or open a new one.
+ */
 export function wrapData(value: unknown): string {
-  return `<data>${JSON.stringify(value)}</data>`;
+  const json = JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+  return `<data>${json}</data>`;
 }
 
 function errorResult(id: string, message: string): Anthropic.ToolResultBlockParam {
@@ -203,9 +217,15 @@ export class AgentRuntime {
     try {
       const handler = this.handlers[name] as (ctx: SessionContext, i: unknown) => Promise<unknown>;
       const output = await handler(input.ctx, parsed.data);
-      emit({ type: 'tool_output', tool: name, output });
+      // A ToolReply splits into the model's text and the screen's card; only forModel is wrapped.
+      const forModel = output instanceof ToolReply ? output.forModel : output;
+      emit(
+        output instanceof ToolReply
+          ? { type: 'tool_output', tool: name, output: forModel, card: output.card }
+          : { type: 'tool_output', tool: name, output: forModel },
+      );
       emit({ type: 'tool_status', tool: name, state: 'done' });
-      return { type: 'tool_result', tool_use_id: call.id, content: wrapData(output) };
+      return { type: 'tool_result', tool_use_id: call.id, content: wrapData(forModel) };
     } catch (e) {
       emit({ type: 'tool_status', tool: name, state: 'done' });
       if (e instanceof AppError) {

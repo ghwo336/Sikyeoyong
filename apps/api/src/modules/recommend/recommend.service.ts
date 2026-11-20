@@ -6,6 +6,13 @@ import { RECENT_ORDERS, type RecentOrdersReader } from './recent-orders.js';
 import { HABIT_WINDOW_MS, rank, type RankResult } from './score.js';
 import { WeatherService } from './weather.service.js';
 
+export type { ApprovalReason, Recommendation } from './score.js';
+// Other modules import only <module>.service (architecture.md), so the weather source is re-exported here.
+export { STATIC_WEATHER, WeatherService } from './weather.service.js';
+
+/** The ranked menus plus the weather they were ranked for. */
+export type RecommendResult = RankResult & { readonly weather: string };
+
 export interface RecommendInput {
   /** What the user said they want, as the model passed it on (a search word, not an order). */
   readonly craving?: string;
@@ -32,7 +39,7 @@ export class RecommendService {
     userId: string,
     input: RecommendInput,
     nowMs: number = Date.now(),
-  ): Promise<RankResult & { readonly weather: string }> {
+  ): Promise<RecommendResult> {
     const view = await this.budget.getView(userId, nowMs);
     const weather = this.weather.current();
     const recentOrders = this.recent
