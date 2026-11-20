@@ -13,7 +13,9 @@ import {SikyeoyongOrders} from "../src/SikyeoyongOrders.sol";
 ///   POLICY_PROFILE  default | demo (D-12). 배포 기록 파일 이름에 쓴다
 ///   RPC와 서명 키는 명령 인자로 (저장소 루트에서):
 ///     forge script contracts/script/Deploy.s.sol:Deploy --root contracts \
-///       --rpc-url "$MAROO_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast
+///       --rpc-url "$MAROO_RPC_URL" --account <keystore 이름> --broadcast
+///   키는 `cast wallet import <이름> --interactive`로 넣은 keystore(--account)나 --interactive로 받는다.
+///   --private-key는 쓰지 않는다 (키가 프로세스 목록과 셸 기록에 보인다).
 ///   가스 한도는 고정하지 않는다 (forge 추정값. 마루는 가스 한도의 절반을 무조건 과금, maroo-facts 4)
 ///
 /// 실제 테스트넷 배포는 호재 님 승인 뒤에만 한다. `pnpm contracts:deploy:testnet`은 준비 확인만 한다.
