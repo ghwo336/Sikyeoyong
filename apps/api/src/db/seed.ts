@@ -1,14 +1,16 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { AppError, aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { z } from 'zod';
 import { uuidv7 } from '../common/ids.js';
 import { loadConfig } from '../config/env.js';
 import { type Db, openDb } from './client.js';
 import { runMigrations } from './migrate.js';
+import { ensurePayoutKeys } from './merchant-keys/payout-keys.js';
 import { menus, merchants } from './schema/index.js';
+
+export { ensurePayoutKeys };
 
 // seed/merchants.json (tech-spec 7.1). Prices are whole OKRW in the file, aokrw text in the DB.
 const Key = z.string().regex(/^[a-z0-9-]{1,40}$/);
@@ -47,66 +49,6 @@ export function parseSeed(json: unknown): SeedFile {
       throw new AppError('INTERNAL', { reason: 'duplicate menu key in seed', merchant: m.key });
   }
   return seed;
-}
-
-const KeyFile = z.record(Key, z.object({ privateKey: z.string().regex(/^0x[0-9a-f]{64}$/) }));
-
-/**
- * Reads the key file without ever letting key material reach an error message:
- * a JSON SyntaxError quotes the broken line, so the original error and cause are dropped.
- */
-function readKeyFile(path: string): z.infer<typeof KeyFile> {
-  let raw: string;
-  try {
-    raw = readFileSync(path, 'utf8');
-  } catch {
-    throw new AppError('INTERNAL', { reason: 'payout key file cannot be read', path });
-  }
-  let json: unknown;
-  try {
-    json = JSON.parse(raw);
-  } catch {
-    throw new AppError('INTERNAL', { reason: 'payout key file is not valid JSON', path });
-  }
-  const parsed = KeyFile.safeParse(json);
-  if (!parsed.success) {
-    throw new AppError('INTERNAL', { reason: 'payout key file has an unexpected shape', path });
-  }
-  return parsed.data;
-}
-
-/**
- * One testnet payout key per merchant (tech-spec 7.1 step 1), kept in seed/.keys (gitignored,
- * mode 600). Missing keys are created; existing ones are reused so addresses stay stable.
- * Returns addresses only. Keys are never printed.
- */
-export function ensurePayoutKeys(
-  keyFilePath: string,
-  merchantKeys: readonly string[],
-): Map<string, string> {
-  const stored = existsSync(keyFilePath) ? readKeyFile(keyFilePath) : {};
-  let changed = false;
-  for (const key of merchantKeys) {
-    if (!stored[key]) {
-      stored[key] = { privateKey: generatePrivateKey() };
-      changed = true;
-    }
-  }
-  if (changed) {
-    // Write a temp file with 600 then rename, so a crash never leaves a truncated key file.
-    mkdirSync(dirname(keyFilePath), { recursive: true });
-    const tmp = `${keyFilePath}.${process.pid}.tmp`;
-    writeFileSync(tmp, `${JSON.stringify(stored, null, 2)}\n`, { mode: 0o600 });
-    chmodSync(tmp, 0o600);
-    renameSync(tmp, keyFilePath);
-  }
-  return new Map(
-    merchantKeys.map((key) => {
-      const entry = stored[key];
-      if (!entry) throw new AppError('INTERNAL', { reason: 'missing payout key', merchant: key });
-      return [key, privateKeyToAccount(entry.privateKey as `0x${string}`).address];
-    }),
-  );
 }
 
 export interface SeedResult {

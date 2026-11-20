@@ -192,7 +192,7 @@ describe('ensurePayoutKeys', () => {
   it('leaves no temp file behind', () => {
     const dir = tempDir();
     ensurePayoutKeys(join(dir, 'k.json'), ['a']);
-    expect(readdirSync(dir)).toEqual(['k.json']);
+    expect(readdirSync(dir).sort()).toEqual(['archive', 'k.json']);
   });
 
   it('returns addresses only, never the private keys', () => {
