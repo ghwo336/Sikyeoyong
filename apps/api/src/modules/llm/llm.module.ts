@@ -3,6 +3,8 @@ import { RateLimitModule } from '../../common/rate-limit/rate-limit.module.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { BudgetModule } from '../budget/budget.module.js';
+import { MerchantsModule } from '../merchants/merchants.module.js';
+import { RecommendModule } from '../recommend/recommend.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { ChatHistoryService } from './chat-history.service.js';
 import { ChatController } from './chat.controller.js';
@@ -15,7 +17,14 @@ import { LLM_PROVIDER } from './llm-provider.js';
 
 /** The chat endpoint, its runtime wiring, LLM_PROVIDER from config and the tool handlers. */
 @Module({
-  imports: [AuthModule, BudgetModule, UsersModule, RateLimitModule],
+  imports: [
+    AuthModule,
+    BudgetModule,
+    UsersModule,
+    RateLimitModule,
+    MerchantsModule,
+    RecommendModule,
+  ],
   controllers: [ChatController],
   providers: [
     LlmToolHandlers,
