@@ -7,7 +7,7 @@ import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../../orders/hooks/useOrder';
 import { withEunNeun } from '../../../lib/format';
-import { limitToFit } from '../fit';
+import { raisePlan } from '../fit';
 import { useBackToChat } from '../hooks/useBackToChat';
 
 /** Blocked.dc.html: the order is over what the dragon may spend at once. Raise, or pick again. */
@@ -33,7 +33,8 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   // Only an order over the per-order limit belongs here; other waits (a new store, the budget)
   // are the owner's approval, not a limit raise.
   if (attempted <= limit) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
-  const raiseTo = limitToFit(attempted);
+  // No offer when no raise can let it through (raisePlan, D-31).
+  const raiseTo = raisePlan(attempted, budget)?.perOrder;
   const menu = order.items[0]?.name ?? '이 메뉴';
   return (
     <>

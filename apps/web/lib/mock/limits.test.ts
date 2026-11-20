@@ -61,4 +61,14 @@ describe('mock limits (user-flow 12 to 14)', () => {
     expect(b.chainUsed).toBe(won(51_000n));
     expect(b.nagLevel).toBe('warn70'); // 85%
   });
+  it('refuses one order above the 30-day limit like the server, changing nothing (D-31)', async () => {
+    await expect(
+      mockApi.setLimits({ perOrderLimit: won(30_000n), myPeriodicLimit: won(20_000n) }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect((await mockApi.getMe()).perOrderLimit).toBe(won(10_000n));
+    await mockApi.setLimits({ myPeriodicLimit: won(20_000n) });
+    await expect(mockApi.setLimits({ perOrderLimit: won(25_000n) })).rejects.toBeInstanceOf(
+      AppError,
+    );
+  });
 });

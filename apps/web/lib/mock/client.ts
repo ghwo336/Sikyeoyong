@@ -443,6 +443,14 @@ export const mockApi: ApiClient = {
       return { dragonSpecies };
     }),
   setLimits: ({ perOrderLimit, myPeriodicLimit }) => {
+    // Like the server (D-31): one order may not be more than 30 days allow; nothing changes.
+    const perOrderAfter = perOrderLimit === undefined ? perOrderNow() : parseAokrw(perOrderLimit);
+    const mineAfter = parseAokrw(myPeriodicLimit ?? budget.myPeriodicLimit);
+    if (perOrderAfter > mineAfter) {
+      return Promise.reject(
+        new AppError('VALIDATION_FAILED', { reason: 'mock: per-order above the 30-day limit' }),
+      );
+    }
     if (perOrderLimit !== undefined) session = { ...session, perOrderLimit };
     if (myPeriodicLimit !== undefined) {
       const used = parseAokrw(budget.chainUsed);

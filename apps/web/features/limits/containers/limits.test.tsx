@@ -162,4 +162,38 @@ describe('limit screens', () => {
       { timeout: 10_000 },
     );
   });
+  it('a per-order raise above the 30-day limit raises the 30 days with it, shown before and after (D-31)', async () => {
+    const W10000 = okrwToAokrw(10_000n).toString();
+    getBudget.mockResolvedValue({
+      ...BUDGET,
+      myPeriodicLimit: W10000,
+      limitRanges: {
+        ...BUDGET.limitRanges,
+        myPeriodic: { min: W10000, max: okrwToAokrw(500_000n).toString(), step: W10000 },
+      },
+    });
+    wrap(<RaiseContainer orderId="o-bossam" />);
+    const confirm = await screen.findByRole('button', { name: /Face ID로 확인하고 바꾸기/ });
+    expect(screen.getByText('10,000원에서 20,000원으로')).toBeInTheDocument();
+    await userEvent.click(confirm);
+    expect(setLimits).toHaveBeenCalledWith({
+      perOrderLimit: okrwToAokrw(15_000n).toString(),
+      myPeriodicLimit: okrwToAokrw(20_000n).toString(),
+    });
+  });
+
+  it('offers no raise when the 30 days would have to pass the shared cap', async () => {
+    const W10000 = okrwToAokrw(10_000n).toString();
+    getBudget.mockResolvedValue({
+      ...BUDGET,
+      myPeriodicLimit: W10000,
+      limitRanges: {
+        ...BUDGET.limitRanges,
+        myPeriodic: { min: W10000, max: W10000, step: W10000 },
+      },
+    });
+    wrap(<BlockedContainer orderId="o-bossam" />);
+    expect(await screen.findByText(/보쌈 정식은/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /올리고 시키기/ })).toBeNull();
+  });
 });

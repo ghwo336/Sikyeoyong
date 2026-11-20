@@ -9,7 +9,7 @@ import { useBudget } from '../../budget/hooks/useBudget';
 import { handQuoteToChat } from '../../chat/hooks/useChat';
 import { useOrder } from '../../orders/hooks/useOrder';
 import { useRequoteOrder } from '../../orders/hooks/useRequoteOrder';
-import { limitToFit } from '../fit';
+import { raisePlan } from '../fit';
 import { useBackToChat } from '../hooks/useBackToChat';
 import { useSetLimits } from '../hooks/useSetLimits';
 
@@ -33,26 +33,26 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
   const toChat = () => {
     router.push('/');
   };
-  // The limit when the button was pressed: after the raise the budget already holds the new one,
-  // and the card stays (confirming) with its old amount until the chat opens.
-  const [pressedFrom, setPressedFrom] = useState<bigint | undefined>(undefined);
-  const to = order ? limitToFit(parseAokrw(order.amount)) : undefined;
-  // Nothing to raise: no limit in the range covers it, or the limit is already there.
+  // The limits when the button was pressed: after the raise the budget already holds the new
+  // ones, and the card stays (confirming) with its old amounts until the chat opens.
+  const [pressed, setPressed] = useState<{ perOrder: bigint; mine: bigint } | undefined>(undefined);
+  const plan = order && budget ? raisePlan(parseAokrw(order.amount), budget) : undefined;
+  // Nothing to raise: no limit in the range covers it (or the 30 days would pass the shared
+  // cap), or the limit is already there.
   const nothingToRaise =
     budget !== undefined &&
     order !== undefined &&
-    pressedFrom === undefined &&
-    (to === undefined || to <= parseAokrw(budget.perOrderLimit));
+    pressed === undefined &&
+    (plan === undefined || plan.perOrder <= parseAokrw(budget.perOrderLimit));
   useBackToChat(orderQuery.isError || nothingToRaise);
-  if (
-    !budget ||
-    !order ||
-    to === undefined ||
-    (pressedFrom === undefined && to <= parseAokrw(budget.perOrderLimit))
-  ) {
+  if (!budget || !order || plan === undefined || nothingToRaise) {
     return <TopBar title="한도 바꾸기" onBack={back} />;
   }
-  const from = pressedFrom ?? parseAokrw(budget.perOrderLimit);
+  const from = pressed?.perOrder ?? parseAokrw(budget.perOrderLimit);
+  const mine = pressed?.mine ?? parseAokrw(budget.myPeriodicLimit);
+  const to = plan.perOrder;
+  // D-31: one order may not be more than 30 days allow, so the 30 days go up with it when needed.
+  const mineTo = plan.myPeriodic;
   return (
     <>
       <TopBar title="한도 바꾸기" onBack={back} />
@@ -64,7 +64,10 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
         rows={[
           {
             label: '30일에 쓸 돈',
-            value: `${formatOkrw(parseAokrw(budget.myPeriodicLimit))} 그대로`,
+            value:
+              mineTo === undefined || mineTo <= mine
+                ? `${formatOkrw(mine)} 그대로`
+                : `${formatOkrw(mine)}에서 ${formatOkrw(mineTo)}으로`,
           },
         ]}
         status={
@@ -72,9 +75,14 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
         }
         onConfirm={() => {
           if (raise.isPending || raise.isSuccess) return;
-          setPressedFrom(from);
+          setPressed({ perOrder: from, mine });
           raise.mutate(
-            { perOrderLimit: to.toString() },
+            {
+              perOrderLimit: to.toString(),
+              ...(mineTo === undefined || mineTo <= mine
+                ? {}
+                : { myPeriodicLimit: mineTo.toString() }),
+            },
             {
               onSuccess: () => {
                 requote.mutate(orderId, {

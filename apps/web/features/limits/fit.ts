@@ -1,4 +1,4 @@
-import { getPolicy, parseAokrw, perOrderLimitToFit } from '@sikyeoyong/shared';
+import { type BudgetView, getPolicy, parseAokrw, perOrderLimitToFit } from '@sikyeoyong/shared';
 
 /**
  * The smallest per-order limit that lets this order through (Blocked.dc.html "한 번에 N원으로
@@ -45,4 +45,31 @@ export function thirtyDayFloor(perOrder: bigint, range: Range): bigint {
   const steps = (perOrder - range.min + range.step - 1n) / range.step;
   const floor = range.min + steps * range.step;
   return floor > range.max ? range.max : floor;
+}
+
+/** What a raise from Blocked sends: the per-order amount, and the 30-day one when it must follow. */
+export interface RaisePlan {
+  readonly perOrder: bigint;
+  /** Set when the 30-day limit is under the new per-order one and goes up with it (D-31). */
+  readonly myPeriodic?: bigint;
+}
+
+/**
+ * The raise that lets this order through (Blocked "한 번에 N원으로 올리고 시키기"): the smallest
+ * per-order step that covers it, and when that is above my 30-day limit, the smallest 30-day
+ * step at or above it too, since one order may not be more than 30 days allow (the server
+ * refuses it). undefined when no per-order step covers it or the 30 days would have to pass the
+ * shared cap (the top of the 30-day range).
+ */
+export function raisePlan(
+  amount: bigint,
+  budget: Pick<BudgetView, 'myPeriodicLimit' | 'limitRanges'>,
+): RaisePlan | undefined {
+  const perOrder = limitToFit(amount);
+  if (perOrder === undefined) return undefined;
+  if (perOrder <= parseAokrw(budget.myPeriodicLimit)) return { perOrder };
+  const r = budget.limitRanges.myPeriodic;
+  const range = { min: parseAokrw(r.min), max: parseAokrw(r.max), step: parseAokrw(r.step) };
+  const myPeriodic = thirtyDayFloor(perOrder, range);
+  return myPeriodic < perOrder ? undefined : { perOrder, myPeriodic };
 }
