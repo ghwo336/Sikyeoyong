@@ -233,8 +233,8 @@ apps/api/src/
 | GET | `/agents/me` | user | | `AgentSetupView` (`{ status: PENDING \| ACTIVE \| FAILED, steps: [wallet, identity, limit] }`, `api/me.ts`). 지갑 화면용 상세(8004 agentId, 지갑, 체인 상태)는 그 화면을 만들 때 선택 칸으로 더한다 |
 | POST | `/agents/me/setup/retry` | user | | `AgentSetupView`. 부화가 실패했을 때만 멈춘 단계부터 다시 한다 ("다시 깨우기", 2026-11-20 추가) |
 | POST | `/agents/me/level` | user | `{ level: 1 \| 2 \| 3 }` (`zSetLevelBody`) | `{ level, perOrderLimit, txHash }` (`zSetLevelResult`, 같은 레벨이면 `txHash` null). TransferLimit을 `OwnerAuthority`로 먼저 쓰고 그다음 레벨과 한도 이력. 내리기는 바로, 올리기는 재인증(D-28: `REAUTH_MODE=none`이면 버튼만, `pouch`는 Q-30 전까지 거절). 멈춘 용이는 `SERVER_FROZEN`. 레벨 초과 승인을 묶는 `approvalId`는 승인 API 쪽 후속 (2026-11-20) |
-| POST | `/agents/me/freeze` | user | | `{ agent, txHashes }` |
-| POST | `/agents/me/unfreeze` | user | | `{ agent, txHashes }` |
+| POST | `/agents/me/freeze` | user | | `FreezeResult` (`{ frozen, txHashes }`, `api/wallet.ts`). 서버 동결 플래그 먼저(바로 `SERVER_FROZEN`), 그다음 소유자 포트로 체인 `setAgentPaused`. 체인 호출이 실패해도 서버는 멈춘 채로 남고 주인이 다시 누른다(자동 재시도 없음). 이미 멈춘 용이면 체인 멈춤만 다시 보낸다. 2026-11-20 구현 (`agents/agent-freeze.service.ts`) |
+| POST | `/agents/me/unfreeze` | user | | `FreezeResult`. 체인 재개 먼저, 그다음 서버 플래그. 체인 호출이 실패하면 계속 멈춤. 이미 깨어 있으면 아무것도 보내지 않는다 |
 | POST | `/agents/me/fund` | user | `{ amount }` (aokrw 문자열) | `{ txHash }` |
 | POST | `/agents/me/drain` | user | | `{ txHashes }` |
 | GET | `/budget` | user | | `BudgetView` (아래) |

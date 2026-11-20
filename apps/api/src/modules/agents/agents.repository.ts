@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AgentLevel, DragonSpecies } from '@sikyeoyong/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { agentLimitHistory, agents, type SETUP_STEPS } from '../../db/schema/index.js';
@@ -91,6 +91,17 @@ export class AgentsRepository {
         .where(eq(agents.id, id))
         .run();
     })();
+  }
+
+  /** Moves the status from one value to another; false if the row was not in `from` (someone else won). */
+  changeStatus(id: string, from: 'ACTIVE' | 'FROZEN', to: 'ACTIVE' | 'FROZEN'): boolean {
+    return (
+      this.handle.db
+        .update(agents)
+        .set({ status: to })
+        .where(and(eq(agents.id, id), eq(agents.status, from)))
+        .run().changes === 1
+    );
   }
 
   /** A level change after its TransferLimit was written: the level and its history in one transaction. */

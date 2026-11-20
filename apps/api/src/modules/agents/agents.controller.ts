@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common
 import {
   type AgentSetupView,
   type CreateAgentBody,
+  type FreezeResult,
   type SetLevelBody,
   type SetLevelResult,
   zCreateAgentBody,
@@ -10,6 +11,7 @@ import {
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
+import { AgentFreezeService } from './agent-freeze.service.js';
 import { AgentLevelService } from './agent-level.service.js';
 import { AgentsService } from './agents.service.js';
 
@@ -20,6 +22,7 @@ export class AgentsController {
   constructor(
     private readonly agents: AgentsService,
     private readonly levels: AgentLevelService,
+    private readonly freezes: AgentFreezeService,
   ) {}
 
   @Post()
@@ -43,6 +46,19 @@ export class AgentsController {
     @Body(new ZodValidationPipe(zSetLevelBody)) body: SetLevelBody,
   ): Promise<SetLevelResult> {
     return this.levels.setLevel(user.userId, body.level);
+  }
+
+  /** The kill switch (user-flow 17): the owner's button only, never an LLM tool. */
+  @Post('me/freeze')
+  @HttpCode(200)
+  freeze(@CurrentUser() user: SessionUser): Promise<FreezeResult> {
+    return this.freezes.freeze(user.userId);
+  }
+
+  @Post('me/unfreeze')
+  @HttpCode(200)
+  unfreeze(@CurrentUser() user: SessionUser): Promise<FreezeResult> {
+    return this.freezes.unfreeze(user.userId);
   }
 
   @Post('me/setup/retry')

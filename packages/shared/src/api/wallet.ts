@@ -29,3 +29,16 @@ export const zIdCardView = z
   })
   .strict();
 export type IdCardView = z.infer<typeof zIdCardView>;
+
+/**
+ * POST /agents/me/freeze and /agents/me/unfreeze (tech-spec 3.2, Wallet.dc.html "용이 멈추기",
+ * Frozen.dc.html "깨우기"): the dragon's state now and the chain transactions that paused or
+ * resumed it (setAgentPaused through the owner port, D-24).
+ */
+export const zFreezeResult = z
+  .object({
+    frozen: z.boolean(),
+    txHashes: z.array(z.string().regex(/^0x[0-9a-fA-F]{64}$/)),
+  })
+  .strict();
+export type FreezeResult = z.infer<typeof zFreezeResult>;

@@ -90,4 +90,11 @@ export {
   type ApprovalList,
   type ApprovalView,
 } from './approvals.js';
-export { zIdCardView, zWalletView, type IdCardView, type WalletView } from './wallet.js';
+export {
+  zFreezeResult,
+  zIdCardView,
+  zWalletView,
+  type FreezeResult,
+  type IdCardView,
+  type WalletView,
+} from './wallet.js';

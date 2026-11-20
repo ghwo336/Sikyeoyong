@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { zIdCardView, zWalletView } from './wallet.js';
+import { zFreezeResult, zIdCardView, zWalletView } from './wallet.js';
 
 describe('zWalletView', () => {
   it('reads aokrw strings only', () => {
@@ -20,5 +20,18 @@ describe('zIdCardView', () => {
     expect(zIdCardView.parse(v)).toEqual(v);
     expect(zIdCardView.safeParse({ ...v, ownerName: '' }).success).toBe(false);
     expect(zIdCardView.safeParse({ ...v, bornAt: -1 }).success).toBe(false);
+  });
+});
+
+describe('zFreezeResult', () => {
+  it('takes the state and 32-byte tx hashes only', () => {
+    const v = { frozen: true, txHashes: [`0x${'a'.repeat(64)}`] };
+    expect(zFreezeResult.parse(v)).toEqual(v);
+    expect(zFreezeResult.parse({ frozen: false, txHashes: [] })).toEqual({
+      frozen: false,
+      txHashes: [],
+    });
+    expect(zFreezeResult.safeParse({ ...v, txHashes: ['0x1234'] }).success).toBe(false);
+    expect(zFreezeResult.safeParse({ ...v, agent: {} }).success).toBe(false);
   });
 });
