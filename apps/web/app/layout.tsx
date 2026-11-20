@@ -12,8 +12,9 @@ import tokens from '../../../design/tokens.json';
 export const metadata: Metadata = {
   title: '시켜용',
   description: '배달을 대신 시켜 주는 아기 드래곤',
-  // iOS: opened from the home screen, no Safari bar (D-23, looks like an app).
-  // public/manifest.webmanifest: display standalone. Its colors repeat design/tokens.json ground.
+  // Opened from the home screen with no browser bar (D-23): that is the manifest's
+  // display standalone (public/manifest.webmanifest, colors repeat tokens.json ground and a test
+  // keeps them equal). appleWebApp only gives the title and the status bar style.
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: '시켜용', statusBarStyle: 'default' },
 };

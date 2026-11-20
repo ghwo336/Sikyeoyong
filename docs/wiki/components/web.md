@@ -54,7 +54,7 @@ children: []
   - Start `.screen.onboarding.start`: 여백 0 24 32, 사이 0. 알과 제목 묶음(ui `Hero`)이 남은 높이 가운데
   - Hatch `.screen.onboarding.hatch`: 여백 56 24 32(`size.hatchTop`), 사이 28. 알과 말 묶음(ui `Hero`)이 남은 높이 가운데
 - 대화 화면(Main)은 `.screen` 하나에 ui `ChatLayout`이 띠(위 줄 16 20 12, 예산 0 20, 입력칸 10 16 24)를 그린다.
-- 앱처럼 열기 (2026-11-20, D-23): `public/manifest.webmanifest`(`display: standalone`, 색은 `design/tokens.json`의 `ground` 값을 옮겨 적음. 정적 JSON이라 토큰을 바꾸면 같이 고친다. `app/`에는 page와 layout만 둔다는 D-18 게이트 때문에 Next의 `app/manifest.ts`를 쓰지 않는다)와 layout의 `appleWebApp`, `themeColor`. 홈 화면에 추가해 열면 브라우저 주소창 없이 뜬다. 남은 것: 앱 아이콘(`app/apple-icon.png`, 없으면 iOS가 화면을 줄여 아이콘으로 쓴다), 위 상태 표시줄과 겹치는 화면의 safe-area 확인.
+- 앱처럼 열기 (2026-11-20, D-23): `public/manifest.webmanifest`(`display: standalone`, 색은 `design/tokens.json`의 `ground` 값을 옮겨 적음. 정적 JSON이라 토큰을 바꾸면 같이 고친다. `app/`에는 page와 layout만 둔다는 D-18 게이트 때문에 Next의 `app/manifest.ts`를 쓰지 않는다)와 layout의 `appleWebApp`, `themeColor`. 홈 화면에 추가해 열면 브라우저 주소창 없이 뜬다. 주소창이 없는 것은 manifest의 standalone 덕이고 `appleWebApp`은 제목과 상태 표시줄만 정한다 (Next 16은 `mobile-web-app-capable`을 낸다, 실측). 색이 토큰과 같은지는 `lib/pwa-manifest.test.ts`가 지킨다. 남은 것: 앱 아이콘(`public/apple-touch-icon.png`와 `metadata.icons`. `app/`에는 page와 layout만, D-18. 없으면 iOS가 화면을 줄여 아이콘으로 쓴다), 실기기 확인, 위 상태 표시줄과 겹치는 화면의 safe-area 확인.
 
 ## 가입 뒤로 (Verify, Name)
 - 뒤로 버튼은 브라우저 기록(`router.back()`)이 아니라 이전 단계로 `router.replace`한다: Verify는 /start, Name은 /verify (2026-11-19 판단).
