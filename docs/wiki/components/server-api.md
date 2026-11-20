@@ -37,6 +37,7 @@ children: []
 - **멱등성**: 주문 `clientOrderId`, 대화 `clientMessageId`, 충전과 회수도 클라이언트 요청 ID. 체인에서는 `orderRef`.
 - **결제는 확인 엔드포인트에서만**: `POST /api/orders`와 LLM `place_order`는 견적만. 결제는 `POST /api/orders/:id/confirm`에서만.
 - **confirm은 상태로 멱등** (D-19): 상태별 동작은 `payment.md` "confirm 상태 규칙"이 원본이다. 요지: `quoted`와 재시도 가능한 `failed`에서만 결제하고(실패는 체인 조회 뒤 같은 orderRef로), 상태 전이는 조건부 UPDATE 하나로 해서 동시에 온 요청 중 하나만 결제로 간다. 나머지 상태는 결제 없이 200과 현재 주문. confirm 상태 때문에 409를 쓰지 않는다.
+- **돈을 옮기지 않는 꾸밈은 체인에 보내지 않는다**: 용이 모습 바꾸기(`PATCH /api/agents/:id { dragonSpecies }`, Look, D-32)는 `agents.dragon_species` 한 칸만 바꾸고 결제 어댑터와 소유자 포트를 부르지 않는다. 이름, 지갑, 한도, 8004 등록은 그대로이고, 돈과 무관해서 멈춘 용이도 바꿀 수 있다. 자기 용이만이고 남의 id나 없는 id는 둘 다 404(있는지 알리지 않는다). 코드: `modules/agents/agent-look.service.ts` (2026-11-20).
 - **바꿔 끼우는 구현은 프로바이더 토큰으로 주입**: `PaymentProvider`(A, B, C), `LlmProvider`, `MerchantSource`. 설정값으로 고른다.
 - **주기 작업**: `indexer`(3초 간격 getLogs), `delivery`(배달 단계 타이머)는 `@nestjs/schedule`. SQLite라 프로세스 하나.
 - **감사 로그**: 돈, 정책, 동결, 한도 변경은 누가 언제 무엇을 했는지 기록.

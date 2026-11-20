@@ -91,6 +91,11 @@ export class AgentsRepository {
     })();
   }
 
+  /** The dragon's look only (D-32): no other column changes. */
+  setSpecies(id: string, dragonSpecies: DragonSpecies): void {
+    this.handle.db.update(agents).set({ dragonSpecies }).where(eq(agents.id, id)).run();
+  }
+
   /** Moves the status from one value to another; false if the row was not in `from` (someone else won). */
   changeStatus(id: string, from: 'ACTIVE' | 'FROZEN', to: 'ACTIVE' | 'FROZEN'): boolean {
     return (

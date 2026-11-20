@@ -1,21 +1,26 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   type AgentSetupView,
   type CreateAgentBody,
   type FreezeResult,
+  type PatchAgentBody,
+  type PatchAgentResult,
   type RefundResult,
   zCreateAgentBody,
+  zMeView,
+  zPatchAgentBody,
 } from '@sikyeoyong/shared';
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { AgentFreezeService } from './agent-freeze.service.js';
+import { AgentLookService } from './agent-look.service.js';
 import { AgentRefundService } from './agent-refund.service.js';
 import { AgentsService } from './agents.service.js';
 
 /**
- * POST /api/agents, GET /api/agents/me, the owner's freeze, unfreeze and drain buttons, and
- * POST /api/agents/me/setup/retry. HTTP only. PUT /agents/me/limits is the limits module's (D-31).
+ * POST /api/agents, GET /api/agents/me, the owner's freeze, unfreeze and drain buttons,
+ * POST /api/agents/me/setup/retry and PATCH /api/agents/:id (Look, D-32). HTTP only. PUT /agents/me/limits is the limits module's (D-31).
  */
 @Controller('agents')
 @UseGuards(SessionGuard)
@@ -24,6 +29,7 @@ export class AgentsController {
     private readonly agents: AgentsService,
     private readonly freezes: AgentFreezeService,
     private readonly refunds: AgentRefundService,
+    private readonly looks: AgentLookService,
   ) {}
 
   @Post()
@@ -63,5 +69,16 @@ export class AgentsController {
   @HttpCode(200)
   retry(@CurrentUser() user: SessionUser): AgentSetupView {
     return this.agents.retrySetup(user.userId);
+  }
+
+  /** Look (user-flow 18): the species only, nothing on chain. The id is MeView.agentId. */
+  @Patch(':id')
+  @HttpCode(200)
+  look(
+    @CurrentUser() user: SessionUser,
+    @Param('id', new ZodValidationPipe(zMeView.shape.agentId)) id: string,
+    @Body(new ZodValidationPipe(zPatchAgentBody)) body: PatchAgentBody,
+  ): PatchAgentResult {
+    return this.looks.change(user.userId, id, body);
   }
 }
