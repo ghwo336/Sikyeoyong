@@ -1,8 +1,9 @@
+import { okrwToAokrw } from '@sikyeoyong/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockApi, resetMockSession } from '../../../lib/mock/client';
+import { mockApi, resetMockSession, setMockChainUsedForTests } from '../../../lib/mock/client';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -100,5 +101,16 @@ describe('ChatContainer', () => {
     await userEvent.click(confirm);
     expect(await screen.findByText(/레벨 3이 됐어용/)).toBeInTheDocument();
     expect((await mockApi.getMe()).level).toBe(3);
+  });
+
+  it('with the 30-day cap used up, picking a menu opens the Cap screen; no sheet, no payment', async () => {
+    setMockChainUsedForTests(okrwToAokrw(55_000n)); // 55,000 + 9,000 > 60,000
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/limit/cap');
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(confirmOrder).not.toHaveBeenCalled();
   });
 });

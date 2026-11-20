@@ -1,6 +1,6 @@
 import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { mockApi, resetMockSession } from './client';
+import { mockApi, resetMockSession, setMockChainUsedForTests } from './client';
 
 const won = (n: bigint) => okrwToAokrw(n).toString();
 const order = (merchantId: string, menuId: string, clientOrderId: string) =>
@@ -21,6 +21,7 @@ describe('mock limits (user-flow 12 to 14)', () => {
     expect((await mockApi.getBudget()).perOrderLimit).toBe(won(50_000n));
     const quoted = await order('hansang-bossam', 'bossam-set', 'c2');
     expect(quoted.order.status).toBe('quoted');
+    expect(quoted.quote?.perOrderLimit).toBe(won(50_000n)); // the raised limit, not level 1's
   });
 
   it('payments use the 30-day window (demo 60,000): two bowls fit, the third is CHAIN_PERIODIC_LIMIT', async () => {
@@ -42,5 +43,22 @@ describe('mock limits (user-flow 12 to 14)', () => {
     await mockApi.confirmOrder('order-pork-gukbap');
     await mockApi.confirmOrder('order-pork-gukbap');
     expect((await mockApi.getBudget()).chainUsed).toBe(won(50_000n));
+  });
+
+  it('a payment that lands exactly on the 60,000 cap goes through; one aokrw over is refused', async () => {
+    setMockChainUsedForTests(okrwToAokrw(51_000n));
+    expect((await order('maru-gukbap', 'pork-gukbap', 'c1')).order.status).toBe('quoted');
+    setMockChainUsedForTests(okrwToAokrw(51_000n) + 1n);
+    await expect(order('maru-gukbap', 'pork-gukbap', 'c2')).rejects.toMatchObject({
+      code: 'CHAIN_PERIODIC_LIMIT',
+    });
+  });
+
+  it("a payment adds to this month's spend and the nag stage (210,000 + 9,000 of 300,000)", async () => {
+    await order('maru-gukbap', 'pork-gukbap', 'c1');
+    await mockApi.confirmOrder('order-pork-gukbap');
+    const b = await mockApi.getBudget();
+    expect(b.personalSpent).toBe(won(219_000n));
+    expect(b.nagLevel).toBe('warn70');
   });
 });

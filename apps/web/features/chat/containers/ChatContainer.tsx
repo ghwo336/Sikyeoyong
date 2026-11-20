@@ -47,8 +47,12 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
     createOrder.mutate(rec, {
       onSuccess: (res) => {
         if (res.quote) chat.showQuote(res.quote);
-        // Over the dragon's per-order limit: the Blocked screen (user-flow 12).
-        else if (res.order.status === 'pending_approval') {
+        // Over the dragon's per-order limit: the Blocked screen (user-flow 12). Other waits
+        // (a new store, the budget) are the owner's approval card, not built yet (web.md).
+        else if (
+          res.order.status === 'pending_approval' &&
+          parseAokrw(rec.price) > parseAokrw(me?.perOrderLimit ?? '0')
+        ) {
           router.push(`/limit/${encodeURIComponent(res.order.id)}`);
         }
       },

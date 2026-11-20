@@ -54,7 +54,7 @@ beforeEach(() => {
 describe('limit screens', () => {
   it('Blocked compares 12,000 with 10,000 and offers level 2 (30,000), the lowest that covers it', async () => {
     wrap(<BlockedContainer orderId="o-bossam" />);
-    expect(await screen.findByText(/보쌈 정식는/)).toBeInTheDocument();
+    expect(await screen.findByText(/보쌈 정식은/)).toBeInTheDocument();
     expect(screen.getByText('12,000원')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /레벨 2로 올리고 시키기/ }));
     expect(push).toHaveBeenCalledWith('/limit/o-bossam/raise');
@@ -78,5 +78,33 @@ describe('limit screens', () => {
     });
     wrap(<CapContainer />);
     expect(await screen.findByText(/다시 채워져요/)).toBeInTheDocument();
+  });
+
+  it('an order within the limit (waiting for another reason) gets no raise offer', async () => {
+    getBudget.mockResolvedValue({
+      ...BUDGET,
+      perOrderLimit: okrwToAokrw(30_000n).toString(),
+      level: 2,
+    });
+    wrap(<BlockedContainer orderId="o-bossam" />);
+    await waitFor(() => {
+      expect(getBudget).toHaveBeenCalled();
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('button', { name: /올리고 시키기/ })).toBeNull();
+  });
+
+  it('no raise card when the dragon is already at that level', async () => {
+    getBudget.mockResolvedValue({
+      ...BUDGET,
+      perOrderLimit: okrwToAokrw(30_000n).toString(),
+      level: 2,
+    });
+    wrap(<RaiseContainer orderId="o-bossam" />);
+    await waitFor(() => {
+      expect(getBudget).toHaveBeenCalled();
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('button', { name: /Face ID로 확인하고 바꾸기/ })).toBeNull();
   });
 });

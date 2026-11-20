@@ -78,6 +78,11 @@ let session: MockSession = loadSession();
 let budget: BudgetView = BUDGET;
 let wallet: WalletView = WALLET;
 
+/** Tests put the 30-day window at a given use (aokrw), to reach the cap's edge exactly. */
+export function setMockChainUsedForTests(aokrw: bigint): void {
+  budget = { ...budget, chainUsed: aokrw.toString() };
+}
+
 /** Tests set where the mock starts (signed in with a hatched dragon, or a first visit). */
 export function resetMockSession(next: 'first-visit' | 'hatched'): void {
   session =
@@ -146,7 +151,7 @@ function quoteFor(rec: RecommendationCard): OrderQuote {
     request: extra?.request,
     amount: rec.price,
     dragonLine: extra?.confirmLine ?? `${rec.menu} 시킬게용.\n이대로 괜찮아용?`,
-    perOrderLimit: budget.perOrderLimit,
+    perOrderLimit: perOrderOf(levelOf()).toString(),
     periodUsedAfter: (parseAokrw(budget.chainUsed) + amount).toString(),
     periodCap: budget.chainCap,
   };
@@ -283,7 +288,7 @@ function spend(amount: bigint): void {
 
 /** Stand-in for the LLM: a menu name orders it, anything else gets the recommendations again. */
 const BUDGET_WORDS = ['예산', '다 쓴', '다쓴', '남았', '얼마'];
-const LIMIT_WORDS = ['올려', '한도'];
+const LIMIT_WORDS = ['올려', '늘려'];
 const FOOD_WORDS = ['시켜', '추천', '점심', '저녁', '배고', '먹'];
 
 /** The dragon's words about this month's budget, from the mock's own numbers. */

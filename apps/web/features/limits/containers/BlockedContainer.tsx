@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../../orders/hooks/useOrder';
+import { withEunNeun } from '../../../lib/format';
 import { levelFor } from '../levels';
 
 /** Blocked.dc.html: the order is over what the dragon may spend at once. Raise, or pick again. */
@@ -19,20 +20,24 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   };
   if (!me || !budget || !order) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
   const attempted = parseAokrw(order.amount);
+  const limit = parseAokrw(budget.perOrderLimit);
+  // Only an order over the per-order limit belongs here; other waits (a new store, the budget)
+  // are the owner's approval, not a level raise.
+  if (attempted <= limit) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
   const next = levelFor(attempted);
   const menu = order.items[0]?.name ?? '이 메뉴';
   return (
     <>
       <TopBar onBack={back} backLabel="대화로 돌아가기" />
       <DragonLine
-        text={`앗, ${menu}는\n제가 한 번에 쓸 수 있는 돈보다 커용.`}
+        text={`앗, ${withEunNeun(menu)}\n제가 한 번에 쓸 수 있는 돈보다 커용.`}
         mood="worried"
         layout="inline"
         species={me.dragonSpecies}
       />
       <LimitBlocked
         attempted={attempted}
-        limit={parseAokrw(budget.perOrderLimit)}
+        limit={limit}
         {...(next === undefined ? {} : { nextLevel: next })}
         onRaise={() => {
           router.push(`/limit/${encodeURIComponent(orderId)}/raise`);

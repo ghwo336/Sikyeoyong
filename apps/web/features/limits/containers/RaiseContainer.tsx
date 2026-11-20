@@ -21,7 +21,10 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
     router.push(`/limit/${encodeURIComponent(orderId)}`);
   };
   const next = order ? levelFor(parseAokrw(order.amount)) : undefined;
-  if (!budget || !order || next === undefined) return <TopBar title="한도 바꾸기" onBack={back} />;
+  // Nothing to raise: no level covers it, or the dragon is already there.
+  if (!budget || !order || next === undefined || next.level <= budget.level) {
+    return <TopBar title="한도 바꾸기" onBack={back} />;
+  }
   return (
     <>
       <TopBar title="한도 바꾸기" onBack={back} />

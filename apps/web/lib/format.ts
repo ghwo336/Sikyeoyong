@@ -37,3 +37,13 @@ export function chatStamp(unixMs: number, now: number): string {
 export function amountRatioText(value: bigint, max: bigint): string {
   return `${formatOkrw(value).replace(/원$/, '')} / ${formatOkrw(max)}`;
 }
+
+/**
+ * The topic particle after a word: 은 after a final consonant, 는 otherwise ("보쌈 정식은",
+ * "돼지국밥은", "김밥은", "라면은", "피자는"). A word not ending in Hangul takes 는.
+ */
+export function withEunNeun(word: string): string {
+  const last = word.charCodeAt(word.length - 1);
+  const hangul = last >= 0xac00 && last <= 0xd7a3;
+  return `${word}${hangul && (last - 0xac00) % 28 !== 0 ? '은' : '는'}`;
+}
