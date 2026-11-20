@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { DRAGON_MOODS } from '../domain/dragon-mood.js';
 import { zChatEvent, zChatHistory, zChatHistoryQuery, zSendChatMessageBody } from './chat.js';
 import { zSetLimitsBody, zSetLimitsResult } from './limits.js';
-import { zAgentSetupView, zCreateAgentBody, zMeView, zSignupConfig } from './me.js';
+import {
+  zAgentSetupView,
+  zCreateAgentBody,
+  zMeView,
+  zPatchAgentBody,
+  zSignupConfig,
+} from './me.js';
 import {
   ORDER_STATUSES,
   zCreateOrderBody,
@@ -239,6 +245,7 @@ describe('order schemas (tech-spec 3.2)', () => {
 describe('me and sign-up schemas', () => {
   it('reads the dragon and its per-order limit', () => {
     const me = {
+      agentId: 'agent-1',
       dragonName: '용이',
       dragonSpecies: 'forest',
       perOrderLimit: W10000,
@@ -305,5 +312,15 @@ describe('zRateOrderBody', () => {
     }
     expect(zRateOrderBody.safeParse({ value: 'great' }).success).toBe(false);
     expect(zRateOrderBody.safeParse({ value: 'again', stars: 5 }).success).toBe(false);
+  });
+});
+
+describe('look change schema (D-32)', () => {
+  it('takes only a known species', () => {
+    expect(zPatchAgentBody.parse({ dragonSpecies: 'water' })).toEqual({ dragonSpecies: 'water' });
+    expect(zPatchAgentBody.safeParse({ dragonSpecies: 'fire' }).success).toBe(false);
+    expect(zPatchAgentBody.safeParse({ dragonSpecies: 'water', dragonName: 'x' }).success).toBe(
+      false,
+    );
   });
 });

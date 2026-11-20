@@ -22,6 +22,7 @@ export class MeService {
   me(userId: string): MeView {
     const agent = this.agents.getForUser(userId);
     return {
+      agentId: agent.id,
       dragonName: agent.dragonName,
       dragonSpecies: agent.dragonSpecies,
       perOrderLimit: aokrwToString(agent.perOrderLimitAokrw),

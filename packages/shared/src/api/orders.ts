@@ -134,6 +134,15 @@ export type OrderView = z.infer<typeof zOrderView>;
 export const zOrderResult = z.object({ order: zOrderView }).strict();
 export type OrderResult = z.infer<typeof zOrderResult>;
 
+/**
+ * GET /orders (Main.dc.html 주문 내역 버튼, 진행 중인 주문 카드): the session user's recent orders,
+ * newest first, at most ORDER_LIST_MAX. Each is the same view as GET /orders/:id (its status is
+ * what the status screens show now). Quoted orders that were never confirmed are left out.
+ */
+export const ORDER_LIST_MAX = 20;
+export const zOrderList = z.object({ orders: z.array(zOrderView).max(ORDER_LIST_MAX) }).strict();
+export type OrderList = z.infer<typeof zOrderList>;
+
 /** :id of /orders/:id routes. */
 export const zOrderIdParam = id;
 

@@ -76,6 +76,7 @@ describe('GET /api/me', () => {
     const res = await as('u1').get('/api/me');
     expect(res.status).toBe(200);
     expect(zMeView.parse(res.body)).toEqual({
+      agentId: expect.any(String) as string,
       dragonName: '봄봄',
       dragonSpecies: 'star',
       perOrderLimit: W('50000'),

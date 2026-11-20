@@ -22,6 +22,7 @@ export const won = (n: bigint): string => aokrwToString(okrwToAokrw(n));
 const policy = getPolicy('default');
 
 export const ME: MeView = {
+  agentId: 'agent-1',
   dragonName: '용이',
   dragonSpecies: 'forest',
   perOrderLimit: aokrwToString(policy.perOrderLimit.initialAokrw),

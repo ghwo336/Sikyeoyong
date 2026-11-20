@@ -18,6 +18,7 @@ function fakeFetch(answers: Record<string, { status?: number; body: string }>) {
 describe('createHttpApi', () => {
   it('reads GET /api/me, same origin, with the fetch header', async () => {
     const me = {
+      agentId: 'agent-1',
       dragonName: '용이',
       dragonSpecies: 'forest',
       perOrderLimit: W10000,

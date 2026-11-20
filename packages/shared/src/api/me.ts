@@ -9,6 +9,8 @@ import { zAokrwString } from '../money/money.js';
  */
 export const zMeView = z
   .object({
+    /** The dragon's id, for PATCH /agents/:id (Look, D-32). */
+    agentId: z.string().min(1).max(64),
     dragonName: z.string().min(1).max(8),
     dragonSpecies: zDragonSpecies,
     /** The per-order limit; the dragon's look grows with it (dragonStage, D-31). */
@@ -50,6 +52,17 @@ export const zAgentSetupView = z
   })
   .strict();
 export type AgentSetupView = z.infer<typeof zAgentSetupView>;
+
+/**
+ * PATCH /agents/:id body (Look.dc.html, D-32): only the species. The owner's button only; nothing
+ * goes on chain, and the name, wallet, limits and 8004 registration stay as they are.
+ */
+export const zPatchAgentBody = z.object({ dragonSpecies: zDragonSpecies }).strict();
+export type PatchAgentBody = z.infer<typeof zPatchAgentBody>;
+
+/** PATCH /agents/:id answer. */
+export const zPatchAgentResult = z.object({ dragonSpecies: zDragonSpecies }).strict();
+export type PatchAgentResult = z.infer<typeof zPatchAgentResult>;
 
 /** POST /agents body. Species is decoration only (D-20). */
 export const zCreateAgentBody = z
