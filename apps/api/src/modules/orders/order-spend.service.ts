@@ -19,6 +19,11 @@ export const SPENT_STATUSES: readonly OrderStatus[] = [
 export class OrderSpend {
   constructor(private readonly repo: OrdersRepository) {}
 
+  /** Counted orders (paid or later, no refunds) since sinceMs: the recommender's history. */
+  recentSince(userId: string, sinceMs: number): { merchantId: string; createdAtMs: number }[] {
+    return this.repo.merchantsSince(userId, SPENT_STATUSES, sinceMs);
+  }
+
   /** Personal budget spend in a KST calendar month, summed in bigint (never SQL sum on text). */
   spentInMonthAokrw(userId: string, monthKst: string): bigint {
     const { startMs, endMs } = kstMonthRange(monthKst);

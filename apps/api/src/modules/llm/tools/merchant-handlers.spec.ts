@@ -7,6 +7,7 @@ import { loadConfig } from '../../../config/env.js';
 import { type DbHandle, openDb } from '../../../db/client.js';
 import { DB } from '../../../db/db.module.js';
 import { runMigrations } from '../../../db/migrate.js';
+import { orders } from '../../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../../test/fixtures.js';
 import { ScriptedProvider } from '../harness/scripted-provider.js';
 import { LlmModule } from '../llm.module.js';
@@ -34,7 +35,7 @@ afterEach(() => {
   while (handles.length) handles.pop()?.close();
 });
 
-async function setup() {
+async function setup(seed: (h: DbHandle) => void = () => undefined) {
   const h = openDb(':memory:');
   runMigrations(h.db);
   handles.push(h);
@@ -50,6 +51,7 @@ async function setup() {
   });
   insertMenu(h.db, 'x-bossam-l', 'm-bossam', 45_000n, { name: '보쌈 대(大)' });
   insertMenu(h.db, 'x-anything', 'm-fake', 1_000n, { name: '무엇이든' });
+  seed(h);
   const moduleRef = await Test.createTestingModule({ imports: [LlmModule] })
     .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig({}) : undefined))
     .compile();
@@ -190,5 +192,49 @@ describe('through the runtime (layer 1 harness)', () => {
     ]);
     const sentToModel = JSON.stringify(provider.requests.map((r) => r.messages));
     expect(sentToModel).not.toContain(W9000);
+  });
+});
+
+describe('recommend_merchants reads real order history (RECENT_ORDERS from OrdersService)', () => {
+  const order = (
+    h: DbHandle,
+    id: string,
+    userId: string,
+    status: 'paid' | 'quoted' | 'delivered',
+    createdAt: number,
+  ) =>
+    h.db
+      .insert(orders)
+      .values({
+        id,
+        orderRef: `0x${id.padStart(64, '0')}`,
+        userId,
+        agentId: `a-${userId}`,
+        merchantId: 'm-gukbap',
+        amountAokrw: W9000,
+        itemsJson: '[]',
+        status,
+        createdAt,
+        updatedAt: createdAt,
+      })
+      .run();
+  const reasonsOf = async (handlers: Awaited<ReturnType<typeof setup>>) => {
+    const reply = (await handlers.recommend_merchants({ userId: 'u1' }, {})) as ToolReply;
+    const forModel = reply.forModel as { candidates: { menuId: string; reasons: string[] }[] };
+    return forModel.candidates.find((c) => c.menuId === 'x-dwaeji')?.reasons ?? [];
+  };
+
+  it('a store paid at yesterday is no longer new; nothing paid leaves it new', async () => {
+    expect(await reasonsOf(await setup())).toContain('최근 3일 안 시킨 가게');
+    const paidYesterday = await setup((h) => order(h, 'o1', 'u1', 'delivered', NOW - 86_400_000));
+    expect(await reasonsOf(paidYesterday)).not.toContain('최근 3일 안 시킨 가게');
+  });
+
+  it('unpaid orders and other users orders do not count', async () => {
+    const handlers = await setup((h) => {
+      order(h, 'o1', 'u1', 'quoted', NOW - 86_400_000);
+      order(h, 'o2', 'u3', 'paid', NOW - 86_400_000);
+    });
+    expect(await reasonsOf(handlers)).toContain('최근 3일 안 시킨 가게');
   });
 });

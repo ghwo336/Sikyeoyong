@@ -31,6 +31,14 @@ export class OrdersService {
     return this.spend.spentInMonthAokrw(userId, monthKst);
   }
 
+  /** The user's counted orders since sinceMs (recommend preference and novelty, tech-spec 3.8). */
+  recentOrdersSince(
+    userId: string,
+    sinceMs: number,
+  ): { merchantId: string; createdAtMs: number }[] {
+    return this.spend.recentSince(userId, sinceMs);
+  }
+
   /** A quote, never a payment (the place_order tool; CLAUDE.md rule 3). */
   quote(userId: string, req: QuoteRequest, nowMs?: number): Promise<QuoteOutcome> {
     return this.quotes.create(userId, req, nowMs);

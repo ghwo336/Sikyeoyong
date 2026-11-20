@@ -9,10 +9,3 @@ export interface RecentOrdersReader {
 }
 
 export const RECENT_ORDERS = Symbol('RECENT_ORDERS');
-
-/**
- * Bound until OrdersService exports a recent-orders read (worklog follow-up).
- * No orders can be paid before place_order lands, so this is also what the
- * orders table would say today. Preference and novelty are then neutral.
- */
-export const NO_RECENT_ORDERS: RecentOrdersReader = { since: () => [] };

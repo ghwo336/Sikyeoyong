@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { ORDER_STATUSES, orders } from '../../db/schema/index.js';
@@ -46,6 +46,26 @@ export class OrdersRepository {
       )
       .all()
       .map((r) => r.amount);
+  }
+
+  /** The user's orders in the statuses created at or after sinceMs, oldest first. */
+  merchantsSince(
+    userId: string,
+    statuses: readonly OrderStatus[],
+    sinceMs: number,
+  ): { merchantId: string; createdAtMs: number }[] {
+    return this.handle.db
+      .select({ merchantId: orders.merchantId, createdAtMs: orders.createdAt })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, userId),
+          inArray(orders.status, [...statuses]),
+          gte(orders.createdAt, sinceMs),
+        ),
+      )
+      .orderBy(asc(orders.createdAt), asc(orders.id))
+      .all();
   }
 
   /** Whether the user has an order at this merchant in one of the statuses. */

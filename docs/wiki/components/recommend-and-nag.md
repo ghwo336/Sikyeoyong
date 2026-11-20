@@ -20,7 +20,7 @@ children: []
 - 예산 기준: 개인 월 예산(서버 설정, 기본 300,000 OKRW)과 30일 상한(체인, 500,000 OKRW).
 - 코드: `modules/budget/budget.service.ts`의 `BudgetService.getView(userId)`가 `BudgetView`(shared `zBudgetView`)를 만든다. 사용자 예산은 `UsersService`, 레벨·동결·지갑은 `AgentsService`, 이번 달 사용액은 `OrdersService.spentInMonthAokrw`, 30일 사용량은 `ChainReader`로만 받는다 (다른 모듈 저장소를 직접 읽지 않는다). 체인 읽기가 실패하면 숫자를 지어내지 않고 오류를 그대로 낸다.
 - 추천 입력: 날씨, 시간대, 대략 위치(1단계는 고정 지역 또는 사용자 입력), 최근 주문, 선호 메모리, 남은 예산, 레벨 한도.
-- 추천 코드: `modules/recommend`. `RecommendService.recommend(userId, { craving?, maxPriceAokrw? }, now)`가 입력을 모아 순수 함수 `score.ts`의 `rank()`에 넘긴다. 예산, 레벨, 동결, 30일 사용량은 `BudgetService.getView`, 가게와 메뉴는 `MerchantsService.catalog`(보이는 가게만), 날씨는 `WeatherService`(get_context와 같은 출처, `static`이면 "비", 그 밖은 지어내지 않고 오류), 최근 주문은 `RECENT_ORDERS` 포트(`recent-orders.ts`)로 받는다. 주문 테이블은 orders 모듈 것이라 직접 읽지 않는다. orders가 최근 주문 읽기 함수를 내보내기 전까지 포트는 빈 목록(`NO_RECENT_ORDERS`)이라 선호와 새로움 점수는 모든 가게가 같다 (주문이 결제되는 길도 아직 없어 지금 주문 테이블도 비어 있다). HTTP 경로는 없다 (LLM 도구 `recommend_merchants`만 쓴다).
+- 추천 코드: `modules/recommend`. `RecommendService.recommend(userId, { craving?, maxPriceAokrw? }, now)`가 입력을 모아 순수 함수 `score.ts`의 `rank()`에 넘긴다. 예산, 레벨, 동결, 30일 사용량은 `BudgetService.getView`, 가게와 메뉴는 `MerchantsService.catalog`(보이는 가게만), 날씨는 `WeatherService`(get_context와 같은 출처, `static`이면 "비", 그 밖은 지어내지 않고 오류), 최근 주문은 `RECENT_ORDERS` 포트(`recent-orders.ts`)로 받는다. 주문 테이블은 orders 모듈 것이라 직접 읽지 않는다. 포트는 `OrdersService.recentOrdersSince`(그 사용자의 paid 이상 주문, 환불 제외)에 묶여 있다 (2026-11-20). 견적만 된 주문, 실패한 주문, 다른 사용자의 주문은 선호와 새로움에 들어가지 않는다. HTTP 경로는 없다 (LLM 도구 `recommend_merchants`만 쓴다).
 
 ## 추천 점수 규칙 (코드 기준, tech-spec 3.8)
 점수는 정수로만 계산한다. 요소마다 0~100점, 가중치는 정수(35, 20, 20, 15, 10), 금액은 aokrw bigint. 같은 입력이면 어느 기계에서나 같은 순서다.

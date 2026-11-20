@@ -233,7 +233,7 @@ children: []
   - 보이는 가게는 DB `verified`와 `active`만으로 (open-questions Q-34, `onchain_id`는 체인 등록 스크립트 뒤).
   - 목 가게 `etaMin`은 배달 타이머 기본값 합 3분 (시안과 웹 목은 20~35분).
 - 막힌 것 (다른 작업자 몫):
-  - orders 모듈이 최근 주문 읽기 함수(`OrdersService`에서 사용자, 시각 이후, paid 이상, `{ merchantId, createdAtMs }`)를 내보내야 추천의 선호와 새로움이 살아난다. 그때 `RECENT_ORDERS` 바인딩만 바꾼다.
+  - (해결 2026-11-20) orders 모듈이 최근 주문 읽기 함수(`OrdersService`에서 사용자, 시각 이후, paid 이상, `{ merchantId, createdAtMs }`)를 내보내야 추천의 선호와 새로움이 살아난다. 그때 `RECENT_ORDERS` 바인딩만 바꾼다. `OrdersService.recentOrdersSince`로 묶었다.
   - approvals 모듈이 허용 가게 읽기를 내보내면 추천 `needsApproval`에 `NEW_MERCHANT`를 더한다.
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: 주문 견적(`place_order`)에서 `lookupForOrder` 쓰기(`not_orderable` → `CHAIN_MERCHANT_INACTIVE`), 웹 목을 실제 `/api/merchants`와 추천 카드로 바꾸기, `etaMin` 출처를 delivery 모듈로.
