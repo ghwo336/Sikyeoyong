@@ -142,10 +142,12 @@ describe('EntryGate splash (Splash.dc.html, user-flow 0)', () => {
       vi.advanceTimersByTime(100);
     });
     expect(screen.getByRole('status')).toHaveTextContent('용이를 깨우는 중이에요');
+    // Nowhere to go yet, so nothing to press (browser QA 2): no button, no "시작하기" name.
+    expect(screen.queryByRole('button')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('once up, a tap lets the next step in as soon as the answer is there', async () => {
+  it('once the answer is there, a tap skips the rest of the minimum time', async () => {
     let answer: (v: unknown) => void = () => undefined;
     getMe.mockReturnValue(
       new Promise((r) => {
@@ -156,7 +158,7 @@ describe('EntryGate splash (Splash.dc.html, user-flow 0)', () => {
     draw(true);
     expect(await screen.findByRole('status', {}, { timeout: 2_000 })).toBeInTheDocument();
     answer(ME);
-    await userEvent.click(screen.getByText('시켜용'));
+    await userEvent.click(await screen.findByRole('button', { name: '시켜용 시작하기' }));
     expect(await screen.findByText('대화 화면')).toBeInTheDocument();
     expect(screen.queryByRole('status')).toBeNull();
   });

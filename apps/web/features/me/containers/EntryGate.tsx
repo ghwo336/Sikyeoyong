@@ -46,7 +46,13 @@ export function EntryGate({
   }, [ready, route, router]);
   if (ready && route === null) return <>{children}</>;
   // Until the next screen is up the splash stays, so there is no blank frame in between.
+  // A press can only skip once the next screen is known (the rest of SPLASH_MIN_MS); before
+  // that there is nowhere to go, so the splash is not a button and says only that it waits
+  // (browser QA 2: "시켜용 시작하기" did nothing while the session check ran).
   return splash && timing.visible ? (
-    <Splash species={me.data?.dragonSpecies ?? shownSpecies()} onSkip={timing.skip} />
+    <Splash
+      species={me.data?.dragonSpecies ?? shownSpecies()}
+      {...(route !== undefined ? { onSkip: timing.skip } : {})}
+    />
   ) : null;
 }
