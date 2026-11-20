@@ -75,6 +75,10 @@ describe('ChatThread (ChatThread.md 테스트 기준)', () => {
     expect(log.scrollTop).toBe(1200);
     rerender(<Sent count={13} last="m2" />); // and the answer is followed again
     expect(log.scrollTop).toBe(1300);
+    log.scrollTop = 100; // reading up again after sending
+    fireEvent.scroll(log);
+    rerender(<Sent count={14} last="m2" />); // same key: the answer must not pull the user down
+    expect(log.scrollTop).toBe(100);
   });
 
   it('follows streamed text that grows the last message', () => {

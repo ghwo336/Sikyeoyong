@@ -77,10 +77,13 @@ describe('OrderViews turns the simulation on only on the mock chain or in the de
     );
   const later = 10 * 60_000; // long past the 3-minute eta
 
-  it('path B without the demo shows the stored status, never a made-up arrival', () => {
-    const v = views({ PAYMENT_PATH: 'B', DEMO_MODE: 'false' }).viewFor('u1', 'o1', later);
-    expect(v.status).toBe('paid');
-  });
+  it.each(['A', 'B', 'C'])(
+    'path %s without the demo shows the stored status, never a made-up arrival',
+    (path) => {
+      const v = views({ PAYMENT_PATH: path, DEMO_MODE: 'false' }).viewFor('u1', 'o1', later);
+      expect(v.status).toBe('paid');
+    },
+  );
 
   it('path B in the demo plays the stages out', () => {
     const v = views({ PAYMENT_PATH: 'B', DEMO_MODE: 'true' }).viewFor('u1', 'o1', later);
