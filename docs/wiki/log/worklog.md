@@ -270,3 +270,19 @@ children: []
   - 승인 응답 카드 만들기에서 체인 RPC가 실패하면 500 (돈 문제 없음), 1분 만료 주기 작업, GET /approvals에 메시지.
   - txHash 대문자 정규화, 결제 지갑과 row.agentId 대조, 경로별 제출 표시(nonce, maws_request_id), 새 견적 전 이전 orderRef 확인.
 - 다음 할 일: 레벨 상향 API(`POST /agents/me/level`, 재인증, TransferLimit 확정 뒤 승인 주문 quoted), `GET /orders/:id`, 경로 B 실제 연결, 웹 목을 실제 API로, 지갑 화면 조립(CustodyNote), UX 다듬기(D-23).
+
+### 2026-11-20 데모 유저플로우 전체 조립, D-26/27/28
+- 한 일:
+  - 목 모드에서 user-flow 17개 화면을 모두 조립하고 검증 PASS (지갑과 신분증과 멈춤 880f6f7, 주문 화면 7cd95dd, 한도 장면 a380b1d). 로그인부터 시작하는 EntryGate, 목 대화 반복 고침, "…" 404 고침.
+  - 로컬 http 모드: dev 로그인(`DEV_LOGIN`), 신원 확인 `POST /identity/verify`(목 기록).
+  - D-26 데모 LLM 비용 (0f69643, 수정 80bd8c2): `LLM_MODE=replay`(읽기 도구만, API 호출 없음), live는 KST 하루 토큰 상한(캐시 포함), 닿으면 용이가 피곤하다는 한 줄만. effort 기본 low.
+  - D-27 데모 시드 가게는 승인 없이 (4b02b96).
+  - D-28 레벨 바꾸기 `POST /agents/me/level` (760c63c), 웹 http 연결 (7bf6c0c).
+- 막힌 것: 없음. 호재 님 Xcode 설치 후 iOS 시뮬레이터로 폰 화면 보기.
+- 후속:
+  - 레벨 올린 뒤 OVER_LEVEL 승인 주문을 다시 견적으로 (http, approvalId 연결).
+  - http에서 아직 거절하는 것: 지갑, 신분증, 멈춤, 환불, 맛 평가, 체험 용돈.
+  - production에서 replay 허용 여부, 장면 시나리오 재생, 하루 상한 동시성.
+  - 충전 멱등성(실제 경로 전 필수), 60초 쿨다운, 1분 승인 만료 작업, 영수증 시각, 목 30일 창 초기화, 결제 때 주머니 감소.
+  - D-23 UX 다듬기: Skeleton, iOS 키보드(visualViewport), Next dev 표시.
+- 다음 할 일: 위 검증 결과 반영, 경로 B 실제 연결, OAuth.
