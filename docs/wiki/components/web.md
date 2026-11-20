@@ -58,6 +58,13 @@ children: []
 - 대화 화면(Main)은 `.screen` 하나에 ui `ChatLayout`이 띠(위 줄 16 20 12, 예산 0 20, 입력칸 10 16 24)를 그린다.
 - 앱처럼 열기 (2026-11-20, D-23): `public/manifest.webmanifest`(`display: standalone`, 색은 `design/tokens.json`의 `ground` 값을 옮겨 적음. 정적 JSON이라 토큰을 바꾸면 같이 고친다. `app/`에는 page와 layout만 둔다는 D-18 게이트 때문에 Next의 `app/manifest.ts`를 쓰지 않는다)와 layout의 `appleWebApp`, `themeColor`. 홈 화면에 추가해 열면 브라우저 주소창 없이 뜬다. 주소창이 없는 것은 manifest의 standalone 덕이고 `appleWebApp`은 제목과 상태 표시줄만 정한다 (Next 16은 `mobile-web-app-capable`을 낸다, 실측). 색이 토큰과 같은지는 `lib/pwa-manifest.test.ts`가 지킨다. 남은 것: 앱 아이콘(`public/apple-touch-icon.png`와 `metadata.icons`. `app/`에는 page와 layout만, D-18. 없으면 iOS가 화면을 줄여 아이콘으로 쓴다), 실기기 확인, 위 상태 표시줄과 겹치는 화면의 safe-area 확인.
 
+## 종별 테마 (D-32, 2026-11-20)
+- 앱 색은 `<html data-species>` 하나로 바꾼다 (값과 고정 부분은 ui `_index.md` "종별 테마"). 루트 layout이 기본 `forest`로 그리고, `<head>`의 짧은 스크립트(`lib/theme.ts`의 `bootSpecies`)가 이 브라우저가 마지막으로 쓴 종(localStorage `sikyeoyong.species`, 알려진 네 값만)을 첫 그림 전에 얹는다. 다시 찾는 사용자는 다른 종 색이 번쩍이지 않는다. 처음 오는 기기에서 숲이 아닌 용이면 GET /me가 올 때 한 번 바뀐다.
+- `features/me/containers/ThemeSync`가 GET /me 캐시의 `dragonSpecies`를 따라 `applySpecies`(속성과 기억)를 부른다. 스스로 /me를 묻지 않는다 (`useMeCached`, 가입 화면에 요청을 더하지 않으려고).
+- Name: 알을 고르는 순간 `applySpecies(종, { remember: false })`로 화면 색이 바뀌고(저장 전, D-32), 알 깨우기가 성공하면 기억한다.
+- 한도 화면 layout(`app/limit/layout.tsx`: Blocked, 한도 올리기, Cap)은 `data-theme="fixed"`라 종과 상관없이 기본 색이다. 바탕은 `.screen[data-theme='fixed']`가 칠한다. 확인 시트는 ui `OrderConfirmSheet`가 스스로 고정이다.
+- 시안과 다른 점: Confirm, Blocked, Cap 시안은 버튼과 막대에 종 색(`sy_accent`)을 쓰지만 D-32 결정(돈과 경고는 고정)을 따른다. `themeColor`(주소창 색)와 manifest 색은 숲 그대로다.
+
 ## 가입 뒤로 (Verify, Name)
 - 뒤로 버튼은 브라우저 기록(`router.back()`)이 아니라 이전 단계로 `router.replace`한다: Verify는 /start, Name은 /verify (2026-11-19 판단).
 - 이유: 새로고침은 기록이 남지만, 직접 링크나 새 탭으로 들어오면 앞 기록이 없거나 다른 사이트라 `router.back()`이 아무것도 안 하거나 앱을 떠난다. 가입은 한 줄로 이어지는 단계라 "뒤로"는 언제나 앞 단계다. push 대신 replace라 브라우저 뒤로로 같은 단계를 오가며 기록이 쌓이지 않는다.

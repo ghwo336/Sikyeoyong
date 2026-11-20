@@ -105,6 +105,21 @@ describe('NameContainer', () => {
       expect(push).toHaveBeenCalledWith('/hatch');
     });
   });
+
+  it('paints the app in the picked egg at once, and remembers it only once saved (D-32)', async () => {
+    localStorage.clear();
+    createAgent.mockResolvedValue({ agent: { id: 'a1', status: 'PENDING' } });
+    wrap(<NameContainer />);
+    expect(document.documentElement.dataset.species).toBe('forest');
+    await userEvent.click(screen.getByRole('radio', { name: /물/ }));
+    expect(document.documentElement.dataset.species).toBe('water');
+    expect(localStorage.getItem('sikyeoyong.species')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '알 깨우기' }));
+    await waitFor(() => {
+      expect(localStorage.getItem('sikyeoyong.species')).toBe('water');
+    });
+    expect(createAgent).toHaveBeenCalledWith({ dragonName: '용이', dragonSpecies: 'water' });
+  });
 });
 
 describe('BudgetSetupContainer', () => {

@@ -3,7 +3,8 @@
 import type { DragonSpecies } from '@sikyeoyong/shared';
 import { Button, EggPicker, ScreenTitle, StepProgress, TextField, TopBar } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { applySpecies } from '../../../lib/theme';
 import { BORN_LINE, SIGNUP_STEPS } from '../steps';
 import { useCreateAgent } from '../hooks/useSignup';
 
@@ -15,6 +16,10 @@ export function NameContainer() {
   const [name, setName] = useState('용이');
   const [tried, setTried] = useState(false);
   const empty = name.trim() === '';
+  // D-32: the screen takes the picked egg's colors at once, before anything is saved.
+  useEffect(() => {
+    applySpecies(species, { remember: false });
+  }, [species]);
   return (
     <>
       <TopBar
@@ -45,6 +50,7 @@ export function NameContainer() {
             { dragonName: name.trim(), dragonSpecies: species },
             {
               onSuccess: () => {
+                applySpecies(species);
                 router.push('/hatch');
               },
             },

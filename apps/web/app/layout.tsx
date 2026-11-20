@@ -6,7 +6,9 @@ import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@fontsource/gowun-dodum/korean-400.css';
 import '@fontsource/gowun-dodum/latin-400.css';
 import './globals.css';
+import { ThemeSync } from '../features/me/containers/ThemeSync';
 import { QueryProvider } from '../lib/query-provider';
+import { DEFAULT_SPECIES, THEME_BOOT_SCRIPT } from '../lib/theme';
 import tokens from '../../../design/tokens.json';
 
 export const metadata: Metadata = {
@@ -28,9 +30,17 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ko">
+    // data-species: the dragon's theme (D-32). The boot script sets the remembered one before the
+    // first paint, so the attribute may differ from the server's; ThemeSync follows GET /me.
+    <html lang="ko" data-species={DEFAULT_SPECIES} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <ThemeSync />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );
