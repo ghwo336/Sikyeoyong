@@ -57,7 +57,7 @@ export function LimitChangeCard({
 
   const detailRows = rows ?? [];
   return (
-    <section className={styles.card} aria-label="한도 바꾸기">
+    <section className={styles.card} aria-label="한도 바꾸기" data-theme="fixed">
       <p className={styles.title}>한도 바꾸기</p>
       <div className={styles.change}>
         <span className={styles.field}>{FIELD_LABEL[field]}</span>

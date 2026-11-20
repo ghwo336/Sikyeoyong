@@ -143,6 +143,15 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(onConfirm).toHaveBeenCalledTimes(2);
   });
 
+  // D-32: an amount and Face ID confirm keeps the default colors whatever the species.
+  it('keeps the fixed theme at its root (D-32)', () => {
+    render(<LimitChangeCard {...base} />);
+    expect(screen.getByRole('region', { name: '한도 바꾸기' })).toHaveAttribute(
+      'data-theme',
+      'fixed',
+    );
+  });
+
   it('cancels with 그만두기', async () => {
     const onCancel = vi.fn();
     render(<LimitChangeCard {...base} onCancel={onCancel} />);
