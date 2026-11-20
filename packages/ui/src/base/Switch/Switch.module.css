@@ -1,33 +1,40 @@
 /* Wallet.dc.html: 52 x 32 track, 3px padding, 26px white knob; leaf when on, line-strong when off. */
-.track {
-  position: relative;
+
+/* 32px to the eye, 44px to the finger (design-and-motion.md): the button is the full target and
+   the track inside it is drawn at the design size, so the element itself measures 52 x 44. */
+.hit {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  width: var(--size-switch-width);
-  height: var(--size-switch-height);
-  padding: calc((var(--size-switch-height) - var(--size-switch-knob)) / 2);
+  min-height: var(--size-touch-min);
+  padding: 0;
   border: 0;
-  border-radius: calc(var(--size-switch-height) / 2);
-  background: var(--color-line-strong);
+  background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
-.track[aria-checked='true'] {
+.track {
+  display: inline-flex;
+  align-items: center;
+  width: var(--size-switch-width);
+  height: var(--size-switch-height);
+  padding: calc((var(--size-switch-height) - var(--size-switch-knob)) / 2);
+  border-radius: calc(var(--size-switch-height) / 2);
+  background: var(--color-line-strong);
+}
+
+.hit[aria-checked='true'] .track {
   background: var(--theme-accent);
 }
 
-.track:focus-visible {
-  outline: 2px solid var(--theme-accent);
-  outline-offset: 2px;
+.hit:focus-visible {
+  outline: none;
 }
 
-/* 32px to the eye, 44px to the finger (design-and-motion.md). */
-.track::after {
-  content: '';
-  position: absolute;
-  inset: calc((var(--size-touch-min) - var(--size-switch-height)) / -2) 0;
+.hit:focus-visible .track {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
 }
 
 .knob {
@@ -41,7 +48,7 @@
 }
 
 /* Slide with translate only (no layout properties): track inner width minus knob. */
-.track[aria-checked='true'] .knob {
+.hit[aria-checked='true'] .knob {
   translate: calc(var(--size-switch-width) - var(--size-switch-height)) 0;
   transform-origin: right center;
 }

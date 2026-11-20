@@ -24,18 +24,20 @@ export function Switch({ checked, onChange, labelId }: SwitchProps) {
       role="switch"
       aria-checked={checked}
       aria-labelledby={labelId}
-      className={styles.track}
+      className={styles.hit}
       whileTap="pressed"
       onClick={() => {
         onChange(!checked);
       }}
     >
-      <motion.span
-        className={styles.knob}
-        variants={reduceMotion ? {} : { pressed: THUMB_PRESS }}
-        transition={PRESS_SPRING}
-        aria-hidden="true"
-      />
+      {/* The button is the 44px finger target; the track inside is what the eye sees. */}
+      <span className={styles.track} aria-hidden="true">
+        <motion.span
+          className={styles.knob}
+          variants={reduceMotion ? {} : { pressed: THUMB_PRESS }}
+          transition={PRESS_SPRING}
+        />
+      </span>
     </motion.button>
   );
 }

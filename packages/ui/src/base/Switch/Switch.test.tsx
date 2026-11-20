@@ -68,22 +68,22 @@ describe('Switch (Switch.md 테스트 기준)', () => {
     expect(rule('.track')).toMatch(/width:\s*var\(--size-switch-width\)/);
     expect(rule('.track')).toMatch(/height:\s*var\(--size-switch-height\)/);
     expect(rule('.track')).toMatch(/background:\s*var\(--color-line-strong\)/);
-    expect(rule(".track[aria-checked='true']")).toMatch(/background:\s*var\(--theme-accent\)/);
+    expect(rule(".hit[aria-checked='true'] .track")).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(rule('.knob')).toMatch(/width:\s*var\(--size-switch-knob\)/);
     expect(rule('.knob')).toMatch(/background:\s*var\(--color-surface\)/);
     // 3px padding: (32 - 26) / 2
     expect(rule('.track')).toMatch(
       /padding:\s*calc\(\(var\(--size-switch-height\) - var\(--size-switch-knob\)\) \/ 2\)/,
     );
-    // 44px finger target around the 32px track: grows by (44 - 32) / 2 above and below
-    expect(rule('.track::after')).toMatch(
-      /inset:\s*calc\(\(var\(--size-touch-min\) - var\(--size-switch-height\)\) \/ -2\) 0;/,
-    );
+    // The button itself is the 44px finger target (browser QA measured the element at 52 x 32);
+    // the 32px track is drawn inside it.
+    expect(rule('.hit')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
+    expect(rule('.hit')).toMatch(/background:\s*transparent/);
   });
 
   it('moves the knob with translate only, and not under reduced motion', () => {
     // travel = inner width 46 - knob 26 = 20 = width - height
-    expect(rule(".track[aria-checked='true'] .knob")).toMatch(
+    expect(rule(".hit[aria-checked='true'] .knob")).toMatch(
       /translate:\s*calc\(var\(--size-switch-width\) - var\(--size-switch-height\)\) 0;/,
     );
     expect(rule('.knob')).toMatch(/transition:\s*translate /);
@@ -95,7 +95,7 @@ describe('Switch (Switch.md 테스트 기준)', () => {
 
   it('stretches the knob while pressed', async () => {
     render(<Switch checked={false} labelId="x" onChange={vi.fn()} />);
-    const knob = screen.getByRole('switch').querySelector('span');
+    const knob = screen.getByRole('switch').querySelector<HTMLElement>('span > span');
     fireEvent.pointerDown(screen.getByRole('switch'), { isPrimary: true, button: 0 });
     await waitFor(() => {
       expect(knob?.style.transform).toMatch(/scaleX\(/);
@@ -105,7 +105,7 @@ describe('Switch (Switch.md 테스트 기준)', () => {
   it('does not stretch the knob under reduced motion', async () => {
     reduced.value = true;
     render(<Switch checked={false} labelId="x" onChange={vi.fn()} />);
-    const knob = screen.getByRole('switch').querySelector('span');
+    const knob = screen.getByRole('switch').querySelector<HTMLElement>('span > span');
     fireEvent.pointerDown(screen.getByRole('switch'), { isPrimary: true, button: 0 });
     await new Promise((r) => setTimeout(r, 100));
     expect(knob?.style.transform ?? '').not.toMatch(/scaleX/);

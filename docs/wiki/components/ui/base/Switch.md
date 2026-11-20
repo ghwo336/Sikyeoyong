@@ -31,7 +31,7 @@ Wallet
 - 키보드 스페이스로 토글
 
 ## 메모
-- Wallet 시안: 트랙 52×32(`size.switchWidth`, `size.switchHeight`), 손잡이 26(`size.switchKnob`) 흰색, 켜짐 잎색, 꺼짐 `lineStrong`. 보이는 높이 32, 누르는 영역 44.
+- Wallet 시안: 트랙 52×32(`size.switchWidth`, `size.switchHeight`), 손잡이 26(`size.switchKnob`) 흰색, 켜짐 잎색, 꺼짐 `lineStrong`. 보이는 높이 32, 누르는 영역 44. 버튼 자체가 높이 44(`min-height: size.touchMin`, 투명)이고 시안 크기의 트랙은 그 안의 span이다 (2026-11-20 브라우저 QA: 요소 크기가 52×32로 재져서 `::after` 확장 대신 버튼을 키웠다).
 - 손잡이는 `translate`로만 움직이고(시안의 정렬 바꾸기 대신), 누르는 동안 가로로 조금 늘어난다. 동작 줄이기면 미끄러짐과 늘어남이 없다.
 - 늘어남은 가로 1.15배이고 스프링은 다른 누름과 같은 `motion.press`(damping 18, stiffness 300)다. 1.15는 시안에 없는 값이라 하네스 Pressing에서 눈으로 맞춘다.
 - 켜짐 이동 거리는 안쪽 너비 46에서 손잡이 26을 뺀 20이고, `width - height`로 계산한다. 트랙 안쪽 여백 3은 `(height - knob) / 2`.
