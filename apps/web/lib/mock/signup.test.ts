@@ -33,6 +33,13 @@ describe('mock sign-up', () => {
     expect(await settle(noDragon)).toMatchObject({ code: 'NOT_FOUND' });
   });
 
+  it('the identity answer: false after login, true once the check passed', async () => {
+    await settle(mockApi.login());
+    expect(await settle(mockApi.getIdentity())).toEqual({ verified: false });
+    await settle(mockApi.verifyIdentity());
+    expect(await settle(mockApi.getIdentity())).toEqual({ verified: true });
+  });
+
   it('hatches step by step: waiting, then doing to done, then ACTIVE', async () => {
     await settle(mockApi.login());
     const before = await settle(mockApi.getAgentSetup());

@@ -154,6 +154,13 @@ describe('createHttpApi', () => {
     await expect(api.getIdCard()).rejects.toThrow();
   });
 
+  it('GET /api/identity is checked by the shared schema', async () => {
+    const ok = fakeFetch({ 'GET /api/identity': { body: '{"verified":false}' } });
+    expect(await createHttpApi(ok).getIdentity()).toEqual({ verified: false });
+    const bad = fakeFetch({ 'GET /api/identity': { body: '{"verified":"no"}' } });
+    await expect(createHttpApi(bad).getIdentity()).rejects.toThrow();
+  });
+
   it('the Pouchi login calls: public config checked by the schema, bind and complete as cookie writes', async () => {
     const f = fakeFetch({
       'GET /api/auth/pouchi/config': {

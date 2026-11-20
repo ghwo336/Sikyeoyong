@@ -199,12 +199,28 @@ describe('StartContainer and the me cache', () => {
     login.mockResolvedValue(undefined);
     const qc = newClient();
     qc.setQueryData(['me'], { stale: 'signed out' });
+    qc.setQueryData(['identity'], { verified: true }); // someone else's answer in this tab
     wrap(<StartContainer />, qc);
     await userEvent.click(screen.getByRole('button', { name: '이메일로 시작하기' }));
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/');
     });
     expect(qc.getQueryState(['me'])).toBeUndefined();
+    expect(qc.getQueryState(['identity'])).toBeUndefined();
+  });
+});
+
+describe('VerifyContainer and the identity cache', () => {
+  it('passing the check drops the old "not verified" answer, so the front door does not send back to Verify', async () => {
+    verifyIdentity.mockResolvedValue({ verified: true });
+    const qc = newClient();
+    qc.setQueryData(['identity'], { verified: false });
+    wrap(<VerifyContainer />, qc);
+    await userEvent.click(await screen.findByRole('button', { name: /본인 인증/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/name');
+    });
+    expect(qc.getQueryState(['identity'])).toBeUndefined();
   });
 });
 
