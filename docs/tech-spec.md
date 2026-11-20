@@ -202,7 +202,7 @@ apps/api/src/
 │   ├── agents/              드래곤 생성, 레벨, 동결, 충전·회수, 신분증 조회
 │   ├── payment/             PaymentProvider 인터페이스 + pathA/pathB/pathC 구현
 │   ├── orders/              주문 생성·조회·취소, 배달 상태 타이머, 영수증
-│   ├── merchants/           MerchantSource 인터페이스 + mockMerchantSource
+│   ├── merchants/           MerchantSource 인터페이스 + DbMerchantSource
 │   ├── recommend/           추천 점수 계산
 │   ├── budget/              예산 집계, 잔소리 판단
 │   ├── approvals/           승인 요청·처리
@@ -237,8 +237,8 @@ apps/api/src/
 | GET | `/budget` | user | | `BudgetView` (아래) |
 | POST | `/chat/messages` | user | `{ text, clientMessageId }` | SSE `ChatEvent` 스트림 |
 | GET | `/chat/history` | user | `?cursor` | `ChatHistory` (`{ startedAt, messages, nextCursor }`, `api/chat.ts`). 용의 말은 그 말을 만든 `ChatEvent` 목록으로 돌려준다 |
-| GET | `/merchants` | user | `?category&verified` | `{ merchants: MerchantCard[] }` |
-| GET | `/merchants/:id` | user | | `{ merchant, menus }` |
+| GET | `/merchants` | user | `?category&verified` | `{ merchants: MerchantCard[] }` (`MerchantCard` = `{ id, name, category, tags, verified, openNow, etaMin }`, `api/merchants.ts`). 미인증·비활성 가게는 나오지 않는다. `verified`는 `true`만 받고 그 밖은 400. 2026-11-20 |
+| GET | `/merchants/:id` | user | | `{ merchant, menus }` (`menus`: `{ id, name, price(aokrw), tags, description, available }[]`). 숨긴 가게는 404 `NOT_FOUND` |
 | POST | `/orders/quote` | user | `{ merchantId, items: [{ menuId, qty }] }` | `{ amount, checks: RuleCheck[] }` |
 | POST | `/orders` | user | `{ merchantId, items, clientOrderId }` | `{ order: { status: 'quoted' }, quote }` (앱에서 직접 주문하는 버튼용, LLM `place_order`와 같은 서비스 함수. 결제는 하지 않음) |
 | POST | `/orders/:id/confirm` | user | | `{ order, receipt }` 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 상태별 동작은 payment.md "confirm 상태 규칙"(D-19): `quoted`와 재시도 가능한 `failed`(체인 조회 뒤 같은 orderRef)만 결제, 그 밖은 결제 없이 현재 `{ order, receipt }`. 409로 답하지 않는다 |
@@ -361,13 +361,14 @@ export interface PaymentProvider {
 
 ```ts
 export interface MerchantSource {
-  list(filter: { category?: string; verifiedOnly?: boolean }): Promise<MerchantRecord[]>;
-  get(id: string): Promise<MerchantRecord | null>;
-  menus(merchantId: string): Promise<MenuRecord[]>;
-  isOpen(merchantId: string, at: Date): Promise<boolean>;
+  list(filter: { category?: string }): MerchantRecord[];
+  get(id: string): MerchantRecord | null;
+  menus(merchantId: string): MenuRecord[];
 }
-// 1단계: mockMerchantSource (seed/merchants.json을 DB에 적재한 것을 읽음)
-// 2단계: dbMerchantSource (판매자 콘솔로 등록된 가게), 같은 테이블 사용
+// 구현은 DbMerchantSource 하나 (apps/api/src/modules/merchants/db-merchant-source.ts).
+// 1단계 시드 가게와 2단계 판매자 콘솔 가게가 같은 테이블이라 같은 구현이다.
+// SQLite 드라이버가 동기라 동기 함수다. 레코드는 날것(영업시간 JSON, etaMin, verified, active)이고,
+// 보이는 가게 판정, 영업 중 판정(isOpenAt), 글자 자르기는 MerchantsService가 한다 (2026-11-20).
 
 export interface LlmProvider {
   // 한 턴: 글자는 onText로 흘려 보내고, 끝나면 전체 메시지(stop_reason, 도구 호출)를 준다.
