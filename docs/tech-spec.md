@@ -315,8 +315,8 @@ apps/api/src/
 ### 3.4 PaymentProvider
 
 ```ts
-// packages/shared/src/payment.ts (타입), apps/api/src/modules/payment/*.ts (구현)
-export type PaymentPath = 'A' | 'B' | 'C';
+// packages/shared/src/payment/index.ts (타입, mock 경로 포함), apps/api/src/modules/payment/*.ts (구현)
+export type PaymentPath = 'A' | 'B' | 'C' | 'mock';  // mock은 개발·테스트 전용, production 금지
 
 export interface AgentWallet {
   agentRowId: string;        // DB id

@@ -5,3 +5,4 @@ export * from './domain/index.js';
 export * from './api/index.js';
 export * from './time/index.js';
 export * from './text/index.js';
+export * from './payment/index.js';
