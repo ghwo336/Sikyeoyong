@@ -88,6 +88,7 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
     );
   }
 
+  const frozen = budget?.frozen === true;
   if (!me) return null;
   return (
     <>
@@ -104,6 +105,9 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
             }}
             placeholder="오늘 저녁도 부탁해"
             sending={chat.sending}
+            // Frozen.dc.html: while the dragon sleeps nothing is ordered, so nothing is sent.
+            disabled={frozen}
+            disabledNote="용이가 자고 있어요"
           />
         }
       >

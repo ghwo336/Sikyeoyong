@@ -91,8 +91,20 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     await userEvent.click(await screen.findByRole('switch', { name: '용이 멈추기' }));
     expect(setFrozen).toHaveBeenCalledWith(true);
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/dragon/frozen');
+      expect(replace).toHaveBeenCalledWith('/dragon/frozen');
     });
+  });
+
+  it('moves to the sleeping screen without waiting for the budget to load again (browser QA)', async () => {
+    wrap(<DragonControlsContainer />);
+    const sw = await screen.findByRole('switch', { name: '용이 멈추기' });
+    // The refetch after the freeze never answers; the screen must not wait for it.
+    getBudget.mockReturnValue(new Promise(() => undefined));
+    await userEvent.click(sw);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/dragon/frozen');
+    });
+    expect(screen.getByRole('switch', { name: '용이 멈추기' })).toBeChecked();
   });
 
   it('the 용이 모습 row shows the species name and opens Look (D-32)', async () => {

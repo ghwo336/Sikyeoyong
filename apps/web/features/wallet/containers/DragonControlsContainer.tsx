@@ -43,7 +43,7 @@ export function DragonControlsContainer() {
               if (!on || freeze.isPending) return; // waking happens on the Frozen screen
               freeze.mutate(true, {
                 onSuccess: () => {
-                  router.push('/dragon/frozen');
+                  router.replace('/dragon/frozen');
                 },
               });
             }}

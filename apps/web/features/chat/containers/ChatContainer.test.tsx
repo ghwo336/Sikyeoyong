@@ -137,4 +137,13 @@ describe('ChatContainer', () => {
     });
     expect(confirmOrder).not.toHaveBeenCalled();
   });
+  it('while the dragon sleeps the input is off and says so (Frozen.dc.html)', async () => {
+    await mockApi.setFrozen(true);
+    setup();
+    const input = await screen.findByRole('textbox', { name: '용이에게 말하기' });
+    await waitFor(() => {
+      expect(input).toBeDisabled();
+    });
+    expect(screen.getByText('용이가 자고 있어요')).toBeInTheDocument();
+  });
 });
