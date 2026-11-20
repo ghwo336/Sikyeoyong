@@ -10,7 +10,8 @@
 | 에이전트 생성 | `agent.create` 후 PENDING, 온체인 등록까지 1~3분 뒤 ACTIVE | 확인 | /apis/maws |
 | 지갑 | 에이전트마다 WaaS가 AA 지갑을 만들고 키를 관리. 도구에 개인키를 넘기지 않음 | 확인 | /concepts/agents/maws-architecture-overview |
 | 전송 | `transfer.send`는 에이전트가 주소로 OKRW를 보냄. 서버에서 정책 검사 후 WaaS가 서명 | 확인 | /apis/maws |
-| 컨트랙트 함수 호출 | 에이전트가 임의 컨트랙트 함수(calldata)를 호출할 수 있는지 문서에 없음 | **미확인 (최우선 확인)** | architecture, agent-policy-semantics |
+| 컨트랙트 함수 호출 | MCP `transfer.send` 입력은 `agentId`, `to`, `amount`(OKRW 소수 문자열), `clientToken`뿐이고 calldata(`data`) 칸이 없다. MCP로는 컨트랙트 함수를 부를 수 없다. WaaS API 자체가 calldata를 받는지는 문서에 없다 | MCP 확인 (2026-11-20, 도구 스키마), WaaS 미확인 | m-aws MCP 도구 스키마 |
+| MCP 정책 강제 | `transfer.send` 설명: "this MCP server (m-aws) checks the agent's on-chain policy (spending limit + allowed targets); WaaS does not enforce that policy itself". 서명 서비스는 정책을 강제하지 않는다 | 확인 (2026-11-20, 도구 설명) | m-aws MCP 도구 설명 |
 | 정책 필드 | `spendingLimit`(건당, 0=무제한, 단위 aokrw), `allowedTargets`(빈 배열이면 모든 주소 허용), `status` | 확인 | /concepts/agents/agent-policy-semantics |
 | 소유자 주소 | `allowedTargets`와 무관하게 항상 허용. 단 `spendingLimit`은 적용 | 확인 | agent-policy-semantics |
 | 강제 위치 | `spendingLimit`, `allowedTargets`, `status`는 MAWS(오프체인)만 강제. 체인은 읽지 않음. 에이전트 키로 MAWS 밖에서 보내면 MAWS 규칙은 적용되지 않음 | 확인 | /concepts/agents/two-layer-policy-model |

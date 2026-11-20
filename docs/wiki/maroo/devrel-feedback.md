@@ -90,3 +90,17 @@ children: []
 - 발견: 2026-11-18. `pcl-policy-structure`와 가이드 예시만으로는 `selector`가 `bytes4`인지 `bytes`인지, enum 숫자값, `AGENT_OKRW_TRANSFER_LIMIT_POLICY`의 필드 없는 struct 인코딩을 알 수 없다 (tech-spec "5.6").
 - 영향: viem으로 정책을 인코딩하는 스크립트를 문서만으로 못 쓴다.
 - 제안: TypeScript(viem) 인코딩 예제와 `IPcl.sol` 링크.
+
+### F-13 MAWS MCP `transfer.send`로 컨트랙트 함수를 부를 수 없음 (calldata 칸 없음)
+- 상태: 열림
+- 종류: 기능 부족, 문서 누락
+- 발견: 2026-11-20. m-aws MCP 도구 스키마에서 `transfer.send` 입력이 `agentId`, `to`, `amount`, `clientToken`뿐임을 확인했다. 에이전트가 결제 컨트랙트(`placeOrder`)처럼 함수를 부르는 방법이 MCP에도 문서에도 없다.
+- 영향: 에이전트 결제 디앱이 MAWS AA 지갑과 페이마스터를 쓰지 못하고 서버가 키를 직접 보관하는 경로(B)로 간다 (D-24). 키 보관 부담과 위험이 디앱으로 넘어온다.
+- 제안: `transfer.send`에 `data`(calldata) 칸, 또는 `contract.call` 도구. 허용 대상과 함수 셀렉터를 정책으로 묶는 방법도 함께.
+
+### F-14 MAWS 정책을 누가 강제하는지 문서와 도구 설명이 다르게 읽힘
+- 상태: 열림
+- 종류: 문서 불일치
+- 발견: 2026-11-20. `transfer.send` 도구 설명은 "m-aws MCP 서버가 정책을 검사하고 WaaS는 강제하지 않는다"고 쓴다. agent-policy-semantics는 "오프체인 검사를 우회해도 합의 단계에서 차단"이라고 쓴다 (maroo-facts 1의 문서 불일치 행과 같은 주제).
+- 영향: 디앱이 "MAWS 한도가 지켜 준다"고 과장할 위험. 시켜용은 컨트랙트 범위 PCL 기준으로만 말한다.
+- 제안: 정책 강제 위치(MCP 서버, WaaS, 체인)를 표 하나로 정리.

@@ -35,7 +35,7 @@ interface PaymentProvider {
 - 부화(user-flow 4)는 `modules/agents/agent-setup.service.ts`: `createAgent`(지갑과 8004 등록) 뒤 `setTransferLimit`(레벨 건당 한도)를 기록하고 `agent_limit_history`와 ACTIVE를 한 트랜잭션으로 남긴다. 단계는 `agents.setup_step`(wallet, identity, limit, done, failed, 마이그레이션 0003). 실패하면 PENDING에 failed로 멈추고 `POST /agents/me/setup/retry`가 멈춘 자리부터 다시 한다. 아직: 본인 인증(D-16) 확인 뒤에만 부화, 프로세스가 죽었을 때 PENDING 이어 하기.
 - `PAYMENT_PATH=mock`: `MockPaymentProvider`는 메모리 안의 흉내 체인이다 (개발·테스트 전용, production 설정은 거절). 지갑 잔액, TransferLimit, 30일 고정 창(첫 주문부터, (추론)), 동결, orderRef 한 번만을 흉내 내고, 막는 사유와 에러 코드는 아래 revert 매핑과 같다. 프로세스를 다시 띄우면 흉내 체인이 비어 TransferLimit이 없어지는데, 이것은 실제 `CHAIN_AGENT_LIMIT_UNSET` 복구 경로(재기록 후 1회 재시도)를 그대로 탄다. 경로 A, B, C는 컨트랙트와 체인 작업 때 붙이며, 그 전에는 모든 호출이 `INTERNAL`로 실패한다 (결제하지 않음).
 
-## 경로 (D-05)
+## 경로 (D-05, 1단계는 B로 확정 D-24)
 | 경로 | 조건 | PCL 적용 | 가스 |
 | --- | --- | --- | --- |
 | A (기본안) | MAWS가 컨트랙트 함수 호출(calldata) 지원 (미확인, Q-01) | 에이전트가 직접 sender. 컨트랙트 범위 정책 전부. 단 AA(EntryPoint 경유)에서 sender 귀속은 미확인 (Q-12, S12) | PAYMASTER (테스트넷 미확인, Q-03) |
