@@ -510,14 +510,19 @@ describe('GET /api/orders/:id (status screens)', () => {
       etaAt: NOW + 3 * 60_000,
     });
     await confirm(id);
+    // The mock chain plays delivery out by time (3 minutes here): two thirds in, the rider is out.
     vi.setSystemTime(NOW + 2 * 60_000 + 1);
     expect(zOrderResult.parse((await view(id)).body).order).toMatchObject({
-      status: 'paid',
+      status: 'delivering',
       remainingMin: 1,
       etaAt: NOW + 3 * 60_000,
     });
     vi.setSystemTime(NOW + 10 * 60_000);
-    expect(zOrderResult.parse((await view(id)).body).order.remainingMin).toBe(0);
+    expect(zOrderResult.parse((await view(id)).body).order).toMatchObject({
+      status: 'delivered',
+      remainingMin: 0,
+      dragonMood: 'eating',
+    });
   });
 
   it('a failed order speaks its error line; a line that needs a value falls back to the message', async () => {

@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AppError, type OrderView } from '@sikyeoyong/shared';
+import { APP_CONFIG } from '../../config/config.module.js';
+import type { AppConfig } from '../../config/env.js';
 import { MerchantsService } from '../merchants/merchants.service.js';
 import { UsersService } from '../users/users.service.js';
 import { toOrderView } from './order-view.js';
@@ -12,6 +14,7 @@ export class OrderViews {
     private readonly repo: OrdersRepository,
     private readonly merchants: MerchantsService,
     private readonly users: UsersService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   /** The session user's order; another user's is NOT_FOUND, never FORBIDDEN (no existence leak). */
@@ -25,6 +28,8 @@ export class OrderViews {
         store: info?.name ?? '가게',
         destination: this.users.getDestination(userId),
         etaMin: info?.etaMin ?? 0,
+        // No delivery feed yet: the mock chain and the demo play the stages out by time.
+        simulateDelivery: this.config.payment.path === 'mock' || this.config.demo.enabled,
       },
       nowMs,
     );

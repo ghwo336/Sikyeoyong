@@ -14,6 +14,31 @@ export interface OrderViewContext {
   readonly store: string;
   readonly destination: string;
   readonly etaMin: number;
+  /**
+   * No real delivery feed yet (the delivery module): on the mock chain or in demo mode, a paid
+   * order moves along by time so the status screens play out (paid, preparing, delivering,
+   * delivered). The stored status stays paid.
+   */
+  readonly simulateDelivery?: boolean;
+}
+
+/**
+ * The simulated delivery stage of a paid order: the first 15% of the way the store takes it,
+ * up to 45% it cooks, then the rider until the estimated arrival, then delivered.
+ */
+export function deliveryStatus(
+  status: OrderView['status'],
+  startMs: number,
+  etaMin: number,
+  nowMs: number,
+): OrderView['status'] {
+  if (status !== 'paid') return status;
+  const total = Math.max(1, etaMin) * 60_000;
+  const share = (nowMs - startMs) / total;
+  if (share >= 1) return 'delivered';
+  if (share >= 0.45) return 'delivering';
+  if (share >= 0.15) return 'preparing';
+  return 'paid';
 }
 
 /** The dragon's line and face per status (Done, Tracking, Arrived designs). */
@@ -52,14 +77,19 @@ function failedLine(code: AppErrorCode | null): string {
  * from when paying started (the confirm press), else from the quote.
  */
 export function toOrderView(row: OrderRow, ctx: OrderViewContext, nowMs: number): OrderView {
-  const etaAt = (row.submitStartedAt ?? row.createdAt) + ctx.etaMin * 60_000;
+  const startMs = row.submitStartedAt ?? row.createdAt;
+  const etaAt = startMs + ctx.etaMin * 60_000;
   const remainingMin = Math.min(MAX_MIN, Math.max(0, Math.ceil((etaAt - nowMs) / 60_000)));
   const code = asCode(row.errorCode);
+  const status =
+    ctx.simulateDelivery === true
+      ? deliveryStatus(row.status, startMs, ctx.etaMin, nowMs)
+      : row.status;
   const [dragonLine, dragonMood] =
-    row.status === 'failed' ? [failedLine(code), 'worried' as const] : LINE_OF[row.status];
+    status === 'failed' ? [failedLine(code), 'worried' as const] : LINE_OF[status];
   return {
     id: row.id,
-    status: row.status,
+    status,
     store: ctx.store,
     destination: ctx.destination,
     items: toItemLines(parseStoredLines(row.itemsJson)),
@@ -69,7 +99,7 @@ export function toOrderView(row: OrderRow, ctx: OrderViewContext, nowMs: number)
     remainingMin,
     dragonLine,
     dragonMood,
-    ...(row.status === 'failed' && code !== null ? { errorCode: code } : {}),
+    ...(status === 'failed' && code !== null ? { errorCode: code } : {}),
     ...(row.txHash === null ? {} : { txHash: row.txHash }),
   };
 }
