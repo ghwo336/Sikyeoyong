@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { zAokrwString } from '../money/money.js';
 
 /**
- * The wallet screen's money (Wallet.dc.html, future GET /wallet). owner: the owner's
- * allowance; pocket: what the dragon holds now; savedThisMonth: what the dragon saved
- * against the usual price this month. The server does not answer this yet (custody
- * of the owner's allowance is open, D-24); only the mock fills it.
+ * The wallet screen's money (Wallet.dc.html, GET /api/wallet). owner: the owner's
+ * allowance (the custodial ledger while D-24 holds, never below 0); pocket: what the
+ * dragon's wallet holds on chain now; savedThisMonth: for now this month's budget minus
+ * what was spent, never below 0 (open-questions Q-37 default (a)).
  */
 export const zWalletView = z
   .object({

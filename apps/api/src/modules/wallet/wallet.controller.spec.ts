@@ -12,7 +12,7 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { agents, orders } from '../../db/schema/index.js';
+import { agents, orders, users } from '../../db/schema/index.js';
 import { insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AuthService } from '../auth/auth.service.js';
@@ -84,29 +84,63 @@ describe('GET /api/wallet', () => {
     expect(view.owner).toBe('0');
   });
 
-  it('saved this month is the budget minus what was paid, never below zero', async () => {
+  it('saved this month is the budget minus what was paid, and 0 when spent reaches or passes it', async () => {
     const { h, get } = await setup();
+    // u1's budget is 10,000 won (the fixture default is 300,000).
+    h.db
+      .update(users)
+      .set({ monthlyBudgetAokrw: s(10_000n) })
+      .where(eq(users.id, 'u1'))
+      .run();
     insertMerchant(h.db, 'm1');
-    const paid = (id: string, won: bigint) =>
+    let seq = 0;
+    const paid = (won: bigint) => {
+      seq += 1;
       h.db
         .insert(orders)
         .values({
-          id,
+          id: `o${seq}`,
           userId: 'u1',
           agentId: 'a-u1',
           merchantId: 'm1',
           itemsJson: '[]',
           amountAokrw: s(won),
           status: 'paid',
-          orderRef: `0x${id.padStart(64, '0')}`,
+          orderRef: `0x${String(seq).padStart(64, '0')}`,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
         .run();
-    const budget = BigInt(zWalletView.parse((await get('u1')).body).savedThisMonth);
-    paid('1', 9_000n);
-    const after = zWalletView.parse((await get('u1')).body);
-    expect(BigInt(after.savedThisMonth)).toBe(budget - W(9_000n));
+    };
+    const saved = async () => zWalletView.parse((await get('u1')).body).savedThisMonth;
+    expect(await saved()).toBe(s(10_000n));
+    paid(9_000n);
+    expect(await saved()).toBe(s(1_000n));
+    paid(1_000n); // exactly the budget
+    expect(await saved()).toBe('0');
+    paid(5_000n); // past the budget: 200 and 0, not an error
+    const res = await get('u1');
+    expect(res.status).toBe(200);
+    expect(zWalletView.parse(res.body).savedThisMonth).toBe('0');
+  });
+
+  it('owner shows 0 (and 200) when more went out than came in', async () => {
+    const { allowance, get } = await setup();
+    allowance.record('u1', 'fund', W(5_000n), null);
+    const res = await get('u1');
+    expect(res.status).toBe(200);
+    expect(zWalletView.parse(res.body).owner).toBe('0');
+    allowance.record('u1', 'trial', W(3_000n), null);
+    expect(zWalletView.parse((await get('u1')).body).owner).toBe('0');
+    allowance.record('u1', 'refund', W(4_000n), null);
+    expect(zWalletView.parse((await get('u1')).body).owner).toBe(s(2_000n));
+  });
+
+  it('the ledger refuses a zero or negative amount', async () => {
+    const { allowance } = await setup();
+    expect(() => allowance.record('u1', 'fund', 0n, null)).toThrow(RangeError);
+    expect(() => allowance.record('u1', 'refund', -1n, null)).toThrow(RangeError);
+    expect(allowance.balanceAokrw('u1')).toBe(0n);
   });
 
   it('shows each user only their own ledger', async () => {
