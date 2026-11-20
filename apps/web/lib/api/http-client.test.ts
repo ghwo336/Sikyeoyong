@@ -329,6 +329,34 @@ describe('createHttpApi: what the server and proxies require', () => {
     },
   );
 
+  it('PATCH /api/agents/:id sends only the species, as a cookie write, and checks the answer (D-32)', async () => {
+    const f = fakeFetch({
+      'PATCH /api/agents/agent%201': { body: '{"dragonSpecies":"water"}' },
+    });
+    expect(await createHttpApi(f).patchAgent('agent 1', { dragonSpecies: 'water' })).toEqual({
+      dragonSpecies: 'water',
+    });
+    expect(f.mock.calls[0]?.[1]?.body).toBe('{"dragonSpecies":"water"}');
+    expect(headersOf(f, 0)['X-Requested-With']).toBe('fetch');
+    const odd = fakeFetch({ 'PATCH /api/agents/a1': { body: '{"dragonSpecies":"fire"}' } });
+    await expect(createHttpApi(odd).patchAgent('a1', { dragonSpecies: 'star' })).rejects.toThrow();
+  });
+
+  it('GET /api/orders is checked by the shared schema (amounts stay strings, at most 20)', async () => {
+    const f = fakeFetch({ 'GET /api/orders': { body: JSON.stringify({ orders: [VIEW] }) } });
+    expect(await createHttpApi(f).listOrders()).toEqual({ orders: [VIEW] });
+    const many = fakeFetch({
+      'GET /api/orders': {
+        body: JSON.stringify({ orders: Array.from({ length: 21 }, () => VIEW) }),
+      },
+    });
+    await expect(createHttpApi(many).listOrders()).rejects.toThrow();
+    const numberAmount = fakeFetch({
+      'GET /api/orders': { body: JSON.stringify({ orders: [{ ...VIEW, amount: 9000 }] }) },
+    });
+    await expect(createHttpApi(numberAmount).listOrders()).rejects.toThrow();
+  });
+
   it('refuses a confirm answer whose amount is a number (money stays a string)', async () => {
     const f = fakeFetch({
       'POST /api/orders/o1/confirm': { body: JSON.stringify({ order: { ...VIEW, amount: 9000 } }) },

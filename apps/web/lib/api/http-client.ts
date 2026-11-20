@@ -19,7 +19,10 @@ import {
   zWalletView,
   zMeView,
   zIdentityStatus,
+  zOrderList,
   zOrderResult,
+  zPatchAgentBody,
+  zPatchAgentResult,
   zPouchiLoginConfig,
   zSetLimitsResult,
   zSignupConfig,
@@ -175,6 +178,7 @@ export function createHttpApi(
       zOrderResult.parse(await call('POST', `/orders/${encodeURIComponent(orderId)}/confirm`)),
     getOrder: async (orderId) =>
       zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),
+    listOrders: async () => zOrderList.parse(await call('GET', '/orders')),
     rateOrder: async (orderId, value) => {
       await call('POST', `/orders/${encodeURIComponent(orderId)}/rating`, { value });
     },
@@ -198,6 +202,11 @@ export function createHttpApi(
       return { verified: true };
     },
     createAgent: async (body) => agentCreated(await call('POST', '/agents', body)),
+    // D-32: the look only, the owner's button (never an LLM tool); nothing goes on chain.
+    patchAgent: async (agentId, body) =>
+      zPatchAgentResult.parse(
+        await call('PATCH', `/agents/${encodeURIComponent(agentId)}`, zPatchAgentBody.parse(body)),
+      ),
     getAgentSetup: async () => zAgentSetupView.parse(await call('GET', '/agents/me')),
     retryAgentSetup: async () => {
       await call('POST', '/agents/me/setup/retry');

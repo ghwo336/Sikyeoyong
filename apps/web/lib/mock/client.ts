@@ -10,6 +10,7 @@ import {
   NETWORKS,
   getPolicy,
   nagStage,
+  ORDER_LIST_MAX,
   parseAokrw,
 } from '@sikyeoyong/shared';
 import type {
@@ -397,6 +398,28 @@ export const mockApi: ApiClient = {
     if (!p) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
     return later(null).then(() => ({ order: orderAt(p.rec, p.at, Date.now()) }));
   },
+  // GET /orders: paid orders as they are now, newest first, like the server (quotes left out).
+  listOrders: () =>
+    later(null).then(() => {
+      if (!session.signedIn) throw new AppError('UNAUTHENTICATED', { reason: 'mock: signed out' });
+      const now = Date.now();
+      const orders = [...paid.values()]
+        .sort((a, b) => b.at - a.at)
+        .slice(0, ORDER_LIST_MAX)
+        .map((p) => orderAt(p.rec, p.at, now));
+      return { orders };
+    }),
+  // PATCH /agents/:id (D-32): only the look changes; the name, money and limits stay.
+  patchAgent: (agentId, { dragonSpecies }) =>
+    later(null).then(() => {
+      const me = currentMe();
+      if (agentId !== me.agentId || session.dragon === null) {
+        throw new AppError('NOT_FOUND', { reason: 'mock: not your dragon' });
+      }
+      session = { ...session, dragon: { ...session.dragon, species: dragonSpecies } };
+      saveSession();
+      return { dragonSpecies };
+    }),
   setLimits: ({ perOrderLimit, myPeriodicLimit }) => {
     if (perOrderLimit !== undefined) session = { ...session, perOrderLimit };
     if (myPeriodicLimit !== undefined) {

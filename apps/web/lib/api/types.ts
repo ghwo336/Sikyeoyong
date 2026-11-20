@@ -14,7 +14,10 @@ import type {
   DragonSpecies,
   IdCardView,
   MeView,
+  OrderList,
   OrderView,
+  PatchAgentBody,
+  PatchAgentResult,
   QuickReply,
   SetLimitsBody,
   SetLimitsResult,
@@ -35,6 +38,7 @@ export type {
   CreateOrderResult,
   MeView,
   OrderItemLine,
+  OrderList,
   OrderQuote,
   OrderStatus,
   OrderView,
@@ -68,6 +72,11 @@ export interface ApiClient {
   /** POST /orders/:id/confirm. The only call that pays (CLAUDE.md rule 3). */
   confirmOrder(orderId: string): Promise<{ readonly order: OrderView }>;
   getOrder(orderId: string): Promise<{ readonly order: OrderView }>;
+  /**
+   * GET /orders: the owner's recent orders, newest first, at most ORDER_LIST_MAX, quotes never
+   * confirmed left out (Main.dc.html: the order in progress card and the 주문 내역 button).
+   */
+  listOrders(): Promise<OrderList>;
   /** Arrived.dc.html taste rating; it feeds later recommendations. */
   rateOrder(orderId: string, value: 'again' | 'okay' | 'meh'): Promise<void>;
 
@@ -89,6 +98,11 @@ export interface ApiClient {
   pouchiComplete(body: PouchiCompleteBody): Promise<void>;
   /** Kakao identity check (or the trial check in mock mode). Only the result is kept. */
   verifyIdentity(): Promise<{ readonly verified: boolean }>;
+  /**
+   * PATCH /agents/:id (Look.dc.html, D-32): the dragon's look only. The owner's button; nothing
+   * goes on chain and the name, money and limits stay. agentId comes from GET /me.
+   */
+  patchAgent(agentId: string, body: PatchAgentBody): Promise<PatchAgentResult>;
   /** POST /agents. */
   createAgent(body: {
     readonly dragonName: string;

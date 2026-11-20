@@ -53,3 +53,36 @@ describe('mock wallet money', () => {
     expect((await mockApi.getWallet()).owner).toBe(won(101_000n)); // nothing left to move
   });
 });
+
+describe('mock look and order list (D-32)', () => {
+  it('PATCH changes only the look of my own dragon; another id is not found', async () => {
+    const { resetMockSession } = await import('./client');
+    resetMockSession('hatched');
+    const before = await mockApi.getMe();
+    expect(await mockApi.patchAgent(before.agentId, { dragonSpecies: 'star' })).toEqual({
+      dragonSpecies: 'star',
+    });
+    const after = await mockApi.getMe();
+    expect(after).toEqual({ ...before, dragonSpecies: 'star' });
+    await expect(
+      mockApi.patchAgent('someone-else', { dragonSpecies: 'water' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('lists only confirmed orders, newest first; a quote alone is not there', async () => {
+    const { resetMockSession } = await import('./client');
+    resetMockSession('hatched');
+    expect((await mockApi.listOrders()).orders).toEqual([]);
+    const order = (menuId: string, merchantId: string) =>
+      mockApi.createOrder({ merchantId, items: [{ menuId, qty: 1 }], clientOrderId: menuId });
+    const first = await order('pork-gukbap', 'maru-gukbap');
+    expect((await mockApi.listOrders()).orders).toEqual([]);
+    await mockApi.confirmOrder(first.order.id);
+    await new Promise((r) => setTimeout(r, 5));
+    const second = await order('eomuk-gimbap', 'daecheong-bunsik');
+    await mockApi.confirmOrder(second.order.id);
+    const { orders } = await mockApi.listOrders();
+    expect(orders.map((o) => o.id)).toEqual([second.order.id, first.order.id]);
+    expect(orders[0]?.status).toBe('preparing');
+  });
+});
