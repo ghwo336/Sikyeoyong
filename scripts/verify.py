@@ -72,6 +72,7 @@ HEX_COLOR = r"#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b"
 CHAIN_ID_OK = (
     "packages/shared/src/config/",  # the one home for chain config (CLAUDE.md 2)
     "config/deployments/",          # deploy outputs per chain id (CLAUDE.md 2)
+    "seed/onchain/",                # merchant registration records per chain id (D-33)
     "docs/", "design/", "CLAUDE.md", "README.md",  # prose
     ".env.example",                 # env template mirrors tech-spec 8.3, values are read via config
     "scripts/verify",               # this gate and its tests

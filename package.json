@@ -30,7 +30,8 @@
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts",
     "contracts:deploy:testnet": "node --env-file-if-exists=.env infra/scripts/deploy-orders.ts",
-    "policy:apply": "node --env-file-if-exists=.env infra/scripts/apply-policy.ts"
+    "policy:apply": "node --env-file-if-exists=.env infra/scripts/apply-policy.ts",
+    "merchants:register": "node --env-file-if-exists=.env infra/scripts/register-merchants.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

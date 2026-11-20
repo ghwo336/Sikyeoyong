@@ -33,3 +33,11 @@ export {
   type DeploymentRecord,
 } from './deployments.js';
 export { DEPLOYMENTS } from './deployments-data.js';
+export {
+  merchantOnchainEntrySchema,
+  merchantOnchainSchema,
+  parseMerchantOnchain,
+  withMerchantEntry,
+  type MerchantOnchainEntry,
+  type MerchantOnchainRecord,
+} from './merchant-onchain.js';
