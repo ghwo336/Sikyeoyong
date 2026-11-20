@@ -37,7 +37,7 @@ interface PaymentProvider {
 ```
 구현체는 경로별로 하나씩 (`pathA`, `pathB`, `pathC`, 테스트용 mock). 선택은 `PAYMENT_PATH` 환경 변수. 타입은 `packages/shared/src/payment`. 다른 모듈은 `modules/payment/payment.service.ts`의 `PAYMENT_PROVIDER` 토큰으로만 받는다 (llm은 payment를 import하지 못한다, 린트 경계).
 - 부화(user-flow 4)는 `modules/agents/agent-setup.service.ts`: `createAgent`(지갑과 8004 등록) 뒤 `OWNER_AUTHORITY`로 `bind`, 이어서 `setTransferLimit`(에이전트 행의 `per_order_limit`, 만들 때 `policy.perOrderLimit.initial` 10,000원, D-31)를 기록하고 (둘 중 하나라도 사용자 서명을 기다리면 ACTIVE로 바꾸지 않는다) `agent_limit_history`와 ACTIVE를 한 트랜잭션으로 남긴다. 단계는 `agents.setup_step`(wallet, identity, limit, done, failed, 마이그레이션 0003). 실패하면 PENDING에 failed로 멈추고 `POST /agents/me/setup/retry`가 멈춘 자리부터 다시 한다. 아직: 본인 인증(D-16) 확인 뒤에만 부화, 프로세스가 죽었을 때 PENDING 이어 하기.
-- `PAYMENT_PATH=mock`: `MockPaymentProvider`는 메모리 안의 흉내 체인이다 (개발·테스트 전용, production 설정은 거절). 지갑 잔액, TransferLimit, 30일 고정 창(첫 주문부터, (추론)), 동결, orderRef 한 번만을 흉내 낸다. 거절 순서는 실제 결제가 실패하는 순서다: 제출(잔액 부족은 `CHAIN_INSUFFICIENT_FUNDS`, 아무것도 실행되지 않음) → 프록시 preCall(한도 미설정, 건당 한도, 30일 상한. 본문보다 먼저라는 것은 maroo-facts 3.5 preCall에서 (추론)) → 컨트랙트 본문, tech-spec 5.2 `placeOrder` 의사 코드 순서대로 동결(`AgentIsPaused`), `BadAmount`(0원 이하, 표에 없어 `INTERNAL`), `OrderExists`(표에 없어 `INTERNAL`). 코드는 `chain-and-pcl.md` revert 매핑과 같다. 흉내 범위 밖: 묶이지 않은 에이전트(`AgentNotBound`), 가게 활성 여부(`MerchantNotActive`), 가스. 프로세스를 다시 띄우면 흉내 체인이 통째로 빈다: 지갑 잔액, TransferLimit, 30일 창, 결제 기록이 모두 사라진다. 그래서 `findPaid`가 재시작 전 결제를 모르며, 재시작 뒤 같은 주문의 재시도는 흉내 체인에서 다시 결제될 수 있다 (실제 체인에서는 `OrderExists`로 막힌다). 경로 A, B, C는 붙이기 전까지 모든 호출이 `INTERNAL`로 실패한다 (결제하지 않음).
+- `PAYMENT_PATH=mock`: `MockPaymentProvider`는 메모리 안의 흉내 체인이다 (개발·테스트 전용, production 설정은 거절). 지갑 잔액, TransferLimit, 30일 고정 창(첫 주문부터, (추론)), 동결, orderRef 한 번만을 흉내 낸다. 거절 순서는 실제 결제가 실패하는 순서다: 제출(잔액 부족은 `CHAIN_INSUFFICIENT_FUNDS`, 아무것도 실행되지 않음) → 프록시 preCall(한도 미설정, 건당 한도, 30일 상한. 본문보다 먼저라는 것은 maroo-facts 3.5 preCall에서 (추론)) → 컨트랙트 본문, tech-spec 5.2 `placeOrder` 의사 코드 순서대로 동결(`AgentIsPaused`), `BadAmount`(0원 이하, 표에 없어 `INTERNAL`), `OrderExists`(표에 없어 `INTERNAL`). 코드는 `chain-and-pcl.md` revert 매핑과 같다. 흉내 범위 밖: 묶이지 않은 에이전트(`AgentNotBound`), 가게 활성 여부(`MerchantNotActive`), 가스. 프로세스를 다시 띄우면 흉내 체인이 통째로 빈다: 지갑 잔액, TransferLimit, 30일 창, 결제 기록이 모두 사라진다. 그래서 `findPaid`가 재시작 전 결제를 모르며, 재시작 뒤 같은 주문의 재시도는 흉내 체인에서 다시 결제될 수 있다 (실제 체인에서는 `OrderExists`로 막힌다). 경로 A와 C는 붙이기 전까지 모든 호출이 `INTERNAL`로 실패한다 (결제하지 않음). 경로 B는 아래 "경로 B 구현".
 
 ## 경로 (D-05, 1단계는 B로 확정 D-25)
 | 경로 | 조건 | PCL 적용 | 가스 |
@@ -48,6 +48,20 @@ interface PaymentProvider {
 | mock | 단위 테스트, 앱 개발 | 없음 | 없음 |
 
 경로를 바꿔도 `PaymentProvider` 위쪽 코드(orders, llm)는 바뀌지 않아야 한다. 영수증 규칙 계산만 `provider.path`를 읽는다.
+
+## 경로 B 구현 (2026-11-21, 테스트넷 실제 결제까지 확인)
+`modules/payment/managed-eoa.provider.ts`의 `ManagedEoaPaymentProvider`(`PAYMENT_PATH=B`, 기본값). viem과 `@maroo-chain/viem@0.5.0`을 쓴다. 클라이언트는 `PublicPort`, `WalletPort`라는 좁은 포트로 받아 테스트에서 가짜로 바꾼다 (`managed-eoa.provider.spec.ts`, 네트워크 없음). 실제 연결은 `managed-eoa.factory.ts`(OPERATOR_KEY, `AgentKeyVault`, `resolveOrdersTarget`).
+
+- **생성 (`createAgent`)**: 키를 `agent_keys`에 먼저 저장 → 운영자가 8004 `register()`(영수증의 `Registered` 이벤트에서 `agentId`) → 에이전트 키가 EIP-712 `AgentWalletSet(agentId, newWallet, owner, deadline)`에 서명(도메인은 레지스트리의 `eip712Domain()`, deadline은 체인 시각 + 240초) → 운영자가 `setAgentWallet(agentId, 에이전트 주소, deadline, 서명)` → `getAgentWallet(agentId)`가 에이전트 주소인지 확인. 이 연결이 있어야 `AGENT_OKRW_TRANSFER_LIMIT_POLICY`가 보낸 사람을 그 에이전트로 본다 (확인, maroo-facts 2). 중간에 죽으면 8004 등록이 고아로 남는다(이어 하기는 없음. 새 키로 다시 만들고 고아는 무시, 돈이 든 적 없음).
+- **`setTransferLimit`**: 운영자가 `setMetadata(agentId, "TransferLimit", abi.encode(uint256))`. **`bindAgent`, `freeze`, `unfreeze`**: 운영자가 프록시의 `bindAgent`, `setAgentPaused`(운영자가 묶은 소유자라 부를 수 있다). **`fund`**: 운영자가 에이전트 주소로 보내는 네이티브 전송, 다른 주소로는 보내지 않는다. 운영자 쓰기는 한 번에 하나, 영수증을 받은 뒤 다음 것 (한 nonce 줄, `lanes.ts`).
+- **`drain`**: 에이전트 키로 (잔액 - 최악의 수수료)를 소유자(운영자)에게 보낸다. 수수료도 못 내는 잔액이면 보내지 않는다. 수수료 몫 약 1 OKRW가 남는다 (확인, 실행 기록).
+- **`preflight`**: 잔액이 금액보다 적으면 `CHAIN_INSUFFICIENT_FUNDS`, 아니면 SDK `simulatePclProxy`로 에이전트를 보낸 사람으로 `placeOrder{value}`를 시뮬레이션한다. 컨트랙트 범위 정책도 시뮬레이션에서 재현된다 (확인, Q-14 닫힘). revert 이름은 `common/onchain/revert-decoder.ts`가 chain-and-pcl.md 표대로 `DecodedChainError`로 바꾼다.
+- **`pay`** (`PayRequest.beforeBroadcast`): `estimateGas`(가스 한도는 추정값 그대로) → nonce(`pending`, 에이전트별 한 줄) → 서명 → **해시와 nonce를 `beforeBroadcast`로 호출자에게 넘겨 DB에 남기게 한 뒤** → `sendRawTransaction`을 한 번만 → 영수증 대기. 추정 단계에서 정책이 거절하면 서명도 전송도 없이 `{ ok: false, stage: 'preflight' }`(가스 없음). 노드가 잔액 부족으로 거절하면 `stage: 'submit'`. 영수증이 revert면 같은 호출을 그 블록에서 다시 실행해 사유를 읽고 `stage: 'execution'`과 `txHash`로 돌려준다 (실제 체인에서 revert가 영수증까지 간 경우는 아직 만들어 보지 못했다. 추정 단계가 먼저 거절한다). 그 밖의 전송 실패, 영수증 시간 초과(90초), 영수증은 성공인데 이 orderRef의 `OrderPlaced`가 없음은 **던진다**(결과 모름, confirm이 `submitting`으로 둔다). 자동 재시도는 없다.
+- **`findPaid`**: 프록시의 `OrderPlaced(orderRef)` 로그를 배포 블록부터 조회.
+- **가스 몫**: 경로 B는 페이마스터가 없어 에이전트 지갑이 가스를 낸다. 제공자의 `gasReserveAokrw`(`AGENT_GAS_SHARE_OKRW`, 기본 2,000 OKRW, D-25)를 confirm의 즉시 충전이 금액에 더해 채운다 (`order-confirm.service.ts` `topUp`, 장부 `fund`에도 가스 몫이 섞여 기록된다. 가스 몫을 용돈에서 뺄지는 Q-38과 함께 정한다). 실측: `placeOrder` 478,058 가스, 가스 가격 9,000 gwei에서 약 4.3 OKRW라 기본 2,000 OKRW는 넉넉하다 (확인).
+- **프로덕션**: `OPERATOR_KEY`, `AGENT_KEY_ENCRYPTION_KEY`, 배포된 프록시(`ORDERS_CONTRACT` 또는 배포 기록) 중 하나라도 없으면 부팅이 멈춘다. 개발과 테스트에서는 결제하지 않는 제공자(모든 호출 `INTERNAL`)로 떨어져 나머지 앱은 돈다.
+- **체인 읽기**: `ChainReader`는 `contractPeriodicVolume`(`modules/chain/onchain-chain-reader.ts`, chain-and-pcl.md).
+- **실제 실행** (owner-run, 실제 테스트넷 트랜잭션): `pnpm e2e:path-b -- --run`. 결과 기록은 worklog 2026-11-21.
 
 ## 모드 P와 float (D-06, 확인된 이유)
 - 컨트랙트 범위 `AGENT_OKRW_TRANSFER_LIMIT_POLICY`는 직접 sender 귀속만 하고 실행 전 call value를 검사한다. 그래서 돈은 에이전트가 `msg.value`로 직접 낸다 (모드 P).

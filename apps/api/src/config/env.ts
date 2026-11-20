@@ -2,6 +2,7 @@ import {
   AppError,
   getPolicy,
   isPolicyProfile,
+  okrwToAokrw,
   resolveChainConfig,
   type ChainConfig,
   type PolicyConfig,
@@ -93,6 +94,8 @@ const schema = z.object({
   WAAS_AUTH_TOKEN: optionalText,
   AGENT_KEY_ENCRYPTION_KEY: optionalText,
   AGENT_FLOAT_MULTIPLIER: int(1).default(2),
+  /** Path B: OKRW kept in each agent wallet for gas on top of the float (D-25, tech-spec 3.4). */
+  AGENT_GAS_SHARE_OKRW: int(0).default(2000),
   SUBMITTING_ALERT_MS: int(1000).default(600_000),
 });
 
@@ -126,10 +129,17 @@ export interface AppConfig {
       }
     | undefined;
   readonly policy: PolicyConfig;
+  /** The orders proxy: ORDERS_CONTRACT and ORDERS_DEPLOY_BLOCK win over the deployment record (tech-spec 8.3). */
+  readonly orders: {
+    readonly contractOverride: string | undefined;
+    readonly deployBlockOverride: number | undefined;
+  };
   readonly payment: {
     readonly path: 'A' | 'B' | 'C' | 'mock';
     readonly ownerMode: 'custodial' | 'pouch';
     readonly floatMultiplier: bigint;
+    /** aokrw kept in each path B agent wallet for gas (AGENT_GAS_SHARE_OKRW). */
+    readonly gasShareAokrw: bigint;
     readonly submittingAlertMs: number;
     readonly confirmations: number;
   };
@@ -258,10 +268,15 @@ export function loadConfig(raw: RawEnv): AppConfig {
     devLogin: env.DEV_LOGIN,
     reauthMode: env.REAUTH_MODE,
     policy: getPolicy(env.POLICY_PROFILE),
+    orders: {
+      contractOverride: env.ORDERS_CONTRACT,
+      deployBlockOverride: env.ORDERS_DEPLOY_BLOCK,
+    },
     payment: {
       path: env.PAYMENT_PATH,
       ownerMode: env.OWNER_MODE,
       floatMultiplier: BigInt(env.AGENT_FLOAT_MULTIPLIER),
+      gasShareAokrw: okrwToAokrw(BigInt(env.AGENT_GAS_SHARE_OKRW)),
       submittingAlertMs: env.SUBMITTING_ALERT_MS,
       confirmations: env.CONFIRMATIONS,
     },

@@ -178,7 +178,28 @@ children: []
 - 영향: 체인 ID를 설정에서 받으려는 앱이 캐스트를 해야 한다.
 - 제안: viem 호환 범위를 올리거나 `marooTestnet.extend({ id, rpcUrls })` 같은 도우미 제공.
 
-### F-23 가스 가격이 세 가지(조회 9,000, 수수료 추정 10,600, 시뮬레이션 기본 17,000 gwei)라 "가스 여유" 계산이 어렵다
+### F-23 SDK README의 `agent.getAgentIds` 예가 "owner"로 부르지만 조회 키는 지갑
+- 상태: 열림
+- 종류: 문서 불일치
+- 발견: 2026-11-21 (경로 B 실제 실행). `@maroo-chain/viem@0.5.0` README는 `getAgentIds({ args: [owner, pageRequest] })`라고 쓴다. 운영자가 `register()`하고 `setAgentWallet`으로 다른 EOA를 지갑으로 연결한 뒤, 그 EOA를 넘기면 id가 나오고 운영자(NFT 소유자)를 넘기면 나오지 않았다.
+- 영향: "소유자의 에이전트 목록"을 얻으려는 앱이 빈 목록을 받는다. 컨트랙트 범위 정책이 에이전트를 지갑으로 알아보는 것과는 맞는다.
+- 제안: 인자 이름을 `wallet`으로 바꾸거나, 소유자로 조회하는 방법(`ownerOf` 순회)을 따로 적기.
+
+### F-24 `setAgentWallet`이 TransferLimit 적용의 선행 조건이라는 설명이 없음
+- 상태: 열림
+- 종류: 문서 누락
+- 발견: 2026-11-21. `register()`만 하면 에이전트 지갑은 등록자 자신이다. 별도 EOA가 `placeOrder`를 보내려면 소유자가 EIP-712 서명(`AgentWalletSet`, 에이전트 키가 서명, 5분 deadline)으로 `setAgentWallet`을 해야 `AGENT_OKRW_TRANSFER_LIMIT_POLICY`가 그 EOA를 에이전트로 읽는다. 이 순서는 SDK 주석(`setAgentWallet`, `eip712Domain`)에만 있고 정책 템플릿 문서에는 없다.
+- 영향: 개발자가 `register`와 `setMetadata`만 하면 한도가 걸리지 않거나(에이전트로 안 읽힘) `AgentTransferLimitMetadataInvalid`가 난다고 오해한다 (후자는 이 실행에서 직접 보지 못했다).
+- 제안: 정책 템플릿 문서에 "에이전트 등록, 지갑 연결, 메타데이터" 순서 예제를 넣기.
+
+### F-25 `contractPeriodicVolume` 문서의 인자와 반환 모양이 SDK와 다르고, 창 경계가 주기 배수에 맞춰짐
+- 상태: 열림
+- 종류: 문서 불일치
+- 발견: 2026-11-21. 문서는 `contractPeriodicVolume(contract, user, selector, asset)`라고 쓰지만 SDK 0.5.0은 `resetPeriodSeconds`와 `resolveAgentOwners`까지 6개를 받고 `{ amount, maxAmount, resetPeriodSeconds, resetAt }` 배열을 돌려준다. 또 3,600초 주기에서 `resetAt`이 첫 주문 + 주기가 아니라 유닉스 시각의 3,600초 배수였다 (문서는 "고정 주기로 추론"만 말한다).
+- 영향: 앱이 "첫 주문부터 30일"로 안내 문구를 만들면 틀린다. 창이 주기 배수라면 월 경계 직전 주문은 곧 리셋된다.
+- 제안: 반환 모양, 인자 의미, 창 경계 규칙을 템플릿 문서에 적기.
+
+### F-26 가스 가격이 세 가지(조회 9,000, 수수료 추정 10,600, 시뮬레이션 기본 17,000 gwei)라 "가스 여유" 계산이 어렵다
 - 상태: 열림
 - 종류: 문서 누락, 도구 동작
 - 발견: 2026-11-21. 가게 지갑에 가스비를 보내 `registerMerchant`를 시뮬레이션하자 "gas required exceeds allowance"로 거절됐다. 잔액 4.5 tOKRW인데 허용 가스가 265,726이라, 시뮬레이션이 약 17,000 gwei(2 x baseFee + tip)로 잔액을 나눈 것이다. 실제 과금은 9,000 gwei였다.

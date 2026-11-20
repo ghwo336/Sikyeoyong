@@ -54,6 +54,11 @@ export type PayResult =
 
 export interface PaymentProvider {
   readonly path: PaymentPath;
+  /**
+   * Path B: aokrw each agent wallet must hold on top of an order's amount for gas (D-25, no
+   * paymaster). Confirm's top-up adds it. Absent means 0 (mock, and paths with a paymaster).
+   */
+  readonly gasReserveAokrw?: bigint;
   /** Creates the wallet and waits for the 8004 registration. */
   createAgent(input: {
     readonly userId: string;

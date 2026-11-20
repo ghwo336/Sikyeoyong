@@ -57,13 +57,13 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 반영한 곳:
 
 ### Q-05 30일 주기는 언제 시작하나? 달력 월 리셋이 가능한가?
-- 상태: 열림
+- 상태: 부분 닫힘 (2026-11-21, 3,600초 주기만 확인)
 - 우선순위: P1
 - 배경: 잔소리 표시와 장면 5 안내 문구.
 - 확인 방법: 테스트넷에서 짧은 주기(예: 600초)로 첫 전송 시각과 `resetAt` 관계 측정.
 - 담당: 구현 세션
-- 결론:
-- 반영한 곳:
+- 결론 (확인, 3,600초 주기): 창 경계는 첫 주문 + 주기가 아니라 유닉스 시각의 주기 배수다 (주문 시각 1795189972에 `resetAt` 1795190400). 30일 주기가 같은지는 시험하지 않았고 (추론) 달력 월 리셋은 아니다. 남은 일: 개발용 목 체인(`MockPaymentProvider`는 첫 주문부터 한 주기)을 실제 규칙에 맞출지, "내 30일 한도" 안내 문구("리셋 날짜")를 이 규칙으로 쓸지 정한다.
+- 반영한 곳: chain-and-pcl.md "에이전트 연결과 30일 사용량 읽기", maroo-facts 3.2, F-25
 
 ### Q-06 `FOR_EACH_POLICY`로 소유자 단위 30일 합산이 되나?
 - 상태: 열림
@@ -111,13 +111,13 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 반영한 곳:
 
 ### Q-11 8004 소유 관계 조회와 setMetadata 시그니처는? (스파이크 S11)
-- 상태: 열림
+- 상태: 닫힘 (2026-11-21, SDK ABI와 실제 실행으로 확인)
 - 우선순위: P0
 - 배경: `bindAgent`의 소유 확인, TransferLimit 기록 (tech-spec "5.3", "5.7"). `IdentityRegistry.ownerOf`, `setMetadata`, `IAgent.getAgentIds` 페이지 인자 형식이 미확인.
 - 확인 방법: Explorer 검증 소스에서 ABI 확인.
 - 담당: 구현 세션
-- 결론:
-- 반영한 곳:
+- 결론 (확인): `ownerOf(agentId)`, `getAgentWallet(agentId)`, `setMetadata(agentId, key, bytes)`(소유자가 보냄), `setAgentWallet(agentId, newWallet, deadline, signature)`, `isAuthorizedOrOwner(agentId, spender)`가 있다. `getAgentIds(wallet, pageRequest)`는 `(uint256[] ids, { nextKey, total })`를 돌려주고 키는 소유자가 아니라 지갑이다 (F-23). `bindAgent`의 소유 확인을 컨트랙트가 8004로 직접 하게 하는 일은 여전히 하지 않는다 (Q-31).
+- 반영한 곳: maroo-facts 2, chain-and-pcl.md, payment.md "경로 B 구현"
 
 ### Q-12 MAWS AA 지갑(EntryPoint 경유) 호출에서 컨트랙트 범위 TransferLimit가 에이전트를 sender로 보나? (스파이크 S12)
 - 상태: 열림
@@ -144,13 +144,13 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 반영한 곳: chain-and-pcl.md "배포", maroo-facts 3.5, 3.6, tech-spec 5.5, 5.6, 5.9, `infra/scripts/deploy-orders.ts`
 
 ### Q-14 `simulateContract`(eth_call)에서 컨트랙트 범위 정책이 재현되나?
-- 상태: 열림
+- 상태: 닫힘 (2026-11-21, 테스트넷 실제 실행으로 확인)
 - 우선순위: P1
 - 배경: preflight로 가스를 아끼려면 시뮬레이션에서 PCL 거절이 보여야 한다. 컨트랙트 범위 정책은 실행 중 평가된다 (확인).
 - 확인 방법: 정책 걸린 `placeOrder` 한도 초과를 `eth_call`로 호출해 revert 데이터 확인.
 - 담당: 구현 세션
-- 결론:
-- 반영한 곳:
+- 결론 (확인, 2026-11-21): 재현된다. SDK `pcl.simulatePclProxy`(에이전트를 보낸 사람으로, `value` 포함)와 `estimateGas` 둘 다 `ExceededAgentTransferLimit(maxLimit, value)`를 revert로 돌려줬다 (TransferLimit 500 OKRW에서 1,000 OKRW 주문). 우리 컨트랙트 본문의 거절(`AgentIsPaused`)도 같은 시뮬레이션에서 읽혔다. 그래서 `pay`는 추정 단계에서 거절을 받으면 서명 없이 돌려준다(가스 없음). 가스가 과금되는 실제 revert는 이 경로로는 만들지 못했다.
+- 반영한 곳: chain-and-pcl.md "에이전트 연결과 30일 사용량 읽기", payment.md "경로 B 구현", maroo-facts 3.3
 
 ### Q-15 전역 KYC 한도 거절의 에러 이름은?
 - 상태: 열림

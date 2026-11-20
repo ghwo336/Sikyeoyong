@@ -31,6 +31,8 @@
 - preinstall 주소 `0x8004000000000000000000000000000000000001`. 테스트넷은 v0.4.0 업그레이드(블록 6,372,905)로 설치. (확인, /concepts/agents)
 - 등록, 에이전트 URI, 메타데이터, 에이전트 지갑은 ERC-8004 v1 ABI. attest/revoke 함수 없음. (확인)
 - Agent 프리컴파일 `0x100000000000000000000000000000000000000A`: 읽기 전용, `getParams()`, `getAgentIds(wallet, pageRequest)`. (확인)
+- 에이전트 등록과 지갑 연결 (확인, 2026-11-21 테스트넷 실제 실행, `@maroo-chain/viem@0.5.0`): `register()`는 호출자를 NFT 소유자이자 에이전트 지갑으로 만들고 `Registered(agentId, agentURI, owner)`를 낸다. 에이전트 id는 체인 전체 증가 숫자다 (31312, 31313). 다른 EOA를 지갑으로 바꾸려면 소유자가 `setAgentWallet(agentId, newWallet, deadline, signature)`를 보내고 서명은 `newWallet`이 EIP-712 `AgentWalletSet(agentId, newWallet, owner, deadline)`로 한다 (도메인: 이름 `ERC8004IdentityRegistry`, 버전 `1`, 체인 ID, 레지스트리 주소). `deadline`은 체인 시각 기준 300초 안이다. 연결 뒤 `getAgentWallet(agentId)`는 새 지갑이고, Agent 프리컴파일 `getAgentIds(새 지갑)`이 그 id를 돌려주며 `getAgentIds(소유자)`에는 없다. SDK README의 `getAgentIds({ args: [owner, ...] })` 예는 이름이 "owner"지만 조회 키는 지갑이다 (F-23).
+- 메타데이터: `setMetadata(agentId, key, bytes)`는 소유자가 보낸다 (이 실행에서는 운영자). `TransferLimit`을 `abi.encode(uint256)`로 쓰면 다음 주문부터 컨트랙트 범위 정책이 그 값을 읽었다 (Q-11 닫힘).
 - MAWS 정책 값은 IdentityRegistry 메타데이터로 저장. (확인)
 
 ## 3. PCL
@@ -55,12 +57,14 @@
 - 주기는 초 단위만. 30일 = 2,592,000초. 문서 예시에 "핫 지갑 30일당 10M OKRW".
 - `block.timestamp >= resetAt`이면 0으로 리셋하고 resetAt 진행 (고정 주기로 추론). 달력 월 리셋 아님.
 - 초과 시 `ExceededPeriodicVolume(uint256 maxLimit, uint256 value, uint256 resetAt)`.
-- 조회: `globalPeriodicVolume(user, asset)`, `contractPeriodicVolume(contract, user, selector, asset)`.
+- 조회: `globalPeriodicVolume(user, asset)`, `contractPeriodicVolume(contract, user, selector, asset)`. 실제 인자는 `(contract, user, selector, asset, resetPeriodSeconds, resolveAgentOwners)`이고 `{ amount, maxAmount, resetPeriodSeconds, resetAt }[]`를 돌려준다 (확인, 2026-11-21, SDK 0.5.0과 테스트넷). 사용량은 `user`가 에이전트 지갑일 때 그 지갑 기준으로 세졌고(주문 9,000 OKRW) 소유자인 운영자 주소는 0이었다.
+- 창 경계 (확인, 2026-11-21, 3,600초 주기): `resetAt`은 첫 주문 시각 + 주기가 아니라 유닉스 시각의 주기 배수로 맞춘 경계다 (주문 블록 시각 1795189972에 `resetAt` 1795190400 = 3600 x 498664). 30일 주기도 같은 규칙인지는 시험하지 않았다 (추론).
 - 인증 사용자 면제: `EAS_POLICY`와 Or로 묶는 `LOGICAL_POLICY`가 일반적 구성.
 
 ### 3.3 AGENT_OKRW_TRANSFER_LIMIT_POLICY (확인, pcl-template-agent-okrw-transfer-limit-policy)
 - 에이전트 지갑이 시작한 단일 전송의 OKRW 금액 상한.
 - 전역 범위: 에이전트가 직접 sender이거나 프록시 훅이 에이전트를 principal로 넘길 때. 컨트랙트 범위: 직접 sender 귀속만.
+- 컨트랙트 범위에서 에이전트로 알아보는 조건 (확인, 2026-11-21): 에이전트 EOA가 8004 `setAgentWallet`으로 연결돼 있어야 하고, 그 EOA가 직접 `placeOrder`를 보낸다. 시뮬레이션(`simulatePclProxy`)과 `estimateGas`에서도 같은 거절(`ExceededAgentTransferLimit`)이 재현된다 (Q-14 닫힘). 가스 과금되는 실제 revert는 문서 기준이다 (우리는 추정 단계에서 막혀 직접 보지 못했다).
 - 설정: 에이전트 소유자가 IdentityRegistry `setMetadata`로 키 `"TransferLimit"`, 값 `abi.encode(uint256)` 정확히 32바이트, 단위 atokrw.
 - 메타데이터가 비었거나 32바이트가 아니면 `AgentTransferLimitMetadataInvalid(reason)`로 revert. **정책을 건 컨트랙트에서 메타데이터 없는 에이전트는 실패한다는 뜻 (추론). 에이전트 생성 직후 반드시 기록.**
 - 실행 전 call value 검사, 실행 후 트랜잭션이 만든 OKRW 전송 각각 검사. 초과 시 `ExceededAgentTransferLimit(maxLimit, value)`.
@@ -91,7 +95,8 @@
 - 체인 ID 450815는 변경 예정. Mock KYC 전환 예정. 둘 다 시점 미정. **하드코딩 금지.**
 - OKRW는 네이티브 코인. ERC-20 진입점 없음. 결제 함수는 `payable`. 최소 단위 aokrw(10^18). 테스트넷 denom `atokrw`.
 - 가스 한도의 절반은 무조건 과금, 단순 전송도 약 22,300 가스. 고정 가스 금지.
-- 확인 (2026-11-21, 테스트넷 46곳 등록): 가스 가격 조회는 9,000 gwei, `estimateFeesPerGas`의 `maxFeePerGas`는 10,600 gwei, viem 기본 시뮬레이션은 약 17,000 gwei. 노드는 잔액이 가스 한도 x maxFee 이상인지 먼저 본다. 실제 과금은 가스 사용량 x 9,000 gwei였다 (`registerMerchant` 334,618 가스 = 3.01 tOKRW, `setMerchantStatus` 약 1.6). EAS 정책이 없는 데모 프로필에서 payout 지갑이 `kybUid=0x0`으로 `registerMerchant`를 호출해 성공했다. F-23.
+- 확인 (2026-11-21, 테스트넷 46곳 등록): 가스 가격 조회는 9,000 gwei, `estimateFeesPerGas`의 `maxFeePerGas`는 10,600 gwei, viem 기본 시뮬레이션은 약 17,000 gwei. 노드는 잔액이 가스 한도 x maxFee 이상인지 먼저 본다. 실제 과금은 가스 사용량 x 9,000 gwei였다 (`registerMerchant` 334,618 가스 = 3.01 tOKRW, `setMerchantStatus` 약 1.6). EAS 정책이 없는 데모 프로필에서 payout 지갑이 `kybUid=0x0`으로 `registerMerchant`를 호출해 성공했다. F-26.
+- 실측 가스 (확인, 2026-11-21, 가스 가격 9,000 gwei): `placeOrder` 478,058(약 4.3 OKRW), 8004 `setMetadata` 76,208, `bindAgent` 190,922, `setAgentPaused` 191,022, 에이전트가 운영자로 보낸 단순 전송 94,063 (22,300보다 훨씬 많다. 전역 정책 평가 몫으로 보이나 (추론)). 전체 실행(쓰기 9건과 주문 1건)에 약 14 OKRW.
 - 지원하는 EVM 하드포크(Shanghai PUSH0, Cancun MCOPY와 TSTORE)는 문서에 없다 (미확인, 2026-11-20 `pcl-proxy-hook` 재확인, Q-32, F-11). 시켜용 컨트랙트는 `evm_version = paris`로 컴파일한다.
 - `deployPclProxy`의 시그니처, kind 값, 초기화 데이터 전달, OZ `UUPSUpgradeable` 호환은 문서 사이트에는 없고 SDK `@maroo-chain/viem`과 실제 배포로 확인했다 (확인, 2026-11-20, 3.5, Q-13 닫힘, F-12, F-21). 이 배포로 `paris` 바이트코드가 테스트넷에서 실행되는 것도 확인했다 (PUSH0 등 상위 하드포크는 여전히 미확인, Q-32).
 

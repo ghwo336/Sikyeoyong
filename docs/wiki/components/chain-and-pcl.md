@@ -21,7 +21,7 @@ children: []
 - 배포 도구: `infra/` (`@sikyeoyong/infra`, `infra/scripts/deploy-orders.ts`, `apply-policy.ts`. Node 22.18 이상에서 TS를 직접 실행).
 - 프리컴파일: PCL `0x1000000000000000000000000000000000000005`, Agent `0x100000000000000000000000000000000000000A`, IdentityRegistry `0x8004000000000000000000000000000000000001` (확인), SchemaRegistry `0x1000000000000000000000000000000000000006` (미확인, tech-spec 7.2에만 있음). 이것도 설정 파일에 둔다.
 - 읽기 클라이언트는 viem. 서버만 체인을 읽는다.
-- 다른 모듈은 `modules/chain/chain.service.ts`의 `ChainReader`(`CHAIN_READER` 토큰)로만 체인 값을 받는다. 지금은 `periodicVolume`(30일 사용량과 resetAt 초)만 있다. 컨트랙트 배포 전이라 `PAYMENT_PATH=mock`이면 목 결제의 창(`mockPeriodicVolume`, 결제하면 차고 기간이 끝나면 비워짐)을, 그 밖의 개발 경로는 빈 창(0, null)을 읽고, production은 진짜 viem 읽기가 붙기 전까지 INTERNAL로 실패한다 (지어낸 체인 값을 보이지 않게). `contractPeriodicVolume` 반환 모양은 (미확인).
+- 다른 모듈은 `modules/chain/chain.service.ts`의 `ChainReader`(`CHAIN_READER` 토큰)로만 체인 값을 받는다. 지금은 `periodicVolume`(30일 사용량과 resetAt 초)만 있다. `PAYMENT_PATH=B`이면 실제 체인에서 읽는다(`modules/chain/onchain-chain-reader.ts`, 아래 "30일 사용량 읽기"). `PAYMENT_PATH=mock`이면 목 결제의 창(`mockPeriodicVolume`, 결제하면 차고 기간이 끝나면 비워짐)을, 그 밖의 개발 경로는 빈 창(0, null)을 읽고, production은 진짜 viem 읽기가 붙기 전까지 INTERNAL로 실패한다 (지어낸 체인 값을 보이지 않게). `contractPeriodicVolume` 반환 모양은 (미확인).
 
 ## 배포 (확인, 2026-11-20 테스트넷 실제 실행)
 `pnpm contracts:deploy:testnet --profile <default|demo>`는 `infra/scripts/deploy-orders.ts`를 `OPERATOR_KEY`(환경에서만, 출력하지 않음)로 돌린다. `--force` 없이는 `deployments/<chainId>.<profile>.json`이 있으면 멈춘다. `--max-spend <OKRW>`(기본 300)를 넘길 쓰기는 보내기 전에 멈춘다.
@@ -43,6 +43,11 @@ children: []
 | 가스 | 합계 22.16 tOKRW |
 
 전체 tx 해시는 배포 기록 JSON에 있다. 정책 admin은 `deployPclProxy` 호출자로 배포와 동시에 정해진다 (아래 규칙, F-20).
+
+## 에이전트 연결과 30일 사용량 읽기 (확인, 2026-11-21 테스트넷 실제 실행)
+- **8004 연결**: 운영자가 `register()`로 에이전트 id를 얻으면 그 시점의 지갑은 운영자다. 에이전트 EOA를 지갑으로 바꾸는 `setAgentWallet(agentId, newWallet, deadline, signature)`를 소유자(운영자)가 보내고, 서명은 `newWallet`(에이전트 키)이 `AgentWalletSet(agentId, newWallet, owner, deadline)`(EIP-712, 도메인 `ERC8004IdentityRegistry` v1)으로 한다. 연결 뒤 `getAgentWallet(agentId)`는 에이전트 주소, Agent 프리컴파일 `getAgentIds(에이전트 주소)`는 그 id, `getAgentIds(운영자)`에는 그 id가 없다. TransferLimit은 이 연결 뒤에 `AGENT_OKRW_TRANSFER_LIMIT_POLICY`가 읽었다 (한도 10,000 OKRW에서 9,000 통과, 500으로 낮춘 뒤 1,000은 `ExceededAgentTransferLimit`, 한도 값 500 OKRW가 revert 인자에 실렸다).
+- **30일 사용량**: `contractPeriodicVolume(proxy, 에이전트 주소, 0x62dac134, "atokrw", 주기 초, false)`가 `{ amount, maxAmount, resetPeriodSeconds, resetAt }[]`를 돌려준다. 에이전트 지갑에 9,000 OKRW가 세졌고 운영자 주소는 0이었다 (사용량은 직접 sender 기준). 아직 센 것이 없을 때의 응답(빈 배열인지 0 값인지)은 구분해 보지 않았다. 코드는 둘 다 "창 없음"(`resetAt` null)으로 읽는다 (추론).
+- **주기 시작 (Q-05)**: 3,600초 주기에서 `resetAt`이 첫 주문 시각 + 주기가 아니라 **주기의 배수(유닉스 시각 기준)로 맞춰진 경계**였다. 첫 실행: 주문 블록 시각 1795189972, `resetAt` 1795190400(= 3600 x 498664). 둘째 실행: 주문 1795190481, `resetAt` 1795194000(= 3600 x 498665). 30일(2,592,000초)도 같은 방식이면 창은 달력 월도 첫 주문도 아닌 1970-01-01부터 2,592,000초씩 끊은 구간이다 (추론, 3,600초만 시험). 개발용 목 체인은 "첫 주문부터 한 주기"로 흉내 내므로 실제와 다르다 (후속).
 
 ## 정책이 언제 막는가 (D-02 표현 규칙, 확인)
 | 정책 | 평가 시점 | 거절되면 |
@@ -72,13 +77,15 @@ children: []
 | 전역 KYC 한도 거절 (에러 이름 미확인) | `CHAIN_KYC_LIMIT` | 소유자 KYC 필요 |
 | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | `CHAIN_EAS_REQUIRED` | 가게 KYB 없음 또는 만료 |
 | `Unauthorized()` | `CHAIN_UNAUTHORIZED` | 잠시 후 다시 시도 (서버 설정 문제), 운영자 알림 |
+| `VolumeAboveMaxLimit(maxLimit, value)` (건당 `VOLUME_POLICY`의 에러) | `CHAIN_KYC_LIMIT` | 소유자 KYC 필요. 전역 KYC 한도가 이 템플릿이라고 보는 것은 (추론, Q-15) |
+| 컨트랙트 `AgentNotBound()`, `BadAmount()`, `OrderExists(orderRef)`, `TransferFailed()` | `INTERNAL` | 표에 없다. 재시도 전에 `findPaid`로 확인 (D-19) |
 | 컨트랙트 `AgentIsPaused()` | `CHAIN_AGENT_PAUSED` | 용이가 자고 있어요 |
 | 컨트랙트 `MerchantNotActive(id)` | `CHAIN_MERCHANT_INACTIVE` | 주문할 수 없는 가게 |
 | 잔액 부족, MAWS `INSUFFICIENT_BALANCE` | `CHAIN_INSUFFICIENT_FUNDS` | 용돈(float) 부족 |
 | MAWS `POLICY_REJECTED` | `MAWS_POLICY_REJECTED` | 용이 규칙에 걸렸어요 |
 | 그 밖 | `INTERNAL` | 잠시 후 다시 시도. 원본 revert는 `AppError.detail.chain`에 담아 서버 로그에만 (응답에는 없음) |
 
-정확한 revert 이름은 테스트넷에서 확인 후 이 표와 tech-spec 3.6을 함께 고친다.
+정확한 revert 이름은 테스트넷에서 확인 후 이 표와 tech-spec 3.6을 함께 고친다. 코드: `apps/api/src/common/onchain/revert-decoder.ts`(`decodeChainFailure`). viem 오류의 `cause` 사슬에서 revert 바이트를 찾아 우리 컨트랙트 에러와 SDK의 `Abis.errors`로 풀고, 바이트가 없으면 노드의 "insufficient funds" 문구를 `CHAIN_INSUFFICIENT_FUNDS`로 본다 (확인: `ExceededAgentTransferLimit(5,000 OKRW 한도)`와 `AgentIsPaused`는 테스트넷에서 이 경로로 풀렸다. 나머지 이름은 ABI 단위 테스트로만).
 
 ## 반드시 지킬 규칙 (MUST)
 - 체인 ID와 주소는 설정 파일에서만 읽는다. 테스트넷 체인 ID(450815)는 바뀔 예정이다 (확인). 부팅 시 `eth_chainId`와 대조한다.
@@ -87,7 +94,7 @@ children: []
 - **정책 admin은 한 번만 정해진다** (확인). 문서는 첫 `changeContractPolicies` 호출자라고 하지만, 실제로는 `deployPclProxy` 호출자가 배포와 동시에 admin이 된다 (확인, 2026-11-20, F-20). 같은 운영자 키로 배포하고 정책을 건다. admin 키를 잃으면 정책을 영구히 못 바꾼다.
 - 정책 변경 절차: `policy.ts` 수정, PR 리뷰, `pnpm policy:apply`, `contractPolicies` 조회로 확인, worklog 기록. 앱 배포는 필요 없다 (데모 리허설 추가 장면).
 - `resetAt`은 unix 초. 표시할 때 Asia/Seoul로 변환.
-- preflight와 `simulateContract`는 사용자 경험용이다. 컨트랙트 범위 정책이 시뮬레이션에서 재현되는지는 미확인 (Q-14). 결과를 보장으로 다루지 않는다.
+- preflight와 `simulatePclProxy`는 사용자 경험용이다. 컨트랙트 범위 정책(TransferLimit)은 시뮬레이션과 `estimateGas`에서 재현된다 (확인, 2026-11-21, Q-14 닫힘). 그래도 결과를 보장으로 다루지 않는다 (시뮬레이션과 실제 실행 사이에 상태가 바뀔 수 있다).
 - 정책 관리자도 컨트랙트 범위 정책(VOLUME, EAS, 컨트랙트 범위 DENY)을 우회할 수 없다 (확인). 운영자 계정 테스트에서도 정책이 걸린다고 가정한다.
 
 ## 하지 말 것 (MUST NOT)
@@ -105,7 +112,7 @@ children: []
 - `policy:apply --check`가 불일치를 잡는다. 전체 교체로 항목이 빠지는 실수를 잡는 테스트.
 
 ## 열린 질문
-- Q-04 `changeContractPolicies` 인자·권한, Q-05 30일 주기 시작 시점, Q-06 `FOR_EACH_POLICY` 소유자 합산, Q-08 체인 ID·Mock KYC 전환, Q-14 시뮬레이션 재현 (Q-13은 닫힘)
+- Q-04 `changeContractPolicies` 인자·권한, Q-05 30일 주기(3,600초 주기는 확인, 30일은 추론), Q-06 `FOR_EACH_POLICY` 소유자 합산, Q-08 체인 ID·Mock KYC 전환 (Q-13, Q-14는 닫힘)
 
 ## 관련 문서
 - `docs/_research/maroo-facts.md` 3장, 4.1

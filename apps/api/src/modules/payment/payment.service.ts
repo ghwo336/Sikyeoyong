@@ -1,5 +1,7 @@
 import { AppError, type PaymentProvider } from '@sikyeoyong/shared';
 import type { AppConfig } from '../../config/env.js';
+import type { AgentKeyStore } from './agent-key-vault.js';
+import { createManagedEoaProvider } from './managed-eoa.factory.js';
 import { MockPaymentProvider } from './mock-payment.provider.js';
 
 /**
@@ -9,14 +11,11 @@ import { MockPaymentProvider } from './mock-payment.provider.js';
  */
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
 
-const NOT_WIRED = (path: string) => () =>
-  Promise.reject(new AppError('INTERNAL', { reason: `payment path ${path} not wired yet` }));
+const NOT_WIRED = (reason: string) => () => Promise.reject(new AppError('INTERNAL', { reason }));
 
-/** Picks the provider from PAYMENT_PATH (D-05). Paths A, B, C land with the contract and chain work. */
-export function createPaymentProvider(config: AppConfig): PaymentProvider {
-  const path = config.payment.path;
-  if (path === 'mock') return new MockPaymentProvider(config.policy);
-  const fail = NOT_WIRED(path);
+/** A provider that pays nothing: every call is INTERNAL with the reason. */
+function unavailable(path: PaymentProvider['path'], reason: string): PaymentProvider {
+  const fail = NOT_WIRED(reason);
   return {
     path,
     createAgent: fail,
@@ -31,6 +30,36 @@ export function createPaymentProvider(config: AppConfig): PaymentProvider {
     findPaid: fail,
     balanceOf: fail,
   };
+}
+
+/**
+ * Picks the provider from PAYMENT_PATH (D-05). Path B is the managed EOA provider (D-25). It
+ * needs OPERATOR_KEY, AGENT_KEY_ENCRYPTION_KEY and a deployed orders proxy. In production a
+ * missing piece stops the boot (nothing unsafe starts); in development and tests it leaves a
+ * provider that pays nothing, so the rest of the app still runs. Paths A and C are not wired:
+ * every call fails with INTERNAL and nothing is paid.
+ */
+export function createPaymentProvider(
+  config: AppConfig,
+  keyStore?: AgentKeyStore,
+): PaymentProvider {
+  const path = config.payment.path;
+  if (path === 'mock') return new MockPaymentProvider(config.policy);
+  if (path === 'B') {
+    try {
+      if (keyStore === undefined) {
+        throw new AppError('INTERNAL', { reason: 'payment path B needs the agent key store' });
+      }
+      return createManagedEoaProvider(config, keyStore);
+    } catch (e) {
+      if (config.nodeEnv === 'production' || !(e instanceof AppError)) throw e;
+      return unavailable(
+        'B',
+        'payment path B is not set up here (operator key, vault key, orders proxy)',
+      );
+    }
+  }
+  return unavailable(path, `payment path ${path} not wired yet`);
 }
 
 export {

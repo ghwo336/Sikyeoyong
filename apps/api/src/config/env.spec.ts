@@ -1,4 +1,4 @@
-import { AppError, NETWORKS } from '@sikyeoyong/shared';
+import { AppError, NETWORKS, okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import { loadConfig, type RawEnv } from './env.js';
 
@@ -42,6 +42,7 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
       path: 'B',
       ownerMode: 'custodial',
       floatMultiplier: 2n,
+      gasShareAokrw: okrwToAokrw(2_000n),
       submittingAlertMs: 600_000,
       confirmations: 1,
     });

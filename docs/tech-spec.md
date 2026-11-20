@@ -382,6 +382,11 @@ export type PayResult =
 
 export interface PaymentProvider {
   readonly path: PaymentPath;
+  /**
+   * Path B: aokrw each agent wallet must hold on top of an order's amount for gas (D-25, no
+   * paymaster). Confirm's top-up adds it. Absent means 0 (mock, and paths with a paymaster).
+   */
+  readonly gasReserveAokrw?: bigint;
   /** Creates the wallet and waits for the 8004 registration. */
   createAgent(input: {
     readonly userId: string;
@@ -408,7 +413,7 @@ export interface PaymentProvider {
 
 **경로 A (MAWS가 calldata 지원 시)**: `createAgent` → MAWS `agent.create` → `agent.detail`로 ACTIVE·`onchainAgentId` 폴링(1~3분). `pay` → MAWS 계약 호출 도구(이름 미확인)로 `SikyeoyongOrders.placeOrder` 실행. `preflight` → MAWS `policy.preflight` + viem `simulateContract`(eth_call로 PCL 전역 사전 검사 일부 확인, 컨트랙트 범위 정책은 실행 시 평가이므로 simulate에서 재현되는지 (미확인)). 가스는 PAYMASTER.
 
-**경로 B (MAWS가 calldata 미지원 시 1순위)**: 서버가 에이전트마다 EOA 키 생성, `AGENT_KEY_ENCRYPTION_KEY`(환경 변수, 2단계 KMS)로 AES-GCM 암호화해 `agent_keys` 테이블 저장. 운영자 계정이 IdentityRegistry에 에이전트 등록(소유자=운영자 주소, 1단계). `pay` → viem `writeContract`(에이전트 키로 서명, 에이전트가 직접 sender). 에이전트 지갑에는 모드 P float(건당 한도 × `AGENT_FLOAT_MULTIPLIER`, 기본 2)와 가스용 소액(기본 2,000 OKRW)만 유지하고, 주문 직전에 서버가 즉시 충전한다. MAWS 미사용이므로 `allowedTargets`·MAWS freeze는 서버 규칙으로 대체.
+**경로 B (MAWS가 calldata 미지원 시 1순위)**: 서버가 에이전트마다 EOA 키 생성, `AGENT_KEY_ENCRYPTION_KEY`(환경 변수, 2단계 KMS)로 AES-GCM 암호화해 `agent_keys` 테이블 저장. 운영자 계정이 IdentityRegistry에 에이전트 등록(소유자=운영자 주소, 1단계). `pay` → 에이전트 키로 서명한 `placeOrder{value}`(에이전트가 직접 sender, 가스 한도는 추정값, 서명 해시와 nonce를 DB에 남긴 뒤 전송). 구현: `modules/payment/managed-eoa.provider.ts` (payment.md "경로 B 구현", 테스트넷 실제 결제 확인 2026-11-21). 8004 등록 뒤 에이전트 지갑 연결(`setAgentWallet`)이 있어야 TransferLimit이 그 에이전트에 걸린다. 에이전트 지갑에는 모드 P float(건당 한도 × `AGENT_FLOAT_MULTIPLIER`, 기본 2)와 가스용 소액(기본 2,000 OKRW)만 유지하고, 주문 직전에 서버가 즉시 충전한다. MAWS 미사용이므로 `allowedTargets`·MAWS freeze는 서버 규칙으로 대체.
 
 **경로 C (최후)**: MAWS `transfer.send`로 `SikyeoyongOrders` 프록시 주소에 OKRW 전송, 컨트랙트 `receive()`가 서버가 미리 `registerIntent(agent, merchantId, amount, orderRef)`로 등록한 의도와 맞춰 지급. 셀렉터 없는 호출(receive)에 컨트랙트 범위 정책이 붙는지 (미확인). 빈 selector 정책은 모든 호출에 적용되므로(확인, [pcl-policy-structure](https://docs.maroo.io/concepts/compliance/pcl-policy-structure)) 빈 selector에 정책을 걸면 receive에도 적용될 것으로 (추론). 운영자 함수까지 같이 걸리는 부작용이 있어 설계가 복잡하다.
 
@@ -953,6 +958,7 @@ OWNER_MODE=custodial                  # custodial(운영자가 소유자, 테스
 WAAS_AUTH_TOKEN=                      # 경로 A, C
 AGENT_KEY_ENCRYPTION_KEY=             # 경로 B, 32바이트 base64
 AGENT_FLOAT_MULTIPLIER=2              # 모드 P: 에이전트 지갑 유지액 = 건당 한도 × 이 값
+AGENT_GAS_SHARE_OKRW=2000             # 경로 B: 에이전트 지갑에 가스용으로 더 두는 OKRW (D-25)
 SUBMITTING_ALERT_MS=600000            # 결제 중(submitting) 주문이 이 시간 넘게 결론이 없으면 운영자 알림 (D-19)
 
 # 2단계

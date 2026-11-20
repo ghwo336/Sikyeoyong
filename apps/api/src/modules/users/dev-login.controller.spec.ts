@@ -67,7 +67,10 @@ describe('POST /api/auth/dev-login (local development only)', () => {
   });
 
   it('stays shut in production even if the config said yes (the guard checks again)', async () => {
-    const { h, login } = await setup({ DEV_LOGIN: 'true' }, { nodeEnv: 'production' });
+    const { h, login } = await setup(
+      { DEV_LOGIN: 'true', PAYMENT_PATH: 'mock' },
+      { nodeEnv: 'production' },
+    );
     const res = await login('hojae');
     expect(res.status).toBe(404);
     expect(res.headers['set-cookie']).toBeUndefined();
