@@ -1,1 +1,1 @@
-export { EggPicker, type EggPickerProps, SPECIES_INFO } from './EggPicker';
+export { EggPicker, type EggPickerProps } from './EggPicker';

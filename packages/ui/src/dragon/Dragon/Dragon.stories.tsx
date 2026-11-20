@@ -22,7 +22,7 @@ const MOODS: DragonMood[] = [
   'eating',
   'cooking',
 ];
-const SIZES: DragonSize[] = [32, 44, 56, 64, 96, 104, 128];
+const SIZES: DragonSize[] = [32, 44, 56, 64, 96, 104, 128, 168];
 const row = { display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' } as const;
 
 /** 표정 8종 전부 */

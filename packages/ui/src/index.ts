@@ -55,3 +55,5 @@ export * from './wallet/AllowanceSummary';
 export * from './wallet/CustodyNote';
 export * from './wallet/FrozenPanel';
 export * from './wallet/IdCard';
+export * from './wallet/LookPreview';
+export * from './wallet/SpeciesPicker';

@@ -4,9 +4,8 @@ import { DRAGON_SPECIES, type DragonSpecies } from '@sikyeoyong/shared';
 import { ChoiceGroup } from '../../base/ChoiceGroup';
 import { Egg } from '../../dragon/Egg';
 import styles from './EggPicker.module.css';
-import { EggPickerCaption, SPECIES_INFO } from './EggPickerCaption';
-
-export { SPECIES_INFO };
+import { SPECIES_INFO } from '../../dragon/Dragon/species-info';
+import { EggPickerCaption } from './EggPickerCaption';
 
 export interface EggPickerProps {
   readonly value: DragonSpecies;

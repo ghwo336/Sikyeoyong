@@ -4,7 +4,8 @@ import { DRAGON_SPECIES } from '@sikyeoyong/shared';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { EggPicker, SPECIES_INFO } from './EggPicker';
+import { SPECIES_INFO } from '../../dragon/Dragon';
+import { EggPicker } from './EggPicker';
 
 const css = readFileSync(resolve(__dirname, 'EggPicker.module.css'), 'utf8');
 // The row of eggs is base ChoiceGroup row; its gap lives in ChoiceGroup.module.css.

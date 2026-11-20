@@ -6,7 +6,7 @@ import { ShellPattern } from './DragonSpecies';
 
 export type DragonMood =
   'default' | 'happy' | 'excited' | 'worried' | 'hiding' | 'sleeping' | 'eating' | 'cooking';
-export type DragonSize = 32 | 44 | 56 | 64 | 96 | 104 | 128;
+export type DragonSize = 32 | 44 | 56 | 64 | 96 | 104 | 128 | 168;
 
 export interface DragonProps {
   readonly mood: DragonMood;
