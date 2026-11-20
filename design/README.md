@@ -26,9 +26,9 @@
 | 3 한도와 규칙 | `Blocked.dc.html` | 한도 초과 | 대화 화면 안 카드 또는 전체 화면 |
 | | `LimitChat.dc.html` | 말로 한도 바꾸기 (변경 카드) | 대화 화면 |
 | | `Cap.dc.html` | 30일 한도 다 씀 | 전체 화면 |
-| 4 용이 관리 | `Wallet.dc.html` | 용이 용돈 (잔액, 한도, 스위치) | `app/dragon/page.tsx` |
-| | `IdCard.dc.html` | 용이 신분증 | `app/dragon/id/page.tsx` |
-| | `Frozen.dc.html` | 용이 멈춤 | `app/dragon/page.tsx` (멈춤 상태) |
+| 4 용이 관리 | `Wallet.dc.html` | 용이 용돈 (잔액, 한도, 스위치) | `app/dragon/(awake)/page.tsx` (주소 `/dragon`) |
+| | `IdCard.dc.html` | 용이 신분증 | `app/dragon/(awake)/id/page.tsx` (주소 `/dragon/id`) |
+| | `Frozen.dc.html` | 용이 멈춤 | `app/dragon/frozen/page.tsx` (멈춘 용이는 `/dragon`에서 이리로 간다. 바탕이 달라 레이아웃이 따로다, 2026-11-20) |
 
 tech-spec "2.2 화면과 라우트"보다 이 표가 새 기준이다 (가입 단계와 도착, 상세가 늘었다). 각 화면을 이루는 UI 컴포넌트는 `docs/wiki/components/ui/` 문서의 "쓰는 화면" 칸으로 찾는다. 페이지는 그 컴포넌트를 조립만 한다.
 

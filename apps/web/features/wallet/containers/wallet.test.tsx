@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BUDGET, ID_CARD, ME, WALLET } from '../../../lib/mock/fixtures';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
+const replace = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace }) }));
 
 const getWallet = vi.fn();
 const getBudget = vi.fn();
@@ -31,6 +32,7 @@ const { DragonControlsContainer } = await import('./DragonControlsContainer');
 const { CustodyNoteContainer } = await import('./CustodyNoteContainer');
 const { FrozenContainer } = await import('./FrozenContainer');
 const { IdCardContainer } = await import('./IdCardContainer');
+const { FrozenRedirect } = await import('./FrozenRedirect');
 
 const won = (n: bigint) => okrwToAokrw(n).toString();
 
@@ -40,7 +42,8 @@ function wrap(ui: ReactNode) {
 }
 
 beforeEach(() => {
-  for (const f of [push, getWallet, getBudget, getMe, setFrozen, refundPocket]) f.mockReset();
+  for (const f of [push, replace, getWallet, getBudget, getMe, setFrozen, refundPocket])
+    f.mockReset();
   getMe.mockResolvedValue(ME);
   getBudget.mockResolvedValue(BUDGET);
   getWallet.mockResolvedValue(WALLET);
@@ -63,6 +66,9 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     expect(screen.getByText('10,000원')).toBeInTheDocument();
     expect(screen.getByText('300,000원')).toBeInTheDocument();
     expect(await screen.findByText('32,000원')).toBeInTheDocument();
+    // 30 days: used first, then the cap (Wallet.dc.html "219,000 / 500,000원" shape).
+    const thirty = screen.getByText('30일 한도').parentElement;
+    expect(thirty?.textContent).toMatch(/210,000\s*\/\s*500,000원/);
   });
 
   it('shows no made-up balance when the server has no wallet (the row is just absent)', async () => {
@@ -119,6 +125,38 @@ describe('Wallet screen (Wallet.dc.html)', () => {
       expect(getMe).toHaveBeenCalled();
     });
     expect(screen.queryByText(/체험판이에요/)).toBeNull();
+  });
+});
+
+describe('a sleeping dragon', () => {
+  it('its wallet sends it to the Frozen screen', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, frozen: true });
+    wrap(<FrozenRedirect />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/dragon/frozen');
+    });
+  });
+
+  it('an awake one stays', async () => {
+    wrap(<FrozenRedirect />);
+    await waitFor(() => {
+      expect(getBudget).toHaveBeenCalled();
+    });
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('with the wallet unknown, it shows no made-up pocket, only waking', async () => {
+    getWallet.mockRejectedValue(new AppError('INTERNAL'));
+    wrap(<FrozenContainer />);
+    expect(await screen.findByRole('button', { name: '용이 깨우기' })).toBeInTheDocument();
+    expect(screen.queryByText(/원 남음/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /돌려받기/ })).toBeNull();
+  });
+
+  it('has a way back to the chat', async () => {
+    wrap(<FrozenContainer />);
+    await userEvent.click(await screen.findByRole('button', { name: '대화로 돌아가기' }));
+    expect(push).toHaveBeenCalledWith('/');
   });
 });
 

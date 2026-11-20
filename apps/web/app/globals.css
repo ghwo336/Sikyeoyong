@@ -48,6 +48,11 @@ body {
   overflow-y: auto;
 }
 
+/* Frozen.dc.html: the dragon sleeps on a cool grey ground. */
+.screen.padded.sleep {
+  background: var(--color-sleep-ground);
+}
+
 /* Sign-up screens (Name.dc.html, Budget.dc.html): 8 20 32 inside, 22 apart; the last block
    (the main button) sits at the bottom. Each sign-up route layout picks its variant. */
 .screen.onboarding {

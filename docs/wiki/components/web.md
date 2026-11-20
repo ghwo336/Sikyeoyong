@@ -68,9 +68,13 @@ children: []
 ## 조립 현황 (목 데이터)
 | 화면 | 경로 | 컨테이너 | 상태 |
 | --- | --- | --- | --- |
-| Main | `app/(main)/page.tsx` | `features/chat/containers/ChatContainer`(ui `ChatLayout`), `features/me/containers/DragonHeaderContainer`(ui `ChatHeader`), `features/budget/containers/BudgetMeterContainer`(Meter `framed`) | 위 줄(용이, 레벨 한 줄, 설정은 `/dragon`으로 가지만 페이지는 아직 없다), 예산 카드, 대화 기록, 용이 말 아래 추천 카드(`threadRows`가 말 바로 뒤 추천을 그 말의 DragonLine children으로 묶는다), 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
+| Main | `app/(main)/page.tsx` | `features/chat/containers/ChatContainer`(ui `ChatLayout`), `features/me/containers/DragonHeaderContainer`(ui `ChatHeader`), `features/budget/containers/BudgetMeterContainer`(Meter `framed`) | 위 줄(용이, 레벨 한 줄, 설정 버튼은 `/dragon` 지갑으로), 예산 카드, 대화 기록, 용이 말 아래 추천 카드(`threadRows`가 말 바로 뒤 추천을 그 말의 DragonLine children으로 묶는다), 보내기와 실패 다시 보내기, 추천 고르기(견적 요청), 빠른 답장. 허락 필요 가게는 견적이 없어 아직 아무 일도 없다 (허락 카드 미조립) |
 | Confirm | Main 위 시트 | `features/orders/containers/OrderConfirmContainer` (ChatContainer 안) | 추천 고르기(`POST /orders` 견적)와 용이의 `order_confirm` 둘 다 시트를 연다. 시키기는 `useConfirmOrder`(목 confirm, 결제 없음)를 부르고 바로 주문 현황으로 넘어간다 (낙관적). confirm이 실패하면 `useConfirmOrder`가 대화로 되돌린다 (`router.replace('/')`). 용이가 이유를 말하는 것은 shared `ChatEvent`의 `order_failed`가 생긴 뒤 |
-| Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중. 상태를 4단계로 바꾸는 규칙은 `features/orders/status.ts`(`orderStep`). 결제 전(`quoted`, `pending_approval`)과 멈춘 주문(`failed`, `cancelled`, `refunded`)은 단계로 그리지 않고 위 줄만 보인다 (실패를 접수처럼 보이지 않게). 그 상태들의 화면, 배달 중(Tracking), 도착(Arrived), 상태 다시 받기는 아직 |
+| Done | `app/orders/[id]/page.tsx` | `features/orders/containers/OrderStatusContainer` | 조리 중, 배달 중(Tracking, 지도), 도착(Arrived, `ArrivedContainer`). 상태를 4단계로 바꾸는 규칙은 `features/orders/status.ts`(`orderStep`). 결제 전(`quoted`, `pending_approval`)과 멈춘 주문(`failed`, `cancelled`, `refunded`)은 단계로 그리지 않고 위 줄만 보인다 (실패를 접수처럼 보이지 않게). 그 상태들의 화면은 아직. 도착 전까지 2초마다 다시 받는다 |
+| Receipt | `app/orders/[id]/receipt/page.tsx` | `features/orders/containers/ReceiptContainer` | 주문 줄, 결제 수단, 한도 줄, 자세히 보기(`ReceiptDetails`). 영수증 시각은 아직 |
+| Wallet | `app/dragon/(awake)/page.tsx` (`/dragon`) | `features/wallet/containers/*` (WalletTopBar, Allowance, LimitRows, DragonControls, CustodyNote, FrozenRedirect) | 시안 값대로. 멈춘 용이는 `/dragon/frozen`으로 보낸다. 시안에는 위 뒤로 버튼이 없지만 대화로 돌아갈 길이 필요해 "대화로 돌아가기"를 넣었다(시안과 다른 점) |
+| IdCard | `app/dragon/(awake)/id/page.tsx` (`/dragon/id`) | `features/wallet/containers/IdCardContainer` | 카드. 아래 안내 한 줄과 공유하기는 아직(아래 "ui에 없는 것") |
+| Frozen | `app/dragon/frozen/page.tsx` | `features/wallet/containers/FrozenContainer` | 자는 바탕(레이아웃 `sleep`), 대화로 돌아가기, 돌려받기, 깨우기. 지갑 값을 모르면 숫자 없이 깨우기만 |
 | Start, Verify, Name, Hatch, Budget | `app/(onboarding)/<start, verify, name, hatch, budget>/page.tsx` | `features/onboarding/containers/*` | 시안대로 조립했다 (Start `Hero`와 `ScreenTitle`, Verify와 Name `TopBar` 뒤로와 단계 막대, Name 안내 줄 `BORN_LINE`은 정책의 레벨 1 한 번에 한도, Hatch `Hero`, Budget DragonLine greeting과 `TrialAllowance`). 뒤로는 이전 단계로 `router.replace` (Verify는 /start, Name은 /verify, 아래 "가입 뒤로"). 목으로 끝까지 이어진다: 로그인, 본인 인증, 알 고르기와 이름(빈 이름은 버튼을 끄지 않고 안내), 부화(1초마다 다시 받기, 다 되면 /budget), 예산 고르기와 체험용 용돈, 시작하기(/). 로그인 취소, 인증 실패 다시 시도는 목에서 일어나지 않는다. 약관, 개인정보 링크(/terms, /privacy)는 페이지가 없다 |
 
 ## ui에 없는 것 (기록만. 웹에서 마크업을 만들지 않는다)
@@ -79,6 +83,7 @@ children: []
 - 시안끼리 다른 문구: 요청이 Confirm은 "깍두기 많이", Done은 "깍두기 많이, 문 앞에 두고 가 주세요"다. 목은 둘 다 "깍두기 많이"로 둔다. 어느 쪽이 맞는지 캔버스에서 정한다.
 - (2026-11-19 해결) 가입 제목 묶음(Start, Verify, Name), Name 아래 한 줄, Verify와 Name의 48 단계 줄, Hatch 가운데 정렬과 22/14 글씨, Budget 말 20과 체험용 용돈 줄과 받은 뒤 모양: ui `ScreenTitle`, TextField `hint`, `TopBar`(뒤로와 단계 막대), `Hero`, DragonLine `greeting`, `TrialAllowance`로 채웠다.
 - Start 알: 시안은 금 간 알 위로 뿔이 보이는 그림인데 `Egg`에 그 상태가 없어 닫힌 알(`closed`)로 그린다. Egg에 상태를 늘릴지 ui에서 정한다.
+- IdCard 화면 아래 "가게는 주문을 받을 때 이 신분증을 봐요" 한 줄과 "신분증 공유하기" 버튼: 이 한 줄에 맞는 ui 부품(카드 아래 작은 안내 글)이 없다. ui에 만들지(예: IdCard에 `footnote`) 정한다. 그 전까지 웹은 그리지 않는다.
 - 받은 뒤 모양("받았어요")은 시안에 없다. TrialAllowance.md에 디자인 선택으로 적었다.
 - 빠른 답장 `quick_replies` 이벤트는 shared `zChatEvent`와 tech-spec 2.4에 들어갔다 (해결).
 

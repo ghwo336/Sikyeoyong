@@ -38,3 +38,17 @@ describe('mockApi', () => {
     await expect(mockApi.getOrder('order-pork-gukbap')).resolves.toEqual({ order });
   });
 });
+
+describe('mock wallet money', () => {
+  it('돌려받기 moves the whole pocket to the owner, exactly in bigint', async () => {
+    const { resetMockSession } = await import('./client');
+    resetMockSession('hatched');
+    await mockApi.refundPocket();
+    const after = await mockApi.getWallet();
+    // 81,000 + 20,000 = 101,000원; the pocket is empty.
+    expect(after.owner).toBe(won(101_000n));
+    expect(after.pocket).toBe('0');
+    await mockApi.refundPocket();
+    expect((await mockApi.getWallet()).owner).toBe(won(101_000n)); // nothing left to move
+  });
+});
