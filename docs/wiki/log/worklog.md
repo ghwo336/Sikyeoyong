@@ -200,3 +200,20 @@ children: []
 - 막힌 것: 없음.
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: Start 알(금 간 알과 뿔) Egg 상태, 추천 줄 높이(시안 64, 지금 약 76), `/dragon` 페이지, LimitChat 조립 때 ChatThread 여백(16 20 12).
+
+### 2026-11-20 가게·메뉴 조회, 추천, recommend_merchants와 get_menu 연결 (Claude, Claude Code)
+- 한 일 (브랜치 `feat/api-merchants-recommend`, 커밋 5개):
+  - shared `api/merchants.ts`: `MerchantCard`, `MenuView`, 목록 쿼리(verified는 true만), 이름 40자, 설명 200자.
+  - merchants 모듈: `MerchantSource` 토큰과 `DbMerchantSource`, `GET /api/merchants`, `GET /api/merchants/:id`(SessionGuard). 미인증·비활성 가게는 숨기고 id로 물어도 404. 영업시간 `isOpenAt`(KST). 다른 모듈용 `catalog`, `lookupForOrder`, `categoryOf`.
+  - recommend 모듈: 정수 점수 `rank()`(tech-spec 3.8), `WeatherService`(get_context와 같은 출처), 최근 주문 `RECENT_ORDERS` 포트.
+  - llm: `recommend_merchants`, `get_menu` 실제 핸들러. `ToolReply(forModel, card)`로 모델용(표시 글자)과 화면용(aokrw 카드)을 나눔. `wrapData`가 `<`, `>`를 이스케이프. 대화 스트림에 `recommendations` 카드, 스키마 실패 카드는 버리고 로그.
+- 판단 (명세가 비었거나 달라 보수적으로 정함, recommend-and-nag.md "추천 점수 규칙"):
+  - 한도 넘는 메뉴는 craving이 맞을 때만 승인 필요로 넣고 한도 안 메뉴 뒤에. 개인 예산 넘는 메뉴는 승인 필요 표시만. 30일 상한을 넘게 되는 메뉴는 제외.
+  - craving이 맞으면 맞은 메뉴만, 아니면 가게마다 메뉴 하나.
+  - 보이는 가게는 DB `verified`와 `active`만으로 (open-questions Q-30, `onchain_id`는 체인 등록 스크립트 뒤).
+  - 목 가게 `etaMin`은 배달 타이머 기본값 합 3분 (시안과 웹 목은 20~35분).
+- 막힌 것 (다른 작업자 몫):
+  - orders 모듈이 최근 주문 읽기 함수(`OrdersService`에서 사용자, 시각 이후, paid 이상, `{ merchantId, createdAtMs }`)를 내보내야 추천의 선호와 새로움이 살아난다. 그때 `RECENT_ORDERS` 바인딩만 바꾼다.
+  - approvals 모듈이 허용 가게 읽기를 내보내면 추천 `needsApproval`에 `NEW_MERCHANT`를 더한다.
+- 새로 안 마루 사실: 없음.
+- 다음 할 일: 주문 견적(`place_order`)에서 `lookupForOrder` 쓰기(`not_orderable` → `CHAIN_MERCHANT_INACTIVE`), 웹 목을 실제 `/api/merchants`와 추천 카드로 바꾸기, `etaMin` 출처를 delivery 모듈로.
