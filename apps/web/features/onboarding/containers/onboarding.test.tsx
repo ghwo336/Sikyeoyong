@@ -40,11 +40,14 @@ const { HatchContainer } = await import('./HatchContainer');
 
 const won = (n: bigint) => okrwToAokrw(n).toString();
 
-function wrap(ui: ReactNode) {
-  const qc = new QueryClient({
+function wrap(ui: ReactNode, qc = newClient()) {
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
+
+function newClient() {
+  return new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
 beforeEach(() => {
@@ -186,6 +189,20 @@ describe('StartContainer', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/verify');
     });
+  });
+});
+
+describe('StartContainer and the me cache', () => {
+  it('a login drops the signed-out answer kept from before, so the front door asks again', async () => {
+    login.mockResolvedValue(undefined);
+    const qc = newClient();
+    qc.setQueryData(['me'], { stale: 'signed out' });
+    wrap(<StartContainer />, qc);
+    await userEvent.click(screen.getByRole('button', { name: /카카오로 시작하기/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/verify');
+    });
+    expect(qc.getQueryState(['me'])).toBeUndefined();
   });
 });
 
