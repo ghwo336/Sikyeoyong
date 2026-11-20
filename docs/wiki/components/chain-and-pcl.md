@@ -20,7 +20,7 @@ children: []
 - 설정 파일: `packages/shared/src/config/chain.ts` (네트워크별), `packages/shared/src/config/policy.ts` (정책값, 프로필), `packages/shared/src/config/deployments/<chainId>.<profile>.json` (배포 주소).
 - 프리컴파일: PCL `0x1000000000000000000000000000000000000005`, Agent `0x100000000000000000000000000000000000000A`, IdentityRegistry `0x8004000000000000000000000000000000000001` (확인), SchemaRegistry `0x1000000000000000000000000000000000000006` (미확인, tech-spec 7.2에만 있음). 이것도 설정 파일에 둔다.
 - 읽기 클라이언트는 viem. 서버만 체인을 읽는다.
-- 다른 모듈은 `modules/chain/chain.service.ts`의 `ChainReader`(`CHAIN_READER` 토큰)로만 체인 값을 받는다. 지금은 `periodicVolume`(30일 사용량과 resetAt 초)만 있다. 컨트랙트 배포 전이라 개발과 테스트는 빈 창(0, null)을 읽고, production은 진짜 viem 읽기가 붙기 전까지 INTERNAL로 실패한다 (지어낸 체인 값을 보이지 않게). `contractPeriodicVolume` 반환 모양은 (미확인).
+- 다른 모듈은 `modules/chain/chain.service.ts`의 `ChainReader`(`CHAIN_READER` 토큰)로만 체인 값을 받는다. 지금은 `periodicVolume`(30일 사용량과 resetAt 초)만 있다. 컨트랙트 배포 전이라 `PAYMENT_PATH=mock`이면 목 결제의 창(`mockPeriodicVolume`, 결제하면 차고 기간이 끝나면 비워짐)을, 그 밖의 개발 경로는 빈 창(0, null)을 읽고, production은 진짜 viem 읽기가 붙기 전까지 INTERNAL로 실패한다 (지어낸 체인 값을 보이지 않게). `contractPeriodicVolume` 반환 모양은 (미확인).
 
 ## 정책이 언제 막는가 (D-02 표현 규칙, 확인)
 | 정책 | 평가 시점 | 거절되면 |

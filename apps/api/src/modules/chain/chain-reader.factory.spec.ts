@@ -1,6 +1,7 @@
 import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../config/env.js';
+import { MockPaymentProvider } from '../payment/mock-payment.provider.js';
 import { createPaymentProvider } from '../payment/payment.service.js';
 import { createChainReader } from './chain-reader.factory.js';
 
@@ -39,25 +40,36 @@ describe('createChainReader', () => {
 describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
   it('a payment fills the 30-day window the budget and wallet screens show', async () => {
     const config = loadConfig({ PAYMENT_PATH: 'mock', POLICY_PROFILE: 'demo' });
-    const payment = createPaymentProvider(config);
+    let clock = 1_700_000_000_500;
+    const payment = new MockPaymentProvider(config.policy, () => clock);
     const reader = createChainReader(config, payment);
     const agent = await payment.createAgent({ userId: 'u1', name: '용이' });
     expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: 0n, resetAtSec: null });
-    const amount = okrwToAokrw(4_500n);
+    const amount = okrwToAokrw(1_000n);
     await payment.setTransferLimit(agent, amount);
-    await payment.fund(agent, amount);
-    const before = Date.now();
-    const paid = await payment.pay({
-      agent,
-      merchantOnchainId: 1n,
-      amount,
-      orderRef: `0x${'a'.repeat(64)}`,
+    await payment.fund(agent, amount * 2n);
+    const pay = (ref: string) =>
+      payment.pay({ agent, merchantOnchainId: 1n, amount, orderRef: `0x${ref.repeat(64)}` });
+
+    const firstMs = clock;
+    expect(await pay('a')).toMatchObject({ ok: true });
+    // The window opens with the first order and lasts the policy's period exactly.
+    const resetAtSec = Math.floor(firstMs / 1000) + config.policy.periodicPeriodSec;
+    expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: amount, resetAtSec });
+
+    // A second order adds to the same window; the reset stays at the first order's.
+    clock += 60_000;
+    expect(await pay('b')).toMatchObject({ ok: true });
+    expect(await reader.periodicVolume(agent.address)).toEqual({
+      usedAokrw: amount * 2n,
+      resetAtSec,
     });
-    expect(paid).toMatchObject({ ok: true });
-    const seen = await reader.periodicVolume(agent.address);
-    expect(seen.usedAokrw).toBe(amount);
-    // The demo profile's window is one hour (policy), from the first order.
-    expect(seen.resetAtSec).toBeGreaterThanOrEqual(Math.floor(before / 1000) + 3600 - 1);
+
+    // One millisecond before the end it still counts; at the end it is empty again.
+    clock = firstMs + config.policy.periodicPeriodSec * 1000 - 1;
+    expect((await reader.periodicVolume(agent.address)).usedAokrw).toBe(amount * 2n);
+    clock += 1;
+    expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: 0n, resetAtSec: null });
   });
 
   it('a wallet with no address yet reads an empty window', async () => {
