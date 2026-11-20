@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useMe } from '../hooks/useMe';
 import { limitLine } from '../limit-line';
 
-/** Main.dc.html top row: the dragon, its name and per-order limit, settings. */
+/** Main.dc.html top row: the dragon, its name and per-order limit, order history, settings. */
 export function DragonHeaderContainer() {
   const router = useRouter();
   const me = useMe().data;
@@ -16,8 +16,11 @@ export function DragonHeaderContainer() {
       name={me.dragonName}
       caption={limitLine(parseAokrw(me.perOrderLimit))}
       species={me.dragonSpecies}
+      onHistory={() => {
+        router.push('/orders');
+      }}
       onSettings={() => {
-        // Wallet.dc.html (용이 용돈). The page is not built yet (web.md).
+        // Wallet.dc.html (용이 용돈).
         router.push('/dragon');
       }}
     />

@@ -4,11 +4,20 @@ import { BudgetMeterContainer } from '../../features/budget/containers/BudgetMet
 import { ChatContainer } from '../../features/chat/containers/ChatContainer';
 import { DragonHeaderContainer } from '../../features/me/containers/DragonHeaderContainer';
 import { EntryGate } from '../../features/me/containers/EntryGate';
+import { ActiveOrderContainer } from '../../features/orders/containers/ActiveOrderContainer';
 
 export default function MainPage() {
   return (
     <EntryGate splash>
-      <ChatContainer header={<DragonHeaderContainer />} top={<BudgetMeterContainer />} />
+      <ChatContainer
+        header={<DragonHeaderContainer />}
+        top={
+          <>
+            <BudgetMeterContainer />
+            <ActiveOrderContainer />
+          </>
+        }
+      />
     </EntryGate>
   );
 }

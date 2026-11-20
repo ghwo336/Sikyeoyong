@@ -36,4 +36,15 @@ describe('DragonHeaderContainer', () => {
     await userEvent.click(screen.getByRole('button', { name: '봄봄 설정' }));
     expect(push).toHaveBeenCalledWith('/dragon');
   });
+
+  it('the receipt button opens the order history (Main.dc.html 주문 내역)', async () => {
+    const qc = new QueryClient();
+    render(
+      <QueryClientProvider client={qc}>
+        <DragonHeaderContainer />
+      </QueryClientProvider>,
+    );
+    await userEvent.click(await screen.findByRole('button', { name: '주문 내역' }));
+    expect(push).toHaveBeenCalledWith('/orders');
+  });
 });

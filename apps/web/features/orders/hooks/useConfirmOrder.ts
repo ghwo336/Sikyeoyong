@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { orderKey } from './useOrder';
+import { ORDERS_KEY } from './useOrders';
 
 /**
  * POST /orders/:id/confirm, the only call that pays (CLAUDE.md rule 3). Called from the
@@ -18,6 +19,8 @@ export function useConfirmOrder() {
     mutationFn: (orderId: string) => api.confirmOrder(orderId),
     onSuccess: ({ order }) => {
       qc.setQueryData(orderKey(order.id), order);
+      // The Main card and the history show it from now on.
+      void qc.invalidateQueries({ queryKey: ORDERS_KEY });
     },
     onError: (_err, orderId) => {
       // Undo the optimistic move: back to the chat. The dragon saying why needs the
