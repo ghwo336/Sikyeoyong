@@ -1,7 +1,6 @@
 import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../config/env.js';
-import { MockPaymentProvider } from '../payment/mock-payment.provider.js';
 import { createPaymentProvider } from '../payment/payment.service.js';
 import { createChainReader } from './chain-reader.factory.js';
 
@@ -38,10 +37,20 @@ describe('createChainReader', () => {
 });
 
 describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('a payment fills the 30-day window the budget and wallet screens show', async () => {
     const config = loadConfig({ PAYMENT_PATH: 'mock', POLICY_PROFILE: 'demo' });
     let clock = 1_700_000_000_500;
-    const payment = new MockPaymentProvider(config.policy, () => clock);
+    const at = (ms: number) => {
+      clock = ms;
+      vi.setSystemTime(ms);
+    };
+    vi.useFakeTimers({ toFake: ['Date'] });
+    at(clock);
+    const payment = createPaymentProvider(config);
     const reader = createChainReader(config, payment);
     const agent = await payment.createAgent({ userId: 'u1', name: '용이' });
     expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: 0n, resetAtSec: null });
@@ -58,7 +67,7 @@ describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
     expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: amount, resetAtSec });
 
     // A second order adds to the same window; the reset stays at the first order's.
-    clock += 60_000;
+    at(clock + 60_000);
     expect(await pay('b')).toMatchObject({ ok: true });
     expect(await reader.periodicVolume(agent.address)).toEqual({
       usedAokrw: amount * 2n,
@@ -66,9 +75,9 @@ describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
     });
 
     // One millisecond before the end it still counts; at the end it is empty again.
-    clock = firstMs + config.policy.periodicPeriodSec * 1000 - 1;
+    at(firstMs + config.policy.periodicPeriodSec * 1000 - 1);
     expect((await reader.periodicVolume(agent.address)).usedAokrw).toBe(amount * 2n);
-    clock += 1;
+    at(clock + 1);
     expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: 0n, resetAtSec: null });
   });
 
