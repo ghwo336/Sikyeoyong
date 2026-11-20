@@ -31,7 +31,7 @@ Main, Arrived
 - onPress
 
 ## 메모
-- `sm`은 Main 빠른 답장: 높이 36(`size.chip`), 좌우 여백 14(`size.chipPaddingX`), 1px `line-strong` 테두리, 흰 바탕, 알약, 14px(`type.chip`). 보이는 높이는 36이지만 누르는 영역은 투명하게 44로 넓힌다.
+- `sm`은 Main 빠른 답장: 높이 36(`size.chip`), 좌우 여백 14(`size.chipPaddingX`), 1px `line-strong` 테두리, 흰 바탕, 알약, 14px(`type.chip`). 버튼 자체가 높이 44(`size.touchMin`)이고 알약(36)은 안쪽 `::before`로 그린다. 보이는 모양은 그대로, 누르는 칸이 진짜 44다 (QA 3). 빠른 답장 줄은 세로 간격 0(버튼 44 안에 4씩 비어 있다).
 - (2026-11-20) 옛 Budget 예산 칩 크기 `lg`는 D-31로 쓰는 곳이 없어져 없앴다.
 - `tile`은 Arrived 맛 평가: 높이 52(`size.input`), 반경 14, 글자 15/400(`type.body`). Arrived 시안의 맛 평가에는 고른 상태가 없다. TasteRating이 고르기(radio)로 쓴다.
 - 고르면 2px 잎색 테두리, 연한 잎색 바탕, `leaf-pressed` 글자색.

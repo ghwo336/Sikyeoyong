@@ -51,7 +51,7 @@ describe('Chip (Chip.md 테스트 기준)', () => {
   // Design values: Main quick reply 36px pill 14px, Arrived 52px tile radius 14,
   // selected 2px leaf border on leaf tint.
   it('matches the design sizes and the selected look', () => {
-    expect(rule('.sm')).toMatch(/height:\s*var\(--size-chip\)/);
+    expect(rule('.sm::before')).toMatch(/inset:/);
     expect(rule('.sm')).toMatch(/font-size:\s*var\(--type-chip-size\)/);
     expect(rule('.chip[data-selected]')).toMatch(/border:\s*2px solid var\(--theme-accent\)/);
     expect(rule('.chip[data-selected]')).toMatch(/background:\s*var\(--theme-tint\)/);
@@ -86,9 +86,10 @@ describe('Chip (Chip.md 테스트 기준)', () => {
     expect(rule('.chip:focus-visible')).toMatch(/outline:\s*2px solid var\(--theme-accent\)/);
   });
 
-  it('keeps a 44px touch target for the 36px pill', () => {
-    expect(rule('.sm::after')).toMatch(
-      /inset:\s*calc\(\(var\(--size-touch-min\) - var\(--size-chip\)\) \/ -2\) 0/,
+  it('is a 44px button that draws the 36px pill', () => {
+    expect(rule('.sm')).toMatch(/height:\s*var\(--size-touch-min\)/);
+    expect(rule('.sm::before')).toMatch(
+      /inset:\s*calc\(\(var\(--size-touch-min\) - var\(--size-chip\)\) \/ 2\) 0/,
     );
     expect(rule('.chip')).toMatch(/position:\s*relative/);
   });

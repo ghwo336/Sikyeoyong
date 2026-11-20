@@ -2,6 +2,8 @@
 .group {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  /* Each chip is 44px tall with its 36px pill inset 4px, so rows sit flush and 8px apart to the eye. */
+  column-gap: var(--space-2);
+  row-gap: 0;
   padding-left: calc(var(--size-dragon-chat) + var(--size-dragon-chat-gap));
 }

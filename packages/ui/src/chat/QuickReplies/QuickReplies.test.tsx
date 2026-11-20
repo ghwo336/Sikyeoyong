@@ -45,7 +45,8 @@ describe('QuickReplies (QuickReplies.md 테스트 기준)', () => {
   // Main.dc.html line 77.
   it('wraps, 8 apart, lined up with the dragon text', () => {
     expect(css).toMatch(/flex-wrap:\s*wrap/);
-    expect(css).toMatch(/gap:\s*var\(--space-2\)/);
+    expect(css).toMatch(/column-gap:\s*var\(--space-2\)/);
+    expect(css).toMatch(/row-gap:\s*0/);
     expect(css).toMatch(
       /padding-left:\s*calc\(var\(--size-dragon-chat\) \+ var\(--size-dragon-chat-gap\)\)/,
     );
