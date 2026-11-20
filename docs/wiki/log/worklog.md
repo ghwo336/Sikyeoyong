@@ -360,3 +360,16 @@ children: []
 ### 2026-11-21 경로 B 검증 반영
 - 한 일: 재시도 때 같은 `agentRowId`의 저장된 키를 다시 쓴다(부화 재시도가 unique 인덱스에 막히던 것, 자금 든 키는 버리지 않음). 회수 테스트에 운영자와 다른 소유자(파우치 방식) 추가. 마스터 키 base64를 정규형만 받게. 가스 몫 기본 100 OKRW, 상한 1,000 OKRW(D-25).
 - 실수 기록 (amend 안 함): cfd4457 제목 `feat(shared,orders): ...`는 범위에 쉼표를 써서 형식 위반이다. 이후 범위는 하나만 쓴다.
+
+### 2026-11-21 밤새 정리 (테스트넷 실제 트랜잭션까지, 호재 님 자는 동안)
+- 한 일 (모두 커밋마다 검증 에이전트 PASS 뒤 main에 push, 마지막 cff1f2e):
+  - 테스트넷 실제 배포(demo): 프록시 `0x36713c60A8b4E54b56997553aD4b8b16d7C02Db8`, `placeOrder`에 And(TransferLimit, 30일 60,000/3600초), `registerMerchant` 정책 없음(D-33).
+  - 가게 66곳 시드와 가게별 키 보관본(`seed/.keys/archive/`), 주인이 손으로 돌리는 `merchants:balances`, `merchants:sweep`. 65곳 중 46곳 온체인 등록과 활성화(`seed/onchain/450815.demo.json`).
+  - 결제 경로 B(`ManagedEoaPaymentProvider`): 키 금고(AES-256-GCM), 8004 등록과 `setAgentWallet`, TransferLimit, 즉시 충전(가스 몫 100 OKRW, D-25), 전송 전 해시와 nonce 기록, 재시도 이어 하기(8004 id 저장, 0011). 실제 e2e: 9,000 OKRW 주문 성공, 한도 초과는 CHAIN_AGENT_LIMIT, 멈춤은 CHAIN_AGENT_PAUSED, 회수 성공.
+  - 실제 날씨(Open-Meteo), 목 체인 30일 창을 실제 규칙(주기 배수)으로, 브라우저 QA 3차까지 반영(메뉴 바꿔치기 막기와 부정 말 처리, 끊겨도 턴 저장 등).
+- 막힌 것 (호재 님 판단 필요):
+  - 운영자 잔액 약 1,691 tOKRW. 화면에서 실제 체인 주문을 끝까지 하려면 약 12,000 이상 필요. `pnpm merchants:sweep --to 0xBb71B672BC33745283842ce701F5b0FC28d023d3 --merchant gukbap-01`(약 18,000)을 돌려 주시거나 자동 모드에서 faucet(`mcp__maws__faucet_drip`)과 회수 명령을 허락해 주셔야 이어 간다 (분류기가 막음, 우회하지 않음).
+  - 남은 가게 19곳 등록(약 92 tOKRW)도 위 자금 뒤에.
+  - dev 서버는 아직 `PAYMENT_PATH=mock`. 경로 B로 바꾸려면 서버를 멈추고 `pnpm merchants:sync-onchain`, `pnpm db:migrate` 뒤 `.env`의 `PAYMENT_PATH=B`.
+- 메모: 온체인 가게 metadataURI는 `http://localhost:3000/...`로 남았다(컨트랙트에 수정 함수 없음). 데모의 비 장면은 `WEATHER_STATIC=비`(또는 openmeteo 실제 날씨). Storybook(6006)은 지워진 BudgetPicker 색인 때문에 다시 띄워야 한다.
+- 후속: 메뉴 이름 일부("국밥") 인식, 부정 말 사전 보강("별로", "질렸"), 사용자별 하루 LLM 예산, 서버 시작 때 `submitting` 재확인, 인덱서, 충전 멱등성, 웹 목 30일 창 테스트, 허락 카드 조립.
