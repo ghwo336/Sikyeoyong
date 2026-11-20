@@ -11,6 +11,15 @@ body {
   padding: 0;
 }
 
+/* An app, not a web page (D-23): screens scroll without a grey bar at the side. */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   min-height: 100dvh;
   background: var(--color-ground);
