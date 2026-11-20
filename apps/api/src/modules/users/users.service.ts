@@ -27,7 +27,6 @@ export class UsersService {
     return id;
   }
 
-  /** Personal monthly budget in aokrw (server-side only, D-07). */
   /** The name the ID card shows for the owner (users.nickname). */
   getNickname(userId: string): string {
     const profile = this.repo.findProfile(userId);
@@ -35,6 +34,7 @@ export class UsersService {
     return profile.nickname;
   }
 
+  /** Personal monthly budget in aokrw (server-side only, D-07). */
   getMonthlyBudgetAokrw(userId: string): bigint {
     const stored = this.repo.findMonthlyBudget(userId);
     if (stored === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });

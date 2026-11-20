@@ -67,6 +67,15 @@ describe('GET /api/me/id-card (IdCard.dc.html)', () => {
     expect(zIdCardView.parse((await get('u1')).body).ownerVerified).toBe(false);
   });
 
+  it('a long name keeps whole characters (32, emoji not cut); an empty name shows 주인님', async () => {
+    const { h, get } = await setup();
+    const long = `${'가'.repeat(31)}🐉🐉`;
+    h.db.update(users).set({ nickname: long }).where(eq(users.id, 'u1')).run();
+    expect(zIdCardView.parse((await get('u1')).body).ownerName).toBe(`${'가'.repeat(31)}🐉`);
+    h.db.update(users).set({ nickname: '' }).where(eq(users.id, 'u1')).run();
+    expect(zIdCardView.parse((await get('u1')).body).ownerName).toBe('주인님');
+  });
+
   it('a user without a dragon gets 404; no session gets 401', async () => {
     const { h, http, get } = await setup();
     h.db

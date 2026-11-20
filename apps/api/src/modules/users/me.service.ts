@@ -37,7 +37,7 @@ export class MeService {
   idCard(userId: string): IdCardView {
     const agent = this.agents.getForUser(userId);
     return {
-      ownerName: this.users.getNickname(userId).slice(0, 32),
+      ownerName: firstChars(this.users.getNickname(userId), 32) || '주인님',
       ownerVerified: this.identity.isVerified(userId),
       bornAt: agent.bornAt,
     };
@@ -49,4 +49,12 @@ export class MeService {
       trialAllowance: aokrwToString(this.config.policy.trialAllowanceAokrw),
     };
   }
+}
+
+/** The first `max` user-visible characters (graphemes), so an emoji is never cut in half. */
+function firstChars(text: string, max: number): string {
+  const graphemes = new Intl.Segmenter('ko', { granularity: 'grapheme' }).segment(text);
+  return Array.from(graphemes, (g) => g.segment)
+    .slice(0, max)
+    .join('');
 }
