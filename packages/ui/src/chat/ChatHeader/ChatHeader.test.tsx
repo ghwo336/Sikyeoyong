@@ -30,6 +30,16 @@ describe('ChatHeader (ChatHeader.md 테스트 기준)', () => {
     expect(onSettings).toHaveBeenCalledTimes(1);
   });
 
+  it('opens the order history with a receipt button before settings (Main.dc.html)', async () => {
+    const onHistory = vi.fn();
+    render(<ChatHeader {...base} onHistory={onHistory} onSettings={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['주문 내역', '용이 설정']);
+    expect(buttons[0]?.querySelector('[data-icon="receipt"]')).not.toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '주문 내역' }));
+    expect(onHistory).toHaveBeenCalledTimes(1);
+  });
+
   it('has no button without onSettings (LimitChat)', () => {
     render(<ChatHeader {...base} />);
     expect(screen.queryByRole('button')).toBeNull();
@@ -38,7 +48,8 @@ describe('ChatHeader (ChatHeader.md 테스트 기준)', () => {
   // Main.dc.html 22-28.
   it('matches the design values', () => {
     expect(rule('.header')).toMatch(/align-items:\s*center/);
-    expect(rule('.header')).toMatch(/gap:\s*var\(--space-3\)/);
+    expect(rule('.header')).toMatch(/gap:\s*var\(--space-2\)/);
+    expect(rule('.text')).toMatch(/margin-left:\s*var\(--space-1\)/);
     expect(rule('.text')).toMatch(/flex-grow:\s*1/);
     expect(rule('.text')).toMatch(/gap:\s*2px/);
     expect(rule('.name')).toMatch(/font-size:\s*var\(--type-heading-size\)/);

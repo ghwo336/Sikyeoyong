@@ -11,16 +11,19 @@ export interface ChatHeaderProps {
   readonly species: DragonSpecies;
   /** Default `default`. */
   readonly mood?: DragonMood;
+  /** Opens the order history (Main.dc.html receipt button). Without it there is no button. */
+  readonly onHistory?: () => void;
   /** Opens the dragon's settings. Without it there is no button (LimitChat). */
   readonly onSettings?: () => void;
 }
 
-/** Draws the top row of the chat: the dragon, its name and limit line, and settings (ChatHeader.md). */
+/** Draws the top row of the chat: the dragon, its name and limit line, order history and settings (ChatHeader.md). */
 export function ChatHeader({
   name,
   caption,
   species,
   mood = 'default',
+  onHistory,
   onSettings,
 }: ChatHeaderProps) {
   return (
@@ -30,6 +33,7 @@ export function ChatHeader({
         <h1 className={styles.name}>{name}</h1>
         <p className={styles.caption}>{caption}</p>
       </div>
+      {onHistory ? <IconButton icon="receipt" label="주문 내역" onPress={onHistory} /> : null}
       {onSettings ? <IconButton icon="more" label={`${name} 설정`} onPress={onSettings} /> : null}
     </div>
   );

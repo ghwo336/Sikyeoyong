@@ -44,6 +44,7 @@ export * from './onboarding/TermsLine';
 export * from './onboarding/EmailStart';
 export * from './onboarding/TrialAllowance';
 export * from './onboarding/Splash';
+export * from './order/ActiveOrderCard';
 export * from './order/DeliveryMap';
 export * from './order/OrderConfirmSheet';
 export * from './order/OrderLines';

@@ -46,6 +46,8 @@ describe('ChatLayout (ChatLayout.md 테스트 기준)', () => {
       /padding:\s*var\(--space-4\) var\(--space-5\) var\(--space-3\)/,
     );
     expect(rule('.top')).toMatch(/padding:\s*0 var\(--space-5\)/);
+    // Main.dc.html: the order card sits 10 under the budget card.
+    expect(rule('.top')).toMatch(/gap:\s*var\(--size-summary-gap\)/);
     expect(rule('.footer')).toMatch(
       /padding:\s*var\(--size-input-band-top\) var\(--space-4\) var\(--space-6\)/,
     );

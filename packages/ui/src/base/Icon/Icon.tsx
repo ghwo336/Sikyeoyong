@@ -4,7 +4,8 @@ import styles from './Icon.module.css';
  * back: TopBar "<". chevron-right: ListRow arrow. chevron-down: ReceiptDetails toggle.
  * arrow-right: LimitChangeCard "from -> to". arrow-up: ChatInput send. face-id: LimitChangeCard
  * reauth. kakao: Kakao speech bubble (Start.dc.html, brand guide match unconfirmed).
- * more: ChatHeader settings, three dots (Main.dc.html).
+ * more: ChatHeader settings, three dots (Main.dc.html). receipt: ChatHeader 주문 내역.
+ * scooter: ActiveOrderCard mark (Main.dc.html, 2026-11-20).
  */
 export type IconName =
   | 'back'
@@ -14,7 +15,9 @@ export type IconName =
   | 'arrow-up'
   | 'face-id'
   | 'kakao'
-  | 'more';
+  | 'more'
+  | 'receipt'
+  | 'scooter';
 
 interface Glyph {
   readonly paths: readonly string[];
@@ -46,6 +49,24 @@ const GLYPHS: Record<IconName, Glyph> = {
       'M17.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0',
     ],
     stroke: '1.8',
+  },
+  // Main.dc.html 주문 내역: a torn-edge slip with three lines, a 1.8 line.
+  receipt: {
+    paths: ['M6 3h12v18l-3-2-3 2-3-2-3 2z', 'M9 8h6', 'M9 12h6', 'M9 16h3'],
+    stroke: '1.8',
+    roundJoin: true,
+  },
+  // Main.dc.html order card: two r 2.5 wheels at x 6 and 18, the body and the handle.
+  scooter: {
+    paths: [
+      'M3.5 17a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0',
+      'M15.5 17a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0',
+      'M8.5 17h7',
+      'M6 14.5l3-6h4l2 4h3',
+      'M13 8.5V6h3',
+    ],
+    stroke: '1.8',
+    roundJoin: true,
   },
   kakao: {
     paths: [

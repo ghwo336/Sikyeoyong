@@ -1,0 +1,81 @@
+/* Main.dc.html: under the budget card, a white card with a theme line (D-32), 16 corners,
+   12 12 12 14 inside, the mark, the words and steps, an arrow, 12 apart. */
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--size-touch-min);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--size-budget-card-pad-x);
+  border: 1.5px solid var(--theme-accent);
+  border-radius: var(--radius-budget-card);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+/* A 36 circle in the theme color with the white scooter (20). */
+.mark {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--theme-accent);
+  color: var(--color-surface);
+}
+
+.markIcon {
+  width: var(--size-send-icon);
+  height: var(--size-send-icon);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 7px;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* 14/600 menu and where it is. */
+.title {
+  overflow: hidden;
+  font-size: var(--type-small-size);
+  font-weight: var(--type-label-weight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 13/600 in the theme color, fixed-width digits. */
+.eta {
+  flex-shrink: 0;
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-label-weight);
+  font-variant-numeric: tabular-nums;
+  color: var(--theme-accent);
+}
+
+/* 18 arrow in secondary ink. */
+.chevron {
+  width: var(--size-details-icon);
+  height: var(--size-details-icon);
+  color: var(--color-ink-secondary);
+}

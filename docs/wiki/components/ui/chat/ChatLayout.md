@@ -15,7 +15,7 @@ children: []
 각 띠의 그림 (`ChatHeader`, `Meter`, `ChatThread`, `ChatInput`을 넘긴다), 스크롤 (`ChatThread`), 화면 폭과 높이 (화면 틀 `.screen`)
 
 ## props
-`header?: ReactNode` (위 줄), `top?: ReactNode` (위 줄 아래, Main 예산 카드), `children: ReactNode` (대화, 남은 높이를 차지한다), `footer: ReactNode` (입력칸)
+`header?: ReactNode` (위 줄), `top?: ReactNode` (위 줄 아래, Main 예산 카드와 진행 중인 주문 카드. 여럿이면 세로로 10 간격), `children: ReactNode` (대화, 남은 높이를 차지한다), `footer: ReactNode` (입력칸)
 
 ## 하네스 상태
 `ChatLayout.stories.tsx`에 아래를 전부 만든다.
@@ -28,6 +28,7 @@ Main, LimitChat
 ## 테스트 기준
 - 위 줄, 예산, 대화, 입력칸 순서. 대화는 감싸지 않는다 (ChatThread가 남은 높이를 차지)
 - header나 top이 없거나 null이면 그 띠를 그리지 않는다
+- top 띠 안은 세로 줄, 사이 10(`size.summaryGap`, Main 시안의 주문 카드 위 10)
 - 시안 여백: 위 줄 16 20 12, 예산 0 20, 입력칸 10 16 24(`size.inputBandTop`)에 바탕 `--theme-bg`(종별 화면 바탕, D-32. 숲이면 `ground`와 같다). 전체는 남은 높이를 채우는 세로 줄
 
 ## 메모

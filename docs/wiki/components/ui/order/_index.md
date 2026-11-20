@@ -10,11 +10,12 @@ children:
   - OrderLines.md
   - TasteRating.md
   - ReceiptDetails.md
+  - ActiveOrderCard.md
 ---
 
 # 주문 (order)
 
-추천, 확인, 기다림, 도착, 상세.
+추천, 확인, 기다림, 도착, 상세, 대화 화면의 진행 중인 주문 카드.
 
 영역 사이 import는 `base`와 `dragon`만 허용한다 (`conventions/architecture.md`).
 
@@ -27,4 +28,5 @@ children:
 | [OrderSummary](OrderSummary.md) | 가게, 메뉴, 요청, 결제 금액을 그린다. |
 | [OrderLines](OrderLines.md) | 메뉴 줄("이름 N개"와 가격)과 요청 한 줄을 그린다. OrderSummary와 OrderConfirmSheet가 함께 쓴다. |
 | [TasteRating](TasteRating.md) | 맛 평가 세 가지 중 하나를 고르게 한다. |
+| [ActiveOrderCard](ActiveOrderCard.md) | 대화 화면 예산 카드 아래에 진행 중인 주문 하나(무엇, 단계, 시간 한 줄, 단계 막대)를 누를 수 있게 그린다. |
 | [ReceiptDetails](ReceiptDetails.md) | 자세히 보기를 접고 펼치며 결제 기록 번호, 신분증 번호, 통과한 마루 규칙, 탐색기 링크를 그린다. |

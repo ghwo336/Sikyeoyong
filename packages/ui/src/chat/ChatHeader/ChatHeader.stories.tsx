@@ -12,8 +12,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 설정 버튼 있음 (Main 시안) */
+/** 주문 내역과 설정 버튼 (Main 시안, 2026-11-20) */
 export const WithSettings: Story = {
+  args: { onHistory: () => undefined, onSettings: () => undefined },
+};
+
+/** 설정 버튼만 */
+export const SettingsOnly: Story = {
   args: { onSettings: () => undefined },
 };
 
