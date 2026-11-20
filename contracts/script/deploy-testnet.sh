@@ -44,7 +44,7 @@ cat <<'GUIDE'
    forge script contracts/script/Deploy.s.sol:Deploy --root contracts \
      --rpc-url "$MAROO_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast
    기록: packages/shared/src/config/deployments/<chainId>.<profile>.json (proxy, deployBlock, policyHash는 0)
-   전송이 실패하면 기록 파일을 지우고 원인을 확인한 뒤 다시 한다 (자동 재시도 금지).
+   전송이 실패하면 사람이 기록 파일을 지우고(스크립트는 지우지 않는다) 원인을 확인한 뒤 다시 한다 (자동 재시도 금지).
 
 2. 프록시와 정책 (infra/scripts/deploy-orders.ts, 아직 없음. Q-13 확인 뒤)
    deployPclProxy(UUPS), initialize(operator, owner, false), 같은 운영자 키로 changeContractPolicies 첫 호출,

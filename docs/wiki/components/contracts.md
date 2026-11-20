@@ -84,7 +84,7 @@ children: []
 - 목 가게 등록은 가게 payout 키가 직접 해야 해서(D-08 E-2) 배포 스크립트에 넣지 않는다 (`infra/scripts/seed-merchants.ts`).
 
 ### 배포 기록
-`packages/shared/src/config/deployments/<chainId>.<profile>.json`. `forge script --broadcast`일 때만 쓰고(연습 실행은 쓰지 않음), 같은 파일이 있으면 덮어쓰지 않고 `DeploymentExists`로 멈춘다. forge는 실행을 흉내 낸 뒤 보내므로 기록이 전송보다 앞선다. 전송이 실패하면 기록을 지운다.
+`packages/shared/src/config/deployments/<chainId>.<profile>.json`. `forge script --broadcast`일 때만 쓰고(연습 실행은 쓰지 않음), 같은 파일이 있으면 덮어쓰지 않고 `DeploymentExists`로 멈춘다. forge는 실행을 흉내 낸 뒤 보내므로 기록이 전송보다 앞선다. 전송이 실패하면 **사람이** 기록 파일을 지운다 (스크립트는 지우지 않는다). 후속: 구현 주소에 코드가 있는지(extcodesize) 확인한 뒤에만 기록하는 단계를 둔다.
 ```json
 {
   "chainId": 0,

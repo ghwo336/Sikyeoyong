@@ -60,7 +60,8 @@ contract Deploy is Script {
         vm.stopBroadcast();
 
         // --broadcast일 때만 기록한다. 연습 실행(dry run)이 체인에 없는 주소를 기록하지 않게.
-        // forge는 실행을 먼저 흉내 낸 뒤 보내므로 기록이 전송보다 앞선다. 전송이 실패하면 기록 파일을 지운다.
+        // forge는 실행을 먼저 흉내 낸 뒤 보내므로 기록이 전송보다 앞선다. 전송이 실패하면 사람이 기록 파일을 지운다
+        // (스크립트는 지우지 않는다). 후속: 주소에 코드가 있는지(extcodesize) 확인한 뒤에만 기록하는 단계.
         if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast) || vm.isContext(VmSafe.ForgeContext.ScriptResume)) {
             vm.writeJson(deploymentJson(block.chainid, profile, implementation), path);
         }
