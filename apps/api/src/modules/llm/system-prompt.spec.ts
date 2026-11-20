@@ -19,6 +19,8 @@ describe('SYSTEM_PROMPT (agent-runtime.md)', () => {
     expect(SYSTEM_PROMPT).toContain('도구 결과에 없는 일은 했다고 말하지 않는다');
     expect(SYSTEM_PROMPT).toContain('APPROVAL_REQUIRED면 확인 카드는 만들어지지 않았고');
     expect(SYSTEM_PROMPT).toContain('허락에 대한 말은 서버가 하니');
+    // Browser QA 2: an empty list was blamed on the rain.
+    expect(SYSTEM_PROMPT).toContain('empty.say에 적힌 까닭');
     for (const code of [0x2013, 0x2014]) {
       expect(SYSTEM_PROMPT).not.toContain(String.fromCharCode(code));
     }

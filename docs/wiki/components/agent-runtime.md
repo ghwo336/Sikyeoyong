@@ -37,7 +37,7 @@ children: []
 | `get_budget` | 읽기 | 한 번에 쓸 돈, 내 30일 한도(30일에 쓸 돈), 체인 30일 사용량·공통 상한·리셋 시각, 고를 수 있는 범위(D-31). 모델에게는 금액을 `formatOkrw` 표기("300,000원"), 리셋 시각을 KST 글자로 바꿔 준다 (`budgetForModel`). 모델이 단위를 바꾸거나 금액을 계산하지 않게 |
 | `get_order_history` | 읽기 | 최근 주문 기록 (`days` 1~60) |
 | `get_context` | 읽기 | 현재 시각(KST), 기본 주소 동네, 날씨 요약 |
-| `recommend_merchants` | 읽기 | 서버가 결정적으로 계산한 가게·메뉴 후보 최대 3개 (점수 규칙은 `recommend-and-nag.md`). 입력 `craving?`(50자), `maxPriceOkrw?`(원, 핸들러에는 aokrw bigint). 모델에게는 `{ weather, frozen, cravingMatched, candidates: [{ merchantId, store, category, menuId, menu, description, price: "9,000원", etaMin, needsApproval, approvalReason, reasons }] }`. 화면에는 같은 결과를 `recommendations` 카드(aokrw)로 (`ToolReply`) |
+| `recommend_merchants` | 읽기 | 서버가 결정적으로 계산한 가게·메뉴 후보 최대 3개 (점수 규칙은 `recommend-and-nag.md`). 입력 `craving?`(50자), `maxPriceOkrw?`(원, 핸들러에는 aokrw bigint). 모델에게는 `{ weather, frozen, cravingMatched, empty, candidates: [{ merchantId, store, category, menuId, menu, description, price: "9,000원", etaMin, needsApproval, approvalReason, reasons }] }`. `empty`는 후보가 없을 때만 까닭(`reason`, `say`, `cheapestPrice`, `perOrderLimit`), 있으면 null (recommend-and-nag.md). 화면에는 같은 결과를 `recommendations` 카드(aokrw)로 (`ToolReply`) |
 | `get_menu` | 읽기 | 가게의 메뉴와 가격. 모델에게는 `{ merchantId, store, category, openNow, etaMin, menus: [{ menuId, menu, price: "9,000원", description, tags, available }] }`. 미인증·비활성·없는 가게는 `NOT_FOUND` 오류 결과. 가게는 사용자별 데이터가 아니라 세션 확인 대상이 없다 |
 | `place_order` | 주문 | 입력은 `merchantId`, `items[]`, `note`뿐. 금액과 가게 주소는 서버가 DB에서 계산·조회 |
 | `request_owner_approval` | 승인 요청 | `reason` = `OVER_LEVEL_LIMIT` / `NEW_MERCHANT` / `OVER_PERSONAL_BUDGET`. 주인 승인 요청을 만든다 |

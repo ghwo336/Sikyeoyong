@@ -226,7 +226,36 @@ describe('rank (tech-spec 3.8, hand-computed)', () => {
       items: [],
       cravingMatched: false,
       frozen: true,
+      empty: { reason: 'FROZEN', cheapestAokrw: null, perOrderLimitAokrw: w(10_000n) },
     });
+  });
+
+  // Browser QA 2: one open store, a 5,000 per-order limit, "아무거나", nothing back; the dragon
+  // blamed the rain. The result says the first filter that left nothing.
+  it('says why it is empty: over the per-order limit, with the cheapest menu', () => {
+    const r = rank({ ...BASE, perOrderLimitAokrw: w(4_000n) });
+    expect(r.items).toEqual([]);
+    expect(r.empty).toEqual({
+      reason: 'OVER_PER_ORDER_LIMIT',
+      cheapestAokrw: w(4_500n),
+      perOrderLimitAokrw: w(4_000n),
+    });
+    expect(rank(BASE).empty).toBeNull();
+  });
+
+  it('says why it is empty: every store closed, nothing on sale, asked price, 30-day cap', () => {
+    const closed = CATALOG.map((e) => ({ ...e, merchant: { ...e.merchant, openNow: false } }));
+    expect(rank({ ...BASE, catalog: closed }).empty?.reason).toBe('ALL_CLOSED');
+    const soldOut = CATALOG.map((e) => ({
+      ...e,
+      menus: e.menus.map((m) => ({ ...m, available: false })),
+    }));
+    expect(rank({ ...BASE, catalog: soldOut }).empty?.reason).toBe('NO_MENU');
+    expect(rank({ ...BASE, maxPriceAokrw: w(1_000n) }).empty).toMatchObject({
+      reason: 'OVER_ASKED_PRICE',
+      cheapestAokrw: w(4_500n),
+    });
+    expect(rank({ ...BASE, chainUsedAokrw: w(499_000n) }).empty?.reason).toBe('OVER_30_DAY_CAP');
   });
 
   it('is the same for the same input, and ties go to the cheaper menu', () => {

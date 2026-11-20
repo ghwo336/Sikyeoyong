@@ -5,7 +5,12 @@ import {
   parseAokrw,
   type RecommendationCard,
 } from '@sikyeoyong/shared';
-import type { Recommendation, RecommendResult } from '../../recommend/recommend.service.js';
+import type {
+  EmptyReason,
+  EmptyResult,
+  Recommendation,
+  RecommendResult,
+} from '../../recommend/recommend.service.js';
 import { ToolReply } from './tool-reply.js';
 
 /*
@@ -26,11 +31,33 @@ function reasons(r: Recommendation): string[] {
   return out;
 }
 
+/** What the dragon may say when nothing came back: the server's reason, in display words. */
+const EMPTY_SAY: Record<EmptyReason, string> = {
+  FROZEN: '용이가 멈춰 있어서 추천하지 않는다.',
+  ALL_CLOSED: '지금 문을 연 가게가 없다.',
+  NO_MENU: '문을 연 가게에 지금 파는 메뉴가 없다.',
+  OVER_ASKED_PRICE: '말한 값 안에 드는 메뉴가 없다.',
+  OVER_30_DAY_CAP: '30일에 쓸 수 있는 돈이 남지 않아 시킬 수 있는 메뉴가 없다.',
+  OVER_PER_ORDER_LIMIT: '문을 연 가게의 메뉴가 모두 한 번에 쓸 수 있는 돈보다 비싸다.',
+};
+
+function emptyForModel(empty: EmptyResult | null) {
+  if (empty === null) return null;
+  return {
+    reason: empty.reason,
+    say: EMPTY_SAY[empty.reason],
+    cheapestPrice: empty.cheapestAokrw === null ? null : formatOkrw(empty.cheapestAokrw),
+    perOrderLimit: formatOkrw(empty.perOrderLimitAokrw),
+    rule: '후보가 없는 까닭은 say와 reason뿐이다. 날씨나 메뉴 탓을 하지 않는다.',
+  };
+}
+
 function recommendationsForModel(result: RecommendResult) {
   return {
     weather: result.weather,
     frozen: result.frozen,
     cravingMatched: result.cravingMatched,
+    empty: emptyForModel(result.empty),
     candidates: result.items.map((r) => ({
       merchantId: r.merchant.id,
       store: r.merchant.name,

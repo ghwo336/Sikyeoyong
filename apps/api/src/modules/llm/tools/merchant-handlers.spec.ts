@@ -100,6 +100,24 @@ describe('recommend_merchants handler', () => {
     });
   });
 
+  it('an empty list tells the model why, in display words (browser QA 2)', async () => {
+    const handlers = await setup((h) => {
+      insertUser(h.db, 'u5', { perOrderWon: 5_000n });
+    });
+    const reply = (await handlers.recommend_merchants({ userId: 'u5' }, {})) as ToolReply;
+    expect(reply.forModel).toMatchObject({
+      candidates: [],
+      empty: {
+        reason: 'OVER_PER_ORDER_LIMIT',
+        cheapestPrice: '9,000원',
+        perOrderLimit: '5,000원',
+      },
+    });
+    expect(JSON.stringify(reply.forModel)).not.toMatch(RAW_NUMBER);
+    const full = (await handlers.recommend_merchants({ userId: 'u1' }, {})) as ToolReply;
+    expect(full.forModel).toMatchObject({ empty: null });
+  });
+
   it('marks an over-limit menu the user asked for as needing approval, on both faces', async () => {
     const handlers = await setup();
     const reply = (await handlers.recommend_merchants(

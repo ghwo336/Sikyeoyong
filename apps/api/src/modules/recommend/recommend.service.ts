@@ -8,7 +8,7 @@ import { RECENT_ORDERS, type RecentOrdersReader } from './recent-orders.js';
 import { HABIT_WINDOW_MS, rank, type RankResult } from './score.js';
 import { WeatherService } from './weather.service.js';
 
-export type { ApprovalReason, Recommendation } from './score.js';
+export type { ApprovalReason, EmptyReason, EmptyResult, Recommendation } from './score.js';
 // Other modules import only <module>.service (architecture.md), so the weather source is re-exported here.
 export { WeatherService } from './weather.service.js';
 

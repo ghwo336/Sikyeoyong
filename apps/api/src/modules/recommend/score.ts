@@ -77,11 +77,37 @@ export interface Recommendation {
   readonly approvalReason: ApprovalReason | null;
 }
 
+/**
+ * Why nothing came back, first cause wins, so the dragon can say the true reason instead of
+ * guessing (browser QA 2: one open store and a 5,000 per-order limit, and the dragon blamed
+ * the rain). FROZEN: the dragon sleeps. ALL_CLOSED: no store is open now. NO_MENU: open stores
+ * have no menu on sale. OVER_ASKED_PRICE: every menu is over the price the user asked for.
+ * OVER_30_DAY_CAP: every menu would pass the 30-day cap. OVER_PER_ORDER_LIMIT: every menu is
+ * over the per-order limit.
+ */
+export type EmptyReason =
+  | 'FROZEN'
+  | 'ALL_CLOSED'
+  | 'NO_MENU'
+  | 'OVER_ASKED_PRICE'
+  | 'OVER_30_DAY_CAP'
+  | 'OVER_PER_ORDER_LIMIT';
+
+export interface EmptyResult {
+  readonly reason: EmptyReason;
+  /** The cheapest menu still in play at the step that emptied the list; null if none. */
+  readonly cheapestAokrw: bigint | null;
+  /** The per-order limit the list was ranked against. */
+  readonly perOrderLimitAokrw: bigint;
+}
+
 export interface RankResult {
   readonly items: readonly Recommendation[];
   /** The craving matched at least one menu, so only matching menus were ranked. */
   readonly cravingMatched: boolean;
   readonly frozen: boolean;
+  /** Set only when items is empty. */
+  readonly empty: EmptyResult | null;
 }
 
 /** bigint points (0..100) to a plain number for the score sum. */
@@ -199,7 +225,18 @@ interface Candidate extends Recommendation {
  * best menu only. Ties go to the cheaper menu, then by id.
  */
 export function rank(input: RankInput): RankResult {
-  if (input.frozen) return { items: [], cravingMatched: false, frozen: true };
+  if (input.frozen) {
+    return {
+      items: [],
+      cravingMatched: false,
+      frozen: true,
+      empty: {
+        reason: 'FROZEN',
+        cheapestAokrw: null,
+        perOrderLimitAokrw: input.perOrderLimitAokrw,
+      },
+    };
+  }
   const daily = dailyShareAokrw(input);
   const words = cravingWords(input.craving);
   const weights = {
@@ -208,13 +245,24 @@ export function rank(input: RankInput): RankResult {
   };
 
   const all: Candidate[] = [];
+  // How far menus got through each filter, so an empty list can say why (EmptyReason).
+  const reached = {
+    open: 0,
+    onSale: [] as bigint[],
+    underAsked: [] as bigint[],
+    underCap: [] as bigint[],
+  };
   for (const { merchant, menus } of input.catalog) {
     if (!merchant.openNow) continue;
+    reached.open += 1;
     for (const menu of menus) {
       const cost = menu.priceAokrw;
       if (!menu.available) continue;
+      reached.onSale.push(cost);
       if (input.maxPriceAokrw !== undefined && cost > input.maxPriceAokrw) continue;
+      reached.underAsked.push(cost);
       if (input.chainUsedAokrw + cost > input.chainCapAokrw) continue;
+      reached.underCap.push(cost);
       const fits: Fits = {
         affordability: affordabilityFit(cost, daily),
         weather: weatherFit(input.weather, merchant, menu),
@@ -263,7 +311,39 @@ export function rank(input: RankInput): RankResult {
       approvalReason: c.approvalReason,
     });
   }
-  return { items, cravingMatched, frozen: false };
+  return {
+    items,
+    cravingMatched,
+    frozen: false,
+    empty: items.length > 0 ? null : whyEmpty(input, reached),
+  };
+}
+
+function cheapest(prices: readonly bigint[]): bigint | null {
+  return prices.reduce<bigint | null>((min, p) => (min === null || p < min ? p : min), null);
+}
+
+/** The first filter that left nothing, with the cheapest menu that reached it. */
+function whyEmpty(
+  input: RankInput,
+  reached: {
+    readonly open: number;
+    readonly onSale: readonly bigint[];
+    readonly underAsked: readonly bigint[];
+    readonly underCap: readonly bigint[];
+  },
+): EmptyResult {
+  const perOrderLimitAokrw = input.perOrderLimitAokrw;
+  const at = (reason: EmptyReason, prices: readonly bigint[]): EmptyResult => ({
+    reason,
+    cheapestAokrw: cheapest(prices),
+    perOrderLimitAokrw,
+  });
+  if (reached.open === 0) return at('ALL_CLOSED', []);
+  if (reached.onSale.length === 0) return at('NO_MENU', []);
+  if (reached.underAsked.length === 0) return at('OVER_ASKED_PRICE', reached.onSale);
+  if (reached.underCap.length === 0) return at('OVER_30_DAY_CAP', reached.underAsked);
+  return at('OVER_PER_ORDER_LIMIT', reached.underCap);
 }
 
 function compare(a: Candidate, b: Candidate): number {
