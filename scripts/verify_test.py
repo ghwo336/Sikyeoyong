@@ -273,7 +273,7 @@ CASES = [
     dict(name="T1 sol src without test", files={"contracts/src/X.sol": "contract X {}\n"}, hit=["T1 tests-required"]),
     dict(name="T1 sol vendored lib ok", files={"contracts/lib/forge-std/src/Test.sol": "contract T {}\n"},
          miss=["T1 tests-required"]),
-    dict(name="T1 sol natspec ok",**t1("contract X {}\n", "/// @notice x\ncontract X {}\n", path="contracts/src/X.sol"),
+    dict(name="T1 sol natspec ok", **t1("contract X {}\n", "/// @notice x\ncontract X {}\n", path="contracts/src/X.sol"),
          miss=["T1 tests-required"]),
     # R8 wiki
     dict(name="R8 wiki doc not in map", files={"docs/wiki/b.md": WIKI_LEAF},
