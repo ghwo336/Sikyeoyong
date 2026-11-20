@@ -91,7 +91,7 @@ apps/api/src/
     ├── <모듈>.repository.ts  DB: Drizzle 쿼리만
     └── *.spec.ts
 ```
-모듈: health(살아있음 확인만), auth, users, agents, payment, orders, merchants, recommend, budget, approvals, owner-approvals(주인의 승인 결정: approvals와 orders를 잇는다), llm, chain, indexer, delivery, admin, demo, (2단계) merchant-api.
+모듈: health(살아있음 확인만), auth, identity(본인 인증 기록, D-16), users, agents, payment, orders, merchants, recommend, budget, approvals, owner-approvals(주인의 승인 결정: approvals와 orders를 잇는다), llm, chain, indexer, delivery, admin, demo, (2단계) merchant-api.
 
 ### 규칙 (MUST)
 - **모듈 하나 = 책임 하나.** 다른 모듈의 저장소나 테이블을 직접 쓰지 않는다. 내보낸(`exports`) 서비스만 주입받아 부른다.

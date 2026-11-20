@@ -62,3 +62,21 @@ export const sessions = sqliteTable(
     enumCheck('sessions_platform_check', t.platform, SESSION_PLATFORMS),
   ],
 );
+
+export const IDENTITY_METHODS = ['kakao', 'mock'] as const;
+
+/**
+ * The owner's identity check (D-16): only that it passed, how and when. No personal
+ * data from the check is kept (user-flow 2). One row per user.
+ */
+export const identityChecks = sqliteTable(
+  'identity_checks',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => users.id),
+    method: text('method', { enum: IDENTITY_METHODS }).notNull(),
+    verifiedAt: integer('verified_at').notNull(),
+  },
+  (t) => [enumCheck('identity_checks_method_check', t.method, IDENTITY_METHODS)],
+);

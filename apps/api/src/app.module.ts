@@ -4,6 +4,7 @@ import { ConfigModule } from './config/config.module.js';
 import { DbModule } from './db/db.module.js';
 import { BudgetModule } from './modules/budget/budget.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { IdentityModule } from './modules/identity/identity.module.js';
 import { LlmModule } from './modules/llm/llm.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { MerchantsModule } from './modules/merchants/merchants.module.js';
@@ -16,6 +17,7 @@ import { OwnerApprovalsModule } from './modules/owner-approvals/owner-approvals.
     DbModule,
     RateLimitModule,
     HealthModule,
+    IdentityModule,
     LlmModule,
     BudgetModule,
     UsersModule,

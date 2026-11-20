@@ -9,6 +9,7 @@ import {
   type PaymentProvider,
 } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
+import { IdentityService } from '../identity/identity.service.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
 import { AgentsRepository } from './agents.repository.js';
@@ -41,6 +42,7 @@ export class AgentsService {
     private readonly repo: AgentsRepository,
     private readonly setup: AgentSetupService,
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
+    private readonly identity: IdentityService,
   ) {}
 
   getForUser(userId: string): AgentSummary {
@@ -83,6 +85,10 @@ export class AgentsService {
     body: CreateAgentBody,
     nowMs: number = Date.now(),
   ): { agent: { id: string; status: 'PENDING' } } {
+    // D-16: no identity check, no dragon.
+    if (!this.identity.isVerified(userId)) {
+      throw new AppError('FORBIDDEN', { reason: 'identity check needed before hatching' });
+    }
     if (this.repo.findByUserId(userId) !== undefined) {
       throw new AppError('CONFLICT', { reason: 'the user already has a dragon' });
     }

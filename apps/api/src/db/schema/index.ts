@@ -10,4 +10,4 @@ export {
   orderEvents,
   orders,
 } from './orders.js';
-export { oauthAccounts, sessions, users } from './users.js';
+export { identityChecks, oauthAccounts, sessions, users } from './users.js';

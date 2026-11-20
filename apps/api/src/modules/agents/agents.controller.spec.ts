@@ -16,7 +16,7 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { agentLimitHistory, agents, users } from '../../db/schema/index.js';
+import { agentLimitHistory, agents, identityChecks, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CustodialOwner, OWNER_AUTHORITY, PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
@@ -33,8 +33,13 @@ afterEach(async () => {
 async function setup(override?: (p: PaymentProvider) => PaymentProvider, owner?: OwnerAuthority) {
   const h = openDb(':memory:');
   runMigrations(h.db);
-  for (const id of ['u1', 'u2'])
+  for (const id of ['u1', 'u2', 'u3']) {
     h.db.insert(users).values({ id, nickname: id, monthlyBudgetAokrw: '1', createdAt: 1 }).run();
+  }
+  // D-16: u1 and u2 passed the identity check; u3 has not.
+  for (const id of ['u1', 'u2']) {
+    h.db.insert(identityChecks).values({ userId: id, method: 'mock', verifiedAt: 1 }).run();
+  }
   let builder = Test.createTestingModule({ imports: [AgentsModule] }).useMocker((t) =>
     t === DB ? h : t === APP_CONFIG ? loadConfig({ PAYMENT_PATH: 'mock' }) : undefined,
   );
@@ -63,9 +68,10 @@ async function setup(override?: (p: PaymentProvider) => PaymentProvider, owner?:
   const tokens = {
     u1: moduleRef.get(AuthService).issue('u1', 'web'),
     u2: moduleRef.get(AuthService).issue('u2', 'web'),
+    u3: moduleRef.get(AuthService).issue('u3', 'web'),
   };
   const http = () => request(app.getHttpServer() as Server);
-  const as = (who: 'u1' | 'u2') => ({
+  const as = (who: 'u1' | 'u2' | 'u3') => ({
     post: (path: string, body: object = {}) =>
       http()
         .post(path)
@@ -258,6 +264,13 @@ describe('POST /api/agents and hatching (user-flow 4)', () => {
     await settle();
     expect(h.db.select().from(agents).all()[0]?.status).toBe('PENDING');
     expect(h.db.select().from(agentLimitHistory).all()).toHaveLength(0);
+  });
+
+  it('refuses to hatch before the identity check (D-16): 403, no dragon written', async () => {
+    const { h, as } = await setup();
+    const res = await as('u3').post('/api/agents', { dragonName: '용이', dragonSpecies: 'forest' });
+    expect(res.status).toBe(403);
+    expect(h.db.select().from(agents).all()).toHaveLength(0);
   });
 
   it('is 404 before a dragon exists and 401 without a session', async () => {

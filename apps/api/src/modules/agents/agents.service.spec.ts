@@ -7,6 +7,7 @@ import { AgentsRepository } from './agents.repository.js';
 import { AgentsService } from './agents.service.js';
 import type { AgentSetupService } from './agent-setup.service.js';
 import type { PaymentProvider } from '@sikyeoyong/shared';
+import type { IdentityService } from '../identity/identity.service.js';
 
 const handles: DbHandle[] = [];
 afterEach(() => {
@@ -40,7 +41,8 @@ function setup() {
   // Reads only here: setup and payment are not reached by getForUser.
   const noSetup = { run: () => Promise.resolve() } as unknown as AgentSetupService;
   const noPayment = { path: 'mock' } as unknown as PaymentProvider;
-  return { h, s: new AgentsService(new AgentsRepository(h), noSetup, noPayment) };
+  const verified = { isVerified: () => true } as unknown as IdentityService;
+  return { h, s: new AgentsService(new AgentsRepository(h), noSetup, noPayment, verified) };
 }
 
 describe('AgentsService', () => {

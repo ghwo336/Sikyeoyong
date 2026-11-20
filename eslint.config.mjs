@@ -15,6 +15,7 @@ const UI_AREAS = ['base', 'dragon', 'chat', 'order', 'limits', 'onboarding', 'wa
 // through its exported service or its Nest module class.
 const API_MODULES = [
   'auth',
+  'identity',
   'users',
   'agents',
   'payment',

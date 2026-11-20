@@ -225,6 +225,7 @@ apps/api/src/
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |
+| POST | `/identity/verify` | user | | `{ verified: true }`. 본인 인증(D-16). `VERIFY_MODE=mock`이면 통과를 기록, `kakao`는 Q-19가 풀릴 때까지 500 `INTERNAL`. 통과한 사실, 방법, 시각만 남긴다. 인증 전의 `POST /agents`는 403 (2026-11-20) |
 | GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, level, perOrderLimit, custodial }`, `api/me.ts`. `custodial`은 `OWNER_MODE=custodial`일 때만 true, 지갑 화면의 체험판 한 줄용, D-24). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
 | PATCH | `/me` | user | `{ nickname?, address?, monthlyBudgetOkrw? }` | `{ user }` |
 | POST | `/agents` | user | `{ dragonName, dragonSpecies }` | `{ agent: { id, status: 'PENDING' } }` |
@@ -493,6 +494,7 @@ score(merchant, menu) =
 | 테이블 | 주요 컬럼 | 인덱스·제약 |
 | --- | --- | --- |
 | `users` | id, nickname, address_text, address_dong, monthly_budget, role(`user`/`operator`/`merchant`), created_at | |
+| `identity_checks` | user_id(PK, users), method(`kakao`/`mock`), verified_at | 본인 인증 통과 기록만. 인증 원문은 저장하지 않는다 (마이그레이션 0005) |
 | `oauth_accounts` | id, user_id → users, provider(`kakao`/`google`/`apple`), provider_user_id, email?, created_at | 유니크(provider, provider_user_id) |
 | `sessions` | id(토큰 해시), user_id, platform(`web`/`native`), expires_at, revoked_at | 인덱스(user_id) |
 | `agents` | id, user_id(1:1), dragon_name, dragon_species(`forest`/`water`/`flower`/`star`, D-20), status(`PENDING`/`ACTIVE`/`FROZEN`/`REVOKED`), payment_path, wallet_address, onchain_agent_id, owner_address, maws_agent_id?, level, created_at | 유니크(user_id), 유니크(wallet_address) |

@@ -1,6 +1,6 @@
 import { okrwToAokrw } from '@sikyeoyong/shared';
 import type { Db } from '../db/client.js';
-import { agents, menus, merchants, users } from '../db/schema/index.js';
+import { agents, identityChecks, menus, merchants, users } from '../db/schema/index.js';
 
 /*
  * Test rows written by hand, shared by the merchants, recommend and llm specs.
@@ -34,6 +34,8 @@ export function insertUser(
       createdAt: 1,
     })
     .run();
+  // D-16: fixture owners have passed the identity check, so they may hatch.
+  db.insert(identityChecks).values({ userId: id, method: 'mock', verifiedAt: 1 }).run();
 }
 
 let payoutSeq = 0;
