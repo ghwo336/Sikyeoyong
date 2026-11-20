@@ -246,7 +246,7 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 사실: MAWS MCP `transfer.send`의 입력은 `agentId`, `to`, `amount`, `clientToken`뿐이고 calldata 칸이 없다 (확인, 도구 스키마, 호재 님 승인으로 스키마만 읽음). 그래서 MCP로는 `SikyeoyongOrders.placeOrder`를 부를 수 없다. 경로 A는 MCP로는 불가.
 - 결정: D-05의 규칙("A가 안 되면 B가 1순위")대로 1단계 결제는 **경로 B**다. 서버가 에이전트마다 EOA 키를 만들어 `AGENT_KEY_ENCRYPTION_KEY`로 AES-GCM 암호화해 보관하고(`agent_keys`), 운영자가 8004에 등록하며, 에이전트 키로 `placeOrder{value}`를 직접 sender로 보낸다. 컨트랙트 범위 PCL(TransferLimit, 30일)은 경로 A와 같이 걸린다.
 - 같이 확인한 것: MAWS의 건당 한도와 허용 주소는 m-aws MCP 서버가 검사하고 WaaS(서명)는 강제하지 않는다 (확인, 도구 설명). 시켜용은 "한도는 체인(PCL)이 지킨다"를 MAWS 정책이 아니라 컨트랙트 범위 PCL 기준으로만 말한다 (규칙 11).
-- 남은 것: WaaS API가 calldata를 받는다는 답이 오면 경로 A를 다시 검토한다 (Q-01). 경로 B는 MAWS의 AA 지갑과 페이마스터를 못 쓰므로 에이전트 지갑에 가스용 소액(기본 2,000 OKRW)을 둔다 (tech-spec 3.4). (2026-11-21 갱신: 테스트넷 실측 `placeOrder` 478,058 가스, 약 4.3 OKRW라 기본을 100 OKRW로 낮추고 상한 1,000 OKRW를 둔다. D-06 float 원칙.)
+- 남은 것: WaaS API가 calldata를 받는다는 답이 오면 경로 A를 다시 검토한다 (Q-01). 경로 B는 MAWS의 AA 지갑과 페이마스터를 못 쓰므로 에이전트 지갑에 가스용 소액을 둔다: 기본 100 OKRW, 상한 1,000 OKRW (2026-11-21, 처음 2,000에서 낮춤, 실측 근거: `placeOrder` 478,058 가스, 약 4.3 OKRW. D-06 float 원칙) (tech-spec 3.4).
 - 영향: payment.md, tech-spec 3.4 경로 B, `PAYMENT_PATH` 기본 B(이미), agent_keys 테이블과 키 보관 구현, devrel F-13, F-14. 경로 B의 에이전트 키 보관과 운영자 소유는 D-24의 수탁 구조이며, 소유자 일은 D-24의 `OwnerAuthority` 포트 뒤에 둔다.
 
 ## D-26 데모 LLM 비용: 리허설은 녹화 재생, 실제 데모는 Claude에 low effort와 하루 상한 (2026-11-20, 호재 님 "추천대로")
