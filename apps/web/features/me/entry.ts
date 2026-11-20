@@ -1,4 +1,4 @@
-import type { AppErrorCode } from '@sikyeoyong/shared';
+import { AppError, type AppErrorCode } from '@sikyeoyong/shared';
 import type { AgentSetupView } from '../../lib/api';
 
 export type EntryRoute = '/start' | '/name' | '/hatch' | null;
@@ -15,7 +15,23 @@ export function entryRoute(input: {
 }): EntryRoute | undefined {
   if (input.meError === 'UNAUTHENTICATED') return '/start';
   if (input.meError === 'NOT_FOUND') return '/name';
+  // Any other failure (5xx, offline): stay and let the screen show its own error, never a blank page.
+  if (input.meError !== undefined) return null;
   if (!input.hasMe) return undefined;
   if (input.setupStatus === undefined) return undefined;
   return input.setupStatus === 'ACTIVE' ? null : '/hatch';
+}
+
+/**
+ * GET /me retries: a 401 or a 404 is an answer (where to go), so it is not asked again;
+ * anything else (5xx, offline) is retried up to three times like other queries.
+ */
+export function retryMe(failureCount: number, error: unknown): boolean {
+  if (
+    error instanceof AppError &&
+    (error.code === 'UNAUTHENTICATED' || error.code === 'NOT_FOUND')
+  ) {
+    return false;
+  }
+  return failureCount < 3;
 }

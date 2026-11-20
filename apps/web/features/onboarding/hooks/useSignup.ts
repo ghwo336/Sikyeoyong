@@ -12,7 +12,12 @@ export function useSignupConfig() {
 
 /** Start: Kakao or Google login. */
 export function useLogin() {
-  return useMutation({ mutationFn: (provider: 'kakao' | 'google') => api.login(provider) });
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: 'kakao' | 'google') => api.login(provider),
+    // A 401 kept from before the login must not send the front door back to Start.
+    onSuccess: () => { qc.removeQueries({ queryKey: ['me'] }); },
+  });
 }
 
 /** Verify: the Kakao identity check. */

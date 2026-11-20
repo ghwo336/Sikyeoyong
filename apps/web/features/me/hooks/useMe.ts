@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import { retryMe } from '../entry';
 
 /** The signed-in owner and their dragon (GET /me). */
 export function useMe() {
-  // A 401 or 404 is an answer (where to go), not a hiccup to retry.
-  return useQuery({ queryKey: ['me'], queryFn: () => api.getMe(), retry: false });
+  return useQuery({ queryKey: ['me'], queryFn: () => api.getMe(), retry: retryMe });
 }
