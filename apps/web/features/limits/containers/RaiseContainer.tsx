@@ -33,9 +33,12 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
   const toChat = () => {
     router.push('/');
   };
-  // The limits when the button was pressed: after the raise the budget already holds the new
-  // ones, and the card stays (confirming) with its old amounts until the chat opens.
-  const [pressed, setPressed] = useState<{ perOrder: bigint; mine: bigint } | undefined>(undefined);
+  // The whole change as it was when the button was pressed: after the raise the budget already
+  // holds the new limits (and raisePlan would then plan nothing), so the card stays (confirming)
+  // with exactly what was sent until the chat opens.
+  const [pressed, setPressed] = useState<
+    { perOrder: bigint; mine: bigint; to: bigint; mineTo: bigint | undefined } | undefined
+  >(undefined);
   const plan = order && budget ? raisePlan(parseAokrw(order.amount), budget) : undefined;
   // Nothing to raise: no limit in the range covers it (or the 30 days would pass the shared
   // cap), or the limit is already there.
@@ -45,14 +48,15 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
     pressed === undefined &&
     (plan === undefined || plan.perOrder <= parseAokrw(budget.perOrderLimit));
   useBackToChat(orderQuery.isError || nothingToRaise);
-  if (!budget || !order || plan === undefined || nothingToRaise) {
+  if (!budget || !order || (pressed === undefined && (plan === undefined || nothingToRaise))) {
     return <TopBar title="한도 바꾸기" onBack={back} />;
   }
   const from = pressed?.perOrder ?? parseAokrw(budget.perOrderLimit);
   const mine = pressed?.mine ?? parseAokrw(budget.myPeriodicLimit);
-  const to = plan.perOrder;
+  const to = pressed?.to ?? plan?.perOrder;
+  if (to === undefined) return <TopBar title="한도 바꾸기" onBack={back} />;
   // D-31: one order may not be more than 30 days allow, so the 30 days go up with it when needed.
-  const mineTo = plan.myPeriodic;
+  const mineTo = pressed === undefined ? plan?.myPeriodic : pressed.mineTo;
   return (
     <>
       <TopBar title="한도 바꾸기" onBack={back} />
@@ -75,7 +79,7 @@ export function RaiseContainer({ orderId }: { readonly orderId: string }) {
         }
         onConfirm={() => {
           if (raise.isPending || raise.isSuccess) return;
-          setPressed({ perOrder: from, mine });
+          setPressed({ perOrder: from, mine, to, mineTo });
           raise.mutate(
             {
               perOrderLimit: to.toString(),

@@ -182,6 +182,36 @@ describe('limit screens', () => {
     });
   });
 
+  it('after the press the card keeps what was sent while the order is quoted again', async () => {
+    const W10000 = okrwToAokrw(10_000n).toString();
+    const before = {
+      ...BUDGET,
+      myPeriodicLimit: W10000,
+      limitRanges: {
+        ...BUDGET.limitRanges,
+        myPeriodic: { min: W10000, max: okrwToAokrw(500_000n).toString(), step: W10000 },
+      },
+    };
+    getBudget.mockResolvedValue(before);
+    setLimits.mockImplementation(() => {
+      // The server has the new limits now; the budget refetch returns them.
+      getBudget.mockResolvedValue({
+        ...before,
+        perOrderLimit: okrwToAokrw(15_000n).toString(),
+        myPeriodicLimit: okrwToAokrw(20_000n).toString(),
+      });
+      return Promise.resolve(undefined);
+    });
+    requoteOrder.mockReturnValue(new Promise(() => undefined)); // still quoting
+    wrap(<RaiseContainer orderId="o-bossam" />);
+    await userEvent.click(await screen.findByRole('button', { name: /Face ID로 확인하고 바꾸기/ }));
+    await waitFor(() => {
+      expect(requoteOrder).toHaveBeenCalled();
+    });
+    expect(screen.getByText('10,000원에서 20,000원으로')).toBeInTheDocument();
+    expect(screen.queryByText(/그대로/)).toBeNull();
+  });
+
   it('offers no raise when the 30 days would have to pass the shared cap', async () => {
     const W10000 = okrwToAokrw(10_000n).toString();
     getBudget.mockResolvedValue({
