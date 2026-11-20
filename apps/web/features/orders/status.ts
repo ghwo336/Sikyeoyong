@@ -26,3 +26,12 @@ export function orderStep(status: OrderStatus): number | null {
       return null;
   }
 }
+
+/**
+ * Whether the status screens keep asking for this order (every 2 seconds): only while it
+ * is on its way. Arrived, not paid yet and stopped orders do not change by waiting.
+ */
+export function shouldPoll(status: OrderStatus | undefined): boolean {
+  if (status === undefined || status === 'delivered') return false;
+  return orderStep(status) !== null;
+}

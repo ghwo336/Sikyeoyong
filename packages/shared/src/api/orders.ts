@@ -81,7 +81,19 @@ export type OrderQuote = z.infer<typeof zOrderQuote>;
 export const zOrderReceipt = z
   .object({
     agentId: z.string().regex(/^[0-9]{1,20}$/),
-    rules: z.array(z.string().min(1).max(64)).max(10),
+    /** tech-spec 2.5: only what was really checked; layer says who checked it (D-02). */
+    rules: z
+      .array(
+        z
+          .object({
+            id: z.string().min(1).max(64),
+            label: z.string().min(1).max(64),
+            layer: z.enum(['chain', 'server']),
+            status: z.literal('passed'),
+          })
+          .strict(),
+      )
+      .max(10),
     explorerUrl: z.url(),
   })
   .strict();

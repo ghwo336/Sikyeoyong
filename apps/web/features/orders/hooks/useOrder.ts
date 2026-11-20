@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
-import { orderStep } from '../status';
+import { shouldPoll } from '../status';
 
 export const orderKey = (orderId: string) => ['order', orderId] as const;
 
@@ -12,10 +12,7 @@ export function useOrder(orderId: string) {
     queryKey: orderKey(orderId),
     queryFn: async () => (await api.getOrder(orderId)).order,
     // Until it arrives (or stops) the screens follow it: cooking, on the road, arrived.
-    refetchInterval: (q) =>
-      orderStep(q.state.data?.status ?? 'quoted') === null || q.state.data?.status === 'delivered'
-        ? false
-        : 2_000,
+    refetchInterval: (q) => (shouldPoll(q.state.data?.status) ? 2_000 : false),
   });
 }
 

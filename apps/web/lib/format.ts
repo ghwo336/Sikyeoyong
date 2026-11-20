@@ -1,3 +1,5 @@
+import { formatOkrw } from '@sikyeoyong/shared';
+
 // Display strings the ui components take ready-made ("25분", "오늘 오후 12:28").
 // Times are shown in KST whatever the device time zone is.
 
@@ -26,4 +28,12 @@ const KST_TIME = new Intl.DateTimeFormat('ko-KR', {
 export function chatStamp(unixMs: number, now: number): string {
   const time = KST_TIME.format(unixMs);
   return KST_DAY.format(unixMs) === KST_DAY.format(now) ? `오늘 ${time}` : time;
+}
+
+/**
+ * "9,000 / 10,000원" for Receipt's small rows (OrderSummary details take text). The unit shows
+ * once, after the max, the same rule as ui Amount `unit={false}` with AmountRatio.
+ */
+export function amountRatioText(value: bigint, max: bigint): string {
+  return `${formatOkrw(value).replace(/원$/, '')} / ${formatOkrw(max)}`;
 }

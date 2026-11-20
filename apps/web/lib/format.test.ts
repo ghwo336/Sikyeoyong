@@ -1,5 +1,6 @@
+import { okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
-import { chatStamp, minutes, routeLine } from './format';
+import { amountRatioText, chatStamp, minutes, routeLine } from './format';
 
 // Written by hand: 2026-11-19 03:28 UTC is 12:28 KST on the 19th.
 const NOON_KST = Date.UTC(2026, 10, 19, 3, 28);
@@ -22,5 +23,12 @@ describe('format', () => {
     expect(routeLine('마루국밥 본점', '회사(역삼동)', 25)).toBe(
       '마루국밥 본점에서 회사(역삼동)로, 25분쯤',
     );
+  });
+});
+
+describe('amountRatioText', () => {
+  it('shows the unit once, after the max', () => {
+    expect(amountRatioText(okrwToAokrw(9_000n), okrwToAokrw(10_000n))).toBe('9,000 / 10,000원');
+    expect(amountRatioText(0n, okrwToAokrw(60_000n))).toBe('0 / 60,000원');
   });
 });

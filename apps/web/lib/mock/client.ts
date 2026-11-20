@@ -157,11 +157,16 @@ const COOK_MS = 20_000;
 const RIDE_MS = 20_000;
 /** The rules a paid order passed, as the Receipt design lists them. */
 const RECEIPT_RULES = [
-  'AGENT_OKRW_TRANSFER_LIMIT_POLICY',
-  'PERIODIC_VOLUME_POLICY',
-  '전역 KYC 한도',
-  'EAS_POLICY (가게 등록 때)',
-];
+  {
+    id: 'transfer-limit',
+    label: 'AGENT_OKRW_TRANSFER_LIMIT_POLICY',
+    layer: 'chain',
+    status: 'passed',
+  },
+  { id: 'periodic-volume', label: 'PERIODIC_VOLUME_POLICY', layer: 'chain', status: 'passed' },
+  { id: 'kyc', label: '전역 KYC 한도', layer: 'chain', status: 'passed' },
+  { id: 'eas', label: 'EAS_POLICY (가게 등록 때)', layer: 'chain', status: 'passed' },
+] as const;
 
 /** A made-up 32-byte hash for the mock receipt (stable per menu, clearly not a real payment). */
 function mockTxHash(menuId: string): string {
@@ -201,7 +206,7 @@ function orderAt(rec: RecommendationCard, paidAt: number, now: number): OrderVie
     txHash,
     receipt: {
       agentId: '1042',
-      rules: RECEIPT_RULES,
+      rules: [...RECEIPT_RULES],
       explorerUrl: explorerTxUrl(NETWORKS['maroo-testnet'], txHash),
     },
   };

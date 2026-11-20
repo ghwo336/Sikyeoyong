@@ -1,11 +1,13 @@
 'use client';
 
 import { parseAokrw } from '@sikyeoyong/shared';
-import { AmountRatio, ListRow, OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
+import { OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
+import { amountRatioText } from '../../../lib/format';
 import { useRouter } from 'next/navigation';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useDetailsMode } from '../../wallet/hooks/useDetailsMode';
 import { useOrder } from '../hooks/useOrder';
+import { orderStep } from '../status';
 
 /**
  * Receipt.dc.html: the order lines, how it was paid, the limits it fit, and 자세히 보기
@@ -22,7 +24,22 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
     router.push(`/orders/${encodeURIComponent(orderId)}`);
   };
   if (!order) return <TopBar title="주문 상세" onBack={back} />;
+  // A stopped or unpaid order has no receipt: it must never look paid (status.ts).
+  if (orderStep(order.status) === null) return <TopBar title="주문 상세" onBack={back} />;
   const amount = parseAokrw(order.amount);
+  const rows = [{ label: '결제 수단', value: '용이 용돈' }];
+  if (budget) {
+    rows.push(
+      {
+        label: '한 번에 쓸 수 있는 돈',
+        value: amountRatioText(amount, parseAokrw(budget.perOrderLimit)),
+      },
+      {
+        label: '30일 한도',
+        value: amountRatioText(parseAokrw(budget.chainUsed), parseAokrw(budget.chainCap)),
+      },
+    );
+  }
   return (
     <>
       <TopBar title="주문 상세" onBack={back} />
@@ -35,39 +52,13 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
         }))}
         request={order.request}
         total={amount}
-        details={[{ label: '결제 수단', value: '용이 용돈' }]}
+        details={rows}
       />
-      {budget && (
-        <>
-          <ListRow
-            label="한 번에 쓸 수 있는 돈"
-            value={
-              <AmountRatio
-                value={amount}
-                max={parseAokrw(budget.perOrderLimit)}
-                size="meter"
-                valueUnit={false}
-              />
-            }
-          />
-          <ListRow
-            label="30일 한도"
-            value={
-              <AmountRatio
-                value={parseAokrw(budget.chainUsed)}
-                max={parseAokrw(budget.chainCap)}
-                size="meter"
-                valueUnit={false}
-              />
-            }
-          />
-        </>
-      )}
       {order.txHash !== undefined && order.receipt !== undefined && (
         <ReceiptDetails
           txHash={order.txHash}
           agentId={order.receipt.agentId}
-          rules={order.receipt.rules}
+          rules={order.receipt.rules.map((r) => r.label)}
           explorerUrl={order.receipt.explorerUrl}
           defaultOpen={details}
         />

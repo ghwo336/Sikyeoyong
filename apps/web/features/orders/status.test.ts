@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OrderStatus } from '../../lib/api';
 import { BUDGET_TONE } from '../budget/tone';
-import { orderStep } from './status';
+import { orderStep, shouldPoll } from './status';
 
 describe('orderStep', () => {
   it('maps orders on their way to the four Done steps', () => {
@@ -32,5 +32,26 @@ describe('BUDGET_TONE', () => {
       warn90: 'warn',
       over100: 'over',
     });
+  });
+});
+
+describe('shouldPoll (the status screens ask again only while the order is on its way)', () => {
+  it.each([
+    ['submitting', true],
+    ['paid', true],
+    ['preparing', true],
+    ['delivering', true],
+    ['delivered', false],
+    ['quoted', false],
+    ['pending_approval', false],
+    ['failed', false],
+    ['cancelled', false],
+    ['refunded', false],
+  ] as const)('%s: %s', (status: OrderStatus, expected) => {
+    expect(shouldPoll(status)).toBe(expected);
+  });
+
+  it('not loaded yet: no polling', () => {
+    expect(shouldPoll(undefined)).toBe(false);
   });
 });

@@ -207,10 +207,24 @@ describe('order schemas (tech-spec 3.2)', () => {
     expect(zOrderIdParam.safeParse('').success).toBe(false);
     const receipt = {
       agentId: '1042',
-      rules: ['AGENT_OKRW_TRANSFER_LIMIT_POLICY', 'PERIODIC_VOLUME_POLICY'],
+      rules: [
+        {
+          id: 'transfer-limit',
+          label: 'AGENT_OKRW_TRANSFER_LIMIT_POLICY',
+          layer: 'chain',
+          status: 'passed',
+        },
+        { id: 'level', label: '레벨 한도', layer: 'server', status: 'passed' },
+      ],
       explorerUrl: 'https://explorer.example/tx/0x1',
     };
     expect(zOrderView.parse({ ...paid, receipt })).toEqual({ ...paid, receipt });
+    expect(
+      zOrderView.safeParse({
+        ...paid,
+        receipt: { ...receipt, rules: [{ id: 'x', label: 'x', layer: 'maybe', status: 'passed' }] },
+      }).success,
+    ).toBe(false);
     expect(zOrderView.safeParse({ ...paid, receipt: { ...receipt, agentId: '0x1' } }).success).toBe(
       false,
     );

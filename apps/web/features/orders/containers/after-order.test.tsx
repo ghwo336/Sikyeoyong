@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,7 +39,15 @@ const base: OrderView = {
   txHash: `0x${'ab'.repeat(32)}`,
   receipt: {
     agentId: '1042',
-    rules: ['AGENT_OKRW_TRANSFER_LIMIT_POLICY', 'PERIODIC_VOLUME_POLICY'],
+    rules: [
+      {
+        id: 'transfer-limit',
+        label: 'AGENT_OKRW_TRANSFER_LIMIT_POLICY',
+        layer: 'chain',
+        status: 'passed',
+      },
+      { id: 'periodic', label: 'PERIODIC_VOLUME_POLICY', layer: 'chain', status: 'passed' },
+    ],
     explorerUrl: 'https://explorer.example/tx/0xab',
   },
 };
@@ -71,6 +79,17 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     expect(await screen.findByRole('img', { name: /경로 지도/ })).toBeInTheDocument();
   });
 
+  it('while cooking it asks again every 2 seconds; once arrived it stops', async () => {
+    getOrder.mockResolvedValue({ order: base });
+    wrap(<OrderStatusContainer orderId="o1" />);
+    await waitFor(
+      () => {
+        expect(getOrder.mock.calls.length).toBeGreaterThanOrEqual(2);
+      },
+      { timeout: 3_500 },
+    );
+  });
+
   it('arrived asks how it was, keeps the pick, and opens the receipt', async () => {
     getOrder.mockResolvedValue({
       order: { ...base, status: 'delivered', remainingMin: 0, dragonLine: '문 앞에 왔어용.' },
@@ -93,4 +112,26 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     wrap(<ReceiptContainer orderId="o1" />);
     expect(await screen.findByText('PERIODIC_VOLUME_POLICY')).toBeInTheDocument();
   });
+
+  it('the receipt rows sit in the order card as small rows (dt, dd), values as text', async () => {
+    getOrder.mockResolvedValue({ order: { ...base, status: 'delivered' } });
+    wrap(<ReceiptContainer orderId="o1" />);
+    const method = await screen.findByText('결제 수단');
+    expect(method.tagName).toBe('DT');
+    expect(method.nextElementSibling?.textContent).toBe('용이 용돈');
+    const perOrder = await screen.findByText('한 번에 쓸 수 있는 돈');
+    expect(perOrder.tagName).toBe('DT');
+    expect(perOrder.nextElementSibling?.textContent).toBe('9,000 / 10,000원');
+  });
+
+  it.each(['failed', 'cancelled', 'refunded'] as const)(
+    'a %s order shows no receipt: nothing looks paid',
+    async (status) => {
+      getOrder.mockResolvedValue({ order: { ...base, status } });
+      wrap(<ReceiptContainer orderId="o1" />);
+      expect(await screen.findByRole('heading', { name: '주문 상세' })).toBeInTheDocument();
+      expect(screen.queryByText('결제 수단')).toBeNull();
+      expect(screen.queryByText('9,000원')).toBeNull();
+    },
+  );
 });
