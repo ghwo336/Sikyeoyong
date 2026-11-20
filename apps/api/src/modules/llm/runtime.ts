@@ -124,7 +124,7 @@ function swapRefusal(
   if (swapped === null) return null;
   return errorResult(
     call.id,
-    `사용자가 말한 메뉴(${swapped.join(', ')})가 주문에 없다. 사용자가 고른 메뉴를 몰래 바꾸지 않는다. 그 메뉴로 다시 place_order를 부르면 한도는 서버가 가린다. 더 싼 걸 권하고 싶으면 recommend_merchants로 카드를 띄우고 사용자가 고르게 한다.`,
+    `사용자가 말한 메뉴(${swapped.join(', ')})가 주문에 없다. 사용자가 고른 메뉴를 몰래 바꾸지 않는다. 사용자가 고른 메뉴로 다시 주문하거나, 바꾸려면 먼저 사용자에게 묻는다. 한도는 서버가 가린다. 권하고 싶은 다른 메뉴는 recommend_merchants로 카드를 띄워 사용자가 고르게 한다.`,
   );
 }
 

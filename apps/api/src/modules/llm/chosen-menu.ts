@@ -23,13 +23,19 @@ export class MenuCatalog {
     }
   }
 
-  /** Menu ids the user named in this message. */
+  /** Menu ids the user named in this message, leaving out names said with a refusal. */
   named(userText: string): string[] {
     const said = squash(userText);
     const out: string[] = [];
     for (const [id, name] of this.names) {
       const n = squash(name);
-      if (n.length >= 2 && said.includes(n)) out.push(id);
+      if (n.length < 2) continue;
+      for (let at = said.indexOf(n); at !== -1; at = said.indexOf(n, at + 1)) {
+        if (!refused(said, at, at + n.length)) {
+          out.push(id);
+          break;
+        }
+      }
     }
     return out;
   }
@@ -44,4 +50,15 @@ export class MenuCatalog {
 
 function squash(s: string): string {
   return s.replace(/\s+/g, '');
+}
+
+/** Words that turn a menu name into one the user does NOT want ("X 말고", "X 대신", "싫어 X"). */
+const REFUSAL = /말고|말구|빼고|대신|제외|싫|아니|안먹|안 ?시/;
+
+function refused(said: string, from: number, to: number): boolean {
+  // Before the name only a plain "don't want" counts; "A 말고 B" must not refuse B.
+  return (
+    REFUSAL.test(said.slice(to, to + 6)) ||
+    /싫|아니|제외/.test(said.slice(Math.max(0, from - 3), from))
+  );
 }

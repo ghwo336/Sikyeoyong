@@ -596,6 +596,48 @@ describe('a named menu is never swapped silently (browser QA 3)', () => {
     expect(used.place_order).toHaveBeenCalledTimes(1);
   });
 
+  const FRY = [
+    { blocks: [tool('get_menu', { merchantId: 'm-bam' })] },
+    {
+      blocks: [
+        tool('place_order', { merchantId: 'm-bam', items: [{ menuId: 'menu-fry', qty: 1 }] }),
+      ],
+    },
+    { blocks: [{ text: '됐어용.' }] },
+  ];
+  const ran = async (text: string) => {
+    let count = 0;
+    const h = handlers({
+      get_menu: vi.fn(() => Promise.resolve(MENUS)),
+      place_order: () => {
+        count += 1;
+        return Promise.resolve({ orderId: 'o-1' });
+      },
+    });
+    await run(FRY, text, h);
+    return count;
+  };
+
+  it.each([
+    '국물떡볶이 말고 다른 걸로 시켜 줘',
+    '국물 떡볶이 대신 뭐 없어',
+    '국물떡볶이 빼고 시켜 줘',
+    '국물떡볶이 싫어 튀김세트 줘',
+  ])('lets an order through when the user refused the named menu: %s', async (text) => {
+    expect(await ran(text)).toBe(1);
+  });
+
+  it.each(['국물떡 볶이 줘', '튀김세트 말고 국물떡볶이로', '국물떡볶이로', '국물떡볶이 시켜 줘'])(
+    'still refuses a swap away from the named menu: %s',
+    async (text) => {
+      expect(await ran(text)).toBe(0);
+    },
+  );
+
+  it('allows any menu when the user named none', async () => {
+    expect(await ran('시켜 줘')).toBe(1);
+  });
+
   it('tells the model never to substitute without asking', () => {
     expect(SYSTEM_PROMPT).toContain('몰래');
     expect(SYSTEM_PROMPT).toContain('사용자가 고르게');
