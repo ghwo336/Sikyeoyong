@@ -234,7 +234,11 @@ AI가 새 지갑을 만들어 돈을 옮기는 것을 막는 3겹:
 - 갈아 끼우는 자리: 소유자 서명을 하나의 포트 뒤에 둔다. `OwnerAuthority` (가칭) 인터페이스에 `setTransferLimit`, `pause`, `unpause`, `drain`, `fund`, `bind`를 두고, 구현은 `CustodialOwner`(운영자 키, 지금)와 `PouchOwner`(사용자 서명 요청, 나중) 두 개. 환경 변수 `OWNER_MODE=custodial|pouch`. 주문, 대화, 화면 코드는 어느 쪽인지 몰라야 한다. DB `agents.owner_address`는 지금도 칸을 두고 운영자 주소를 넣는다.
 - 화면은 지금부터 비수탁 흐름으로 만든다: 한도 변경 확정은 이미 "버튼 + 재인증"(D-17, D-21)이라, 나중에 재인증이 파우치 서명으로 바뀌어도 화면은 그대로다.
 - 이유: 파우치 임베디드 SDK는 만드는 중이고 아직 배포 전이다 (11/20 호재 님 확인). 테스트넷 데모는 실제 가치가 없어 수탁이어도 당장 문제가 없지만, 레퍼런스 디앱이 수탁 구조를 굳히면 "체인이 지킨다"는 메시지가 약해지고 따라 만드는 개발자가 수탁형 서비스를 복사하게 된다. 메인넷이나 실사용 전에는 반드시 비수탁으로 바꾼다 (특금법상 가상자산 보관·관리 해당 여부는 법무 확인 필요).
-- 영향: auth.md, security.md, payment.md(소유자 포트), infra.md(OWNER_MODE), Q-30.
+- 밝히는 문구 (2026-11-20, 호재 님 결정):
+  - 사용자 화면: 용이 지갑 화면 맨 아래에 작게 한 줄. "체험판이에요. 용이 용돈은 지금 시켜용이 대신 맡아 두고 있어요." 블록체인 말이 없다 (D-17). 사실을 밝히는 한 줄이라 D-17이 금지한 안심 문구나 설명 문단으로 보지 않는다.
+  - 데모 "자세히 보기"와 README: 그대로 정확하게. "테스트넷 데모. 에이전트 키와 소유자 권한은 운영자 서버가 보관한다(수탁, D-24). 파우치 임베디드 SDK가 나오면 사용자 지갑이 소유자가 된다."
+  - `OWNER_MODE=pouch`가 되면 화면 문구는 저절로 빠진다. 서버가 `GET /me`의 `custodial`(OWNER_MODE가 custodial일 때만 true)로 알려 주고, 화면은 이 값만 보고 그린다. 화면은 모드 이름을 모른다.
+- 영향: auth.md, security.md, payment.md(소유자 포트), infra.md(OWNER_MODE), Q-30, README, ui/wallet `CustodyNote`, `MeView.custodial`.
 
 ## D-25 결제 경로는 B로 간다 (2026-11-20, 스파이크 S1 결과, 호재 님 동의)
 - 사실: MAWS MCP `transfer.send`의 입력은 `agentId`, `to`, `amount`, `clientToken`뿐이고 calldata 칸이 없다 (확인, 도구 스키마, 호재 님 승인으로 스키마만 읽음). 그래서 MCP로는 `SikyeoyongOrders.placeOrder`를 부를 수 없다. 경로 A는 MCP로는 불가.
