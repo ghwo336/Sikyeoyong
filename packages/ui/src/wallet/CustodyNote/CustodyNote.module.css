@@ -1,0 +1,9 @@
+/* D-24: one quiet line under the wallet screen, smaller and lighter than the body. */
+.note {
+  margin: 0;
+  padding: var(--space-4) 0;
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
