@@ -256,3 +256,17 @@ children: []
   - payment.md "confirm 코드" 절의 "아직" 목록 (TransferLimit 재기록 1회, float 상한, 시작 시 submitting 재확인, 인덱서, 데모 우회, 영수증).
   - 추천 `needsApproval`에 `NEW_MERCHANT` 반영, 최근 주문 읽기 포트.
   - 웹 목을 실제 API로, 지갑 화면 조립(`CustodyNote`), UX 다듬기(D-23 토스급).
+
+### 2026-11-20 주문 흐름 마무리: confirm, place_order, 승인 API, request_owner_approval
+- 한 일 (모두 검증 PASS):
+  - confirm 결제 (207fc32, 수정 9a6f4ce): 표시 뒤 던짐은 submitting, 30일 재검사, 승인 롤백, attempt는 SQL에서.
+  - place_order 연결 (26c6230, 수정 e77c10c): OrdersService 창구, 모델에는 표시 말만, 승인 필요면 APPROVAL_REQUIRED.
+  - 승인과 거절 API (28b8834, 수정 ccdfe8a): owner-approvals 모듈, 결정과 주문 효과를 한 트랜잭션에, 레벨 승인은 /agents/me/level 몫.
+  - request_owner_approval (6f66ee5, 수정 0dcf4c6): 살아 있는 대기 승인에 메시지, 승인이 필요 없으면 아무것도 만들지 않음.
+- 막힌 것: Q-35 결정 대기.
+- 후속 (검증 MINOR):
+  - 충전 멱등성(요청 ID, 충전 제출 표시)은 실제 경로 연결 전 필수 (payment.md "confirm 코드" 아직).
+  - 같은 가게 60초 쿨다운, 한 메시지 안 대기 승인 중복, 살아 있는 quoted 재사용 검토.
+  - 승인 응답 카드 만들기에서 체인 RPC가 실패하면 500 (돈 문제 없음), 1분 만료 주기 작업, GET /approvals에 메시지.
+  - txHash 대문자 정규화, 결제 지갑과 row.agentId 대조, 경로별 제출 표시(nonce, maws_request_id), 새 견적 전 이전 orderRef 확인.
+- 다음 할 일: 레벨 상향 API(`POST /agents/me/level`, 재인증, TransferLimit 확정 뒤 승인 주문 quoted), `GET /orders/:id`, 경로 B 실제 연결, 웹 목을 실제 API로, 지갑 화면 조립(CustodyNote), UX 다듬기(D-23).
