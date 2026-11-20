@@ -30,6 +30,12 @@ export function credentialFrom(req: Request): Credential | null {
     const m = /^bearer (.*)$/i.exec(auth);
     if (m) return { token: m[1] ?? '', viaCookie: false };
   }
+  const token = sessionCookieFrom(req);
+  return token === null ? null : { token, viaCookie: true };
+}
+
+/** The one sid cookie of the request, or null when there is none or more than one. */
+export function sessionCookieFrom(req: Request): string | null {
   const cookie = req.headers.cookie;
   if (typeof cookie !== 'string') return null;
   const values: string[] = [];
@@ -37,9 +43,7 @@ export function credentialFrom(req: Request): Credential | null {
     const [name, ...rest] = part.trim().split('=');
     if (name === SESSION_COOKIE) values.push(rest.join('='));
   }
-  return values.length === 1 && values[0] !== undefined
-    ? { token: values[0], viaCookie: true }
-    : null;
+  return values.length === 1 && values[0] !== undefined ? values[0] : null;
 }
 
 /**

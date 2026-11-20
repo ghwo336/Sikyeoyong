@@ -36,6 +36,20 @@ export class AuthService {
     return { userId: row.userId, issuedAt: row.expiresAt - SESSION_TTL_MS };
   }
 
+  /**
+   * A login: the browser's previous session (if any) ends and a new one starts, so one
+   * browser never holds two live sids (auth.md). Every login route uses this.
+   */
+  rotate(
+    previous: string | null,
+    userId: string,
+    platform: SessionPlatform,
+    nowMs: number = Date.now(),
+  ): string {
+    if (previous !== null) this.revoke(previous, nowMs);
+    return this.issue(userId, platform, nowMs);
+  }
+
   revoke(token: string, nowMs: number = Date.now()): void {
     this.repo.revoke(hashToken(token), nowMs);
   }

@@ -186,4 +186,10 @@ describe('loadConfig in production', () => {
     );
     expect(r.variables).toEqual(['DEMO_BYPASS_SERVER_LIMIT (production에서 금지)']);
   });
+
+  it('refuses DEV_LOGIN=true, and only that, when everything else is in place', () => {
+    const r = codeAndVars(() => loadConfig({ ...PROD, DEV_LOGIN: 'true' }));
+    expect(r.variables).toEqual(['DEV_LOGIN (production에서 금지)']);
+    expect(loadConfig({ ...PROD, DEV_LOGIN: 'false' }).devLogin).toBe(false);
+  });
 });

@@ -7,7 +7,7 @@ import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
 import { APP_CONFIG } from '../../config/config.module.js';
-import { loadConfig } from '../../config/env.js';
+import { type AppConfig, loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
@@ -22,11 +22,13 @@ afterEach(async () => {
   }
 });
 
-async function setup(env: Record<string, string>) {
+async function setup(env: Record<string, string>, override: Partial<AppConfig> = {}) {
   const h = openDb(':memory:');
   runMigrations(h.db);
   const moduleRef = await Test.createTestingModule({ imports: [UsersModule] })
-    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))
+    .useMocker((t) =>
+      t === DB ? h : t === APP_CONFIG ? { ...loadConfig(env), ...override } : undefined,
+    )
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
@@ -41,9 +43,9 @@ async function setup(env: Record<string, string>) {
 
 const sidOf = (res: request.Response): string => {
   const raw = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const c = raw?.find((x) => x.startsWith('sid='));
-  if (c === undefined) throw new Error('no sid cookie');
-  return c;
+  const sids = raw?.filter((x) => x.startsWith('sid=')) ?? [];
+  expect(sids).toHaveLength(1); // exactly one sid cookie
+  return sids[0] ?? '';
 };
 
 describe('POST /api/auth/dev-login (local development only)', () => {
@@ -55,8 +57,21 @@ describe('POST /api/auth/dev-login (local development only)', () => {
     expect(h.db.select().from(users).all()).toHaveLength(0);
   });
 
-  it('production refuses to boot with DEV_LOGIN=true', () => {
-    expect(() => loadConfig({ NODE_ENV: 'production', DEV_LOGIN: 'true' })).toThrow();
+  it('is 404 before any body check when off: a bad body tells nothing', async () => {
+    const { http } = await setup({});
+    const res = await http()
+      .post('/api/auth/dev-login')
+      .set('X-Requested-With', 'fetch')
+      .send({ key: 'BAD!' });
+    expect(res.status).toBe(404);
+  });
+
+  it('stays shut in production even if the config said yes (the guard checks again)', async () => {
+    const { h, login } = await setup({ DEV_LOGIN: 'true' }, { nodeEnv: 'production' });
+    const res = await login('hojae');
+    expect(res.status).toBe(404);
+    expect(res.headers['set-cookie']).toBeUndefined();
+    expect(h.db.select().from(users).all()).toHaveLength(0);
   });
 
   it('makes dev-<key> with the default budget and sets an HttpOnly sid on Path=/ that /me accepts', async () => {
@@ -65,7 +80,7 @@ describe('POST /api/auth/dev-login (local development only)', () => {
     expect(res.status).toBe(204);
     const cookie = sidOf(res);
     expect(cookie).toMatch(/HttpOnly/);
-    expect(cookie).toMatch(/Path=\//);
+    expect(cookie).toMatch(/;\s*Path=\/(;|$)/); // Path=/ exactly, not /api
     expect(cookie).toMatch(/SameSite=Lax/);
     expect(h.db.select().from(users).where(eq(users.id, 'dev-hojae')).get()).toMatchObject({
       nickname: 'hojae',
@@ -89,6 +104,9 @@ describe('POST /api/auth/dev-login (local development only)', () => {
     const { http, login } = await setup({ DEV_LOGIN: 'true' });
     expect((await http().post('/api/auth/dev-login').send({ key: 'hojae' })).status).toBe(403);
     expect((await login('Hojae!')).status).toBe(400);
+    expect((await login('Hojae')).status).toBe(400); // lowercase only
+    expect((await login('')).status).toBe(400); // no bare "dev-" id
     expect((await login('x'.repeat(25))).status).toBe(400);
+    expect((await login('x'.repeat(24))).status).toBe(204);
   });
 });
