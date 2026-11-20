@@ -75,7 +75,7 @@ export class LlmToolHandlers {
       Promise.reject(new AppError('INTERNAL', { reason: 'tool not ready', tool }));
     return {
       get_budget: (ctx: SessionContext) => this.budget.getView(ctx.userId).then(budgetForModel),
-      get_context: (ctx: SessionContext) => Promise.resolve().then(() => this.context(ctx, now())),
+      get_context: (ctx: SessionContext) => this.context(ctx, now()),
       get_order_history: notReady('get_order_history'),
       recommend_merchants: (ctx, input) =>
         this.recommender.recommend(ctx.userId, input, now()).then(recommendReply),
@@ -119,9 +119,10 @@ export class LlmToolHandlers {
     };
   }
 
-  private context(ctx: SessionContext, nowMs: number) {
+  private async context(ctx: SessionContext, nowMs: number) {
     // The same weather source as recommend_merchants, so the two never disagree.
-    const weather = this.weather.current();
+    // null = provider down: said as unknown, never a made-up sky (the prompt only trusts tool results).
+    const weather = await this.weather.current(nowMs);
     return {
       // Year included so the model never guesses it; 24-hour clock avoids 오전/오후 slips.
       nowKst: kstTime(nowMs),

@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { okrwToAokrw, zBudgetView, zChatEvent } from '@sikyeoyong/shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../../config/config.module.js';
 import { loadConfig } from '../../../config/env.js';
 import { type DbHandle, openDb } from '../../../db/client.js';
@@ -53,7 +53,9 @@ async function setupWithDb(env: Record<string, string> = {}) {
       .run();
   }
   const moduleRef = await Test.createTestingModule({ imports: [LlmModule] })
-    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))
+    .useMocker((t) =>
+      t === DB ? h : t === APP_CONFIG ? loadConfig({ WEATHER_STATIC: '비', ...env }) : undefined,
+    )
     .compile();
   return { handlers: moduleRef.get(LlmToolHandlers).build(() => NOW), h };
 }
@@ -206,11 +208,11 @@ describe('LlmToolHandlers (agent-runtime.md)', () => {
     expect(await handlers.get_context({ userId: 'u2' }, {})).toMatchObject({ dong: null });
   });
 
-  it('refuses a weather provider that is not wired instead of making weather up', async () => {
+  it('get_context says weather is null, not a made-up sky, when the provider is down', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const handlers = await setup({ WEATHER_PROVIDER: 'openmeteo' });
-    await expect(handlers.get_context({ userId: 'u1' }, {})).rejects.toMatchObject({
-      code: 'INTERNAL',
-    });
+    expect(await handlers.get_context({ userId: 'u1' }, {})).toMatchObject({ weather: null });
+    vi.unstubAllGlobals();
   });
 
   it('runs through the runtime: data wrapped, unbuilt tools come back as errors, nothing is ordered', async () => {

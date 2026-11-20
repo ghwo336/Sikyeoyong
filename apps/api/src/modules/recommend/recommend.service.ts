@@ -13,7 +13,7 @@ export type { ApprovalReason, EmptyReason, EmptyResult, Recommendation } from '.
 export { WeatherService } from './weather.service.js';
 
 /** The ranked menus plus the weather they were ranked for. */
-export type RecommendResult = RankResult & { readonly weather: string };
+export type RecommendResult = RankResult & { readonly weather: string | null };
 
 export interface RecommendInput {
   /** What the user said they want, as the model passed it on (a search word, not an order). */
@@ -44,14 +44,15 @@ export class RecommendService {
     nowMs: number = Date.now(),
   ): Promise<RecommendResult> {
     const view = await this.budget.getView(userId);
-    const weather = this.weather.current();
+    const weather = await this.weather.current(nowMs);
     const recentOrders = this.recent
       .since(userId, nowMs - HABIT_WINDOW_MS)
       .map((o) => ({ ...o, category: this.merchants.categoryOf(o.merchantId) }));
     const result = rank({
       catalog: this.merchants.catalog(nowMs),
       nowMs,
-      weather,
+      // Unknown weather ranks as no signal (no tag matches the empty word).
+      weather: weather ?? '',
       ...(input.craving === undefined ? {} : { craving: input.craving }),
       ...(input.maxPriceAokrw === undefined ? {} : { maxPriceAokrw: input.maxPriceAokrw }),
       perOrderLimitAokrw: parseAokrw(view.perOrderLimit),

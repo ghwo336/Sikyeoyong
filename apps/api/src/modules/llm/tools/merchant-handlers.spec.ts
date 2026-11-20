@@ -53,7 +53,9 @@ async function setup(seed: (h: DbHandle) => void = () => undefined) {
   insertMenu(h.db, 'x-anything', 'm-fake', 1_000n, { name: '무엇이든' });
   seed(h);
   const moduleRef = await Test.createTestingModule({ imports: [LlmModule] })
-    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig({}) : undefined))
+    .useMocker((t) =>
+      t === DB ? h : t === APP_CONFIG ? loadConfig({ WEATHER_STATIC: '비' }) : undefined,
+    )
     .compile();
   return moduleRef.get(LlmToolHandlers).build(() => NOW);
 }

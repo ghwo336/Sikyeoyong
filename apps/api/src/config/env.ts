@@ -19,6 +19,12 @@ const int = (min: number, max = Number.MAX_SAFE_INTEGER) =>
     .regex(/^\d+$/, 'integer')
     .transform(Number)
     .refine((n) => Number.isSafeInteger(n) && n >= min && n <= max, `${min}..${max}`);
+const coord = (min: number, max: number) =>
+  z
+    .string()
+    .regex(/^-?\d+(\.\d+)?$/, 'decimal')
+    .transform(Number)
+    .refine((n) => n >= min && n <= max, `${min}..${max}`);
 const optionalText = z
   .string()
   .optional()
@@ -64,6 +70,11 @@ const schema = z.object({
   /** D-26: live tokens (input, output and cache) per KST day; at it the dragon says it is tired for the rest of the day. 0 = no cap. */
   LLM_DAILY_TOKEN_CAP: int(0).default(1_000_000),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
+  /** static provider's one word (a demo scene sets 비 on purpose); blank = 맑음. */
+  WEATHER_STATIC: optionalText,
+  /** openmeteo location, default 서울 강남. */
+  WEATHER_LAT: coord(-90, 90).default(37.4979),
+  WEATHER_LON: coord(-180, 180).default(127.0276),
   /** D-16: kakao now; mock when Maroo switches to Mock KYC. */
   VERIFY_MODE: z.enum(['kakao', 'mock']).default('kakao'),
   MAROO_RPC_URL: optionalText,
@@ -133,6 +144,9 @@ export interface AppConfig {
     /** D-26: live tokens per KST day before the tired line; 0 = no cap. */
     readonly dailyTokenCap: number;
     readonly weatherProvider: 'static' | 'openmeteo';
+    readonly weatherStatic: string;
+    readonly weatherLat: number;
+    readonly weatherLon: number;
   };
   /** Secrets stay here and are never logged (security.md). */
   readonly secrets: {
@@ -258,6 +272,9 @@ export function loadConfig(raw: RawEnv): AppConfig {
       mode: env.LLM_MODE,
       dailyTokenCap: env.LLM_DAILY_TOKEN_CAP,
       weatherProvider: env.WEATHER_PROVIDER,
+      weatherStatic: env.WEATHER_STATIC ?? '맑음',
+      weatherLat: env.WEATHER_LAT,
+      weatherLon: env.WEATHER_LON,
     },
     secrets: {
       sessionSecret: env.SESSION_SECRET,

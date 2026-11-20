@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { okrwToAokrw } from '@sikyeoyong/shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -37,7 +37,9 @@ async function setup(recent: RecentOrdersReader, env: Record<string, string> = {
   insertMenu(h.db, 'x-anything', 'm-fake', 1_000n, { name: '무엇이든', tags: ['국물'] });
   insertMenu(h.db, 'x-off', 'm-off', 1_000n, { name: '쉬는 국밥', tags: ['국물'] });
   const moduleRef = await Test.createTestingModule({ imports: [RecommendModule] })
-    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))
+    .useMocker((t) =>
+      t === DB ? h : t === APP_CONFIG ? loadConfig({ WEATHER_STATIC: '비', ...env }) : undefined,
+    )
     .overrideProvider(RECENT_ORDERS)
     .useValue(recent)
     .compile();
@@ -95,8 +97,12 @@ describe('RecommendService', () => {
     expect(r).toMatchObject({ items: [], frozen: true });
   });
 
-  it('refuses a weather provider that is not wired instead of making weather up', async () => {
+  it('ranks with no weather signal when the provider is down, and says unknown', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const svc = await setup(none, { WEATHER_PROVIDER: 'openmeteo' });
-    await expect(svc.recommend('u1', {}, NOW)).rejects.toMatchObject({ code: 'INTERNAL' });
+    const r = await svc.recommend('u1', {}, NOW);
+    expect(r.weather).toBeNull();
+    expect(r.items.every((x) => x.fits.weather === 0)).toBe(true);
+    vi.unstubAllGlobals();
   });
 });

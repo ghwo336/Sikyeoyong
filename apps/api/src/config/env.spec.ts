@@ -46,6 +46,8 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
       confirmations: 1,
     });
     expect(c.llm.weatherProvider).toBe('static');
+    expect(c.llm.weatherStatic).toBe('맑음');
+    expect([c.llm.weatherLat, c.llm.weatherLon]).toEqual([37.4979, 127.0276]);
     expect(c.llm.effort).toBe('low'); // D-26
     expect(c.llm.mode).toBe('live');
     expect(c.llm.dailyTokenCap).toBe(1_000_000);
