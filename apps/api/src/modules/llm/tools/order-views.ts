@@ -41,12 +41,12 @@ export function placeOrderReply(outcome: QuoteOutcome): unknown {
 
 /**
  * request_owner_approval's answer. The reason is the server's (the model's guess is
- * not trusted); nothing is paid or approved here. If the server's rules need no
- * owner after all, the confirm card comes up as for place_order.
+ * not trusted); nothing is paid or approved here, and no card is shown. If the
+ * server's rules need no owner, no order is made: the model is told to use place_order.
  */
 export function approvalRequestReply(outcome: ApprovalRequestOutcome): unknown {
-  if (outcome.kind === 'quoted') {
-    return placeOrderReply({ result: outcome.result, approvalReason: null });
+  if (outcome.kind === 'not_needed') {
+    return { status: 'NO_APPROVAL_NEEDED', paid: false, next: 'place_order로 확인 카드를 띄운다' };
   }
   return { status: 'APPROVAL_REQUESTED', paid: false, reason: outcome.reason };
 }

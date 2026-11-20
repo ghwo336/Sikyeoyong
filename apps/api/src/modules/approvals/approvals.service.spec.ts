@@ -239,3 +239,56 @@ describe('ApprovalsService.decide (the decision and its effect in one transactio
     expect(s.isMerchantAllowed('u1', 'm1')).toBe(false);
   });
 });
+
+describe('ApprovalsService.attachMessage (request_owner_approval)', () => {
+  it('adds the message and keeps the amount and store the approval was opened with', () => {
+    const { h, s, insertOrder } = setup();
+    const amount = won(45_000n);
+    s.openWithOrder(
+      {
+        userId: 'u1',
+        agentId: 'a1',
+        orderId: '01',
+        reason: 'OVER_PERSONAL_BUDGET',
+        payload: { merchantId: 'm1', amount },
+      },
+      () => insertOrder('01', 'pending_approval'),
+      NOW,
+    );
+    expect(s.attachMessage('01', '이번만 부탁해용', NOW)).toBe('OVER_PERSONAL_BUDGET');
+    expect(JSON.parse(h.db.select().from(approvals).get()?.payloadJson ?? '{}')).toEqual({
+      merchantId: 'm1',
+      amount: '45000000000000000000000',
+      message: '이번만 부탁해용',
+    });
+    // Approved after the message: the budget allowance still matches this amount.
+    h.db.update(approvals).set({ status: 'approved' }).run();
+    expect(s.budgetApprovedFor('01', amount)).toBe(true);
+  });
+
+  it('caps a message at 200 characters even if a caller passes more', () => {
+    const { h, s, insertOrder } = setup();
+    s.openWithOrder(
+      { userId: 'u1', agentId: 'a1', orderId: '01', reason: 'NEW_MERCHANT' },
+      () => insertOrder('01', 'pending_approval'),
+      NOW,
+    );
+    s.attachMessage('01', '가'.repeat(201), NOW);
+    const p = JSON.parse(h.db.select().from(approvals).get()?.payloadJson ?? '{}') as {
+      message: string;
+    };
+    expect(p.message).toHaveLength(200);
+  });
+
+  it('answers null for an expired or a missing approval and writes nothing', () => {
+    const { h, s, insertOrder } = setup();
+    s.openWithOrder(
+      { userId: 'u1', agentId: 'a1', orderId: '01', reason: 'NEW_MERCHANT' },
+      () => insertOrder('01', 'pending_approval'),
+      NOW,
+    );
+    expect(s.attachMessage('01', '늦음', NOW + 600_000)).toBeNull();
+    expect(s.attachMessage('02', '없음', NOW)).toBeNull();
+    expect(h.db.select().from(approvals).get()?.payloadJson).toBe('{}');
+  });
+});

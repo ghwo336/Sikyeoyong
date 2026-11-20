@@ -138,6 +138,7 @@ export class ApprovalsService {
     if (row === undefined || row.expiresAt <= nowMs) return null;
     if (message !== undefined) {
       const payload = parsePayload(row.payloadJson);
+      // The tool schema already caps it at 200; the cap is repeated so no other caller can store more.
       this.repo.setPayload(row.id, JSON.stringify({ ...payload, message: message.slice(0, 200) }));
     }
     return row.reason;

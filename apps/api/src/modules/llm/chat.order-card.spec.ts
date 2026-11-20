@@ -229,7 +229,7 @@ describe('request_owner_approval: asks the owner, never approves or pays', () =>
         .all()
         .map((o) => o.status)
         .sort(),
-    ).toEqual(['pending_approval', 'quoted']);
+    ).toEqual(['pending_approval']); // nothing new: the server needs no owner for one bowl
   });
 
   it('with nothing waiting, it makes the order the place_order way (pending with the message)', async () => {
@@ -246,7 +246,7 @@ describe('request_owner_approval: asks the owner, never approves or pays', () =>
     expect(toolResult(ask)).toContain('APPROVAL_REQUESTED');
   });
 
-  it('if the server needs no owner after all, the confirm card comes up instead', async () => {
+  it("if the server needs no owner, it makes no order and no card: ordering is place_order's", async () => {
     const ask = askTurns({
       reason: 'OVER_LEVEL_LIMIT',
       merchantId: 'm-gukbap',
@@ -254,10 +254,54 @@ describe('request_owner_approval: asks the owner, never approves or pays', () =>
     });
     const { h, post } = await setup(ask);
     const list = events((await post('u1', '허락받아 줘', 'c1')).text);
-    expect(list.some((e) => e.type === 'order_confirm')).toBe(true);
-    expect(h.db.select().from(orders).get()?.status).toBe('quoted');
+    expect(list.some((e) => e.type === 'order_confirm')).toBe(false);
+    expect(h.db.select().from(orders).all()).toHaveLength(0);
     expect(h.db.select().from(approvals).all()).toHaveLength(0);
-    expect(toolResult(ask)).toContain('CONFIRM_CARD_SHOWN');
+    expect(toolResult(ask)).toContain('NO_APPROVAL_NEEDED');
+  });
+
+  it('place_order then request_owner_approval in one message still makes one order and one card', async () => {
+    const both = new ScriptedProvider([
+      {
+        blocks: [
+          {
+            tool: 'place_order',
+            input: { merchantId: 'm-gukbap', items: [{ menuId: 'x-dwaeji', qty: 1 }] },
+          },
+        ],
+      },
+      {
+        blocks: [
+          {
+            tool: 'request_owner_approval',
+            input: {
+              reason: 'OVER_LEVEL_LIMIT',
+              merchantId: 'm-gukbap',
+              items: [{ menuId: 'x-dwaeji', qty: 1 }],
+            },
+          },
+        ],
+      },
+      { blocks: [{ text: '카드 확인해 주세용.' }] },
+    ]);
+    const { h, post } = await setup(both);
+    const list = events((await post('u1', '시켜 줘', 'c1')).text);
+    expect(list.filter((e) => e.type === 'order_confirm')).toHaveLength(1);
+    expect(
+      h.db
+        .select()
+        .from(orders)
+        .all()
+        .map((o) => o.status),
+    ).toEqual(['quoted']);
+  });
+
+  it('items without their store are refused (VALIDATION_FAILED), nothing written', async () => {
+    const ask = askTurns({ reason: 'OVER_LEVEL_LIMIT', items: [{ menuId: 'x-dwaeji', qty: 2 }] });
+    const { h, post } = await setup(ask);
+    await post('u1', '허락받아 줘', 'c1');
+    expect(toolResult(ask)).toContain('VALIDATION_FAILED');
+    expect(h.db.select().from(orders).all()).toHaveLength(0);
   });
 
   it("with no store and nothing waiting it is NOT_FOUND; another user's approval is not touched", async () => {

@@ -71,6 +71,31 @@ export class OrderQuoteService {
     req: QuoteRequest,
     nowMs: number = Date.now(),
   ): Promise<QuoteOutcome> {
+    const outcome = await this.write(userId, req, nowMs, false);
+    if (outcome === null) throw new AppError('INTERNAL', { reason: 'quote not written' });
+    return outcome;
+  }
+
+  /**
+   * request_owner_approval with nothing waiting: write the order only if the server's
+   * rules ask the owner (a pending_approval order and its approval). If they do not,
+   * write nothing and return null; ordering stays place_order's job (one order per
+   * message, tech-spec 3.3).
+   */
+  createIfApprovalNeeded(
+    userId: string,
+    req: QuoteRequest,
+    nowMs: number,
+  ): Promise<QuoteOutcome | null> {
+    return this.write(userId, req, nowMs, true);
+  }
+
+  private async write(
+    userId: string,
+    req: QuoteRequest,
+    nowMs: number,
+    approvalOnly: boolean,
+  ): Promise<QuoteOutcome | null> {
     if (req.clientOrderId !== null) {
       const before = this.repo.findByClientOrderId(userId, req.clientOrderId);
       if (before !== undefined) return resent(await this.replay(userId, before, req, nowMs));
@@ -87,6 +112,7 @@ export class OrderQuoteService {
       throw new AppError('INTERNAL', { reason: 'not an approval code' });
     }
 
+    if (approvalOnly && reason === null) return null;
     const orderId = uuidv7(nowMs);
     const row = {
       id: orderId,

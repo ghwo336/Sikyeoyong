@@ -21,8 +21,6 @@ import type { ToolCard, ToolName } from './tools/index.js';
 export const CARD_OF_TOOL: Partial<Record<ToolName, ChatEvent['type']>> = {
   recommend_merchants: 'recommendations',
   place_order: 'order_confirm',
-  // When no approval is needed after all, the request comes back as the confirm card.
-  request_owner_approval: 'order_confirm',
 };
 
 /** Said when the model refuses (D-22 left fallbacks to the server). Plain text, no claims. */
