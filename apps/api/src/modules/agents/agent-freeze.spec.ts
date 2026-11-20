@@ -60,7 +60,7 @@ async function setup(env: Record<string, string> = {}) {
 }
 
 describe('POST /api/agents/me/freeze and /unfreeze (user-flow 17)', () => {
-  it('freeze: the server flag and the chain pause; a leaked key cannot pay on chain', async () => {
+  it('freeze: the server flag and the chain pause; a leaked key cannot place an order through the contract (float sent outside the order path is not covered, D-06)', async () => {
     const { press, row, payment, wallet } = await setup();
     const res = await press('freeze');
     expect(res.status).toBe(200);
@@ -101,6 +101,40 @@ describe('POST /api/agents/me/freeze and /unfreeze (user-flow 17)', () => {
     expect(ok).toMatchObject({ frozen: false });
     expect(ok.txHashes).toHaveLength(1);
     expect(row()?.status).toBe('ACTIVE');
+  });
+
+  it('a freeze pressed while a slow unfreeze is running wins: frozen on server and chain', async () => {
+    const { press, row, payment, wallet } = await setup();
+    await press('freeze');
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const realUnfreeze = payment.unfreeze.bind(payment);
+    vi.spyOn(payment, 'unfreeze').mockImplementationOnce(async (a) => {
+      await gate; // the chain unpause takes a while
+      return realUnfreeze(a);
+    });
+    // supertest sends on then(): start each request now, in this order.
+    const waking = press('unfreeze').then((r) => r);
+    await new Promise((r) => setTimeout(r, 20));
+    const freezing = press('freeze').then((r) => r);
+    await new Promise((r) => setTimeout(r, 20));
+    release();
+    const [woke, froze] = await Promise.all([waking, freezing]);
+    expect(zFreezeResult.parse(woke.body).frozen).toBe(false);
+    expect(zFreezeResult.parse(froze.body).frozen).toBe(true);
+    // The last press was freeze, so the dragon ends frozen everywhere.
+    expect(row()?.status).toBe('FROZEN');
+    await payment.setTransferLimit(wallet, 10n ** 22n);
+    await payment.fund(wallet, 10n ** 22n);
+    const paid = await payment.pay({
+      agent: { agentRowId: 'a-u1', address: wallet.address, ownerAddress: wallet.ownerAddress },
+      merchantOnchainId: 1n,
+      amount: 1n,
+      orderRef: `0x${'2'.repeat(64)}`,
+    });
+    expect(paid).toMatchObject({ ok: false, error: { code: 'CHAIN_AGENT_PAUSED' } });
   });
 
   it('unfreeze on an active dragon sends nothing', async () => {

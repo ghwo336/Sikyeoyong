@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
 import { PaymentModule } from '../payment/payment.module.js';
 import { AgentFreezeService } from './agent-freeze.service.js';
+import { AgentLock } from './agent-lock.service.js';
 import { AgentLevelService } from './agent-level.service.js';
 import { AgentRefundService } from './agent-refund.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
@@ -21,6 +22,7 @@ import { AgentsService } from './agents.service.js';
     AgentLevelService,
     AgentFreezeService,
     AgentRefundService,
+    AgentLock,
   ],
   exports: [AgentsService],
 })
