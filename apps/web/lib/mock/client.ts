@@ -415,11 +415,21 @@ export const mockApi: ApiClient = {
     later(null).then(() => {
       if (!session.signedIn) throw new AppError('UNAUTHENTICATED', { reason: 'mock: signed out' });
       const now = Date.now();
-      const orders = [...paid.values()]
+      const done = [...paid.values()]
         .sort((a, b) => b.at - a.at)
-        .slice(0, ORDER_LIST_MAX)
         .map((p) => orderAt(p.rec, p.at, now));
-      return { orders };
+      // Orders waiting for the owner are listed too, like the server (first, as the newest).
+      const waits = [...waiting.entries()]
+        .filter(([id]) => !paid.has(id))
+        .map(([, w]) => ({
+          ...orderAt(w, now, now),
+          status: 'pending_approval' as const,
+          dragonLine: '주인님 허락을 기다려용.',
+          dragonMood: 'worried' as const,
+          txHash: undefined,
+          receipt: undefined,
+        }));
+      return { orders: [...waits, ...done].slice(0, ORDER_LIST_MAX) };
     }),
   // PATCH /agents/:id (D-32): only the look changes; the name, money and limits stay.
   patchAgent: (agentId, { dragonSpecies }) =>

@@ -1,3 +1,4 @@
+import { parseAokrw } from '@sikyeoyong/shared';
 import type { OrderView } from '../../lib/api';
 import { ORDER_STEPS, orderStep } from './status';
 
@@ -39,14 +40,22 @@ export function activeCard(order: OrderView): {
 }
 
 /**
- * Where an order in the history opens: its status screen while on its way, the limit screen
- * while it waits for the owner, its receipt once it arrived or stopped.
+ * Where an order in the history opens, or undefined when it has no screen to open: its status
+ * screen while on its way, its receipt once it arrived, the limit screen while it waits only
+ * because it is over the per-order limit (perOrderLimit, aokrw). A stopped order (failed,
+ * cancelled, refunded) and one waiting for another reason (a new store, the 30-day limit) have
+ * no screen yet, so the row is not pressable (browser QA: they opened blank screens).
  */
-export function orderHref(order: OrderView): string {
+export function orderHref(order: OrderView, perOrderLimit: bigint | undefined): string | undefined {
   const step = orderStep(order.status);
   const id = encodeURIComponent(order.id);
-  if (order.status === 'pending_approval') return `/limit/${id}`;
-  return step !== null && step < ORDER_STEPS.length ? `/orders/${id}` : `/orders/${id}/receipt`;
+  if (order.status === 'pending_approval') {
+    return perOrderLimit !== undefined && parseAokrw(order.amount) > perOrderLimit
+      ? `/limit/${id}`
+      : undefined;
+  }
+  if (order.status === 'delivered') return `/orders/${id}/receipt`;
+  return step !== null && step < ORDER_STEPS.length ? `/orders/${id}` : undefined;
 }
 
 /** The history row's name: the menu, and where it is while on its way or why it stopped. */
@@ -55,7 +64,9 @@ export function historyLabel(order: OrderView): string {
   const step = orderStep(order.status);
   if (step !== null && step < ORDER_STEPS.length) return `${menu}, ${ORDER_STEPS[step - 1] ?? ''}`;
   if (order.status === 'pending_approval') return `${menu}, 허락 기다리는 중`;
-  if (order.status === 'failed' || order.status === 'cancelled') return `${menu}, 취소`;
+  // failed: payment refused or the owner said no or did not answer (D-19); nothing was spent.
+  if (order.status === 'failed') return `${menu}, 멈춤`;
+  if (order.status === 'cancelled') return `${menu}, 취소`;
   if (order.status === 'refunded') return `${menu}, 환불`;
   return menu;
 }

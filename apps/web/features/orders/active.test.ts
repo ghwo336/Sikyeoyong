@@ -1,3 +1,4 @@
+import { okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import type { OrderStatus, OrderView } from '../../lib/api';
 import { activeCard, activeOrder, historyLabel, menuLabel, orderHref } from './active';
@@ -59,18 +60,31 @@ describe('activeCard: the words of Main.dc.html per step', () => {
 });
 
 describe('orderHref and historyLabel (주문 내역)', () => {
-  it('on its way opens the status screen, waiting opens the limit screen, the rest the receipt', () => {
-    expect(orderHref(view('o 1', 'preparing'))).toBe('/orders/o%201');
-    expect(orderHref(view('o1', 'pending_approval'))).toBe('/limit/o1');
-    for (const s of ['delivered', 'failed', 'cancelled', 'refunded'] as const) {
-      expect(orderHref(view('o1', s))).toBe('/orders/o1/receipt');
+  it('on its way opens the status screen, arrived the receipt, over the limit the limit screen', () => {
+    const limit = okrwToAokrw(10_000n);
+    expect(orderHref(view('o 1', 'preparing'), limit)).toBe('/orders/o%201');
+    expect(orderHref(view('o1', 'delivered'), limit)).toBe('/orders/o1/receipt');
+    const over = { ...view('o1', 'pending_approval'), amount: okrwToAokrw(12_000n).toString() };
+    expect(orderHref(over, limit)).toBe('/limit/o1');
+  });
+
+  it('stopped orders and waits that are not over the limit open nothing (browser QA)', () => {
+    const limit = okrwToAokrw(10_000n);
+    for (const s of ['failed', 'cancelled', 'refunded', 'quoted'] as const) {
+      expect(orderHref(view('o1', s), limit)).toBeUndefined();
     }
+    const within = { ...view('o1', 'pending_approval'), amount: okrwToAokrw(9_000n).toString() };
+    expect(orderHref(within, limit)).toBeUndefined();
+    // Without the limit known it cannot tell, so it does not send to the limit screen.
+    const over = { ...view('o1', 'pending_approval'), amount: okrwToAokrw(12_000n).toString() };
+    expect(orderHref(over, undefined)).toBeUndefined();
   });
 
   it('says where it is while on its way or why it stopped, and only the menu once arrived', () => {
     expect(historyLabel(view('a', 'delivering'))).toBe('돼지국밥, 배달 중');
     expect(historyLabel(view('a', 'pending_approval'))).toBe('돼지국밥, 허락 기다리는 중');
-    expect(historyLabel(view('a', 'failed'))).toBe('돼지국밥, 취소');
+    expect(historyLabel(view('a', 'failed'))).toBe('돼지국밥, 멈춤');
+    expect(historyLabel(view('a', 'cancelled'))).toBe('돼지국밥, 취소');
     expect(historyLabel(view('a', 'refunded'))).toBe('돼지국밥, 환불');
     expect(historyLabel(view('a', 'delivered'))).toBe('돼지국밥');
   });

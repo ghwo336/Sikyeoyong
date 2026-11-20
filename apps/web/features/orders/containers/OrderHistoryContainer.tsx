@@ -12,7 +12,8 @@ import { useOrders } from '../hooks/useOrders';
 /**
  * 주문 내역 (Main.dc.html receipt button). The design has no list screen yet, so this is the
  * simplest list from existing parts (web.md "ui에 없는 것"): one ListRow per order, newest
- * first, the amount on the right. A press opens its status screen or its receipt.
+ * first, the amount on the right. A press opens its status screen, its receipt or the limit
+ * screen; rows with nothing to open are not pressable (orderHref).
  */
 export function OrderHistoryContainer() {
   const router = useRouter();
@@ -43,18 +44,28 @@ export function OrderHistoryContainer() {
         ) : null
       ) : (
         <>
-          {list.map((o) => (
-            <ListRow
-              key={o.id}
-              label={historyLabel(o)}
-              value={formatOkrw(parseAokrw(o.amount))}
-              trailing="chevron"
-              onPress={() => {
-                qc.setQueryData(orderKey(o.id), o);
-                router.push(orderHref(o));
-              }}
-            />
-          ))}
+          {list.map((o) => {
+            const href = orderHref(o, me ? parseAokrw(me.perOrderLimit) : undefined);
+            // A row with no screen to open is not pressable and has no arrow.
+            return href === undefined ? (
+              <ListRow
+                key={o.id}
+                label={historyLabel(o)}
+                value={formatOkrw(parseAokrw(o.amount))}
+              />
+            ) : (
+              <ListRow
+                key={o.id}
+                label={historyLabel(o)}
+                value={formatOkrw(parseAokrw(o.amount))}
+                trailing="chevron"
+                onPress={() => {
+                  qc.setQueryData(orderKey(o.id), o);
+                  router.push(href);
+                }}
+              />
+            );
+          })}
         </>
       )}
     </>
