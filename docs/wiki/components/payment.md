@@ -89,8 +89,8 @@ interface PaymentProvider {
   - 레벨 초과(`OVER_LEVEL_LIMIT`)는 여기서 승인하지 않는다 (400). 레벨을 올리는 일은 TransferLimit 기록과 재인증이 필요해서 `POST /agents/me/level { level, approvalId }`가 맡는다 (tech-spec 3.2 두 행이 겹치던 것을 이렇게 나눴다).
   - 만료(10분)는 지금 읽을 때(`GET /approvals`)와 결정할 때 처리한다. 아직: 1분 주기 작업(`@nestjs/schedule` 도입), 레벨 상향 API.
 - **승인된 사유는 그 주문의 confirm에서 다시 막지 않는다**: confirm 사전 검사는 그 주문(`order_id`)에 승인된 approvals 행이 있으면 그 행의 사유만큼 통과시킨다. 레벨 상향과 가게 허용은 조치 자체가 남아서 다시 걸리지 않는다. 예산 초과(`SERVER_BUDGET_OVER`)는 남는 조치가 없으므로, 승인된 행의 금액이 주문 금액과 같을 때만 예산 검사를 건너뛴다. 금액이 다르면(가격이 바뀌어 새 견적) 그 승인은 쓰지 않는다. 그래서 승인 뒤 confirm이 같은 사유로 다시 `pending_approval`에 빠지는 반복이 없다.
-- 주인이 승인하면 서버는 필요한 조치(레벨 상향, 가게 허용)를 한다. 레벨 상향이면 TransferLimit 갱신 트랜잭션이 **확정된 뒤에** 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 다시 보낸다 (먼저 되돌리면 다시 revert되고 가스가 든다). `POST /api/approvals/:id/approve`는 결제하지 않는다. **결제는 다시 confirm에서만** 한다.
-- 거절, 또는 만료(approvals 모듈의 주기 작업이 1분마다 `expires_at`이 지난 대기 승인을 `expired`로 바꾼다)면 묶인 주문은 재시도 불가 `failed` (`error_code`는 원래 사유).
+- 주인이 승인하면 서버는 필요한 조치를 한다. 가게 허용과 예산 초과는 `POST /api/approvals/:id/approve`가, 레벨 상향은 `POST /api/agents/me/level { level, approvalId }`가 한다(재인증과 TransferLimit 기록이 필요해서, D-21). 레벨 상향이면 TransferLimit 갱신 트랜잭션이 **확정된 뒤에** 주문을 `pending_approval`에서 `quoted`로 되돌리고 확인 카드를 다시 보낸다 (먼저 되돌리면 다시 revert되고 가스가 든다). `POST /api/approvals/:id/approve`는 결제하지 않는다. **결제는 다시 confirm에서만** 한다.
+- 거절, 또는 만료(10분. 지금은 `GET /approvals`와 결정 때 처리한다. 1분 주기 작업은 예정)면 묶인 주문은 재시도 불가 `failed` (`error_code`는 승인 사유의 서버 코드: `SERVER_OVER_LEVEL`, `SERVER_NEW_MERCHANT`, `SERVER_BUDGET_OVER`. 체인이 막은 `CHAIN_AGENT_LIMIT`로 연 승인도 `SERVER_OVER_LEVEL`로 남는다).
 
 ### confirm 코드 (2026-11-20)
 - `modules/orders/order-confirm.service.ts`의 `OrderConfirmService.confirm`. 상태 전이는 모두 `OrdersRepository.transition(id, from, set)`(조건부 UPDATE 하나, 이겼는지 돌려줌)로만 한다. 실패 분류 표는 `modules/orders/failure-class.ts`(이 절의 표와 같다). 서버 규칙(30일 상한, 레벨, 처음 보는 가게, 예산)은 견적과 confirm이 `OrderRules` 하나를 같이 쓴다.

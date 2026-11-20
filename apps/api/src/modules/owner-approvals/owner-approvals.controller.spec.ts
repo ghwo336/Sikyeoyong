@@ -267,4 +267,55 @@ describe('POST /api/approvals/:id/reject', () => {
       h.db.select().from(allowedMerchants).where(eq(allowedMerchants.merchantId, 'm2')).all(),
     ).toHaveLength(0);
   });
+
+  it('another user cannot reject it: 404, the approval stays pending and the order waiting', async () => {
+    const { h, post, pending, order } = await setup();
+    const p = await pending('m2', 'x-guksu');
+    expect((await post('u2', `/api/approvals/${p.approvalId}/reject`)).status).toBe(404);
+    expect(h.db.select().from(approvals).get()?.status).toBe('pending');
+    expect(order(p.orderId)?.status).toBe('pending_approval');
+  });
+
+  it('another user listing cannot expire this user approvals', async () => {
+    const { h, get, pending, order } = await setup();
+    const p = await pending('m2', 'x-guksu');
+    vi.setSystemTime(NOW + 600_000);
+    await get('u2', '/api/approvals');
+    expect(h.db.select().from(approvals).get()?.status).toBe('pending');
+    expect(order(p.orderId)?.status).toBe('pending_approval');
+  });
+
+  it('rejecting a budget overrun keeps SERVER_BUDGET_OVER on the order', async () => {
+    const { h, post, pending, order } = await setup();
+    h.db
+      .insert(orders)
+      .values({
+        id: 'p0',
+        orderRef: `0x${'1'.repeat(64)}`,
+        userId: 'u1',
+        agentId: 'a-u1',
+        merchantId: 'm1',
+        amountAokrw: W('292000'),
+        itemsJson: '[]',
+        status: 'paid',
+        createdAt: NOW,
+        updatedAt: NOW,
+      })
+      .run();
+    const p = await pending('m1', 'x-dwaeji');
+    await post('u1', `/api/approvals/${p.approvalId}/reject`);
+    expect(order(p.orderId)).toMatchObject({ status: 'failed', errorCode: 'SERVER_BUDGET_OVER' });
+  });
+
+  it('if the order already left pending_approval, approving writes nothing (one transaction)', async () => {
+    const { h, post, pending } = await setup();
+    const p = await pending('m2', 'x-guksu');
+    h.db.update(orders).set({ status: 'cancelled' }).where(eq(orders.id, p.orderId)).run();
+    const res = await post('u1', `/api/approvals/${p.approvalId}/approve`);
+    expect(res.status).toBe(500);
+    expect(h.db.select().from(approvals).get()?.status).toBe('pending');
+    expect(
+      h.db.select().from(allowedMerchants).where(eq(allowedMerchants.merchantId, 'm2')).all(),
+    ).toHaveLength(0);
+  });
 });

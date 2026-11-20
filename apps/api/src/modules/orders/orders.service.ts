@@ -29,12 +29,15 @@ export class OrdersService {
     return this.quotes.create(userId, req, nowMs);
   }
 
-  /** Owner approved: back to quoted (sync, inside the approvals transaction). Never pays. */
+  /**
+   * owner-approvals only: the owner approved, back to quoted (sync, inside the approvals
+   * transaction). Never pays; confirm checks the rules again.
+   */
   reopenApproved(orderId: string, nowMs: number): void {
     this.approvalEffects.reopen(orderId, nowMs);
   }
 
-  /** Owner rejected or the approval expired: the order fails for good (sync, same transaction). */
+  /** owner-approvals only: rejected or expired, the order fails for good (sync, same transaction). */
   failUnapproved(orderId: string, code: AppErrorCode, nowMs: number): void {
     this.approvalEffects.fail(orderId, code, nowMs);
   }

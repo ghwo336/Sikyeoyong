@@ -181,3 +181,61 @@ describe('ApprovalsService helpers', () => {
     expect(s.isMerchantAllowed('u2', 'm1')).toBe(false);
   });
 });
+
+describe('ApprovalsService.decide (the decision and its effect in one transaction)', () => {
+  const open = (
+    s: ApprovalsService,
+    insertOrder: (id: string, st: 'quoted' | 'pending_approval') => unknown,
+  ) =>
+    s.openWithOrder(
+      { userId: 'u1', agentId: 'a1', orderId: '01', reason: 'NEW_MERCHANT' },
+      () => insertOrder('01', 'pending_approval'),
+      NOW,
+    );
+
+  it('decides once: a second decision on the same row writes nothing and says false', () => {
+    const { h, s, insertOrder } = setup();
+    const { approvalId } = open(s, insertOrder);
+    const row = h.db.select().from(approvals).where(eq(approvals.id, approvalId)).get();
+    if (row === undefined) throw new Error('no row');
+    expect(s.decide(row, 'approved', () => undefined, NOW, { allowMerchant: 'm1' })).toBe(true);
+    expect(s.decide(row, 'rejected', () => undefined, NOW)).toBe(false);
+    expect(h.db.select().from(approvals).get()).toMatchObject({
+      status: 'approved',
+      decidedAt: NOW,
+    });
+    expect(s.isMerchantAllowed('u1', 'm1')).toBe(true);
+  });
+
+  it('if the effect throws, the decision and the allowance are rolled back', () => {
+    const { h, s, insertOrder } = setup();
+    const { approvalId } = open(s, insertOrder);
+    const row = h.db.select().from(approvals).where(eq(approvals.id, approvalId)).get();
+    if (row === undefined) throw new Error('no row');
+    expect(() =>
+      s.decide(
+        row,
+        'approved',
+        () => {
+          throw new Error('order moved');
+        },
+        NOW,
+        { allowMerchant: 'm1' },
+      ),
+    ).toThrow('order moved');
+    expect(h.db.select().from(approvals).get()?.status).toBe('pending');
+    expect(s.isMerchantAllowed('u1', 'm1')).toBe(false);
+  });
+
+  it('refuses an async effect (its writes would land outside the transaction)', () => {
+    const { h, s, insertOrder } = setup();
+    const { approvalId } = open(s, insertOrder);
+    const row = h.db.select().from(approvals).where(eq(approvals.id, approvalId)).get();
+    if (row === undefined) throw new Error('no row');
+    expect(() => s.decide(row, 'approved', async () => {}, NOW, { allowMerchant: 'm1' })).toThrow(
+      expect.objectContaining({ code: 'INTERNAL' }),
+    );
+    expect(h.db.select().from(approvals).get()?.status).toBe('pending');
+    expect(s.isMerchantAllowed('u1', 'm1')).toBe(false);
+  });
+});
