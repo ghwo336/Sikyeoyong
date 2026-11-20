@@ -37,6 +37,9 @@ class MemoryStore {
   find(address: string) {
     return this.rows.get(address);
   }
+  findByAgentId(agentId: string) {
+    return [...this.rows.values()].find((r) => r.agentId === agentId);
+  }
   link(address: string, agentId: string) {
     const row = this.rows.get(address);
     if (row) this.rows.set(address, { ...row, agentId });
@@ -130,11 +133,15 @@ function setup(opts: { balance?: bigint } = {}) {
     }),
     sendTransaction: vi.fn(),
   };
+  const walletAccounts: string[] = [];
   const signWalletAuthorization = vi.fn(() => Promise.resolve('0x1234' as Hex));
   const provider = new ManagedEoaPaymentProvider({
     publicClient: pub,
     operatorWallet,
-    walletFor: () => agentWallet,
+    walletFor: (account) => {
+      walletAccounts.push(account.address.toLowerCase());
+      return agentWallet;
+    },
     signWalletAuthorization,
     vault,
     config: {
@@ -172,6 +179,7 @@ function setup(opts: { balance?: bigint } = {}) {
     agent,
     req,
     signWalletAuthorization,
+    walletAccounts,
   };
 }
 
@@ -219,6 +227,42 @@ describe('createAgent', () => {
     await expect(t.provider.createAgent({ userId: 'u', name: 'n' })).rejects.toBeInstanceOf(
       AppError,
     );
+  });
+
+  it('a retry after a partway failure reuses the saved key and succeeds for the same row', async () => {
+    const t = setup();
+    // first attempt: the register tx emits no Registered event, so it fails after the key is saved
+    t.receipts.set(hash(1001), success(1001, []));
+    await expect(
+      t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-5' }),
+    ).rejects.toThrow();
+    const rowsAfterFail = t.store.rows.size;
+    const orphan = t.vault.addressFor('row-5');
+    expect(orphan).toBeDefined();
+    t.receipts.set(hash(1002), success(1002, [registeredLog(88n)]));
+    t.receipts.set(hash(1003), success(1003));
+    const wallet = await t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-5' });
+    expect(wallet.address).toBe(orphan);
+    expect(wallet.onchainAgentId).toBe(88n);
+    expect(t.store.rows.size).toBe(rowsAfterFail);
+  });
+
+  it('a funded orphan key is kept and recorded, never replaced by a new one', async () => {
+    const t = setup({ balance: W(500n) });
+    t.receipts.set(hash(1001), success(1001, []));
+    await expect(
+      t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-6' }),
+    ).rejects.toThrow();
+    const orphan = t.vault.addressFor('row-6') as Hex;
+    expect(await t.provider.balanceOf(orphan)).toBe(W(500n));
+    t.receipts.set(hash(1002), success(1002, [registeredLog(90n)]));
+    t.receipts.set(hash(1003), success(1003));
+    const wallet = await t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-6' });
+    expect(wallet.address).toBe(orphan);
+    // the key still opens, so the funds stay reachable (drain works on it)
+    await expect(
+      t.vault.withAccount(orphan, (a) => Promise.resolve(a.address.toLowerCase())),
+    ).resolves.toBe(orphan);
   });
 
   it('fails without a Registered event, and when the register tx reverts', async () => {

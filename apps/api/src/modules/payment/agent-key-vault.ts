@@ -17,6 +17,7 @@ export interface SealedKeyRow {
 export interface AgentKeyStore {
   insert(row: SealedKeyRow): void;
   find(address: string): SealedKeyRow | undefined;
+  findByAgentId(agentId: string): SealedKeyRow | undefined;
   /** Links a saved key to its agents row. */
   link(address: string, agentId: string): void;
 }
@@ -53,6 +54,14 @@ export class AgentKeyVault {
     if (masterKey.length !== 32) {
       throw new AppError('INTERNAL', { reason: 'vault master key must be 32 bytes' });
     }
+  }
+
+  /**
+   * The key already saved for this agents row, if any. A retried hatch reuses it: the key may hold
+   * funds, so it is never replaced or dropped.
+   */
+  addressFor(agentId: string): Hex | undefined {
+    return this.store.findByAgentId(agentId)?.address as Hex | undefined;
   }
 
   /** Makes a new key, saves it sealed, returns only the address. */

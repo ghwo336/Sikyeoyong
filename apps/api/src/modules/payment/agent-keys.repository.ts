@@ -18,6 +18,10 @@ export class AgentKeysRepository implements AgentKeyStore {
     return this.handle.db.select().from(agentKeys).where(eq(agentKeys.address, address)).get();
   }
 
+  findByAgentId(agentId: string): SealedKeyRow | undefined {
+    return this.handle.db.select().from(agentKeys).where(eq(agentKeys.agentId, agentId)).get();
+  }
+
   link(address: string, agentId: string): void {
     this.handle.db.update(agentKeys).set({ agentId }).where(eq(agentKeys.address, address)).run();
   }

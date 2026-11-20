@@ -14,6 +14,9 @@ class MemoryStore {
   find(address: string) {
     return this.rows.get(address);
   }
+  findByAgentId(agentId: string) {
+    return [...this.rows.values()].find((r) => r.agentId === agentId);
+  }
   link(address: string, agentId: string) {
     const row = this.rows.get(address);
     if (row) this.rows.set(address, { ...row, agentId });
@@ -109,6 +112,14 @@ describe('AgentKeyVault', () => {
     expect(() => new AgentKeyVault(Buffer.alloc(16), new MemoryStore())).toThrow(AppError);
   });
 
+  it('finds the key saved for an agents row, and nothing for another', () => {
+    const store = new MemoryStore();
+    const vault = new AgentKeyVault(master(), store);
+    const a = vault.create('row-1');
+    expect(vault.addressFor('row-1')).toBe(a);
+    expect(vault.addressFor('row-2')).toBeUndefined();
+  });
+
   it('is case insensitive on the address and links an agent row', () => {
     const store = new MemoryStore();
     const vault = new AgentKeyVault(master(), store);
@@ -133,6 +144,23 @@ describe('AgentKeysRepository (agent_keys, migration 0010)', () => {
       expect(() => {
         repo.insert(row);
       }).toThrow();
+    } finally {
+      handle.close();
+    }
+  });
+
+  it('a second key for the same agents row is refused by the table (so callers reuse)', () => {
+    const handle = openDb(':memory:');
+    try {
+      runMigrations(handle.db);
+      const repo = new AgentKeysRepository(handle);
+      const vault = new AgentKeyVault(randomBytes(32), repo);
+      (handle.db as unknown as { $client: { pragma(s: string): void } }).$client.pragma(
+        'foreign_keys = OFF',
+      );
+      const a = vault.create('row-1');
+      expect(vault.addressFor('row-1')).toBe(a);
+      expect(() => vault.create('row-1')).toThrow();
     } finally {
       handle.close();
     }

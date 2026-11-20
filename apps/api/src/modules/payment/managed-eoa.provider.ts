@@ -181,8 +181,11 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
     readonly name: string;
     readonly agentRowId?: string;
   }): Promise<AgentWallet> {
-    // The key is saved before anything goes on chain: a crash later never loses a key.
-    const address = this.d.vault.create(input.agentRowId);
+    // The key is saved before anything goes on chain: a crash later never loses a key. A retry of
+    // the same agents row reuses its saved key (it may already hold funds), never a second one.
+    const address =
+      (input.agentRowId === undefined ? undefined : this.d.vault.addressFor(input.agentRowId)) ??
+      this.d.vault.create(input.agentRowId);
     const { registry } = this.d.config;
     const { receipt } = await this.operatorTx(
       {

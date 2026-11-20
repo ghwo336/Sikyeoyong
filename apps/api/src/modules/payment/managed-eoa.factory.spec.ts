@@ -9,6 +9,7 @@ import { createPaymentProvider } from './payment.service.js';
 const store = {
   insert: (_row: SealedKeyRow) => undefined,
   find: (_address: string) => undefined,
+  findByAgentId: (_agentId: string) => undefined,
   link: (_address: string, _agentId: string) => undefined,
 };
 const KEY = `0x${randomBytes(32).toString('hex')}`;
