@@ -82,6 +82,7 @@
 | `pnpm contracts:deploy:testnet` | PCL 프록시로 테스트넷 배포 |
 | `pnpm policy:apply` | `packages/shared/src/config/policy.ts` 값(프로필별)을 컨트랙트 범위 정책에 반영. `changeContractPolicies`는 전체 교체라 현재 값을 읽고 전체를 다시 쓴다 |
 | `pnpm merchants:balances` / `pnpm merchants:sweep --to <주소> (--merchant <키>\|--all) [--dry-run]` | 가게 지갑 잔액 보기 / 주인이 손으로 돌리는 가게 지갑 회수 (D-33). 키는 `seed/.keys`(보관본 `archive/`), LLM과 서버 API에는 없다 |
+| `pnpm e2e:path-b --run` (또는 `--drain <에이전트 주소>`) | 경로 B 실제 테스트넷 결제 전 과정을 주인이 손으로 돌린다 (실제 트랜잭션, 일회용 에이전트, 끝에 회수). `OPERATOR_KEY`, `AGENT_KEY_ENCRYPTION_KEY` 필요, 키는 출력하지 않는다 |
 | `pnpm demo:rehearse` | 데모 장면 1~8 자동 리허설 |
 | `pnpm check:dash` | em dash, en dash 검사 |
 | `pnpm verify` | 커밋 게이트 (`python3 -I scripts/verify.py`, 커밋 전에는 `pnpm verify --precommit`). 자체 테스트는 `pnpm verify:test` |

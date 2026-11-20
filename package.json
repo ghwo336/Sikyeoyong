@@ -27,6 +27,7 @@
     "db:seed": "pnpm --filter @sikyeoyong/api build && pnpm --filter @sikyeoyong/api db:seed",
     "merchants:balances": "pnpm --filter @sikyeoyong/api build && node apps/api/dist/db/merchant-keys/cli.js balances",
     "merchants:sweep": "pnpm --filter @sikyeoyong/api build && node apps/api/dist/db/merchant-keys/cli.js sweep",
+    "e2e:path-b": "pnpm --filter @sikyeoyong/api build && node --env-file-if-exists=.env apps/api/dist/modules/payment/e2e-path-b.js",
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts",
     "contracts:deploy:testnet": "node --env-file-if-exists=.env infra/scripts/deploy-orders.ts",

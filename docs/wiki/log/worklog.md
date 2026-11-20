@@ -346,3 +346,14 @@ children: []
 - 다음 할 일: API 체인 모듈이 `resolveOrdersContract`와 `ORDERS_CONTRACT`를 쓰게(지금은 env만), `contractPolicies`를 `ChainReader`로 읽기, 목 가게 `registerMerchant`(가게 payout 키), 에이전트 TransferLimit 기록, `placeOrder` 실제 호출로 한도 revert와 `simulatePclProxy`(Q-14) 확인, `Deploy.s.sol` 주석과 기록 쓰기(이제 TS가 전부 함)를 정리.
 - 메모: worktree에는 `.env`가 없어 `node --env-file=<메인 저장소 .env>`로 직접 실행했다 (키는 출력하지 않음).
 
+### 2026-11-21 경로 B 실제 결제 (ManagedEoaPaymentProvider), 테스트넷 실행 (호재 님 승인)
+- 한 일 (커밋 순서):
+  - `agent_keys` 표(마이그레이션 0010)와 `AgentKeyVault`(AES-256-GCM, 주소 AAD, 키는 체인 일 전에 저장, 열기는 콜백 안에서만).
+  - shared `PayRequest.beforeBroadcast`: 서명 해시와 nonce를 브로드캐스트 전에 confirm이 `submit_tx_hash`, `submit_nonce`로 남긴다. `createAgent`는 `agentRowId`를 받는다.
+  - `ManagedEoaPaymentProvider`(register, setAgentWallet, setMetadata, bindAgent, setAgentPaused, fund, drain, preflight=`simulatePclProxy`, pay, findPaid), `common/onchain/`(클라이언트, ABI, 배포 주소 해석, revert 해석), `payment.service`가 B를 연결(프로덕션은 키나 프록시가 없으면 부팅 멈춤, 개발은 결제 안 하는 제공자로 대체), `AGENT_GAS_SHARE_OKRW`.
+  - `ChainReader` 경로 B: `contractPeriodicVolume`. confirm 즉시 충전이 제공자의 가스 몫을 더한다. `pnpm e2e:path-b`.
+  - 문서: payment.md "경로 B 구현", chain-and-pcl.md, tech-spec 3.4와 4, maroo-facts, F-23 ~ F-25, Q-05(부분), Q-11, Q-14 닫음.
+- 실제 실행 결과 (체인 450815, demo 프로필, 일회용 에이전트): 8004 연결, TransferLimit, 9,000 OKRW 주문 통과(`OrderPlaced`), 한도 500으로 낮춘 뒤 1,000 주문은 `CHAIN_AGENT_LIMIT`(500원), 30일 사용량 9,000, 동결 시 `CHAIN_AGENT_PAUSED`, 회수. 실행 2회(첫 실행은 마지막 단계의 오류 해석 버그를 잡음). 가스 합계 약 27 OKRW.
+- 놓친 것과 발견: (1) 30일 창 경계가 첫 주문이 아니라 주기 배수(Q-05, 목 체인은 다르게 흉내 냄). (2) 기본 가스 몫 2,000 OKRW는 실측(주문 약 4.3 OKRW)에 비해 크다. (3) 가게 payout `gukbap-01`(온체인 가게 1)에 두 번의 주문으로 18,000 OKRW가 들어 있다. 주인이 `pnpm merchants:sweep --to <운영자> --merchant gukbap-01`로 회수할 수 있다 (이 세션은 승인받은 세 가게만 회수했다).
+- 다음 할 일: 부화 흐름(agent-setup)이 `agentRowId` 없이도 키를 연결하는지 통합 확인, 서버 시작 때 표시 있는 `submitting` 재확인, 인덱서, 충전 멱등성(payment.md "아직"), 목 체인 창을 실제 규칙으로, 가스 몫 기본값 조정, 체인 ID 부팅 대조.
+
