@@ -1,0 +1,26 @@
+contracts/lib: 복사해 둔 의존성 (git submodule 아님)
+
+받는 방식: 릴리스 태그 tar.gz를 받아 필요한 파일만 원래 경로 그대로 복사했다. 내용은 고치지 않는다.
+submodule을 쓰지 않은 이유:
+- 이 저장소는 커밋마다 별도 git worktree에서 검증한다 (docs/wiki/conventions/dev-loop.md).
+  새 worktree는 submodule이 비어 있어 verify.py의 forge build가 매번 깨진다.
+  복사본은 네트워크 없이 바로 빌드된다.
+- verify.py(ADDRESS_OK)와 .prettierignore가 이미 contracts/lib를 복사한 라이브러리 자리로 둔다.
+OpenZeppelin은 SikyeoyongOrders와 테스트가 import하는 파일의 닫힌 집합만 복사했다.
+새 파일이 필요하면 같은 태그에서 원래 경로로 더 복사하고 아래 표와 VENDOR.sha256을 고친다.
+버전을 올릴 때는 배포된 지 2주가 지난 릴리스 태그만 쓴다.
+
+이름                                 태그     커밋                                       릴리스 날짜
+forge-std                            v1.17.0  f3dae6e6ee381f25eb6a246f7da9b85c91a68219  2026-09-30
+openzeppelin-contracts               v5.7.0   cab19933c33c2ad1d4c7a84864a3601dddfd16f3  2026-07-29
+openzeppelin-contracts-upgradeable   v5.7.0   14f52c54d3a1eefbda3d4071efba24d3c1e07e8a  2026-07-29
+
+받은 tar.gz의 sha256
+forge-std                            f104cf27931254c647377aa46e308189a694dbd207f9af2e891c2547e8c03300
+openzeppelin-contracts               b22c8372c556d64b4f7d614e06e555e181fda90b23f7389ab9e807a5cf59d942
+openzeppelin-contracts-upgradeable   be15847806bbb2b1120f84d48acda2f6b8105f8c4684f12d9284cd80c0aa59f9
+
+받은 곳: https://codeload.github.com/<조직>/<저장소>/tar.gz/refs/tags/<태그>
+(foundry-rs/forge-std, OpenZeppelin/openzeppelin-contracts, OpenZeppelin/openzeppelin-contracts-upgradeable)
+
+파일 검사: contracts/lib에서 shasum -a 256 -c VENDOR.sha256
