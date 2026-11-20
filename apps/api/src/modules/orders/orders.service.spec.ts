@@ -103,3 +103,18 @@ describe('OrderSpend.spentInMonthAokrw (tech-spec 3.7)', () => {
     expect(s.spentInMonthAokrw('u1', '2026-12')).toBe(okrwToAokrw(123_456_790n));
   });
 });
+
+describe('OrderSpend.recentSince (the recommender history)', () => {
+  it('gives paid or later orders of the user from sinceMs on, oldest first; one ms earlier is out', () => {
+    const { add, s } = setup();
+    add('u1', 'paid', 9_000n, DEC_START - 1); // one ms before the window
+    add('u1', 'delivered', 9_000n, DEC_START);
+    add('u1', 'paid', 9_000n, DEC_START + 5);
+    add('u1', 'quoted', 9_000n, DEC_START + 6);
+    add('u2', 'paid', 9_000n, DEC_START + 7);
+    expect(s.recentSince('u1', DEC_START).map((o) => o.createdAtMs)).toEqual([
+      DEC_START,
+      DEC_START + 5,
+    ]);
+  });
+});
