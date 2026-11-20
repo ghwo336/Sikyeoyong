@@ -188,9 +188,10 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 우선순위: P0 (가입 흐름이 걸려 있음)
 - 배경: 테스트넷 KYC 발급은 카카오 본인 인증 하나, 발급 계정도 마루 쪽 하나 (D-16). 시켜용 앱 안에서 인증을 붙일 수 있는지, 익스피리언스처럼 마루 쪽에서 인증하고 돌아와야 하는지 모른다.
 - 확인 방법: 재욱 님, 딜라이트랩스 (11/19 Mock KYC 요구사항 문서 검토 때).
+- 덧붙임 (2026-11-20): 증명은 주인의 **파우치 스마트 지갑 주소**를 recipient로 받아야 PCL EAS 검사를 통과한다. 근거: maroo `x/pcl/keeper/policy/eas.go`가 실행 주체 `op.From`을 검사한다 (호재 님 확인, 이 세션은 코드를 열어 보지 않음). 파우치 지갑은 ERC-4337 스마트 지갑이라 `op.From`은 EOA가 아니라 지갑 컨트랙트다 (추론). kyc-testnet.maroo.io가 스마트 지갑 주소를 recipient로 받는지는 Q-40.
 - 담당: 호재 님
 - 결론:
-- 반영한 곳:
+- 반영한 곳: design/user-flow.md 2 Verify 행 (2026-11-20)
 
 ### Q-20 12/9 시연을 웹 빌드로 할까, iOS 실기기로 할까?
 - 상태: 열림
@@ -369,3 +370,21 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 확인 방법: 호재 님 결정. (a)면 장부 확인과 기록을 한 트랜잭션으로 묶는다(검증 MINOR).
 - 담당: 호재
 
+### Q-39 파우치 EntryPoint v9가 테스트넷 PCL의 신뢰 엔트리포인트인가?
+- 상태: 닫힘 (2026-11-20)
+- 우선순위: P1 (파우치 위임 결제 경로, S14)
+- 배경: PCL 훅은 등록된 프록시나 `PclParams.entrypoints`의 엔트리포인트가 부를 때만 돈다 (maroo-facts). 파우치 스마트 지갑의 UserOperation이 EntryPoint를 거쳐 주문 컨트랙트를 부를 때 정책이 걸리려면 그 EntryPoint가 목록에 있어야 한다.
+- 확인 방법: 테스트넷 PCL 프리컴파일 `getParams()` 읽기 (`cast call 0x1000000000000000000000000000000000000005 "getParams()((address,address[]))"`, 읽기만).
+- 결론 (확인, 2026-11-20 조회): 있다. entrypoints = `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`(v0.6), `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108`(v0.8), `0x433709009B8330FDa32311DF1C2AFA402eD8D009`(파우치 EntryPoint v9, bech32 `maroo1gvmsjqymsvc0mgerz803c2h6gqhd35qfx3tslf`와 같은 주소). policyAdmin = `0x58eC1E718ff15e5f34591747D47ADf5BccDA804F`.
+- 남은 것: 목록에 있다는 것과 컨트랙트 범위 TransferLimit가 스마트 지갑을 sender로 보는지는 다른 질문이다 (Q-12, S14 2단계).
+- 반영한 곳: 이 항목
+
+### Q-40 (마루 KYC 담당자께) kyc-testnet.maroo.io가 스마트 지갑 주소를 recipient로 받나?
+- 상태: 열림
+- 우선순위: P0 (가입 흐름, Q-19)
+- 배경: PCL EAS 검사가 `op.From`(파우치 스마트 지갑)을 보므로 카카오 KYC 증명의 recipient가 스마트 지갑 주소여야 한다 (Q-19 덧붙임). 지금 KYC 페이지가 EOA 연결(지갑 서명)만 받는다면 스마트 지갑 주소로는 발급받을 수 없다.
+- 물을 질문: (1) kyc-testnet.maroo.io에서 recipient 주소를 직접 넣을 수 있나, 아니면 연결한 지갑 주소로만 발급하나? (2) ERC-1271 서명(스마트 지갑 서명)으로 지갑 연결이 되나? (3) 안 되면 디앱이 사용자 대신 recipient를 지정해 발급을 요청하는 API가 있나?
+- 확인 방법: 마루 KYC 담당자께 질문 (호재 님 전달).
+- 담당: 호재 님
+- 결론:
+- 반영한 곳:
