@@ -28,11 +28,13 @@ export class OrdersController {
     @CurrentUser() user: SessionUser,
     @Body(new ZodValidationPipe(zCreateOrderBody)) body: CreateOrderBody,
   ): Promise<CreateOrderResult> {
-    return this.quotes.create(user.userId, {
-      merchantId: body.merchantId,
-      items: body.items,
-      clientOrderId: body.clientOrderId,
-    });
+    return this.quotes
+      .create(user.userId, {
+        merchantId: body.merchantId,
+        items: body.items,
+        clientOrderId: body.clientOrderId,
+      })
+      .then((o) => o.result);
   }
 
   /** The card's button. The only call that pays (CLAUDE.md rule 3, payment.md "confirm 상태 규칙"). */

@@ -17,6 +17,7 @@ export interface NewOrder {
   readonly itemsJson: string;
   readonly status: 'quoted' | 'pending_approval';
   readonly clientOrderId: string | null;
+  readonly note: string | null;
   readonly createdAt: number;
 }
 

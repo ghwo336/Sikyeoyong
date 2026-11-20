@@ -11,7 +11,11 @@ import { uuidv7 } from '../../common/ids.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
 import { type AgentSummary, AgentsService } from '../agents/agents.service.js';
-import { ApprovalsService, approvalReasonOf } from '../approvals/approvals.service.js';
+import {
+  type ApprovalReason,
+  ApprovalsService,
+  approvalReasonOf,
+} from '../approvals/approvals.service.js';
 import { CHAIN_READER, type ChainReader } from '../chain/chain.service.js';
 import { type MenuItem, MerchantsService } from '../merchants/merchants.service.js';
 import { UsersService } from '../users/users.service.js';
@@ -32,6 +36,15 @@ export interface QuoteRequest {
   readonly items: readonly RequestedItem[];
   /** POST /orders idempotency key; place_order passes null. */
   readonly clientOrderId: string | null;
+  /** The user's request to the store (place_order note), at most 100 characters. */
+  readonly note?: string;
+}
+
+/** The result the screens get, and for the place_order tool why the owner is asked. */
+export interface QuoteOutcome {
+  readonly result: CreateOrderResult;
+  /** Set when this call made a pending_approval order; null on a quote or a resend. */
+  readonly approvalReason: ApprovalReason | null;
 }
 
 /**
@@ -57,10 +70,10 @@ export class OrderQuoteService {
     userId: string,
     req: QuoteRequest,
     nowMs: number = Date.now(),
-  ): Promise<CreateOrderResult> {
+  ): Promise<QuoteOutcome> {
     if (req.clientOrderId !== null) {
       const before = this.repo.findByClientOrderId(userId, req.clientOrderId);
-      if (before !== undefined) return this.replay(userId, before, req, nowMs);
+      if (before !== undefined) return resent(await this.replay(userId, before, req, nowMs));
     }
     const agent = this.agents.getForUser(userId);
     if (!agent.ready) throw new AppError('CHAIN_AGENT_LIMIT_UNSET', { reason: 'not hatched yet' });
@@ -69,6 +82,10 @@ export class OrderQuoteService {
     const { lines, total } = priceLines(req.items, merchant.menus);
     const periodUsed = await this.rules.periodUsedOrRefuse(agent, total, nowMs);
     const refusal = this.rules.approvalNeeded(userId, agent, req.merchantId, total, nowMs);
+    const reason = refusal === null ? null : approvalReasonOf(refusal);
+    if (refusal !== null && reason === null) {
+      throw new AppError('INTERNAL', { reason: 'not an approval code' });
+    }
 
     const orderId = uuidv7(nowMs);
     const row = {
@@ -80,14 +97,13 @@ export class OrderQuoteService {
       amountAokrw: aokrwToString(total),
       itemsJson: JSON.stringify(lines),
       clientOrderId: req.clientOrderId,
+      note: req.note ?? null,
       createdAt: nowMs,
     };
     try {
-      if (refusal === null) {
+      if (reason === null) {
         this.repo.insert({ ...row, status: 'quoted' });
       } else {
-        const reason = approvalReasonOf(refusal);
-        if (reason === null) throw new AppError('INTERNAL', { reason: 'not an approval code' });
         this.approvals.openWithOrder(
           {
             userId,
@@ -108,13 +124,30 @@ export class OrderQuoteService {
         req.clientOrderId === null
           ? undefined
           : this.repo.findByClientOrderId(userId, req.clientOrderId);
-      if (winner !== undefined) return this.replay(userId, winner, req, nowMs);
+      if (winner !== undefined) return resent(await this.replay(userId, winner, req, nowMs));
       throw e;
     }
-    if (refusal !== null) return { order: { id: orderId, status: 'pending_approval' } };
+    if (reason !== null) {
+      return {
+        result: { order: { id: orderId, status: 'pending_approval' } },
+        approvalReason: reason,
+      };
+    }
     return {
-      order: { id: orderId, status: 'quoted' },
-      quote: this.quoteView(userId, orderId, merchant.card, lines, total, agent, periodUsed),
+      result: {
+        order: { id: orderId, status: 'quoted' },
+        quote: this.quoteView(
+          userId,
+          orderId,
+          merchant.card,
+          lines,
+          total,
+          agent,
+          periodUsed,
+          row.note,
+        ),
+      },
+      approvalReason: null,
     };
   }
 
@@ -139,6 +172,7 @@ export class OrderQuoteService {
     total: bigint,
     agent: AgentSummary,
     periodUsed: bigint,
+    note: string | null,
   ): OrderQuote {
     const policy = this.config.policy;
     const first = lines[0]?.name ?? '';
@@ -148,6 +182,7 @@ export class OrderQuoteService {
       destination: this.users.getDestination(userId),
       etaMin: merchant.etaMin,
       items: toItemLines(lines),
+      ...(note === null ? {} : { request: note }),
       amount: aokrwToString(total),
       dragonLine: `${first} 시킬게용.\n이대로 괜찮아용?`,
       perOrderLimit: aokrwToString(policy.perOrderLimitAokrw[agent.level]),
@@ -180,7 +215,21 @@ export class OrderQuoteService {
     const volume = await this.chain.periodicVolume(agent.wallet);
     return {
       order,
-      quote: this.quoteView(userId, row.id, found.merchant, lines, total, agent, volume.usedAokrw),
+      quote: this.quoteView(
+        userId,
+        row.id,
+        found.merchant,
+        lines,
+        total,
+        agent,
+        volume.usedAokrw,
+        row.note,
+      ),
     };
   }
+}
+
+/** A resend never opens an approval, so the tool learns nothing new about why. */
+function resent(result: CreateOrderResult): QuoteOutcome {
+  return { result, approvalReason: null };
 }

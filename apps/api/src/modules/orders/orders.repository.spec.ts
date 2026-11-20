@@ -33,6 +33,7 @@ const order = (userId: string, clientOrderId: string | null): NewOrder => {
     itemsJson: '[]',
     status: 'quoted',
     clientOrderId,
+    note: null,
     createdAt: 1,
   };
 };

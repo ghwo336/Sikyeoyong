@@ -4,7 +4,7 @@ import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, merchants, orders, users } from '../../db/schema/index.js';
 import { type OrderStatus, OrdersRepository } from './orders.repository.js';
-import { OrdersService } from './orders.service.js';
+import { OrderSpend } from './order-spend.service.js';
 
 const handles: DbHandle[] = [];
 afterEach(() => {
@@ -65,10 +65,10 @@ function setup() {
       })
       .run();
   };
-  return { add, s: new OrdersService(new OrdersRepository(h)) };
+  return { add, s: new OrderSpend(new OrdersRepository(h)) };
 }
 
-describe('OrdersService.spentInMonthAokrw (tech-spec 3.7)', () => {
+describe('OrderSpend.spentInMonthAokrw (tech-spec 3.7)', () => {
   it('sums paid and later orders of the user in the KST month, exactly in bigint', () => {
     const { add, s } = setup();
     add('u1', 'paid', 9_000n, DEC_START);

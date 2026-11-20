@@ -3,6 +3,8 @@ import { AppError, type AppErrorCode } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
 import { type ApprovalReason, ApprovalsRepository } from './approvals.repository.js';
 
+export type { ApprovalReason } from './approvals.repository.js';
+
 /** A pending approval expires after 10 minutes (payment.md "승인 흐름과의 관계"). */
 export const APPROVAL_TTL_MS = 10 * 60_000;
 

@@ -7,7 +7,7 @@ import { ApprovalsService } from '../approvals/approvals.service.js';
 import { CHAIN_READER, type ChainReader } from '../chain/chain.service.js';
 import { UsersService } from '../users/users.service.js';
 import { OrdersRepository } from './orders.repository.js';
-import { OrdersService, SPENT_STATUSES } from './orders.service.js';
+import { OrderSpend, SPENT_STATUSES } from './order-spend.service.js';
 
 /**
  * The server's own order rules, checked by the quote and again by confirm
@@ -20,7 +20,7 @@ export class OrderRules {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(CHAIN_READER) private readonly chain: ChainReader,
     private readonly repo: OrdersRepository,
-    private readonly orders: OrdersService,
+    private readonly spend: OrderSpend,
     private readonly users: UsersService,
     private readonly approvals: ApprovalsService,
   ) {}
@@ -67,7 +67,7 @@ export class OrderRules {
       this.repo.hasOrderAt(userId, merchantId, SPENT_STATUSES);
     if (!seen) return 'SERVER_NEW_MERCHANT';
     if (budgetApproved) return null;
-    const spent = this.orders.spentInMonthAokrw(userId, kstMonthOf(nowMs));
+    const spent = this.spend.spentInMonthAokrw(userId, kstMonthOf(nowMs));
     if (spent + amount > this.users.getMonthlyBudgetAokrw(userId)) return 'SERVER_BUDGET_OVER';
     return null;
   }

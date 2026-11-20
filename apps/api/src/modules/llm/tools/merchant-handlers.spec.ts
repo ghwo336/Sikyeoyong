@@ -14,6 +14,13 @@ import { AgentRuntime, type RuntimeEvent } from '../runtime.js';
 import { LlmToolHandlers } from './handlers.js';
 import { ToolReply } from './tool-reply.js';
 
+/** The recommendations card of a reply (ToolCard is a union now that place_order has one). */
+function recCards(reply: ToolReply) {
+  if (reply.card.type !== 'recommendations')
+    throw new Error(`not a recommendations card: ${reply.card.type}`);
+  return reply.card.items;
+}
+
 // Thursday 12:28 KST, every merchant below is open all day.
 const NOW = Date.parse('2026-12-10T12:28:00+09:00');
 const W9000 = '9000000000000000000000'; // 9,000원 in aokrw, by hand
@@ -107,7 +114,7 @@ describe('recommend_merchants handler', () => {
         },
       ],
     });
-    expect(reply.card.items).toMatchObject([{ menuId: 'x-bossam-l', needsApproval: true }]);
+    expect(recCards(reply)).toMatchObject([{ menuId: 'x-bossam-l', needsApproval: true }]);
   });
   it('decides needsApproval for the session user: the same menu differs by level', async () => {
     const handlers = await setup();
@@ -115,8 +122,8 @@ describe('recommend_merchants handler', () => {
     const l1 = (await handlers.recommend_merchants({ userId: 'u1' }, asked)) as ToolReply;
     const l3 = (await handlers.recommend_merchants({ userId: 'u3' }, asked)) as ToolReply;
     // 45,000원: over level 1 (10,000), within level 3 (50,000).
-    expect(l1.card.items.map((c) => [c.menuId, c.needsApproval])).toEqual([['x-bossam-l', true]]);
-    expect(l3.card.items.map((c) => [c.menuId, c.needsApproval])).toEqual([['x-bossam-l', false]]);
+    expect(recCards(l1).map((c) => [c.menuId, c.needsApproval])).toEqual([['x-bossam-l', true]]);
+    expect(recCards(l3).map((c) => [c.menuId, c.needsApproval])).toEqual([['x-bossam-l', false]]);
     expect(l3.forModel).toMatchObject({
       candidates: [{ needsApproval: false, approvalReason: null }],
     });

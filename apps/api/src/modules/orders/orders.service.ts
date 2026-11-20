@@ -1,28 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { kstMonthRange, parseAokrw } from '@sikyeoyong/shared';
-import { type OrderStatus, OrdersRepository } from './orders.repository.js';
+import { OrderQuoteService, type QuoteOutcome, type QuoteRequest } from './order-quote.service.js';
+import { OrderSpend } from './order-spend.service.js';
+
+export { SPENT_STATUSES } from './order-spend.service.js';
+export type { QuoteOutcome, QuoteRequest } from './order-quote.service.js';
 
 /**
- * Statuses that count as spent for the personal budget: paid and everything
- * after it short of a refund (tech-spec 3.7, recommend-and-nag.md "paid 이상").
- * The indexer moves orders to paid only after the chain confirms them.
+ * What other modules may ask of orders (architecture.md: one exported service).
+ * The work lives in the orders module's own services; this only forwards.
  */
-export const SPENT_STATUSES: readonly OrderStatus[] = [
-  'paid',
-  'preparing',
-  'delivering',
-  'delivered',
-];
-
 @Injectable()
 export class OrdersService {
-  constructor(private readonly repo: OrdersRepository) {}
+  constructor(
+    private readonly spend: OrderSpend,
+    private readonly quotes: OrderQuoteService,
+  ) {}
 
-  /** Personal budget spend in a KST calendar month, summed in bigint (never SQL sum on text). */
+  /** Personal budget spend in a KST calendar month (budget module, nag). */
   spentInMonthAokrw(userId: string, monthKst: string): bigint {
-    const { startMs, endMs } = kstMonthRange(monthKst);
-    return this.repo
-      .amountsBetween(userId, SPENT_STATUSES, startMs, endMs)
-      .reduce((sum, a) => sum + parseAokrw(a), 0n);
+    return this.spend.spentInMonthAokrw(userId, monthKst);
+  }
+
+  /** A quote, never a payment (the place_order tool; CLAUDE.md rule 3). */
+  quote(userId: string, req: QuoteRequest, nowMs?: number): Promise<QuoteOutcome> {
+    return this.quotes.create(userId, req, nowMs);
   }
 }

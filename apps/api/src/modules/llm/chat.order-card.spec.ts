@@ -1,0 +1,153 @@
+import 'reflect-metadata';
+import type { Server } from 'node:http';
+import { Test } from '@nestjs/testing';
+import { type ChatEvent, zChatEvent } from '@sikyeoyong/shared';
+import request from 'supertest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { configureApp } from '../../app.setup.js';
+import { APP_CONFIG } from '../../config/config.module.js';
+import { loadConfig } from '../../config/env.js';
+import { type DbHandle, openDb } from '../../db/client.js';
+import { DB } from '../../db/db.module.js';
+import { runMigrations } from '../../db/migrate.js';
+import { allowedMerchants, approvals, orders } from '../../db/schema/index.js';
+import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
+import { AuthService } from '../auth/auth.service.js';
+import { ScriptedProvider } from './harness/scripted-provider.js';
+import { LLM_PROVIDER } from './llm-provider.js';
+import { LlmModule } from './llm.module.js';
+
+// Amounts by hand: 9,000원 = 9000 * 10^18 aokrw. Default policy: level 1, 10,000 per order.
+const W9000 = '9000000000000000000000';
+
+const open: { close: () => Promise<void> }[] = [];
+afterEach(async () => {
+  vi.restoreAllMocks();
+  for (const o of open.splice(0)) await o.close();
+});
+
+const placeTurns = (qty: number, note?: string) =>
+  new ScriptedProvider([
+    {
+      blocks: [
+        {
+          tool: 'place_order',
+          input: {
+            merchantId: 'm-gukbap',
+            items: [{ menuId: 'x-dwaeji', qty }],
+            ...(note === undefined ? {} : { note }),
+          },
+        },
+      ],
+    },
+    { blocks: [{ text: '카드 확인해 주세용.' }] },
+  ]);
+
+async function setup(provider: ScriptedProvider) {
+  const h: DbHandle = openDb(':memory:');
+  runMigrations(h.db);
+  insertUser(h.db, 'u1', { dong: '역삼동' });
+  insertUser(h.db, 'u2');
+  insertMerchant(h.db, 'm-gukbap', { name: '마루국밥 본점' });
+  insertMenu(h.db, 'x-dwaeji', 'm-gukbap', 9_000n, { name: '돼지국밥' });
+  h.db
+    .insert(allowedMerchants)
+    .values({ userId: 'u1', merchantId: 'm-gukbap', approvedAt: 1 })
+    .run();
+  const moduleRef = await Test.createTestingModule({ imports: [LlmModule] })
+    .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig({}) : undefined))
+    .overrideProvider(LLM_PROVIDER)
+    .useValue(provider)
+    .compile();
+  const app = configureApp(moduleRef.createNestApplication());
+  await app.init();
+  open.push({
+    close: async () => {
+      await app.close();
+      h.close();
+    },
+  });
+  const auth = moduleRef.get(AuthService);
+  const post = (who: 'u1' | 'u2', text: string, clientMessageId: string) =>
+    request(app.getHttpServer() as Server)
+      .post('/api/chat/messages')
+      .set('Cookie', `sid=${auth.issue(who, 'web')}`)
+      .set('X-Requested-With', 'fetch')
+      .send({ text, clientMessageId });
+  return { h, post };
+}
+
+function events(text: string): ChatEvent[] {
+  return text
+    .split('\n\n')
+    .filter((f) => f.startsWith('data: '))
+    .map((f) => zChatEvent.parse(JSON.parse(f.slice('data: '.length))));
+}
+
+const toolResult = (provider: ScriptedProvider) => {
+  const r = provider.resultsAfter(1)[0];
+  return typeof r?.content === 'string' ? r.content : JSON.stringify(r?.content);
+};
+
+describe('place_order in the chat stream: a confirm card, never a payment', () => {
+  it('shows the server quote as an order_confirm card; the model hears display words only', async () => {
+    const provider = placeTurns(1, '깍두기 많이');
+    const { h, post } = await setup(provider);
+    const list = events((await post('u1', '2번으로 시켜 줘', 'c1')).text);
+    const cardEvent = list.find((e) => e.type === 'order_confirm');
+    const order = h.db.select().from(orders).get();
+    expect(cardEvent).toEqual({
+      type: 'order_confirm',
+      quote: {
+        orderId: order?.id,
+        store: '마루국밥 본점',
+        destination: '역삼동',
+        etaMin: 3,
+        items: [{ name: '돼지국밥', quantity: 1, price: W9000 }],
+        request: '깍두기 많이',
+        amount: W9000,
+        dragonLine: '돼지국밥 시킬게용.\n이대로 괜찮아용?',
+        perOrderLimit: '10000000000000000000000',
+        periodUsedAfter: W9000,
+        periodCap: '500000000000000000000000',
+      },
+    });
+    expect(order).toMatchObject({
+      userId: 'u1',
+      status: 'quoted',
+      clientOrderId: null,
+      note: '깍두기 많이',
+      // Nothing started paying: no attempt, no submit marker, no transaction.
+      attempt: 0,
+      submitStartedAt: null,
+      txHash: null,
+    });
+    const forModel = toolResult(provider);
+    expect(forModel).toContain('CONFIRM_CARD_SHOWN');
+    expect(forModel).toContain('9,000원');
+    expect(forModel).toContain('"paid":false');
+    expect(forModel).not.toContain(W9000);
+    expect(forModel).not.toContain(order?.id ?? 'no id');
+  });
+
+  it('an order that needs the owner gives the model APPROVAL_REQUIRED and the screen no card', async () => {
+    const provider = placeTurns(2); // 18,000 over level 1
+    const { h, post } = await setup(provider);
+    const list = events((await post('u1', '두 그릇 시켜 줘', 'c1')).text);
+    expect(list.some((e) => e.type === 'order_confirm')).toBe(false);
+    expect(toolResult(provider)).toContain('APPROVAL_REQUIRED');
+    expect(toolResult(provider)).toContain('OVER_LEVEL_LIMIT');
+    expect(h.db.select().from(orders).get()?.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()?.reason).toBe('OVER_LEVEL_LIMIT');
+  });
+
+  it('orders for the session user only (the input has no user)', async () => {
+    const provider = placeTurns(1);
+    const { h, post } = await setup(provider);
+    await post('u2', '시켜 줘', 'c1');
+    const order = h.db.select().from(orders).get();
+    expect(order?.userId).toBe('u2');
+    expect(order?.status).toBe('pending_approval'); // m-gukbap is new for u2
+    expect(h.db.select().from(approvals).get()?.reason).toBe('NEW_MERCHANT');
+  });
+});

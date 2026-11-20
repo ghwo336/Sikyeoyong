@@ -20,6 +20,7 @@ import type { ToolCard, ToolName } from './tools/index.js';
 /** The one card type each tool may put on screen (tech-spec 2.4). Others are dropped. */
 export const CARD_OF_TOOL: Partial<Record<ToolName, ChatEvent['type']>> = {
   recommend_merchants: 'recommendations',
+  place_order: 'order_confirm',
 };
 
 /** Said when the model refuses (D-22 left fallbacks to the server). Plain text, no claims. */

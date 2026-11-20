@@ -123,9 +123,7 @@ describe('LlmToolHandlers (agent-runtime.md)', () => {
         ],
       },
       {
-        blocks: [
-          { tool: 'place_order', input: { merchantId: 'm1', items: [{ menuId: 'x', qty: 1 }] } },
-        ],
+        blocks: [{ tool: 'request_owner_approval', input: { reason: 'NEW_MERCHANT' } }],
       },
       { blocks: [{ text: '아직 주문은 못 해용.' }] },
     ]);

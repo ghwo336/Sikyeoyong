@@ -9,11 +9,13 @@ import {
 } from '@sikyeoyong/shared';
 import { BudgetService } from '../../budget/budget.service.js';
 import { MerchantsService } from '../../merchants/merchants.service.js';
+import { OrdersService } from '../../orders/orders.service.js';
 import { RecommendService, WeatherService } from '../../recommend/recommend.service.js';
 import { UsersService } from '../../users/users.service.js';
 import type { SessionContext, ToolHandlers } from '../runtime.js';
 import type { ToolName } from './definitions.js';
 import { menuForModel, recommendReply } from './merchant-views.js';
+import { placeOrderReply } from './order-views.js';
 
 const won = (aokrw: string) => formatOkrw(parseAokrw(aokrw));
 const kstTime = (unixMs: number) => `${formatKstDate(unixMs)} ${formatKstClock(unixMs)}`;
@@ -54,6 +56,7 @@ export class LlmToolHandlers {
     private readonly weather: WeatherService,
     private readonly recommender: RecommendService,
     private readonly merchants: MerchantsService,
+    private readonly orders: OrdersService,
   ) {}
 
   /** nowMs is a seam for tests. */
@@ -70,7 +73,21 @@ export class LlmToolHandlers {
       // Merchants are not per user; a hidden or unknown id is NOT_FOUND back to the model.
       get_menu: (_ctx, input) =>
         Promise.resolve().then(() => menuForModel(this.merchants.detail(input.merchantId, now()))),
-      place_order: notReady('place_order'),
+      // A quote and a confirm card only; paying is the card's button (CLAUDE.md rule 3).
+      // No amount in the input: the server prices the items. The user is the session's.
+      place_order: (ctx, input) =>
+        this.orders
+          .quote(
+            ctx.userId,
+            {
+              merchantId: input.merchantId,
+              items: input.items,
+              clientOrderId: null,
+              ...(input.note === undefined ? {} : { note: input.note }),
+            },
+            now(),
+          )
+          .then(placeOrderReply),
       request_owner_approval: notReady('request_owner_approval'),
       propose_limit_change: notReady('propose_limit_change'),
     };

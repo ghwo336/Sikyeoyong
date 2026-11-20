@@ -4,6 +4,7 @@ import { APP_CONFIG } from '../../config/config.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { BudgetModule } from '../budget/budget.module.js';
 import { MerchantsModule } from '../merchants/merchants.module.js';
+import { OrdersModule } from '../orders/orders.module.js';
 import { RecommendModule } from '../recommend/recommend.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { ChatHistoryService } from './chat-history.service.js';
@@ -24,6 +25,7 @@ import { LLM_PROVIDER } from './llm-provider.js';
     RateLimitModule,
     MerchantsModule,
     RecommendModule,
+    OrdersModule,
   ],
   controllers: [ChatController],
   providers: [

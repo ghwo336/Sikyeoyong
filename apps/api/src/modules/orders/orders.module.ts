@@ -12,6 +12,7 @@ import { OrderRules } from './order-rules.service.js';
 import { OrdersController } from './orders.controller.js';
 import { OrdersRepository } from './orders.repository.js';
 import { OrdersService } from './orders.service.js';
+import { OrderSpend } from './order-spend.service.js';
 
 @Module({
   imports: [
@@ -24,7 +25,14 @@ import { OrdersService } from './orders.service.js';
     PaymentModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersRepository, OrdersService, OrderRules, OrderQuoteService, OrderConfirmService],
-  exports: [OrdersService, OrderQuoteService],
+  providers: [
+    OrdersRepository,
+    OrderSpend,
+    OrderRules,
+    OrderQuoteService,
+    OrderConfirmService,
+    OrdersService,
+  ],
+  exports: [OrdersService],
 })
 export class OrdersModule {}
