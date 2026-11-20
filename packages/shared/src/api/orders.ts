@@ -73,6 +73,20 @@ export const zOrderQuote = z
   .strict();
 export type OrderQuote = z.infer<typeof zOrderQuote>;
 
+/**
+ * What the chain checked for this payment (Receipt.dc.html 자세히 보기): the dragon's
+ * ID-card number (ERC-8004 agentId), the rule names as the server recorded them, and
+ * the explorer link for the payment (from the shared chain config, CLAUDE.md rule 2).
+ */
+export const zOrderReceipt = z
+  .object({
+    agentId: z.string().regex(/^[0-9]{1,20}$/),
+    rules: z.array(z.string().min(1).max(64)).max(10),
+    explorerUrl: z.url(),
+  })
+  .strict();
+export type OrderReceipt = z.infer<typeof zOrderReceipt>;
+
 /** GET /orders/:id, the fields the status screens read. */
 export const zOrderView = z
   .object({
@@ -95,6 +109,8 @@ export const zOrderView = z
       .string()
       .regex(/^0x[0-9a-f]{64}$/)
       .optional(),
+    /** Receipt.dc.html 자세히 보기, once the server has written the receipt (receipt_json). */
+    receipt: zOrderReceipt.optional(),
   })
   .strict();
 export type OrderView = z.infer<typeof zOrderView>;

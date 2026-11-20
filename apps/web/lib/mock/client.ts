@@ -4,7 +4,9 @@
 import {
   AppError,
   type BudgetView,
+  explorerTxUrl,
   formatOkrw,
+  NETWORKS,
   getPolicy,
   nagStage,
   parseAokrw,
@@ -125,20 +127,58 @@ function quoteFor(rec: RecommendationCard): OrderQuote {
   };
 }
 
-function preparingOrder(rec: RecommendationCard, now: number): OrderView {
+/** Demo pace (the real one is the store's minutes): 20 s cooking, then 20 s on the road. */
+const COOK_MS = 20_000;
+const RIDE_MS = 20_000;
+/** The rules a paid order passed, as the Receipt design lists them. */
+const RECEIPT_RULES = [
+  'AGENT_OKRW_TRANSFER_LIMIT_POLICY',
+  'PERIODIC_VOLUME_POLICY',
+  '전역 KYC 한도',
+  'EAS_POLICY (가게 등록 때)',
+];
+
+/** A made-up 32-byte hash for the mock receipt (stable per menu, clearly not a real payment). */
+function mockTxHash(menuId: string): string {
+  let hex = '';
+  for (let i = 0; i < menuId.length; i += 1) {
+    hex += (menuId.charCodeAt(i) % 256).toString(16).padStart(2, '0');
+  }
+  return `0x${hex.padEnd(64, '0').slice(0, 64)}`;
+}
+
+/** The order as it is `now`, paid at `paidAt`: cooking, then on the road, then arrived. */
+function orderAt(rec: RecommendationCard, paidAt: number, now: number): OrderView {
   const extra = MENU_EXTRA[rec.menuId];
+  const elapsed = Math.max(0, now - paidAt);
+  const total = COOK_MS + RIDE_MS;
+  const status = elapsed < COOK_MS ? 'preparing' : elapsed < total ? 'delivering' : 'delivered';
+  const remainingMin = Math.max(0, Math.ceil(rec.etaMin * (1 - elapsed / total)));
+  const [dragonLine, dragonMood] =
+    status === 'preparing'
+      ? [extra?.cookingLine ?? '만드는 중이에용.\n출발하면 알려 줄게용.', 'cooking' as const]
+      : status === 'delivering'
+        ? ['라이더님 출발했어용!\n숟가락 준비해용.', 'excited' as const]
+        : [`문 앞에 ${rec.menu} 왔어용. 맛있게 먹어용!`, 'eating' as const];
+  const txHash = mockTxHash(rec.menuId);
   return {
     id: orderIdOf(rec.menuId),
-    status: 'preparing',
+    status,
     store: rec.store,
     destination: DESTINATION,
     items: [{ name: rec.menu, quantity: 1, price: rec.price }],
     request: extra?.request,
     amount: rec.price,
-    etaAt: now + rec.etaMin * 60_000,
-    remainingMin: rec.etaMin,
-    dragonLine: extra?.cookingLine ?? '만드는 중이에용.\n출발하면 알려 줄게용.',
-    dragonMood: 'cooking',
+    etaAt: paidAt + rec.etaMin * 60_000,
+    remainingMin,
+    dragonLine,
+    dragonMood,
+    txHash,
+    receipt: {
+      agentId: '1042',
+      rules: RECEIPT_RULES,
+      explorerUrl: explorerTxUrl(NETWORKS['maroo-testnet'], txHash),
+    },
   };
 }
 
@@ -159,7 +199,9 @@ function agentSetup(now: number): AgentSetupView {
   };
 }
 
-const orders = new Map<string, OrderView>();
+/** Paid mock orders: which menu and when it was paid (the state follows from the time). */
+const paid = new Map<string, { rec: RecommendationCard; at: number }>();
+const ratings = new Map<string, 'again' | 'okay' | 'meh'>();
 
 function createOrder(body: CreateOrderBody): CreateOrderResult {
   const first = body.items[0];
@@ -224,19 +266,20 @@ export const mockApi: ApiClient = {
   confirmOrder: (orderId) => {
     const rec = RECOMMENDATIONS.find((r) => orderIdOf(r.menuId) === orderId);
     if (!rec) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
-    // Like the server: submitting at once (no payment here), accepted by the store after a beat.
-    const order = preparingOrder(rec, Date.now());
-    orders.set(orderId, { ...order, status: 'submitting' });
-    return later(null).then(() => {
-      orders.set(orderId, order);
-      return { order };
-    });
+    // Pays nothing here: the order just starts its clock (CLAUDE.md rule 3 holds on the server).
+    const at = paid.get(orderId)?.at ?? Date.now();
+    paid.set(orderId, { rec, at });
+    return later(null).then(() => ({ order: orderAt(rec, at, Date.now()) }));
   },
   getOrder: (orderId) => {
     // Only a confirmed order exists. A reload loses the mock's memory, like a server restart.
-    const saved = orders.get(orderId);
-    if (!saved) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
-    return later({ order: saved });
+    const p = paid.get(orderId);
+    if (!p) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
+    return later(null).then(() => ({ order: orderAt(p.rec, p.at, Date.now()) }));
+  },
+  rateOrder: (orderId, value) => {
+    ratings.set(orderId, value);
+    return later(undefined);
   },
   getSignupConfig: () => later(SIGNUP),
   login: () => {

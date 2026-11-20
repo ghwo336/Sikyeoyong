@@ -1,14 +1,23 @@
 'use client';
 
 import { parseAokrw } from '@sikyeoyong/shared';
-import { DragonLine, OrderStatusHeader, OrderSummary, StepProgress, TopBar } from '@sikyeoyong/ui';
+import {
+  DeliveryMap,
+  DragonLine,
+  OrderStatusHeader,
+  OrderSummary,
+  StepProgress,
+  TopBar,
+} from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { routeLine } from '../../../lib/format';
 import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../hooks/useOrder';
+import { DEMO_ROAD, riderProgress } from '../map';
 import { ORDER_STEPS, orderStep } from '../status';
+import { ArrivedContainer } from './ArrivedContainer';
 
-/** Order status while cooking (Done.dc.html). Tracking and Arrived come later (web.md). */
+/** Order status: cooking (Done.dc.html), on the road (Tracking.dc.html), arrived (Arrived.dc.html). */
 export function OrderStatusContainer({ orderId }: { readonly orderId: string }) {
   const router = useRouter();
   const me = useMe().data;
@@ -22,14 +31,26 @@ export function OrderStatusContainer({ orderId }: { readonly orderId: string }) 
   if (!order || !me || step === null) {
     return <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />;
   }
+  if (order.status === 'delivered') return <ArrivedContainer order={order} />;
+  const riding = order.status === 'delivering';
   return (
     <>
       <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />
       <OrderStatusHeader
         etaAt={order.etaAt}
         remainingMin={order.remainingMin}
-        variant="eta-first"
+        variant={riding ? 'remaining-first' : 'eta-first'}
       />
+      {riding && (
+        <DeliveryMap
+          store={DEMO_ROAD.store}
+          home={DEMO_ROAD.home}
+          route={DEMO_ROAD.route}
+          progress={riderProgress(order.remainingMin)}
+          storeName={order.store}
+          homeName={order.destination}
+        />
+      )}
       <StepProgress steps={ORDER_STEPS} current={step} showLabels size="md" />
       <DragonLine
         text={order.dragonLine}

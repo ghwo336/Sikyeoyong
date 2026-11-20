@@ -61,6 +61,8 @@ export interface ApiClient {
   /** POST /orders/:id/confirm. The only call that pays (CLAUDE.md rule 3). */
   confirmOrder(orderId: string): Promise<{ readonly order: OrderView }>;
   getOrder(orderId: string): Promise<{ readonly order: OrderView }>;
+  /** Arrived.dc.html taste rating; it feeds later recommendations. */
+  rateOrder(orderId: string, value: 'again' | 'okay' | 'meh'): Promise<void>;
 
   getSignupConfig(): Promise<SignupConfig>;
   /** Starts OAuth. The real one redirects to the provider; the API sets the session cookie. */

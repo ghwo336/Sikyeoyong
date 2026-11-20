@@ -205,6 +205,18 @@ describe('order schemas (tech-spec 3.2)', () => {
     expect(zOrderView.safeParse({ ...view, txHash: '0x1234' }).success).toBe(false);
     expect(zOrderResult.safeParse({ order: paid, receipt: {} }).success).toBe(false);
     expect(zOrderIdParam.safeParse('').success).toBe(false);
+    const receipt = {
+      agentId: '1042',
+      rules: ['AGENT_OKRW_TRANSFER_LIMIT_POLICY', 'PERIODIC_VOLUME_POLICY'],
+      explorerUrl: 'https://explorer.example/tx/0x1',
+    };
+    expect(zOrderView.parse({ ...paid, receipt })).toEqual({ ...paid, receipt });
+    expect(zOrderView.safeParse({ ...paid, receipt: { ...receipt, agentId: '0x1' } }).success).toBe(
+      false,
+    );
+    expect(
+      zOrderView.safeParse({ ...paid, receipt: { ...receipt, explorerUrl: 'nope' } }).success,
+    ).toBe(false);
     expect(zOrderIdParam.safeParse('x'.repeat(65)).success).toBe(false);
     expect(zOrderIdParam.parse('o1')).toBe('o1');
   });

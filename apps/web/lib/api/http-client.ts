@@ -141,6 +141,7 @@ export function createHttpApi(
       zOrderResult.parse(await call('POST', `/orders/${encodeURIComponent(orderId)}/confirm`)),
     getOrder: async (orderId) =>
       zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),
+    rateOrder: () => notReady('taste rating'),
     getSignupConfig: async () => zSignupConfig.parse(await call('GET', '/signup/config')),
     login: async () => {
       if (devLoginKey === undefined) return notReady('login');
