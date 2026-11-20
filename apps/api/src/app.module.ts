@@ -5,7 +5,6 @@ import { DbModule } from './db/db.module.js';
 import { BudgetModule } from './modules/budget/budget.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { LlmModule } from './modules/llm/llm.module.js';
-import { PaymentModule } from './modules/payment/payment.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
@@ -13,7 +12,6 @@ import { UsersModule } from './modules/users/users.module.js';
     ConfigModule,
     DbModule,
     RateLimitModule,
-    PaymentModule,
     HealthModule,
     LlmModule,
     BudgetModule,

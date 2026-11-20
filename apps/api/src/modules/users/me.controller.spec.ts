@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { zMeView, zSignupConfig, zUserView } from '@sikyeoyong/shared';
+import { zBudgetView, zMeView, zSignupConfig, zUserView } from '@sikyeoyong/shared';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
@@ -13,6 +13,7 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
+import { BudgetModule } from '../budget/budget.module.js';
 import { UsersModule } from './users.module.js';
 
 // Amounts written by hand: N won = N * 10^18 aokrw.
@@ -49,7 +50,7 @@ async function setup(env: Record<string, string> = {}) {
       createdAt: 1,
     })
     .run();
-  const moduleRef = await Test.createTestingModule({ imports: [UsersModule] })
+  const moduleRef = await Test.createTestingModule({ imports: [UsersModule, BudgetModule] })
     .useMocker((t) => (t === DB ? h : t === APP_CONFIG ? loadConfig(env) : undefined))
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
@@ -67,7 +68,7 @@ async function setup(env: Record<string, string> = {}) {
         .set('X-Requested-With', 'fetch')
         .send(body),
   });
-  return { http, as };
+  return { http, as, h };
 }
 
 describe('GET /api/me', () => {
@@ -92,12 +93,21 @@ describe('GET /api/me', () => {
 
 describe('PATCH /api/me', () => {
   it('sets the budget to a policy option at once', async () => {
-    const { as } = await setup();
+    const { as, h } = await setup();
     const res = await as('u1').patch('/api/me', { monthlyBudgetOkrw: W('200000') });
     expect(res.status).toBe(200);
     expect(zUserView.parse(res.body)).toEqual({
       user: { nickname: '주인님', monthlyBudget: W('200000') },
     });
+    // Shows at once in the budget screen, and touches no one else.
+    const budget = zBudgetView.parse((await as('u1').get('/api/budget')).body);
+    expect(budget.personalBudget).toBe(W('200000'));
+    const others = h.db
+      .select()
+      .from(users)
+      .all()
+      .filter((u) => u.id !== 'u1');
+    expect(others.map((u) => u.monthlyBudgetAokrw)).toEqual([W('300000')]);
   });
 
   it('refuses other amounts, extra fields and cookie writes without the CSRF header', async () => {

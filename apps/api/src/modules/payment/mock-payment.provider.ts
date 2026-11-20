@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  AppError,
   type AgentWallet,
   type DecodedChainError,
   formatKstDateTime,
@@ -17,6 +18,10 @@ interface MockWallet {
   paused: boolean;
   /** Fixed 30-day window that starts with the first order (maroo-facts 3.2, (추론)). */
   window: { readonly start: number; used: bigint } | null;
+}
+
+function badAmount(reason: string): AppError {
+  return new AppError('INTERNAL', { reason });
 }
 
 function hex(seed: string, bytes: number): Hex {
@@ -64,11 +69,13 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   setTransferLimit(agent: AgentWallet, amount: bigint): Promise<Hex> {
+    if (amount <= 0n) return Promise.reject(badAmount('TransferLimit must be positive'));
     this.wallet(agent.address).limit = amount;
     return Promise.resolve(this.tx());
   }
 
   fund(agent: AgentWallet, amount: bigint): Promise<Hex> {
+    if (amount <= 0n) return Promise.reject(badAmount('fund amount must be positive'));
     this.wallet(agent.address).balance += amount;
     return Promise.resolve(this.tx());
   }
@@ -89,17 +96,14 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   preflight(req: PayRequest): Promise<{ ok: true } | { ok: false; error: DecodedChainError }> {
-    const error = this.refusal(req);
-    return Promise.resolve(error === null ? { ok: true } : { ok: false, error });
+    const refused = this.refusal(req);
+    return Promise.resolve(refused === null ? { ok: true } : { ok: false, error: refused.error });
   }
 
   pay(req: PayRequest): Promise<PayResult> {
-    if (this.paid.has(req.orderRef)) {
-      // OrderExists(orderRef): the contract pays an orderRef once (D-19).
-      return Promise.resolve({ ok: false, stage: 'execution', error: { code: 'CONFLICT' } });
-    }
-    const error = this.refusal(req);
-    if (error !== null) return Promise.resolve({ ok: false, stage: 'execution', error });
+    const refused = this.refusal(req);
+    if (refused !== null)
+      return Promise.resolve({ ok: false, stage: refused.stage, error: refused.error });
     const w = this.wallet(req.agent.address);
     w.balance -= req.amount;
     const start = w.window?.start ?? this.now();
@@ -118,20 +122,44 @@ export class MockPaymentProvider implements PaymentProvider {
     return Promise.resolve(this.wallets.get(address)?.balance ?? 0n);
   }
 
-  /** Same order of checks as the proxy hooks: pause, TransferLimit, 30-day volume, balance. */
-  private refusal(req: PayRequest): DecodedChainError | null {
+  /**
+   * The order a real payment would fail in (추론, payment.md mock 절):
+   * 1. submit: an amount the wallet cannot send (0 or negative is the contract's
+   *    BadAmount; a short balance fails before execution);
+   * 2. proxy preCall (PCL): TransferLimit unset, per-order limit, 30-day volume;
+   * 3. contract body: OrderExists(orderRef), AgentIsPaused.
+   * Codes follow the chain-and-pcl.md revert table; anything not in it is INTERNAL.
+   */
+  private refusal(
+    req: PayRequest,
+  ): { stage: 'submit' | 'execution'; error: DecodedChainError } | null {
+    if (req.amount <= 0n) return { stage: 'execution', error: { code: 'INTERNAL' } };
     const w = this.wallets.get(req.agent.address);
-    if (w === undefined || w.limit === null) return { code: 'CHAIN_AGENT_LIMIT_UNSET' };
-    if (w.paused) return { code: 'CHAIN_AGENT_PAUSED' };
-    if (req.amount > w.limit)
-      return { code: 'CHAIN_AGENT_LIMIT', params: { max: formatOkrw(w.limit) } };
+    if ((w?.balance ?? 0n) < req.amount) {
+      return { stage: 'submit', error: { code: 'CHAIN_INSUFFICIENT_FUNDS' } };
+    }
+    if (w === undefined || w.limit === null) {
+      return { stage: 'execution', error: { code: 'CHAIN_AGENT_LIMIT_UNSET' } };
+    }
+    if (req.amount > w.limit) {
+      return {
+        stage: 'execution',
+        error: { code: 'CHAIN_AGENT_LIMIT', params: { max: formatOkrw(w.limit) } },
+      };
+    }
     this.rollWindow(w);
     const used = w.window?.used ?? 0n;
     if (used + req.amount > this.policy.periodicCapAokrw) {
+      // A window opens with the first order; with none yet, this order would open it now.
       const resetMs = (w.window?.start ?? this.now()) + this.policy.periodicPeriodSec * 1000;
-      return { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: formatKstDateTime(resetMs) } };
+      return {
+        stage: 'execution',
+        error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: formatKstDateTime(resetMs) } },
+      };
     }
-    if (w.balance < req.amount) return { code: 'CHAIN_INSUFFICIENT_FUNDS' };
+    // OrderExists is not in the revert table, so it is INTERNAL; confirm asks findPaid first (D-19).
+    if (this.paid.has(req.orderRef)) return { stage: 'execution', error: { code: 'INTERNAL' } };
+    if (w.paused) return { stage: 'execution', error: { code: 'CHAIN_AGENT_PAUSED' } };
     return null;
   }
 

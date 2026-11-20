@@ -315,38 +315,70 @@ apps/api/src/
 
 ### 3.4 PaymentProvider
 
+원본은 `packages/shared/src/payment/index.ts`이고 아래는 그 값 그대로다 (구현은 `apps/api/src/modules/payment/*.ts`).
+
 ```ts
-// packages/shared/src/payment/index.ts (타입, mock 경로 포함), apps/api/src/modules/payment/*.ts (구현)
-export type PaymentPath = 'A' | 'B' | 'C' | 'mock';  // mock은 개발·테스트 전용, production 금지
+/**
+ * Payment boundary types (tech-spec 3.4, payment.md). Implementations live in
+ * apps/api/src/modules/payment, one per path. Code above PaymentProvider
+ * (orders, llm) never knows which path runs; only the receipt reads `path`.
+ */
+export type PaymentPath = 'A' | 'B' | 'C' | 'mock';
+
+export type Hex = `0x${string}`;
 
 export interface AgentWallet {
-  agentRowId: string;        // DB id
-  address: `0x${string}`;    // 에이전트 지갑 (A: MAWS AA, B: 서버 EOA)
-  onchainAgentId?: bigint;   // 8004 agentId
-  ownerAddress: `0x${string}`;
+  /** agents.id in the DB. */
+  readonly agentRowId: string;
+  readonly address: Hex;
+  /** ERC-8004 agentId, once registered. */
+  readonly onchainAgentId?: bigint;
+  readonly ownerAddress: Hex;
+}
+
+/** A chain refusal turned into our error code (chain-and-pcl.md revert table). */
+export interface DecodedChainError {
+  readonly code: AppErrorCode;
+  /** Values for the dragon line, e.g. { max: '10,000원' } or { resetAt: '12월 1일 오후 3시' }. */
+  readonly params?: Readonly<Record<string, string>>;
 }
 
 export interface PayRequest {
-  agent: AgentWallet;
-  merchantOnchainId: bigint;
-  amount: bigint;            // aokrw
-  orderRef: `0x${string}`;   // bytes32, DB order id에서 keccak
+  readonly agent: AgentWallet;
+  readonly merchantOnchainId: bigint;
+  /** aokrw */
+  readonly amount: bigint;
+  /** bytes32, made once from the DB order id; the same order retries only with this (D-19). */
+  readonly orderRef: Hex;
 }
 
 export type PayResult =
-  | { ok: true; txHash: `0x${string}`; blockNumber: bigint }
-  | { ok: false; stage: 'server' | 'preflight' | 'submit' | 'execution'; error: DecodedChainError; txHash?: `0x${string}` };
+  | { readonly ok: true; readonly txHash: Hex; readonly blockNumber: bigint }
+  | {
+      readonly ok: false;
+      readonly stage: 'server' | 'preflight' | 'submit' | 'execution';
+      readonly error: DecodedChainError;
+      readonly txHash?: Hex;
+    };
 
 export interface PaymentProvider {
   readonly path: PaymentPath;
-  createAgent(input: { userId: string; name: string }): Promise<AgentWallet>;    // 생성 + 8004 등록 대기
-  setTransferLimit(agent: AgentWallet, amount: bigint): Promise<`0x${string}`>;  // 8004 setMetadata("TransferLimit")
-  fund(agent: AgentWallet, amount: bigint): Promise<`0x${string}`>;
-  drain(agent: AgentWallet): Promise<`0x${string}`[]>;
-  freeze(agent: AgentWallet): Promise<`0x${string}`[]>;   // MAWS freeze + 컨트랙트 setAgentPaused
-  unfreeze(agent: AgentWallet): Promise<`0x${string}`[]>;
-  preflight(req: PayRequest): Promise<{ ok: true } | { ok: false; error: DecodedChainError }>;
+  /** Creates the wallet and waits for the 8004 registration. */
+  createAgent(input: { readonly userId: string; readonly name: string }): Promise<AgentWallet>;
+  /** 8004 setMetadata("TransferLimit"), before the agent may order (payment.md MUST). */
+  setTransferLimit(agent: AgentWallet, amount: bigint): Promise<Hex>;
+  fund(agent: AgentWallet, amount: bigint): Promise<Hex>;
+  drain(agent: AgentWallet): Promise<Hex[]>;
+  freeze(agent: AgentWallet): Promise<Hex[]>;
+  unfreeze(agent: AgentWallet): Promise<Hex[]>;
+  preflight(
+    req: PayRequest,
+  ): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: DecodedChainError }>;
   pay(req: PayRequest): Promise<PayResult>;
+  /** Has OrderPlaced(orderRef) happened on chain? Confirm asks before a retry (D-19). */
+  findPaid(orderRef: Hex): Promise<{ readonly txHash: Hex; readonly blockNumber: bigint } | null>;
+  /** aokrw balance of a wallet (float top-up math). */
+  balanceOf(address: Hex): Promise<bigint>;
 }
 ```
 
@@ -356,7 +388,7 @@ export interface PaymentProvider {
 
 **경로 C (최후)**: MAWS `transfer.send`로 `SikyeoyongOrders` 프록시 주소에 OKRW 전송, 컨트랙트 `receive()`가 서버가 미리 `registerIntent(agent, merchantId, amount, orderRef)`로 등록한 의도와 맞춰 지급. 셀렉터 없는 호출(receive)에 컨트랙트 범위 정책이 붙는지 (미확인). 빈 selector 정책은 모든 호출에 적용되므로(확인, [pcl-policy-structure](https://docs.maroo.io/concepts/compliance/pcl-policy-structure)) 빈 selector에 정책을 걸면 receive에도 적용될 것으로 (추론). 운영자 함수까지 같이 걸리는 부작용이 있어 설계가 복잡하다.
 
-경로 선택은 환경 변수 `PAYMENT_PATH=A|B|C`. 위쪽 코드(orders, llm)는 경로를 몰라야 한다. 단 영수증 규칙 계산(2.5)만 `provider.path`를 읽는다.
+경로 선택은 환경 변수 `PAYMENT_PATH=A|B|C|mock` (mock은 개발·테스트 전용, production 금지). 1단계는 B (D-24). 위쪽 코드(orders, llm)는 경로를 몰라야 한다. 단 영수증 규칙 계산(2.5)만 `provider.path`를 읽는다.
 
 ### 3.5 MerchantSource, LlmProvider
 

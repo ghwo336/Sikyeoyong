@@ -63,13 +63,12 @@ describe('MockPaymentProvider (refusals follow chain-and-pcl.md)', () => {
     expect(await p.findPaid(REF(1))).toEqual(
       r.ok ? { txHash: r.txHash, blockNumber: r.blockNumber } : null,
     );
-    // Same orderRef again: OrderExists, nothing taken.
+    // Same orderRef again: OrderExists (not in the revert table, so INTERNAL), nothing taken.
     expect(await p.pay(req(agent, won(9_000n)))).toEqual({
       ok: false,
       stage: 'execution',
-      error: { code: 'CONFLICT' },
+      error: { code: 'INTERNAL' },
     });
-    expect(await p.balanceOf(agent.address)).toBe(won(11_000n));
     expect(await p.findPaid(REF(2))).toBeNull();
   });
 
@@ -124,6 +123,108 @@ describe('MockPaymentProvider (refusals follow chain-and-pcl.md)', () => {
     const agent = await ready(p, won(10_000n), amount + 2n);
     expect((await p.pay(req(agent, amount))).ok).toBe(true);
     expect(await p.balanceOf(agent.address)).toBe(2n);
+  });
+});
+
+describe('MockPaymentProvider money edges', () => {
+  it.each([0n, -1n, -won(5_000n)])(
+    'refuses a %s aokrw payment and keeps the money and the orderRef',
+    async (amount) => {
+      const { p } = setup();
+      const agent = await ready(p, won(10_000n), won(1_000n));
+      expect(await p.pay(req(agent, amount, 7))).toEqual({
+        ok: false,
+        stage: 'execution',
+        error: { code: 'INTERNAL' },
+      });
+      expect(await p.balanceOf(agent.address)).toBe(won(1_000n));
+      expect(await p.findPaid(REF(7))).toBeNull();
+      expect((await p.pay(req(agent, won(1_000n), 7))).ok).toBe(true); // the orderRef is still free
+    },
+  );
+
+  it('refuses a zero or negative fund and TransferLimit', async () => {
+    const { p } = setup();
+    const agent = await p.createAgent({ userId: 'u1', name: '용이' });
+    await expect(p.fund(agent, -won(1_000n))).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(p.fund(agent, 0n)).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(p.setTransferLimit(agent, 0n)).rejects.toMatchObject({ code: 'INTERNAL' });
+    expect(await p.balanceOf(agent.address)).toBe(0n);
+  });
+
+  it('pays exactly the whole balance; one aokrw short is CHAIN_INSUFFICIENT_FUNDS at submit', async () => {
+    const { p } = setup();
+    const agent = await ready(p, won(10_000n), won(9_000n));
+    expect(await p.pay(req(agent, won(9_000n) + 1n, 1))).toEqual({
+      ok: false,
+      stage: 'submit',
+      error: { code: 'CHAIN_INSUFFICIENT_FUNDS' },
+    });
+    expect((await p.pay(req(agent, won(9_000n), 2))).ok).toBe(true);
+    expect(await p.balanceOf(agent.address)).toBe(0n);
+  });
+
+  it('dates resetAt from the first order of the window, not from now', async () => {
+    const { p, advance } = setup('demo');
+    const agent = await ready(p, won(50_000n), won(200_000n));
+    expect((await p.pay(req(agent, won(50_000n), 1))).ok).toBe(true); // window opens 12:00 KST
+    advance(10 * 60_000); // 12:10
+    expect(await p.pay(req(agent, won(20_000n), 2))).toEqual({
+      ok: false,
+      stage: 'execution',
+      error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: '12월 1일 오후 1시' } },
+    });
+  });
+});
+
+describe('MockPaymentProvider refusal order when reasons overlap ((추론), payment.md)', () => {
+  it('short balance comes first (submit), before an unset limit', async () => {
+    const { p } = setup();
+    const agent = await p.createAgent({ userId: 'u1', name: '용이' });
+    expect(await p.preflight(req(agent, won(9_000n)))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_INSUFFICIENT_FUNDS' },
+    });
+  });
+
+  it('an unset limit comes before a pause', async () => {
+    const { p } = setup();
+    const agent = await p.createAgent({ userId: 'u1', name: '용이' });
+    await p.fund(agent, won(9_000n));
+    await p.freeze(agent);
+    expect(await p.preflight(req(agent, won(9_000n)))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_AGENT_LIMIT_UNSET' },
+    });
+  });
+
+  it('the per-order limit (preCall) comes before a pause (contract body)', async () => {
+    const { p } = setup();
+    const agent = await ready(p, won(10_000n), won(50_000n));
+    await p.freeze(agent);
+    expect(await p.preflight(req(agent, won(20_000n)))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_AGENT_LIMIT', params: { max: '10,000원' } },
+    });
+  });
+
+  it('the 30-day cap comes before a used orderRef, which comes before a pause', async () => {
+    const { p } = setup('demo');
+    const agent = await ready(p, won(50_000n), won(200_000n));
+    expect((await p.pay(req(agent, won(50_000n), 1))).ok).toBe(true);
+    await p.freeze(agent);
+    expect(await p.preflight(req(agent, won(20_000n), 1))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_PERIODIC_LIMIT', params: { resetAt: '12월 1일 오후 1시' } },
+    });
+    expect(await p.preflight(req(agent, won(1_000n), 1))).toEqual({
+      ok: false,
+      error: { code: 'INTERNAL' },
+    });
+    expect(await p.preflight(req(agent, won(1_000n), 2))).toEqual({
+      ok: false,
+      error: { code: 'CHAIN_AGENT_PAUSED' },
+    });
   });
 });
 
