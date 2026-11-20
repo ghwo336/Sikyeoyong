@@ -43,3 +43,5 @@ Main, LimitChat
 - 화면 아래 띠(여백 10 16 24, 바탕 ground)는 `ChatLayout` footer가 그린다. 이 컴포넌트는 한 줄과 안내만.
 - 멈춤 모양과 안내 문구는 시안에 없다 (추론).
 - 조합 처리 (추론, 실기기 미확인): 크롬은 조합 중 Enter에 isComposing이 붙고, 사파리는 compositionend 바로 뒤 같은 틱에 Enter가 와서 ref가 막는다. 두 브라우저 모두 조합을 끝내는 Enter로는 안 보내고 한 번 더 눌러야 보낸다. iOS 한글 자판의 보내기 키도 그럴 수 있다. 웹 조립 때 실기기에서 확인하고 여기에 적는다. keyCode 229 검사는 린트(no-deprecated)가 막아 쓰지 않았다.
+
+- 바탕 띠(D-32, 2026-11-20 브라우저 QA 2차): `color.track`(#EEF2EC, 숲의 녹회색) 대신 `--theme-track`(`tokens/base.css`, 테마 dark 4%를 테마 bg에 섞음. 숲은 #EDF2ED)을 쓴다. 물용, 별용 화면에 녹회색 띠가 남지 않게. 고정 테마(`data-theme="fixed"`) 화면은 숲 값을 다시 받는다. 채움 색(노른자, 잎색, 경고)은 그대로다.

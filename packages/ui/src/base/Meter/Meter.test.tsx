@@ -82,10 +82,10 @@ describe('Meter (Meter.md 테스트 기준)', () => {
   it('matches the design values', () => {
     expect(rule('.track')).toMatch(/height:\s*var\(--size-meter\)/);
     expect(rule('.track')).toMatch(/border-radius:\s*calc\(var\(--size-meter\) \/ 2\)/);
-    expect(rule('.track')).toMatch(/background:\s*var\(--color-track\)/);
+    expect(rule('.track')).toMatch(/background:\s*var\(--theme-track\)/);
     expect(rule('.track')).toMatch(/overflow:\s*hidden/);
     // budget: yolk on the light track. limit: leaf on the line track, gap 6.
-    expect(rule('.budget .track')).toMatch(/background:\s*var\(--color-track\)/);
+    expect(rule('.budget .track')).toMatch(/background:\s*var\(--theme-track\)/);
     expect(rule('.budget .fill')).toMatch(/background:\s*var\(--color-yolk\)/);
     expect(rule('.limit .track')).toMatch(/background:\s*var\(--color-line\)/);
     expect(rule('.limit .fill')).toMatch(/background:\s*var\(--theme-accent\)/);

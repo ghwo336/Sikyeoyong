@@ -48,7 +48,7 @@
 }
 
 .input:disabled {
-  background: var(--color-track);
+  background: var(--theme-track);
 }
 
 .send {

@@ -14,3 +14,15 @@
   --motion-number: 400ms;
   --motion-typing: 1200ms;
 }
+
+/*
+ * D-32: the neutral track under a bar and a switched-off input follows the species bg, so a
+ * green-grey #EEF2EC never sits on a blue or purple screen (browser QA 2). 4% of the theme's
+ * dark over its bg gives #EDF2ED for the forest, next to color.track. Declared on every
+ * element that sets the theme, so a fixed-theme screen inside another species gets its own.
+ */
+:root,
+[data-species],
+[data-theme='fixed'] {
+  --theme-track: color-mix(in srgb, var(--theme-dark) 4%, var(--theme-bg));
+}

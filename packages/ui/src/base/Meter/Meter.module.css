@@ -35,7 +35,7 @@
 .track {
   height: var(--size-meter);
   border-radius: calc(var(--size-meter) / 2);
-  background: var(--color-track);
+  background: var(--theme-track);
   overflow: hidden;
 }
 
@@ -47,7 +47,7 @@
 
 /* The month's budget is yolk on the light track (D-17, Main 70%, Arrived 73%). */
 .budget .track {
-  background: var(--color-track);
+  background: var(--theme-track);
 }
 
 .budget .fill {

@@ -47,3 +47,5 @@ Main, Arrived (예산), Confirm (한도)
 - tone을 고르는 기준은 부모가 `nagStage`(packages/shared policy)로 정한다. 막대는 받은 tone만 칠한다.
 - 퍼센트는 표시용 숫자로만 바꾼다. 돈 계산이 아니다.
 - 카드(`framed`)는 2026-11-19에 Main 시안 "이번 달 배달비" 카드를 그리려고 늘렸다. 화면 양옆 20은 카드가 아니라 `ChatLayout` top 띠가 준다.
+
+- 바탕 띠(D-32, 2026-11-20 브라우저 QA 2차): `color.track`(#EEF2EC, 숲의 녹회색) 대신 `--theme-track`(`tokens/base.css`, 테마 dark 4%를 테마 bg에 섞음. 숲은 #EDF2ED)을 쓴다. 물용, 별용 화면에 녹회색 띠가 남지 않게. 고정 테마(`data-theme="fixed"`) 화면은 숲 값을 다시 받는다. 채움 색(노른자, 잎색, 경고)은 그대로다.

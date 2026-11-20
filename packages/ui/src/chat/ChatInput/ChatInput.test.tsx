@@ -152,6 +152,10 @@ describe('ChatInput (ChatInput.md 테스트 기준)', () => {
   });
 
   // Main.dc.html 84-87.
+  it('a switched-off input sits on the theme track, not the forest grey (D-32)', () => {
+    expect(rule('.input:disabled')).toMatch(/background:\s*var\(--theme-track\)/);
+  });
+
   it('matches the design values', () => {
     const input = rule('.input');
     expect(input).toMatch(/height:\s*var\(--size-chat-input\)/);

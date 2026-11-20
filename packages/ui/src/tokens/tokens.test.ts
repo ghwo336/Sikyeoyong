@@ -95,6 +95,15 @@ describe('renderTokens rejects shapes it cannot express', () => {
 describe('base.css (hand-maintained)', () => {
   const vars = cssVars(base);
 
+  it('the neutral track follows the theme on every theme-setting element (D-32, browser QA 2)', () => {
+    const block = /:root,\s*\[data-species\],\s*\[data-theme='fixed'\]\s*\{([^}]*)\}/.exec(
+      base,
+    )?.[1];
+    expect(block).toMatch(
+      /--theme-track:\s*color-mix\(in srgb, var\(--theme-dark\) 4%, var\(--theme-bg\)\)/,
+    );
+  });
+
   it('matches the motion strings in tokens.json', () => {
     expect(tokens.motion.screen).toBe('220ms ease-out');
     expect(vars.get('motion-screen')).toBe('220ms');
