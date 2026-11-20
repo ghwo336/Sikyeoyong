@@ -225,11 +225,11 @@ apps/api/src/
 | POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/auth/pouchi/config` | 공개 | | `PouchiLoginConfig` (`api/auth.ts`, D-29): 금고 주소, 앱 ID, 콜백. 파우치 로그인이 꺼져 있으면 404 |
-| GET | `/identity` | user | | `IdentityStatus` (`{ verified }`, `api/auth.ts`). 본인 인증을 마쳤는지. 입구(EntryGate)가 용이 없는 사용자를 Verify와 Name 중 어디로 보낼지 정한다. 2026-11-20 추가 |
 | POST | `/auth/pouchi/bind` | 공개(`X-Requested-With`) | `{ requestId, codeChallenge, flow: signup }` (둘 다 base64url 43자) | 204. 금고를 열기 전 요청과 PKCE challenge를 서버에 묶는다 (10분, 한 번, 같은 요청 다시 묶기 409, IP당 1분 10회) |
 | POST | `/auth/pouchi/complete` | 공개(`X-Requested-With`) | `{ requestId, envelope, codeVerifier }` (정확히 셋) | 204와 세션 쿠키(이전 sid는 폐기). 묶은 요청으로만 한 번, verifier가 challenge와 맞아야 하고, SDK로 결과 서명과 기기 확인. 실패는 401, IP당 1분 10회. 2026-11-20 구현 |
 | GET | `/signup/config` | 공개 | | `SignupConfig` (`{ verifyMode: kakao \| mock, trialAllowance }`, `api/me.ts`, D-16). 2026-11-19 추가 |
 | POST | `/signup/trial` | user | | `TrialResult` (`{ granted }`, `api/wallet.ts`). 본인 인증을 마친 주인만(아니면 403). 체험용 용돈(정책 `trialAllowanceAokrw`, 기본 100,000원)을 주인 용돈 장부에 한 번만 넣는다. 두 번째부터는 200 `granted: false`(동시에 와도 하나만, 부분 유일 색인). 수탁(D-24) 동안은 장부만 쓰고 체인에서는 아무것도 옮기지 않는다. 2026-11-20 추가 (allowance 모듈) |
+| GET | `/identity` | user | | `IdentityStatus` (`{ verified }`, `api/auth.ts`). 본인 인증을 마쳤는지. 입구(EntryGate)가 용이 없는 사용자를 Verify와 Name 중 어디로 보낼지 정한다. 2026-11-20 추가 |
 | POST | `/identity/verify` | user | | `{ verified: true }`. 본인 인증(D-16). `VERIFY_MODE=mock`이면 통과를 기록, `kakao`는 Q-19가 풀릴 때까지 500 `INTERNAL`. 통과한 사실, 방법, 시각만 남긴다. 인증 전의 `POST /agents`는 403 (2026-11-20) |
 | GET | `/me` | user | | `MeView` (`{ dragonName, dragonSpecies, level, perOrderLimit, custodial }`, `api/me.ts`. `custodial`은 `OWNER_MODE=custodial`일 때만 true, 지갑 화면의 체험판 한 줄용, D-24). 예산은 `GET /budget`. 용이 아직 없으면 404 `NOT_FOUND` (웹은 이름 짓기로) |
 | GET | `/me/id-card` | user | | `IdCardView` (`api/wallet.ts`, 용이 신분증 화면): `ownerName`은 닉네임(실명은 저장하지 않는다, D-16), `ownerVerified`는 본인 인증 기록 여부, `bornAt`은 용이를 만든 시각. 용이 없으면 404. 2026-11-20 추가 (users 모듈: users가 agents와 identity를 이미 가져오므로 순환 없이 여기) |

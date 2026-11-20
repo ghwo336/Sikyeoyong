@@ -229,6 +229,18 @@ describe('Pouchi login (D-29)', () => {
     expect((await bind(11, '198.51.100.2')).status).toBe(204);
   });
 
+  it('complete counts too: the 11th call from one address in a minute is 429', async () => {
+    const { http } = await setup();
+    const complete = (n: number) =>
+      http()
+        .post('/api/auth/pouchi/complete')
+        .set('X-Requested-With', 'fetch')
+        .set('X-Forwarded-For', '203.0.113.9')
+        .send({ requestId: rid(n), envelope: 'e', codeVerifier: VERIFIER });
+    for (let n = 0; n < 10; n += 1) expect((await complete(n)).status).toBe(401);
+    expect((await complete(10)).status).toBe(429);
+  });
+
   it('the pending floor: past the cap a new bind is 429 until old ones expire', async () => {
     const { service } = await setup();
     service.maxPending = 2;
