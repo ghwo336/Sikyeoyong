@@ -1,0 +1,22 @@
+/* Start.dc.html 33: 12px secondary ink, centered, 6 below the buttons. */
+.terms {
+  margin: var(--size-terms-top) 0 0;
+  font-size: var(--type-fine-size);
+  line-height: var(--type-fine-line-height);
+  color: var(--color-ink-secondary);
+  text-align: center;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.link:hover {
+  color: var(--color-ink);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
+}

@@ -86,10 +86,7 @@ describe('SocialLogin (SocialLogin.md 테스트 기준)', () => {
   // Start.dc.html 29-33.
   it('matches the design values', () => {
     expect(rule('.login')).toMatch(/gap:\s*var\(--size-social-gap\)/);
-    expect(rule('.terms')).toMatch(/margin:\s*var\(--size-terms-top\) 0 0/);
-    expect(rule('.terms')).toMatch(/font-size:\s*var\(--type-fine-size\)/);
-    expect(rule('.terms')).toMatch(/color:\s*var\(--color-ink-secondary\)/);
-    expect(rule('.terms')).toMatch(/text-align:\s*center/);
+    // The terms line's own values are TermsLine's (TermsLine.test.tsx).
     expect(rule('.kakaoMark')).toMatch(/width:\s*var\(--size-social-mark\)/);
     expect(rule('.googleMark')).toMatch(/width:\s*var\(--size-google-mark\)/);
   });

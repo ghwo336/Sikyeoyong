@@ -1,5 +1,6 @@
 import { Button } from '../../base/Button';
 import { Icon } from '../../base/Icon';
+import { TermsLine } from '../TermsLine';
 import styles from './SocialLogin.module.css';
 
 export type SocialProvider = 'kakao' | 'google';
@@ -74,17 +75,7 @@ export function SocialLogin({
       >
         구글로 시작하기
       </Button>
-      <p className={styles.terms}>
-        시작하면{' '}
-        <a href={termsHref} className={styles.link}>
-          이용약관
-        </a>
-        과{' '}
-        <a href={privacyHref} className={styles.link}>
-          개인정보 처리방침
-        </a>
-        에 동의하게 돼요
-      </p>
+      <TermsLine termsHref={termsHref} privacyHref={privacyHref} />
     </div>
   );
 }

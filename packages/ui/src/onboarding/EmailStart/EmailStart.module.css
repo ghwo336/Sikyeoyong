@@ -1,0 +1,6 @@
+/* Start.dc.html bottom block with one 56px button: the same gap as the two-button version. */
+.start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-social-gap);
+}
