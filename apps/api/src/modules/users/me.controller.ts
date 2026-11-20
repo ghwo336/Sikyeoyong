@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import {
+  type IdCardView,
   type MeView,
   parseAokrw,
   type PatchMeBody,
@@ -25,6 +26,11 @@ export class MeController {
   @Get()
   get(@CurrentUser() user: SessionUser): MeView {
     return this.me.me(user.userId);
+  }
+
+  @Get('id-card')
+  idCard(@CurrentUser() user: SessionUser): IdCardView {
+    return this.me.idCard(user.userId);
   }
 
   @Patch()

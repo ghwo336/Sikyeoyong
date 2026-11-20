@@ -57,6 +57,7 @@ describe('AgentsService', () => {
       wallet: null,
       dragonName: '용이',
       dragonSpecies: 'water',
+      bornAt: 1,
     });
   });
 

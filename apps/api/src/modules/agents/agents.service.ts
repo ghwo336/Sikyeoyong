@@ -25,6 +25,8 @@ export interface AgentSummary {
   readonly wallet: `0x${string}` | null;
   readonly dragonName: string;
   readonly dragonSpecies: DragonSpecies;
+  /** When the owner asked for this dragon (unix ms): the ID card's birth date. */
+  readonly bornAt: number;
 }
 
 function asWallet(value: string | null): `0x${string}` | null {
@@ -56,6 +58,7 @@ export class AgentsService {
       wallet: asWallet(row.walletAddress),
       dragonName: row.dragonName,
       dragonSpecies: row.dragonSpecies,
+      bornAt: row.createdAt,
     };
   }
 

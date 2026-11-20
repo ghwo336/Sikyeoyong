@@ -19,6 +19,7 @@ const COLUMNS = {
   dragonName: agents.dragonName,
   dragonSpecies: agents.dragonSpecies,
   setupStep: agents.setupStep,
+  createdAt: agents.createdAt,
 };
 
 /** Queries on agents and their limit history only. */

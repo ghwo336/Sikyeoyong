@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AgentsModule } from '../agents/agents.module.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { IdentityModule } from '../identity/identity.module.js';
 import { DevLoginController } from './dev-login.controller.js';
 import { DevLoginGuard } from './dev-login.guard.js';
 import { MeController, SignupController } from './me.controller.js';
@@ -9,7 +10,7 @@ import { UsersRepository } from './users.repository.js';
 import { UsersService } from './users.service.js';
 
 @Module({
-  imports: [AuthModule, AgentsModule],
+  imports: [AuthModule, AgentsModule, IdentityModule],
   controllers: [MeController, SignupController, DevLoginController],
   providers: [UsersRepository, UsersService, MeService, DevLoginGuard],
   exports: [UsersService],

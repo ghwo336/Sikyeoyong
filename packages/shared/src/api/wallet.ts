@@ -17,7 +17,7 @@ export const zWalletView = z
 export type WalletView = z.infer<typeof zWalletView>;
 
 /**
- * The dragon's ID card (IdCard.dc.html, future GET /agents/me/id-card): the owner's
+ * The dragon's ID card (IdCard.dc.html, GET /api/me/id-card): the owner's
  * name, whether the owner passed the identity check (D-16), and when the dragon hatched.
  */
 export const zIdCardView = z
