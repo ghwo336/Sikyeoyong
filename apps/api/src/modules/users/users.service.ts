@@ -12,6 +12,21 @@ export class UsersService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
+  /**
+   * dev-login only: the user for a local developer key, made on first use with the
+   * policy's default monthly budget. Ids are `dev-<key>`, never an OAuth user's.
+   */
+  ensureDevUser(key: string, nowMs: number = Date.now()): string {
+    const id = `dev-${key}`;
+    this.repo.ensure({
+      id,
+      nickname: key,
+      monthlyBudgetAokrw: aokrwToString(this.config.policy.defaultMonthlyBudgetAokrw),
+      createdAt: nowMs,
+    });
+    return id;
+  }
+
   /** Personal monthly budget in aokrw (server-side only, D-07). */
   getMonthlyBudgetAokrw(userId: string): bigint {
     const stored = this.repo.findMonthlyBudget(userId);

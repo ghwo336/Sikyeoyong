@@ -863,6 +863,7 @@ SESSION_SECRET=                       # 32바이트 이상 무작위
 DATABASE_URL=file:/data/sikyeoyong.db
 DEMO_MODE=false
 DEMO_BYPASS_SERVER_LIMIT=false
+DEV_LOGIN=false           # 개발 때만 POST /api/auth/dev-login (production이면 부팅 거절)
 
 # 웹 (개발 때만, next dev의 /api 전달 대상. 비우면 http://localhost:<PORT>. 운영은 Caddy)
 API_DEV_ORIGIN=

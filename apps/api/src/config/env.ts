@@ -36,6 +36,8 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1).default('file:./data/sikyeoyong.db'),
   DEMO_MODE: bool.default(false),
   DEMO_BYPASS_SERVER_LIMIT: bool.default(false),
+  /** Local development only: POST /api/auth/dev-login without OAuth. Refused in production. */
+  DEV_LOGIN: bool.default(false),
   KAKAO_REST_API_KEY: optionalText,
   KAKAO_CLIENT_SECRET: optionalText,
   GOOGLE_CLIENT_ID_WEB: optionalText,
@@ -75,6 +77,8 @@ export interface AppConfig {
   readonly demo: { readonly enabled: boolean; readonly bypassServerLimit: boolean };
   /** Identity step on sign-up (D-16). */
   readonly verifyMode: 'kakao' | 'mock';
+  /** POST /api/auth/dev-login is open (never in production, auth.md). */
+  readonly devLogin: boolean;
   readonly chain: ChainConfig;
   readonly policy: PolicyConfig;
   readonly payment: {
@@ -123,6 +127,7 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
     need('WAAS_AUTH_TOKEN', env.WAAS_AUTH_TOKEN !== undefined);
   if (env.PAYMENT_PATH === 'mock') missing.push('PAYMENT_PATH=mock (production에서 금지)');
   if (env.DEMO_BYPASS_SERVER_LIMIT) missing.push('DEMO_BYPASS_SERVER_LIMIT (production에서 금지)');
+  if (env.DEV_LOGIN) missing.push('DEV_LOGIN (production에서 금지)');
   return missing;
 }
 
@@ -169,6 +174,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
       okrwDenom: env.OKRW_DENOM,
     }),
     verifyMode: env.VERIFY_MODE,
+    devLogin: env.DEV_LOGIN,
     policy: getPolicy(env.POLICY_PROFILE),
     payment: {
       path: env.PAYMENT_PATH,

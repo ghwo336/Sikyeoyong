@@ -9,6 +9,16 @@ import { users } from '../../db/schema/index.js';
 export class UsersRepository {
   constructor(@Inject(DB) private readonly handle: DbHandle) {}
 
+  /** Inserts the user once; an existing id is left as it is. */
+  ensure(row: {
+    id: string;
+    nickname: string;
+    monthlyBudgetAokrw: string;
+    createdAt: number;
+  }): void {
+    this.handle.db.insert(users).values(row).onConflictDoNothing().run();
+  }
+
   findMonthlyBudget(userId: string): string | undefined {
     return this.handle.db
       .select({ monthlyBudgetAokrw: users.monthlyBudgetAokrw })
