@@ -11,6 +11,7 @@ const store = {
   find: (_address: string) => undefined,
   findByAgentId: (_agentId: string) => undefined,
   link: (_address: string, _agentId: string) => undefined,
+  setOnchainAgentId: (_address: string, _id: string) => undefined,
 };
 const KEY = `0x${randomBytes(32).toString('hex')}`;
 const ENV = {

@@ -25,4 +25,12 @@ export class AgentKeysRepository implements AgentKeyStore {
   link(address: string, agentId: string): void {
     this.handle.db.update(agentKeys).set({ agentId }).where(eq(agentKeys.address, address)).run();
   }
+
+  setOnchainAgentId(address: string, onchainAgentId: string): void {
+    this.handle.db
+      .update(agentKeys)
+      .set({ onchainAgentId })
+      .where(eq(agentKeys.address, address))
+      .run();
+  }
 }

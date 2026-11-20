@@ -1,0 +1,1 @@
+ALTER TABLE `agent_keys` ADD `onchain_agent_id` text;

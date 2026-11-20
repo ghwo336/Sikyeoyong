@@ -74,6 +74,8 @@ export const agentKeys = sqliteTable(
     /** Lowercase 0x address of the agent wallet. */
     address: text('address').primaryKey(),
     agentId: text('agent_id').references(() => agents.id),
+    /** The 8004 id (decimal string) once register() succeeded; a retried hatch resumes from it. */
+    onchainAgentId: text('onchain_agent_id'),
     /** AES-256-GCM ciphertext, hex. */
     ciphertext: text('ciphertext').notNull(),
     /** 12 byte nonce, hex. */

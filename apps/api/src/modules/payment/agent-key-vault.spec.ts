@@ -21,6 +21,10 @@ class MemoryStore {
     const row = this.rows.get(address);
     if (row) this.rows.set(address, { ...row, agentId });
   }
+  setOnchainAgentId(address: string, onchainAgentId: string) {
+    const row = this.rows.get(address);
+    if (row) this.rows.set(address, { ...row, onchainAgentId });
+  }
 }
 
 describe('parseMasterKey', () => {
@@ -167,6 +171,22 @@ describe('AgentKeysRepository (agent_keys, migration 0010)', () => {
       const a = vault.create('row-1');
       expect(vault.addressFor('row-1')).toBe(a);
       expect(() => vault.create('row-1')).toThrow();
+    } finally {
+      handle.close();
+    }
+  });
+
+  it('keeps the 8004 id across reads, in the real table too', () => {
+    const handle = openDb(':memory:');
+    try {
+      runMigrations(handle.db);
+      const vault = new AgentKeyVault(randomBytes(32), new AgentKeysRepository(handle));
+      const address = vault.create();
+      expect(vault.onchainAgentIdOf(address)).toBeUndefined();
+      vault.recordOnchainAgentId(address, 123_456_789_012_345_678_901n);
+      expect(vault.onchainAgentIdOf(address.toUpperCase().replace('0X', '0x'))).toBe(
+        123_456_789_012_345_678_901n,
+      );
     } finally {
       handle.close();
     }

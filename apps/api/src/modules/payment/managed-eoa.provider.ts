@@ -187,52 +187,64 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
       (input.agentRowId === undefined ? undefined : this.d.vault.addressFor(input.agentRowId)) ??
       this.d.vault.create(input.agentRowId);
     const { registry } = this.d.config;
-    const { receipt } = await this.operatorTx(
-      {
-        to: registry,
-        data: encodeFunctionData({ abi: identityRegistryAbi, functionName: 'register' }),
-      },
-      'register',
-    );
-    const registered = parseEventLogs({
-      abi: identityRegistryAbi,
-      eventName: 'Registered',
-      logs: receipt.logs.filter((l) => l.address.toLowerCase() === registry.toLowerCase()),
-    } as never) as unknown as readonly { args: { agentId: bigint } }[];
-    const first = registered[0];
-    if (first === undefined) throw unknown('8004 register emitted no Registered event');
-    const agentId = first.args.agentId;
+    // Each on-chain step is resumable: the 8004 id is saved right after register() succeeds, and
+    // the wallet link is read before it is written. A retry never registers a second id.
+    let agentId = this.d.vault.onchainAgentIdOf(address);
+    if (agentId === undefined) {
+      const { receipt } = await this.operatorTx(
+        {
+          to: registry,
+          data: encodeFunctionData({ abi: identityRegistryAbi, functionName: 'register' }),
+        },
+        'register',
+      );
+      const registered = parseEventLogs({
+        abi: identityRegistryAbi,
+        eventName: 'Registered',
+        logs: receipt.logs.filter((l) => l.address.toLowerCase() === registry.toLowerCase()),
+      } as never) as unknown as readonly { args: { agentId: bigint } }[];
+      const first = registered[0];
+      if (first === undefined) throw unknown('8004 register emitted no Registered event');
+      agentId = first.args.agentId;
+      this.d.vault.recordOnchainAgentId(address, agentId);
+    }
 
-    // Link the wallet: the agent signs, the owner (operator) sends (EIP-712 AgentWalletSet).
-    const now = (await this.d.publicClient.getBlock()).timestamp;
-    const deadline = now + DEADLINE_SECONDS;
-    const signature = await this.d.vault.withAccount(address, (account) =>
-      this.d.signWalletAuthorization(account, {
-        agentId,
-        newWallet: address,
-        owner: this.operator,
-        deadline,
-      }),
-    );
-    await this.operatorTx(
-      {
-        to: registry,
-        data: encodeFunctionData({
-          abi: identityRegistryAbi,
-          functionName: 'setAgentWallet',
-          args: [agentId, address, deadline, signature],
+    const readLink = async (): Promise<boolean> => {
+      const linked = await this.d.publicClient.readContract({
+        address: registry,
+        abi: identityRegistryAbi,
+        functionName: 'getAgentWallet',
+        args: [agentId],
+      });
+      return typeof linked === 'string' && linked.toLowerCase() === address.toLowerCase();
+    };
+    if (!(await readLink())) {
+      // Link the wallet: the agent signs, the owner (operator) sends (EIP-712 AgentWalletSet).
+      const now = (await this.d.publicClient.getBlock()).timestamp;
+      const deadline = now + DEADLINE_SECONDS;
+      const id = agentId;
+      const signature = await this.d.vault.withAccount(address, (account) =>
+        this.d.signWalletAuthorization(account, {
+          agentId: id,
+          newWallet: address,
+          owner: this.operator,
+          deadline,
         }),
-      },
-      'setAgentWallet',
-    );
-    const linked = await this.d.publicClient.readContract({
-      address: registry,
-      abi: identityRegistryAbi,
-      functionName: 'getAgentWallet',
-      args: [agentId],
-    });
-    if (typeof linked !== 'string' || linked.toLowerCase() !== address.toLowerCase()) {
-      throw unknown('8004 wallet link did not hold', { agentId: agentId.toString() });
+      );
+      await this.operatorTx(
+        {
+          to: registry,
+          data: encodeFunctionData({
+            abi: identityRegistryAbi,
+            functionName: 'setAgentWallet',
+            args: [agentId, address, deadline, signature],
+          }),
+        },
+        'setAgentWallet',
+      );
+      if (!(await readLink())) {
+        throw unknown('8004 wallet link did not hold', { agentId: agentId.toString() });
+      }
     }
     return {
       agentRowId: input.agentRowId ?? '',

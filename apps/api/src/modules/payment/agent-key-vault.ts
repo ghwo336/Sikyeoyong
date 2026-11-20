@@ -6,6 +6,8 @@ import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 
 export interface SealedKeyRow {
   readonly address: string;
   readonly agentId: string | null;
+  /** The 8004 id (decimal string) once register() succeeded. */
+  readonly onchainAgentId: string | null;
   readonly ciphertext: string;
   readonly iv: string;
   readonly tag: string;
@@ -20,6 +22,8 @@ export interface AgentKeyStore {
   findByAgentId(agentId: string): SealedKeyRow | undefined;
   /** Links a saved key to its agents row. */
   link(address: string, agentId: string): void;
+  /** Remembers the 8004 id so a retried hatch does not register a second one. */
+  setOnchainAgentId(address: string, onchainAgentId: string): void;
 }
 
 const KEY_VERSION = 1;
@@ -77,6 +81,7 @@ export class AgentKeyVault {
       this.store.insert({
         address,
         agentId: agentId ?? null,
+        onchainAgentId: null,
         ciphertext: ciphertext.toString('hex'),
         iv: iv.toString('hex'),
         tag: cipher.getAuthTag().toString('hex'),
@@ -95,6 +100,16 @@ export class AgentKeyVault {
 
   link(address: string, agentId: string): void {
     this.store.link(address.toLowerCase(), agentId);
+  }
+
+  /** The 8004 id saved for this wallet, if register() already succeeded for it. */
+  onchainAgentIdOf(address: string): bigint | undefined {
+    const raw = this.store.find(address.toLowerCase())?.onchainAgentId;
+    return raw === null || raw === undefined ? undefined : BigInt(raw);
+  }
+
+  recordOnchainAgentId(address: string, onchainAgentId: bigint): void {
+    this.store.setOnchainAgentId(address.toLowerCase(), onchainAgentId.toString());
   }
 
   /** Runs `fn` with the agent's signing account. The plaintext buffer is zeroed when it returns. */

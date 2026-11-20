@@ -44,6 +44,10 @@ class MemoryStore {
     const row = this.rows.get(address);
     if (row) this.rows.set(address, { ...row, agentId });
   }
+  setOnchainAgentId(address: string, onchainAgentId: string) {
+    const row = this.rows.get(address);
+    if (row) this.rows.set(address, { ...row, onchainAgentId });
+  }
 }
 
 const success = (n: number, logs: ReceiptLike['logs'] = [], blockNumber = 100n): ReceiptLike => ({
@@ -102,10 +106,23 @@ function setup(opts: { balance?: bigint } = {}) {
       (): Promise<readonly { transactionHash: Hex | null; blockNumber: bigint | null }[]> =>
         Promise.resolve([]),
     ),
-    // getAgentWallet: the wallet the registry now links, i.e. the newest key in the vault.
-    readContract: vi.fn((): Promise<unknown> =>
-      Promise.resolve(getAddress([...store.rows.keys()].at(-1) ?? '0x0')),
-    ),
+    // getAgentWallet: the wallet of the last setAgentWallet the operator sent (zero if none).
+    readContract: vi.fn((): Promise<unknown> => {
+      // only mined, successful link txs count (the n-th send has hash 1000 + n)
+      const last = operatorSends
+        .map((tx, i) => ({
+          d: decodeFunctionData({ abi: identityRegistryAbi, data: tx.data ?? '0x' }),
+          ok: (receipts.get(hash(1001 + i)) as ReceiptLike | undefined)?.status === 'success',
+        }))
+        .filter((x) => x.ok && x.d.functionName === 'setAgentWallet')
+        .map((x) => x.d)
+        .at(-1);
+      return Promise.resolve(
+        last === undefined
+          ? '0x0000000000000000000000000000000000000000'
+          : (last.args as readonly unknown[])[1],
+      );
+    }),
     pcl: {
       simulatePclProxy: vi.fn((): Promise<SimulateOutcome> =>
         Promise.resolve({ status: 'succeeded' }),
@@ -245,6 +262,46 @@ describe('createAgent', () => {
     expect(wallet.address).toBe(orphan);
     expect(wallet.onchainAgentId).toBe(88n);
     expect(t.store.rows.size).toBe(rowsAfterFail);
+  });
+
+  it('a retry after register succeeded reuses the saved 8004 id and registers only once', async () => {
+    const t = setup();
+    t.receipts.set(hash(1001), success(1001, [registeredLog(55n)]));
+    t.receipts.set(hash(1002), { ...success(1002), status: 'reverted' });
+    await expect(
+      t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-7' }),
+    ).rejects.toThrow();
+    const address = t.vault.addressFor('row-7') as Hex;
+    expect(t.vault.onchainAgentIdOf(address)).toBe(55n);
+    t.receipts.set(hash(1003), success(1003));
+    const wallet = await t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-7' });
+    const fns = t.operatorSends.map(
+      (tx) => decodeFunctionData({ abi: identityRegistryAbi, data: tx.data ?? '0x' }).functionName,
+    );
+    expect(fns).toEqual(['register', 'setAgentWallet', 'setAgentWallet']);
+    expect(wallet.onchainAgentId).toBe(55n);
+    const retryLink = decodeFunctionData({
+      abi: identityRegistryAbi,
+      data: t.operatorSends[2]?.data ?? '0x',
+    });
+    expect((retryLink.args as readonly unknown[])[0]).toBe(55n);
+  });
+
+  it('a retry after setAgentWallet went through does not send it again', async () => {
+    const t = setup();
+    t.receipts.set(hash(1001), success(1001, [registeredLog(66n)]));
+    t.receipts.set(hash(1002), success(1002));
+    // the first attempt dies on the post-check read, after the link tx was mined
+    t.pub.readContract
+      .mockImplementationOnce(() => Promise.resolve('0x0000000000000000000000000000000000000000'))
+      .mockImplementationOnce(() => Promise.reject(new Error('rpc down')));
+    await expect(
+      t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-8' }),
+    ).rejects.toThrow();
+    expect(t.operatorSends).toHaveLength(2);
+    const wallet = await t.provider.createAgent({ userId: 'u', name: 'n', agentRowId: 'row-8' });
+    expect(t.operatorSends).toHaveLength(2);
+    expect(wallet.onchainAgentId).toBe(66n);
   });
 
   it('a funded orphan key is kept and recorded, never replaced by a new one', async () => {
