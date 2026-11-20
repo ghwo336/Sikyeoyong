@@ -170,6 +170,20 @@ export class MockPaymentProvider implements PaymentProvider {
     return null;
   }
 
+  /**
+   * The mock chain's 30-day window for one agent (what contractPeriodicVolume will answer on the
+   * real chain): used aokrw and its reset in unix seconds, null before the first order.
+   */
+  periodicVolume(address: Hex): { usedAokrw: bigint; resetAtSec: number | null } {
+    const w = this.wallet(address);
+    this.rollWindow(w);
+    if (w.window === null) return { usedAokrw: 0n, resetAtSec: null };
+    return {
+      usedAokrw: w.window.used,
+      resetAtSec: Math.floor((w.window.start + this.policy.periodicPeriodSec * 1000) / 1000),
+    };
+  }
+
   private rollWindow(w: MockWallet): void {
     if (w.window !== null && this.now() >= w.window.start + this.policy.periodicPeriodSec * 1000) {
       w.window = null;

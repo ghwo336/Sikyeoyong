@@ -39,3 +39,14 @@ export {
   createOwnerAuthority,
   runOwnerAction,
 } from './owner-authority.js';
+
+/**
+ * Development only: the 30-day window the mock chain keeps, for the chain reader to show on the
+ * budget and wallet screens. null for any real payment provider (the real reader reads the chain).
+ */
+export function mockPeriodicVolume(
+  payment: PaymentProvider,
+  address: `0x${string}`,
+): { usedAokrw: bigint; resetAtSec: number | null } | null {
+  return payment instanceof MockPaymentProvider ? payment.periodicVolume(address) : null;
+}

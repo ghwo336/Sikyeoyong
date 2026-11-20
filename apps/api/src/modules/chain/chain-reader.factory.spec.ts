@@ -1,6 +1,7 @@
-import { AppError } from '@sikyeoyong/shared';
+import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../config/env.js';
+import { createPaymentProvider } from '../payment/payment.service.js';
 import { createChainReader } from './chain-reader.factory.js';
 
 const PROD = {
@@ -32,5 +33,36 @@ describe('createChainReader', () => {
     const err = await r.periodicVolume(null).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AppError);
     expect((err as AppError).code).toBe('INTERNAL');
+  });
+});
+
+describe('createChainReader on the mock chain (PAYMENT_PATH=mock)', () => {
+  it('a payment fills the 30-day window the budget and wallet screens show', async () => {
+    const config = loadConfig({ PAYMENT_PATH: 'mock', POLICY_PROFILE: 'demo' });
+    const payment = createPaymentProvider(config);
+    const reader = createChainReader(config, payment);
+    const agent = await payment.createAgent({ userId: 'u1', name: '용이' });
+    expect(await reader.periodicVolume(agent.address)).toEqual({ usedAokrw: 0n, resetAtSec: null });
+    const amount = okrwToAokrw(4_500n);
+    await payment.setTransferLimit(agent, amount);
+    await payment.fund(agent, amount);
+    const before = Date.now();
+    const paid = await payment.pay({
+      agent,
+      merchantOnchainId: 1n,
+      amount,
+      orderRef: `0x${'a'.repeat(64)}`,
+    });
+    expect(paid).toMatchObject({ ok: true });
+    const seen = await reader.periodicVolume(agent.address);
+    expect(seen.usedAokrw).toBe(amount);
+    // The demo profile's window is one hour (policy), from the first order.
+    expect(seen.resetAtSec).toBeGreaterThanOrEqual(Math.floor(before / 1000) + 3600 - 1);
+  });
+
+  it('a wallet with no address yet reads an empty window', async () => {
+    const config = loadConfig({ PAYMENT_PATH: 'mock' });
+    const reader = createChainReader(config, createPaymentProvider(config));
+    expect(await reader.periodicVolume(null)).toEqual({ usedAokrw: 0n, resetAtSec: null });
   });
 });
