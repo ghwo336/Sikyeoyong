@@ -19,6 +19,21 @@ describe('dragonTurn', () => {
     expect(turn.quote).toBeUndefined();
   });
 
+  it('draws the same recommendation list once when the model fetched it twice', () => {
+    const other = { id: 'r2', menu: '순대국' } as RecommendationCard;
+    const turn = dragonTurn('m', [
+      { type: 'recommendations', items: [rec] },
+      { type: 'token', text: '골랐어용' },
+      { type: 'recommendations', items: [rec] },
+      { type: 'recommendations', items: [other] },
+    ]);
+    expect(turn.entries.map((e) => e.kind)).toEqual([
+      'recommendations',
+      'dragon',
+      'recommendations',
+    ]);
+  });
+
   it('turns order_confirm into the quote, not a thread item', () => {
     const turn = dragonTurn('m', [{ type: 'order_confirm', quote }]);
     expect(turn.entries).toEqual([]);

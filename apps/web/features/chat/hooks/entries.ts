@@ -54,6 +54,8 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
   let text = '';
   let cardBreak = false;
   let quote: OrderQuote | undefined;
+  // The model may look the same list up twice in one turn; the thread shows it once (QA 3).
+  const seenLists = new Set<string>();
   const flushText = () => {
     if (text === '') return;
     entries.push({ kind: 'dragon', id: `${messageId}-t${String(entries.length)}`, text });
@@ -67,7 +69,10 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
         cardBreak = false;
         text += e.text;
         break;
-      case 'recommendations':
+      case 'recommendations': {
+        const key = e.items.map((i) => i.id).join('|');
+        if (seenLists.has(key)) break;
+        seenLists.add(key);
         flushText();
         entries.push({
           kind: 'recommendations',
@@ -75,6 +80,7 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
           items: e.items,
         });
         break;
+      }
       case 'quick_replies':
         flushText();
         entries.push({
