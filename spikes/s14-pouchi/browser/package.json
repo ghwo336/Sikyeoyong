@@ -1,0 +1,15 @@
+{
+  "name": "s14-pouchi-browser",
+  "private": true,
+  "type": "module",
+  "description": "S14 spike: Pouchi Browser SDK login and owner signing on Maroo testnet. Not part of the pnpm workspace, never imported by apps/.",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@nc-waas/sdk": "file:vendor/nc-waas-sdk-0.1.0-beta.8.tgz"
+  },
+  "devDependencies": {
+    "vite": "6.4.5"
+  }
+}
