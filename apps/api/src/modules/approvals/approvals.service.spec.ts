@@ -1,0 +1,171 @@
+import { aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
+import { eq } from 'drizzle-orm';
+import { afterEach, describe, expect, it } from 'vitest';
+import { type DbHandle, openDb } from '../../db/client.js';
+import { runMigrations } from '../../db/migrate.js';
+import {
+  agents,
+  allowedMerchants,
+  approvals,
+  merchants,
+  orders,
+  users,
+} from '../../db/schema/index.js';
+import { ApprovalsRepository } from './approvals.repository.js';
+import { APPROVAL_TTL_MS, ApprovalsService, approvalReasonOf } from './approvals.service.js';
+
+const handles: DbHandle[] = [];
+afterEach(() => {
+  while (handles.length) handles.pop()?.close();
+});
+
+const won = (n: bigint) => aokrwToString(okrwToAokrw(n));
+const NOW = Date.parse('2026-12-01T03:00:00.000Z');
+
+function setup() {
+  const h = openDb(':memory:');
+  runMigrations(h.db);
+  handles.push(h);
+  h.db
+    .insert(users)
+    .values({ id: 'u1', nickname: '주인님', monthlyBudgetAokrw: won(300_000n), createdAt: 1 })
+    .run();
+  h.db
+    .insert(agents)
+    .values({
+      id: 'a1',
+      userId: 'u1',
+      dragonName: '용이',
+      dragonSpecies: 'forest',
+      paymentPath: 'B',
+      createdAt: 1,
+    })
+    .run();
+  for (const id of ['m1', 'm2']) {
+    h.db
+      .insert(merchants)
+      .values({
+        id,
+        name: id,
+        category: 'korean',
+        payoutAddress: `pay-${id}`,
+        metadataUri: `https://x.test/${id}`,
+        source: 'seed',
+        createdAt: 1,
+      })
+      .run();
+  }
+  const insertOrder = (id: string, status: 'quoted' | 'pending_approval') =>
+    h.db
+      .insert(orders)
+      .values({
+        id,
+        orderRef: `0x${id.padStart(64, '0')}`,
+        userId: 'u1',
+        agentId: 'a1',
+        merchantId: 'm1',
+        amountAokrw: won(45_000n),
+        itemsJson: '[]',
+        status,
+        createdAt: 1,
+        updatedAt: 1,
+      })
+      .run();
+  return { h, s: new ApprovalsService(new ApprovalsRepository(h)), insertOrder };
+}
+
+describe('ApprovalsService.openWithOrder (D-19: no pending order without its approval)', () => {
+  it('writes the order and a pending approval that expires in 10 minutes', () => {
+    const { h, s, insertOrder } = setup();
+    const r = s.openWithOrder(
+      {
+        userId: 'u1',
+        agentId: 'a1',
+        orderId: '01',
+        reason: 'OVER_LEVEL_LIMIT',
+        payload: { amount: won(45_000n) },
+      },
+      () => insertOrder('01', 'pending_approval'),
+      NOW,
+    );
+    expect(r.expiresAt).toBe(NOW + 600_000);
+    expect(APPROVAL_TTL_MS).toBe(600_000);
+    expect(
+      h.db
+        .select()
+        .from(orders)
+        .all()
+        .map((o) => o.status),
+    ).toEqual(['pending_approval']);
+    const rows = h.db.select().from(approvals).all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: r.approvalId,
+      userId: 'u1',
+      agentId: 'a1',
+      orderId: '01',
+      reason: 'OVER_LEVEL_LIMIT',
+      status: 'pending',
+      expiresAt: NOW + 600_000,
+      payloadJson: JSON.stringify({ amount: '45000000000000000000000' }),
+    });
+  });
+
+  it('writes nothing when writing the order fails', () => {
+    const { h, s } = setup();
+    expect(() =>
+      s.openWithOrder(
+        { userId: 'u1', agentId: 'a1', orderId: '01', reason: 'NEW_MERCHANT' },
+        () => {
+          throw new Error('order lost the race');
+        },
+        NOW,
+      ),
+    ).toThrow('order lost the race');
+    expect(h.db.select().from(approvals).all()).toHaveLength(0);
+  });
+
+  it('rolls the order back when the approval cannot be written (second pending one)', () => {
+    const { h, s, insertOrder } = setup();
+    insertOrder('01', 'quoted');
+    const open = () =>
+      s.openWithOrder(
+        { userId: 'u1', agentId: 'a1', orderId: '01', reason: 'OVER_PERSONAL_BUDGET' },
+        () =>
+          h.db.update(orders).set({ status: 'pending_approval' }).where(eq(orders.id, '01')).run(),
+        NOW,
+      );
+    open();
+    h.db.update(orders).set({ status: 'quoted' }).where(eq(orders.id, '01')).run();
+    expect(open).toThrow(); // approvals_pending_order_uq
+    expect(h.db.select().from(orders).get()?.status).toBe('quoted');
+    expect(h.db.select().from(approvals).all()).toHaveLength(1);
+  });
+});
+
+describe('ApprovalsService helpers', () => {
+  it('maps only the approval refusals to reasons', () => {
+    expect(approvalReasonOf('SERVER_OVER_LEVEL')).toBe('OVER_LEVEL_LIMIT');
+    expect(approvalReasonOf('CHAIN_AGENT_LIMIT')).toBe('OVER_LEVEL_LIMIT');
+    expect(approvalReasonOf('SERVER_NEW_MERCHANT')).toBe('NEW_MERCHANT');
+    expect(approvalReasonOf('SERVER_BUDGET_OVER')).toBe('OVER_PERSONAL_BUDGET');
+    for (const code of [
+      'CHAIN_PERIODIC_LIMIT',
+      'CHAIN_INSUFFICIENT_FUNDS',
+      'SERVER_FROZEN',
+      'SERVER_PRICE_CHANGED',
+      'INTERNAL',
+    ] as const) {
+      expect(approvalReasonOf(code)).toBeNull();
+    }
+  });
+
+  it('knows a store only after the owner allowed it, per user', () => {
+    const { h, s } = setup();
+    expect(s.isMerchantAllowed('u1', 'm1')).toBe(false);
+    h.db.insert(allowedMerchants).values({ userId: 'u1', merchantId: 'm1', approvedAt: 1 }).run();
+    expect(s.isMerchantAllowed('u1', 'm1')).toBe(true);
+    expect(s.isMerchantAllowed('u1', 'm2')).toBe(false);
+    expect(s.isMerchantAllowed('u2', 'm1')).toBe(false);
+  });
+});
