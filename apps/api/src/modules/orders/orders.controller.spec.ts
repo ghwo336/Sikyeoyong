@@ -16,7 +16,9 @@ import { agents, allowedMerchants, approvals, orders, users } from '../../db/sch
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER, type PeriodicVolume } from '../chain/chain.service.js';
+import { orderRefOf } from './order-ref.js';
 import { OrdersModule } from './orders.module.js';
+import { OrdersRepository } from './orders.repository.js';
 
 // Amounts written by hand: N won = N * 10^18 aokrw. Default policy: Lv1 10,000 per order, 500,000 / 30 days.
 const W = (won: string) => `${won}000000000000000000`;
@@ -67,7 +69,7 @@ async function setup(volume: PeriodicVolume = { usedAokrw: 0n, resetAtSec: null 
         .set('X-Requested-With', 'fetch')
         .send(body),
   });
-  return { h, http, as };
+  return { h, http, as, token: tokens.u1, repo: moduleRef.get(OrdersRepository) };
 }
 
 const body = (
@@ -80,18 +82,26 @@ const body = (
   clientOrderId,
 });
 
-function paidOrder(h: DbHandle, id: string, merchantId: string, won: string, createdAt = NOW) {
+function paidOrder(
+  h: DbHandle,
+  id: string,
+  merchantId: string,
+  won: string,
+  createdAt = NOW,
+  opts: { userId?: 'u1' | 'u2'; status?: 'paid' | 'quoted' | 'failed' | 'pending_approval' } = {},
+) {
+  const userId = opts.userId ?? 'u1';
   h.db
     .insert(orders)
     .values({
       id,
       orderRef: `0x${id.padStart(64, '0')}`,
-      userId: 'u1',
-      agentId: 'a-u1',
+      userId,
+      agentId: `a-${userId}`,
       merchantId,
       amountAokrw: W(won),
       itemsJson: '[]',
-      status: 'paid',
+      status: opts.status ?? 'paid',
       createdAt,
       updatedAt: createdAt,
     })
@@ -138,7 +148,7 @@ describe('POST /api/orders: a quote, never a payment', () => {
       txHash: null,
       submitStartedAt: null,
     });
-    expect(row?.orderRef).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(row?.orderRef).toBe(orderRefOf(r.order.id)); // keccak of the id (payment.md)
     expect(h.db.select().from(approvals).all()).toHaveLength(0);
   });
 
@@ -148,6 +158,11 @@ describe('POST /api/orders: a quote, never a payment', () => {
       (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }]))).body,
     );
     expect(a.quote?.destination).toBe('역삼동');
+    h.db.update(users).set({ addressText: '  ' }).where(eq(users.id, 'u1')).run();
+    const blank = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c3'))).body,
+    );
+    expect(blank.quote?.destination).toBe('역삼동'); // blank text is not an address
     h.db.update(users).set({ addressDong: null }).where(eq(users.id, 'u1')).run();
     const b = zCreateOrderResult.parse(
       (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c2'))).body,
@@ -164,8 +179,20 @@ describe('POST /api/orders: a quote, never a payment', () => {
     expect(h.db.select().from(orders).all()).toHaveLength(0);
   });
 
-  it('needs a session (401) and the fetch header for a cookie write', async () => {
-    const { http } = await setup();
+  it('needs a session (401) and the fetch header for a cookie write (403)', async () => {
+    const { h, http, token } = await setup();
+    const tokenless = await http()
+      .post('/api/orders')
+      .set('Cookie', 'sid=nope')
+      .set('X-Requested-With', 'fetch')
+      .send(body([{ menuId: 'x-dwaeji', qty: 1 }]));
+    expect(tokenless.status).toBe(401);
+    const noHeader = await http()
+      .post('/api/orders')
+      .set('Cookie', `sid=${token}`)
+      .send(body([{ menuId: 'x-dwaeji', qty: 1 }]));
+    expect(noHeader.status).toBe(403);
+    expect(h.db.select().from(orders).all()).toHaveLength(0);
     expect(
       (
         await http()
@@ -217,6 +244,37 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
       (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2', 'c2'))).body,
     );
     expect(again.order.status).toBe('quoted');
+  });
+
+  it('orders not paid yet (quoted, failed, waiting) do not make a store known', async () => {
+    const { h, as } = await setup();
+    paidOrder(h, 'q1', 'm2', '7000', NOW, { status: 'quoted' });
+    paidOrder(h, 'f1', 'm2', '7000', NOW, { status: 'failed' });
+    const first = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2', 'c1'))).body,
+    );
+    expect(first.order.status).toBe('pending_approval');
+    // Resending under a new clientOrderId must not slip past the owner.
+    const again = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2', 'c2'))).body,
+    );
+    expect(again.order.status).toBe('pending_approval');
+    const reasons = h.db
+      .select()
+      .from(approvals)
+      .all()
+      .map((a) => a.reason);
+    expect(reasons).toEqual(['NEW_MERCHANT', 'NEW_MERCHANT']);
+  });
+
+  it('another user having paid at a store does not make it known to this one', async () => {
+    const { h, as } = await setup();
+    paidOrder(h, 'p2', 'm2', '7000', NOW, { userId: 'u2' });
+    const r = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2'))).body,
+    );
+    expect(r.order.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()?.reason).toBe('NEW_MERCHANT');
   });
 
   it('a store allowed for another user is still new for this one', async () => {
@@ -358,5 +416,34 @@ describe('POST /api/orders: clientOrderId', () => {
     const other = await as('u2').post(body([{ menuId: 'x-dwaeji', qty: 1 }]));
     expect(zCreateOrderResult.parse(other.body).order.status).toBe('quoted');
     expect(h.db.select().from(orders).all()).toHaveLength(2);
+  });
+
+  // Two requests with one clientOrderId at once: both pass the first lookup, the
+  // unique index lets one write, and the loser answers like the winner.
+  it('the loser of a race on one clientOrderId gets the same quoted order, written once', async () => {
+    const { h, as, repo } = await setup();
+    const b = body([{ menuId: 'x-dwaeji', qty: 1 }]);
+    const first = zCreateOrderResult.parse((await as('u1').post(b)).body);
+    const spy = vi.spyOn(repo, 'findByClientOrderId').mockReturnValueOnce(undefined);
+    const lost = await as('u1').post(b);
+    expect(lost.status).toBe(200);
+    expect(zCreateOrderResult.parse(lost.body)).toEqual(first);
+    expect(spy).toHaveBeenCalledTimes(2); // the first lookup missed, the replay found it
+    spy.mockReturnValueOnce(undefined);
+    const clash = await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }]));
+    expect(clash.status).toBe(409);
+    expect(h.db.select().from(orders).all()).toHaveLength(1);
+    expect(h.db.select().from(approvals).all()).toHaveLength(0);
+  });
+
+  it('the loser of a race on a pending order gets it too, with one approval row', async () => {
+    const { h, as, repo } = await setup();
+    const b = body([{ menuId: 'x-dwaeji', qty: 2 }]);
+    const first = zCreateOrderResult.parse((await as('u1').post(b)).body);
+    vi.spyOn(repo, 'findByClientOrderId').mockReturnValueOnce(undefined);
+    const lost = zCreateOrderResult.parse((await as('u1').post(b)).body);
+    expect(lost).toEqual(first);
+    expect(h.db.select().from(orders).all()).toHaveLength(1);
+    expect(h.db.select().from(approvals).all()).toHaveLength(1);
   });
 });

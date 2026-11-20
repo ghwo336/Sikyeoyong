@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   AppError,
@@ -27,6 +26,7 @@ import {
   type StoredLine,
   toItemLines,
 } from './order-lines.js';
+import { orderRefOf } from './order-ref.js';
 import { OrdersRepository, type OrderRow } from './orders.repository.js';
 import { OrdersService, SPENT_STATUSES } from './orders.service.js';
 
@@ -76,7 +76,7 @@ export class OrderQuoteService {
     const orderId = uuidv7(nowMs);
     const row = {
       id: orderId,
-      orderRef: `0x${randomBytes(32).toString('hex')}`,
+      orderRef: orderRefOf(orderId),
       userId,
       agentId: agent.id,
       merchantId: req.merchantId,

@@ -89,11 +89,13 @@ interface PaymentProvider {
 - 거절, 또는 만료(approvals 모듈의 주기 작업이 1분마다 `expires_at`이 지난 대기 승인을 `expired`로 바꾼다)면 묶인 주문은 재시도 불가 `failed` (`error_code`는 원래 사유).
 
 ### 견적 (`POST /orders`, `place_order`, 2026-11-20 코드)
-- `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 서버 메뉴로 값을 매기고(같은 메뉴 두 번은 400, 없거나 품절이면 `NOT_FOUND`, 가게가 없으면 `NOT_FOUND`, 미인증·비활성·영업 외면 `CHAIN_MERCHANT_INACTIVE`) 아래 순서로 본다.
-  1. 부화 전(ACTIVE도 FROZEN도 아님)이면 `CHAIN_AGENT_LIMIT_UNSET`, 멈췄으면 `SERVER_FROZEN`. 주문을 만들지 않는다.
+- `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 아래 순서로 본다.
+  1. 부화 전(ACTIVE도 FROZEN도 아님)이면 `CHAIN_AGENT_LIMIT_UNSET`, 멈췄으면 `SERVER_FROZEN`. 그다음 가게(없으면 `NOT_FOUND`, 미인증·비활성·영업 외면 `CHAIN_MERCHANT_INACTIVE`)와 메뉴(같은 메뉴 두 번은 400, 없거나 품절이면 `NOT_FOUND`)를 서버 값으로 매긴다. 여기서 거절되면 주문을 만들지 않는다.
   2. 체인 30일 상한: 지금 사용량 + 이 주문이 상한을 넘으면 `CHAIN_PERIODIC_LIMIT`(`resetAt` 포함). 승인으로 풀 수 없으니 주문을 만들지 않는다. 딱 상한까지는 통과.
   3. 승인 사유, 먼저 맞는 하나: 레벨 건당 한도 초과(`SERVER_OVER_LEVEL`), 처음 보는 가게(`allowed_merchants`에 없고 그 가게 결제 주문도 없음, `SERVER_NEW_MERCHANT`, Q-35), 이 주문으로 이번 달 개인 예산 초과(사용액 + 금액 > 예산, 딱 예산까지는 통과, `SERVER_BUDGET_OVER`). 하나라도 맞으면 approvals `openWithOrder`로 `pending_approval` 주문과 승인 행을 함께 만들고 견적 카드는 보내지 않는다.
   4. 아니면 `quoted` 주문과 확인 카드(`OrderQuote`, `periodUsedAfter`는 체인 사용량 + 이 주문).
+- `orderRef`는 `keccak256(주문 ID의 UTF-8 바이트)` (`modules/orders/order-ref.ts`). ID만 있으면 다시 만들 수 있다.
+- 처음 보는 가게 판정의 "결제 주문"은 그 사용자의 paid 이상만이다. quoted, failed, 승인 대기 주문은 치지 않는다 (새 `clientOrderId`로 다시 보내 승인을 건너뛰지 못하게).
 - `clientOrderId`(`orders.client_order_id`, 사용자별 고유, 마이그레이션 0004): 같은 요청을 다시 보내면 규칙이 그사이 바뀌었어도 처음 만든 주문의 지금 상태를 돌려주고, 다른 요청이면 409. 동시에 온 두 요청은 고유 인덱스로 하나만 쓰이고 진 쪽도 같은 답을 받는다.
 - 아직: `place_order` 도구 연결, `DEMO_BYPASS_SERVER_LIMIT`, `request_owner_approval`.
 
