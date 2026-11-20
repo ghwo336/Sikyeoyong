@@ -125,6 +125,18 @@ describe('ApprovalsService.openWithOrder (D-19: no pending order without its app
     expect(h.db.select().from(approvals).all()).toHaveLength(0);
   });
 
+  it('refuses an async writeOrder (its writes would land outside the transaction)', () => {
+    const { h, s } = setup();
+    expect(() =>
+      s.openWithOrder(
+        { userId: 'u1', agentId: 'a1', orderId: '01', reason: 'NEW_MERCHANT' },
+        async () => {},
+        NOW,
+      ),
+    ).toThrow(expect.objectContaining({ code: 'INTERNAL' }));
+    expect(h.db.select().from(approvals).all()).toHaveLength(0);
+  });
+
   it('rolls the order back when the approval cannot be written (second pending one)', () => {
     const { h, s, insertOrder } = setup();
     insertOrder('01', 'quoted');

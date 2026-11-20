@@ -34,6 +34,16 @@ export class UsersRepository {
   }
 
   /** undefined: no such user; null: the user has not set an address yet. */
+  /** Default address text and its neighborhood; undefined when the user does not exist. */
+  findAddress(userId: string): { text: string | null; dong: string | null } | undefined {
+    const row = this.handle.db
+      .select({ text: users.addressText, dong: users.addressDong })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+    return row;
+  }
+
   findAddressDong(userId: string): string | null | undefined {
     const row = this.handle.db
       .select({ addressDong: users.addressDong })

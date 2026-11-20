@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { AppErrorCode } from '@sikyeoyong/shared';
+import { AppError, type AppErrorCode } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
 import { type ApprovalReason, ApprovalsRepository } from './approvals.repository.js';
 
@@ -44,13 +44,17 @@ export class ApprovalsService {
    */
   openWithOrder(
     input: OpenApprovalInput,
-    writeOrder: () => void,
+    writeOrder: () => unknown,
     nowMs: number = Date.now(),
   ): { approvalId: string; expiresAt: number } {
     const approvalId = uuidv7(nowMs);
     const expiresAt = nowMs + APPROVAL_TTL_MS;
     this.repo.inTransaction(() => {
-      writeOrder();
+      const written = writeOrder();
+      // An async writeOrder would run its writes after the transaction ends.
+      if (written instanceof Promise) {
+        throw new AppError('INTERNAL', { reason: 'writeOrder must be synchronous' });
+      }
       this.repo.insert({
         id: approvalId,
         userId: input.userId,

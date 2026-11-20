@@ -17,6 +17,8 @@ export interface AgentSummary {
   readonly level: AgentLevel;
   /** FROZEN by the owner or the operator; nothing is paid while frozen. */
   readonly frozen: boolean;
+  /** Hatched: the TransferLimit is written (ACTIVE or FROZEN). Orders wait until then (user-flow 4). */
+  readonly ready: boolean;
   /** Agent wallet, null until the wallet is created (status PENDING). */
   readonly wallet: `0x${string}` | null;
   readonly dragonName: string;
@@ -47,6 +49,7 @@ export class AgentsService {
       id: row.id,
       level: row.level,
       frozen: row.status === 'FROZEN',
+      ready: row.status === 'ACTIVE' || row.status === 'FROZEN',
       wallet: asWallet(row.walletAddress),
       dragonName: row.dragonName,
       dragonSpecies: row.dragonSpecies,

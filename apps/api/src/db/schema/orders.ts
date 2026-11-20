@@ -56,12 +56,15 @@ export const orders = sqliteTable(
     submitTxHash: text('submit_tx_hash'),
     submitNonce: integer('submit_nonce'),
     mawsRequestId: text('maws_request_id'),
+    /** POST /orders idempotency key from the app (server-api.md "멱등성"); null for place_order. */
+    clientOrderId: text('client_order_id'),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },
   (t) => [
     index('orders_user_created_idx').on(t.userId, t.createdAt),
     index('orders_status_idx').on(t.status),
+    uniqueIndex('orders_user_client_order_uq').on(t.userId, t.clientOrderId),
     aokrwCheck('orders_amount_check', t.amountAokrw),
     enumCheck('orders_status_check', t.status, ORDER_STATUSES),
   ],

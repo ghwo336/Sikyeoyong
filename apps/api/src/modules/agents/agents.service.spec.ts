@@ -51,6 +51,7 @@ describe('AgentsService', () => {
       id: 'a1',
       level: 2,
       frozen: false,
+      ready: true,
       wallet: null,
       dragonName: '용이',
       dragonSpecies: 'water',
@@ -58,14 +59,15 @@ describe('AgentsService', () => {
   });
 
   it.each([
-    ['PENDING', false],
-    ['ACTIVE', false],
-    ['FROZEN', true],
-    ['REVOKED', false],
-  ] as const)('status %s reads as frozen=%s', (status, frozen) => {
+    ['PENDING', false, false],
+    ['ACTIVE', false, true],
+    ['FROZEN', true, true],
+    ['REVOKED', false, false],
+  ] as const)('status %s reads as frozen=%s, ready=%s', (status, frozen, ready) => {
     const { h, s } = setup();
     h.db.update(agents).set({ status }).where(eq(agents.id, 'a1')).run();
     expect(s.getForUser('u1').frozen).toBe(frozen);
+    expect(s.getForUser('u1').ready).toBe(ready);
   });
 
   it('returns the wallet once it exists, and refuses a malformed stored value', () => {

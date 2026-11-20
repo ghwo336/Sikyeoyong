@@ -19,6 +19,16 @@ export class UsersService {
     return parseAokrw(stored);
   }
 
+  /**
+   * Where an order goes, as the confirm card says it ("회사(역삼동)"): the address
+   * text, else the neighborhood, else '집' until the user sets one (user-flow 7).
+   */
+  getDestination(userId: string): string {
+    const a = this.repo.findAddress(userId);
+    if (a === undefined) throw new AppError('NOT_FOUND', { reason: 'user not found' });
+    return a.text ?? a.dong ?? '집';
+  }
+
   /** The neighborhood of the default address (get_context), null when not set. */
   getAddressDong(userId: string): string | null {
     const dong = this.repo.findAddressDong(userId);
