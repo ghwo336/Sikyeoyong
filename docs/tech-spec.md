@@ -254,7 +254,7 @@ apps/api/src/
 | POST | `/orders/quote` | user | `{ merchantId, items: [{ menuId, qty }] }` | `{ amount, checks: RuleCheck[] }` |
 | POST | `/orders` | user | `{ merchantId, items, clientOrderId }` | `{ order: { status: 'quoted' }, quote }` (앱에서 직접 주문하는 버튼용, LLM `place_order`와 같은 서비스 함수. 결제는 하지 않음) |
 | POST | `/orders/:id/confirm` | user | | `{ order }` (`OrderView`, `zOrderResult`. 실패면 `errorCode`, 결제되면 `txHash`) 또는 에러. 확인 카드 버튼. 여기서만 결제(`pay`)가 일어난다. 상태별 동작은 payment.md "confirm 상태 규칙"(D-19): `quoted`와 재시도 가능한 `failed`(체인 조회 뒤 같은 orderRef)만 결제, 그 밖은 결제 없이 현재 `{ order }`. 409로 답하지 않는다 |
-| GET | `/orders` | user | `?cursor` | `{ orders, nextCursor }` |
+| GET | `/orders` | user | | `{ orders: OrderView[] }` (`zOrderList`, `api/orders.ts`). 세션 사용자의 최근 주문, 새것부터 최대 `ORDER_LIST_MAX`(20)개. Main의 주문 내역 버튼과 진행 중인 주문 카드용(D-32 시안). 각 항목은 `GET /orders/:id`와 같은 `OrderViews`로 만들어 상태(배달 흉내 단계 포함)가 상태 화면과 같다. 견적만 받고 확정하지 않은 `quoted`는 빼고, `pending_approval`(주인 허락을 기다리는 주문)은 넣는다. 남의 주문은 나오지 않는다. 커서는 아직 없다(20개 너머가 필요해지면 더한다). 2026-11-20 구현 |
 | GET | `/orders/:id` | user | | `{ order }` (`OrderView`, `zOrderResult`, confirm과 같은 모양. 다른 사용자 주문은 404). `receipt`는 `zOrderReceipt`(2.5 모양 `{ id, label, layer, status }` 규칙, 서버가 영수증을 쓸 때 채운다, 선택 칸). `events`는 인덱서가 생기면 더한다 |
 | POST | `/orders/:id/rating` | user | `{ value: again \| okay \| meh }` (`zRateOrderBody`) | 204. 도착 화면 맛 평가. 결제된 주문(paid, preparing, delivering, delivered)만, 아니면 409. 남의 주문이나 없는 id는 404. 다시 보내면 바꾼다. 돈을 옮기지 않는다. 추천에 반영은 후속 (테이블 `order_ratings`, 마이그레이션 0007). 2026-11-20 추가 |
 | POST | `/orders/:id/cancel` | user | | `{ order }` (접수 단계만, 환불 트랜잭션) |

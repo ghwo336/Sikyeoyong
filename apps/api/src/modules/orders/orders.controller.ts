@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs
 import {
   type CreateOrderBody,
   type CreateOrderResult,
+  type OrderList,
   type OrderResult,
   type RateOrderBody,
   zCreateOrderBody,
@@ -62,6 +63,12 @@ export class OrdersController {
     @Body(new ZodValidationPipe(zRateOrderBody)) body: RateOrderBody,
   ): void {
     this.ratings.rate(user.userId, id, body.value);
+  }
+
+  /** Recent orders (Main's order history and in-progress card). Reads only. */
+  @Get()
+  list(@CurrentUser() user: SessionUser): OrderList {
+    return { orders: this.views.listFor(user.userId) };
   }
 
   /** The status screens (Done, Tracking, Arrived). Reads only. */

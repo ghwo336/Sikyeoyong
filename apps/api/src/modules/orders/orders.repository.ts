@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm';
 import type { TasteRating } from '@sikyeoyong/shared';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
@@ -99,6 +99,17 @@ export class OrdersRepository {
         ),
       )
       .orderBy(desc(orders.createdAt), desc(orders.id))
+      .all();
+  }
+
+  /** The user's orders not in the left-out statuses, newest first, at most `max`. */
+  recentForUser(userId: string, leaveOut: readonly OrderStatus[], max: number): OrderRow[] {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.userId, userId), notInArray(orders.status, [...leaveOut])))
+      .orderBy(desc(orders.createdAt), desc(orders.id))
+      .limit(max)
       .all();
   }
 
