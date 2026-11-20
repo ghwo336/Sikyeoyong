@@ -13,6 +13,14 @@ describe('SYSTEM_PROMPT (agent-runtime.md)', () => {
     expect(SYSTEM_PROMPT).toContain('한 번에 한두 문장');
   });
 
+  it('says weather, time and open stores only from tool results, and recommends with the tool', () => {
+    // Real use: "비 오니까 따끈한 국물 어때용?" on a dry day, copied from the old tone example.
+    expect(SYSTEM_PROMPT).not.toContain('비 오니까');
+    expect(SYSTEM_PROMPT).toContain('이번 도구 결과');
+    expect(SYSTEM_PROMPT).toContain('도구 결과에 비가 없으면 비 이야기를 하지 않는다');
+    expect(SYSTEM_PROMPT).toContain('먼저 recommend_merchants를 부른다');
+  });
+
   it('keeps the money rules and has no dashes or dates (stable cache prefix, CLAUDE.md 1)', () => {
     expect(SYSTEM_PROMPT).toContain('결제는 사용자가 카드 버튼을 누를 때 서버가 한다');
     // QA 2026-11-20: after APPROVAL_REQUIRED the dragon said it had approved and made the card.
