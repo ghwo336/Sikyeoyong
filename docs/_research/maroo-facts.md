@@ -77,6 +77,7 @@
 - 훅 호출자는 등록된 PCL 프록시 또는 `PclParams.entrypoints`의 신뢰 엔트리포인트만. EOA, 7702 위임 EOA, 임의 컨트랙트는 `Unauthorized`.
 - 정책은 직접 호출자가 아니라 principal(최종 사용자) 기준으로 평가.
 - 신뢰 엔트리포인트는 제네시스 파라미터, 거버넌스로만 변경.
+- 테스트넷 실제 값 (확인, 2026-11-20 PCL 프리컴파일 `getParams()` 조회): entrypoints = `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`, `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108`, `0x433709009B8330FDa32311DF1C2AFA402eD8D009`(파우치 EntryPoint v9). policyAdmin `0x58eC1E718ff15e5f34591747D47ADf5BccDA804F`. 앞의 둘이 v0.6, v0.8 표준 EntryPoint인 것은 (추론). open-questions Q-39.
 
 ### 3.6 정책 관리 (확인, pcl-policy-admin)
 - 전역 정책 관리자 `IPcl.policyAdmin()` 단일 주소. 4개 메서드만: registerPolicyTemplate, removePolicyTemplate, setGlobalPolicies, removeGlobalPolicies.

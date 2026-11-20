@@ -304,3 +304,21 @@ children: []
   - 장부 실체인 전 할 일(영수증 금액, txHash 유일 열쇠, 체인 멈춤 뒤 drain), REVOKED 오류 코드, 동결과 confirm 겹침.
   - OWNER_MODE=pouch(PouchOwner)와 S14 2단계 실행(배포, 세션 키 실험은 React SDK spikes에서).
 - 다음 할 일: 호재 님 실제 로그인 결과를 보고 고치기, Start 시안, 30일 사용액, D-23 UX 다듬기.
+
+### 2026-11-20 실제 LLM 대화, 한도 금액(D-31), 캔버스 시안과 종별 테마(D-32), 체인 확인
+- 한 일:
+  - 대화: OpenAI 공급자(D-30), 음식 주제 제한, 쓰는 중 점 셋과 스트리밍, 회색 스크롤바 숨김, 위로 올려 읽다가 보내면 맨 아래로(followKey).
+  - 목 체인 30일 사용량, 배달 단계 흉내(목과 데모만), 검증 FAIL 수정 커밋들.
+  - 테스트넷 준비: 운영자 키를 .env에 새로 만듦(주소 0xBb71B672BC33745283842ce701F5b0FC28d023d3, 값은 출력 안 함), faucet 5,000 tOKRW 1회. 배포는 아직. `@maroo-chain/viem` 0.5.0 타입으로 deployPclProxy(kind Transparent 1, UUPS 2, initializer 같이)와 policy 빌더(agentOkrwTransferLimit, periodicVolume, and, eas)를 확인(Q-13 후속).
+  - D-31 (7803f0c): 한도는 사용자가 금액으로, 레벨 없앰, 월 예산은 내 30일 한도로 합침, 드래곤은 금액 구간으로 자람. PUT /agents/me/limits, 마이그레이션 0009.
+  - 캔버스 시안 반영과 D-32 (b774a33): 종별 테마 색, Look, Themes. 들어온 시안이 D-31 전 것이라 D-31 문구를 다시 얹음.
+  - 체인 읽기: 파우치 EntryPoint v9가 PCL entrypoints에 있음(Q-39), KYC recipient는 스마트 지갑(Q-19, Q-40).
+  - main 머지와 push (c31890b까지).
+- 실수 기록 (amend 안 함, dev-loop.md):
+  - 7fa0080은 게이트 FAIL(D18 경계, lint) 상태로 커밋됐다. 게이트 출력을 `tail`로 넘겨 종료 코드를 보지 않았다. 3c4d4da로 고쳤고, 이후 커밋은 게이트 종료 코드가 0일 때만 한다.
+  - 7c1761c 제목의 종류 `design`은 허용 목록에 없다(G2). 시안 커밋은 `docs(design)`으로 쓴다.
+  - b774a33에 Verify 행의 KYC recipient 내용(Q-19 반영)이 같이 들어갔다. 원래 37d9d70의 일이다.
+- 막힌 것: 테스트넷 배포는 faucet 두 번째 수령을 멈춘 뒤 호재 님 지시 대기.
+- 열린 질문: Q-37(아낀 돈, D-31 뒤 뜻 바뀜), Q-38, Q-40(마루 KYC 담당자께).
+- 후속: 충전 코드가 floatCapAokrw를 쓰게, web 테스트가 turbo 병렬에서 5초 타임아웃(불안정), D-32 tech-spec과 위키 반영, 시작 화면 아래 한 줄은 D-17 설명 문구에 가까움(지울지 판단).
+- 다음 할 일: D-32 구현(테마 CSS 변수, Look), Splash, 진행 중 주문 카드, 주문 내역 버튼, 브라우저 QA 결과 반영.
