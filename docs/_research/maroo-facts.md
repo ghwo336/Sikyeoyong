@@ -88,6 +88,8 @@
 - 체인 ID 450815는 변경 예정. Mock KYC 전환 예정. 둘 다 시점 미정. **하드코딩 금지.**
 - OKRW는 네이티브 코인. ERC-20 진입점 없음. 결제 함수는 `payable`. 최소 단위 aokrw(10^18). 테스트넷 denom `atokrw`.
 - 가스 한도의 절반은 무조건 과금, 단순 전송도 약 22,300 가스. 고정 가스 금지.
+- 지원하는 EVM 하드포크(Shanghai PUSH0, Cancun MCOPY와 TSTORE)는 문서에 없다 (미확인, 2026-11-20 `pcl-proxy-hook` 재확인, Q-31, F-11). 시켜용 컨트랙트는 `evm_version = paris`로 컴파일한다.
+- `deployPclProxy`의 시그니처, kind 값, 초기화 데이터 전달, OZ `UUPSUpgradeable` 호환 여부는 문서에 없다 (미확인, 2026-11-20 재확인, Q-13, F-12).
 
 ## 4.1 기술 기획 조사로 추가 확인 (2026-11-18)
 | 항목 | 내용 | 상태 | 출처 |

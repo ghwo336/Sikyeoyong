@@ -200,3 +200,15 @@ children: []
 - 막힌 것: 없음.
 - 새로 안 마루 사실: 없음.
 - 다음 할 일: Start 알(금 간 알과 뿔) Egg 상태, 추천 줄 높이(시안 64, 지금 약 76), `/dragon` 페이지, LimitChat 조립 때 ChatThread 여백(16 20 12).
+
+### 2026-11-20 컨트랙트 SikyeoyongOrders와 Foundry 프로젝트 (Claude, Claude Code 서브 에이전트)
+- 한 일:
+  - `contracts/` Foundry 프로젝트. solc 0.8.30, `evm_version = paris`. forge-std v1.17.0, OpenZeppelin v5.7.0을 `contracts/lib`에 태그 그대로 복사 (submodule은 새 worktree에서 비어 게이트가 깨져서. 해시는 `lib/VENDOR.txt`, `VENDOR.sha256`).
+  - `SikyeoyongOrders`: D-08 함수, 이벤트, 에러 그대로. 모드 P 기본, 모드 V는 `vaultMode`. 한도 로직 없음 (PCL 몫). `bindAgent`는 1단계 운영자만 (Q-30). 명세와 다른 점은 contracts.md 표.
+  - 테스트 72개 (단위, 재진입, 업그레이드 권한, 퍼즈, 불변식 1, 3, 4, 6, 7, 배포 스크립트). 일부러 깨 보기: `OrderExists` 검사, 환불 수신자, `refund`의 `nonReentrant`를 빼면 각각 테스트가 실패하는 것을 확인.
+  - `script/Deploy.s.sol`(구현 배포와 배포 기록), `pnpm contracts:build`, `contracts:test`, `contracts:deploy:testnet`(준비 확인만). anvil에서 실제 실행, 연습 실행 무기록, 덮어쓰기 거절, 체인 ID 불일치 거절을 확인.
+  - verify.py T1이 `contracts/lib` 복사본을 소스로 보지 않게 고침.
+- 결과물: 테스트넷 배포 없음.
+- 막힌 것: PCL 프록시 배포와 정책 바인딩(2단계 이후)은 `deployPclProxy` 인터페이스가 미확인이라 스크립트를 못 씀 (Q-13, F-12).
+- 새로 안 마루 사실: 없음. 미확인 둘을 maroo-facts 4에 적음 (EVM 하드포크 Q-31, `deployPclProxy` 세부 Q-13). devrel F-11, F-12.
+- 다음 할 일: S11 뒤 `bindAgent` 소유자 호출 열기(Q-30), `infra/scripts/deploy-orders.ts`(프록시, initialize, 정책 첫 호출), 테스트넷 배포는 호재 님 승인 뒤, 서버 `ChainReader`에 배포 기록(`proxy`가 0이면 미배포) 연결.
