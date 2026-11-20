@@ -5,6 +5,11 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BUDGET, ME, SIGNUP } from '../../../lib/mock/fixtures';
+import {
+  clearBudgetStepPending,
+  isBudgetStepPending,
+  markBudgetStepPending,
+} from '../pending-budget';
 
 const push = vi.fn();
 const replace = vi.fn();
@@ -123,6 +128,19 @@ describe('NameContainer', () => {
 });
 
 describe('BudgetSetupContainer', () => {
+  beforeEach(() => {
+    markBudgetStepPending();
+  });
+
+  it('sends an onboarded owner to the dragon screen instead of sign-up (QA 3)', async () => {
+    clearBudgetStepPending();
+    wrap(<BudgetSetupContainer />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/dragon');
+    });
+    expect(screen.queryByText(/안녕하세용/)).toBeNull();
+  });
+
   it('sends both picked limits as aokrw strings, once (D-31)', async () => {
     setLimits.mockResolvedValue(undefined);
     wrap(<BudgetSetupContainer />);
@@ -321,5 +339,6 @@ describe('HatchContainer', () => {
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/budget');
     });
+    expect(isBudgetStepPending()).toBe(true);
   });
 });

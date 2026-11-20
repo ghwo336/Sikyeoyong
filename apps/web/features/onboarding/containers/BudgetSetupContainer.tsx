@@ -10,12 +10,13 @@ import {
   TrialAllowance,
 } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { thirtyDayFloor } from '../../limits/fit';
 import { useSetLimits } from '../../limits/hooks/useSetLimits';
 import { useMe } from '../../me/hooks/useMe';
 import { useClaimTrialAllowance, useSignupConfig } from '../hooks/useSignup';
+import { clearBudgetStepPending, isBudgetStepPending } from '../pending-budget';
 import { nameIs, SIGNUP_STEPS } from '../steps';
 
 /**
@@ -32,7 +33,12 @@ export function BudgetSetupContainer() {
   const claim = useClaimTrialAllowance();
   const [perOrder, setPerOrder] = useState<bigint | undefined>(undefined);
   const [myPeriodic, setMyPeriodic] = useState<bigint | undefined>(undefined);
-  if (!me || !budget || !config) {
+  // Sign-up only: someone already set up opening /budget goes to the dragon screen.
+  const onboarded = me !== undefined && !isBudgetStepPending();
+  useEffect(() => {
+    if (onboarded) router.replace('/dragon');
+  }, [onboarded, router]);
+  if (onboarded || !me || !budget || !config) {
     return <TopBar trailing={<StepProgress steps={SIGNUP_STEPS} current={3} />} />;
   }
   const savedPerOrder = parseAokrw(budget.perOrderLimit);
@@ -55,11 +61,13 @@ export function BudgetSetupContainer() {
       ...(myPeriodicNow === savedMyPeriodic ? {} : { myPeriodicLimit: myPeriodicNow.toString() }),
     };
     if (Object.keys(body).length === 0) {
+      clearBudgetStepPending();
       router.push('/');
       return;
     }
     save.mutate(body, {
       onSuccess: () => {
+        clearBudgetStepPending();
         router.push('/');
       },
     });

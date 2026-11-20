@@ -4,6 +4,7 @@ import { Egg, HatchProgress, Hero, ScreenTitle } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useMe } from '../../me/hooks/useMe';
+import { markBudgetStepPending } from '../pending-budget';
 import { HATCH_LABEL } from '../steps';
 import { useAgentSetup, useRetryAgentSetup } from '../hooks/useSignup';
 
@@ -15,7 +16,9 @@ export function HatchContainer() {
   const retry = useRetryAgentSetup();
   const active = setup?.status === 'ACTIVE';
   useEffect(() => {
-    if (active) router.replace('/budget');
+    if (!active) return;
+    markBudgetStepPending();
+    router.replace('/budget');
   }, [active, router]);
   if (!me || !setup) return null;
   return (
