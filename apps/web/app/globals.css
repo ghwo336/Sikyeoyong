@@ -137,10 +137,12 @@ body {
   }
 }
 
+/* Keep this block last. A named rule such as ::view-transition-old(root) is more specific than
+   the (*) form, so only !important makes reduced motion win over every named transition. */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
-    animation: none;
+    animation: none !important;
   }
 }

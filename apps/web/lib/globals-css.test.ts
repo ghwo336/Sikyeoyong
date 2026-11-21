@@ -33,9 +33,24 @@ describe('app/globals.css', () => {
     }
   });
 
-  it('reduced motion turns the screen transition off', () => {
-    expect(css).toMatch(
-      /prefers-reduced-motion: reduce\)\s*\{\s*::view-transition-group\(\*\),[\s\S]*?animation:\s*none;/,
+  it('reduced motion turns every named screen transition off, and wins over them', () => {
+    const block = /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?)\n\}/.exec(css);
+    expect(block).not.toBeNull();
+    const body = block?.[1] ?? '';
+    for (const part of ['group', 'old', 'new']) {
+      expect(body).toContain(`::view-transition-${part}(*)`);
+    }
+    // Named rules (root) are more specific than (*), so it must be !important.
+    expect(body).toMatch(/animation:\s*none\s*!important;/);
+    // It is the last block, so nothing declared after it can bring an animation back.
+    expect(css.lastIndexOf('@media (prefers-reduced-motion: reduce)')).toBe(
+      css.indexOf('@media (prefers-reduced-motion: reduce)'),
+    );
+    expect(css.lastIndexOf('::view-transition-')).toBeGreaterThan(
+      css.indexOf('@media (prefers-reduced-motion: reduce)'),
+    );
+    expect(css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'))).not.toMatch(
+      /animation-name/,
     );
   });
 });
