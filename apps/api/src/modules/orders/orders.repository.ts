@@ -121,6 +121,16 @@ export class OrdersRepository {
       .get();
   }
 
+  /** Every order in the status, oldest first (the boot recheck of `submitting`). */
+  withStatus(status: OrderStatus): OrderRow[] {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(eq(orders.status, status))
+      .orderBy(asc(orders.createdAt), asc(orders.id))
+      .all();
+  }
+
   findForUser(id: string, userId: string): OrderRow | undefined {
     return this.handle.db
       .select()
