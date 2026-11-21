@@ -92,6 +92,9 @@ describe('stripApprovalClaims', () => {
     '승인 끝이에요!',
     '허락 OK 받았어용',
     '승인 요청 쏴 뒀어용',
+    '승인 보내져 있어용 필요하면 말해요',
+    '승인 보내져 있어용, 주문 넣으면 돼요',
+    '승인 OK예용 확인 필요하면 말해요',
   ])('drops %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: '', dropped: true });
   });

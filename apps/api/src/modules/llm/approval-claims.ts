@@ -25,21 +25,23 @@ const CLAIM = new RegExp(
 );
 
 /**
- * Weak result forms: 있/OK/끝 read as a result only when nothing conditional or requesting
- * surrounds them ("OK 누르면 끝이에요", "보내져 있어야 해요" are not claims).
+ * Weak result forms: 있/OK/끝 read as a result only when no condition or request sits between
+ * 승인 and the form, and the form is not itself conditional ("보내져 있으면"). A condition
+ * after the form has closed its clause does not excuse it. "OK 누르면 끝이에요" and
+ * "필요한 주문이에용 OK" are not claims; "보내져 있어용 필요하면 말해요" is.
  */
 const WEAK = new RegExp(
-  '(승인|허락)[^.!?\\n]*' +
-    '(?:보내져\\s?있|' +
-    '(?:OK|ok|오케이|끝)\\s?(?:이에용|이에요|예용|예요|이야|이다|임)?[용요야]?(?=\\s*[!.~]*\\s*$))',
+  '(승인|허락)(?:(?!면|어야|있나|필요한|필요해|주세|주실)[^.!?\\n])*' +
+    '(?:보내져\\s?있(?!으면|어야|나)|' +
+    '(?:OK|ok|오케이|끝)(?:\\s?(?:이에용|이에요|예용|예요|이야|이다|임)[용요야]?(?=[\\s,!.~]|$)|' +
+    '[용요야]?(?=\\s*[!.~]*\\s*$)))',
 );
-const CONDITION = /면|어야|있나|필요한|필요해|주세|주실/;
 
 /** Sentences end at . ! ? or a line break; the terminator stays with its sentence. */
 const SENTENCE = /[^.!?\n]*[.!?\n]+[ \t]*|[^.!?\n]+$/g;
 
 export function isApprovalClaim(sentence: string): boolean {
-  return CLAIM.test(sentence) || (WEAK.test(sentence) && !CONDITION.test(sentence));
+  return CLAIM.test(sentence) || WEAK.test(sentence);
 }
 
 /** Splits into sentences and drops the ones that claim an approval outcome. */
