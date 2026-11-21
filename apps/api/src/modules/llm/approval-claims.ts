@@ -7,9 +7,13 @@
  * turn. "승인이 필요해용" (a reason, no outcome) stays.
  */
 
-/** A sentence that talks about 승인/허락 and says it was sent, received, given or finished. */
+/**
+ * A sentence that talks about 승인/허락 and reports it as done: sent, asked, received, given or
+ * finished (past tense or a result). Intentions and questions ("요청해 볼게용", "보내 드릴까용?",
+ * "승인되면 알려드릴게용") are not claims and stay.
+ */
 const CLAIM =
-  /(승인|허락)[^.!?\n]*(보냈|보내|요청했|요청드렸|요청해|올렸|받았|받으셨|받아\s?왔|해\s?주셨|해\s?줬|해주|하셨|주셨|됐|되었|돼서|완료|통과|떨어졌|나왔|났어|끝났)/;
+  /(승인|허락)[^.!?\n]*(보냈|요청했|요청드렸|드렸|구했|올렸|받았|받으셨|받아\s?왔|해\s?주셨|해\s?줬|하셨|주셨|승인됐|승인되었|허락됐|허락되었|돼서|완료됐|완료되었|완료했|통과|떨어졌|왔|나왔|났어|끝났)/;
 
 /** Sentences end at . ! ? or a line break; the terminator stays with its sentence. */
 const SENTENCE = /[^.!?\n]*[.!?\n]+[ \t]*|[^.!?\n]+$/g;
