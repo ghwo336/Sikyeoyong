@@ -432,6 +432,16 @@ describe('POST /api/orders: refusals that make no order', () => {
     expect(h.db.select().from(orders).all()).toHaveLength(0);
   });
 
+  it('an inactive store answers 422 with a line the dragon can say (QA 5)', async () => {
+    const { as } = await setup();
+    const res = await as('u1').post(body([{ menuId: 'x-offmenu', qty: 1 }], 'm-off'));
+    expect(res.status).toBe(422);
+    expect(errorOf(res.body)).toMatchObject({
+      code: 'CHAIN_MERCHANT_INACTIVE',
+      dragonLine: '지금은 이 가게에서 못 시켜용. 다른 가게를 골라 주세용',
+    });
+  });
+
   it.each([
     ['an unknown store', body([{ menuId: 'x-dwaeji', qty: 1 }], 'nope'), 'NOT_FOUND'],
     [

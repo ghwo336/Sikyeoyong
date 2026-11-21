@@ -463,7 +463,7 @@ PCL 거절은 `iPclAbi`(`@maroo-chain/contracts`)와 viem `decodeErrorResult`로
 | `CHAIN_EAS_REQUIRED` | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | 422 | 인증이 없거나 만료된 가게예요 | "이 가게는 인증이 없어서 못 시켜용" | 다른 가게 추천 |
 | `CHAIN_UNAUTHORIZED` | `Unauthorized()` (서버 설정 문제) | 500 | 잠시 후 다시 시도해 주세요 | "앗, 뭔가 꼬였어용. 조금 있다 다시 해 주세용" | 로그, 운영자 알림 |
 | `CHAIN_AGENT_PAUSED` | 컨트랙트 `AgentIsPaused()` | 423 | 용이가 자고 있어요 | "쉬고 있을게용. 깨워 주면 다시 일할게용." | 깨우기 안내 |
-| `CHAIN_MERCHANT_INACTIVE` | 컨트랙트 `MerchantNotActive(id)` | 422 | 주문할 수 없는 가게예요 | "이 가게는 등록이 안 돼 있어용" | 다른 가게 |
+| `CHAIN_MERCHANT_INACTIVE` | 컨트랙트 `MerchantNotActive(id)` | 422 | 주문할 수 없는 가게예요 | "지금은 이 가게에서 못 시켜용. 다른 가게를 골라 주세용" | 다른 가게 |
 | `CHAIN_INSUFFICIENT_FUNDS` | 잔액 부족, `INSUFFICIENT_BALANCE`(MAWS) | 422 | 용돈이 부족해요 | "용돈이 모자라용" | 충전 버튼 |
 | `MAWS_POLICY_REJECTED` | MAWS `POLICY_REJECTED` | 422 | 용이 규칙에 걸렸어요 | "용이 규칙에 걸렸어용" | 원인별 분기 |
 | `SERVER_OVER_LEVEL` | 서버 사전 검사 | 422 | 승인이 필요해요 | "이건 제 한도보다 비싸용. 허락해 주실래용?" | 승인 카드 |

@@ -50,7 +50,7 @@ const EXPECTED: Record<AppErrorCode, { httpStatus: number; message: string; drag
     CHAIN_MERCHANT_INACTIVE: {
       httpStatus: 422,
       message: '주문할 수 없는 가게예요',
-      dragonLine: '이 가게는 등록이 안 돼 있어용',
+      dragonLine: '지금은 이 가게에서 못 시켜용. 다른 가게를 골라 주세용',
     },
     CHAIN_INSUFFICIENT_FUNDS: {
       httpStatus: 422,
