@@ -234,4 +234,17 @@ describe('limit screens', () => {
     expect(await screen.findByText(/보쌈 정식은/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /올리고 시키기/ })).toBeNull();
   });
+
+  it.each(['order', 'budget'])(
+    'Blocked: a failed %s query ends in the bare top bar, with no loading shape (D-23)',
+    async (which) => {
+      if (which === 'order') getOrder.mockRejectedValue(new Error('500'));
+      else getBudget.mockRejectedValue(new Error('500'));
+      const { container } = wrap(<BlockedContainer orderId="o-bossam" />);
+      await waitFor(() => {
+        expect(container.querySelector('[data-shape]')).toBeNull();
+      });
+      expect(screen.getByRole('button', { name: '대화로 돌아가기' })).toBeInTheDocument();
+    },
+  );
 });

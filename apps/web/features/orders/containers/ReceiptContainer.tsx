@@ -17,12 +17,14 @@ import { orderStep } from '../status';
  */
 export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
   const router = useTransitionRouter();
-  const { data: order } = useOrder(orderId);
+  const { data: order, isError } = useOrder(orderId);
   const budget = useBudget().data;
   const [details] = useDetailsMode();
   const back = () => {
     router.push(`/orders/${encodeURIComponent(orderId)}`);
   };
+  // A failed query ends in the bare screen, never a shape that waits forever.
+  if (!order && isError) return <TopBar title="주문 상세" onBack={back} />;
   if (!order) {
     return (
       <>

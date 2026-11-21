@@ -21,14 +21,19 @@ import { ArrivedContainer } from './ArrivedContainer';
 /** Order status: cooking (Done.dc.html), on the road (Tracking.dc.html), arrived (Arrived.dc.html). */
 export function OrderStatusContainer({ orderId }: { readonly orderId: string }) {
   const router = useTransitionRouter();
-  const me = useMe().data;
-  const { data: order } = useOrder(orderId);
+  const meQuery = useMe();
+  const me = meQuery.data;
+  const { data: order, isError } = useOrder(orderId);
   const back = () => {
     router.push('/');
   };
   const step = order ? orderStep(order.status) : null;
   // Loading, unknown, unpaid or stopped orders show no progress: a failed or refunded order
   // must never look accepted. Their own screens are not built yet (web.md).
+  // A failed query ends in the bare screen, never a shape that waits forever.
+  if ((!order && isError) || (!me && meQuery.isError)) {
+    return <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />;
+  }
   if (!order || !me) {
     // Still loading: the shape of the status screen, so it does not jump when the order arrives.
     return (

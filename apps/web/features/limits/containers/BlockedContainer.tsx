@@ -13,8 +13,10 @@ import { useBackToChat } from '../hooks/useBackToChat';
 /** Blocked.dc.html: the order is over what the dragon may spend at once. Raise, or pick again. */
 export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   const router = useTransitionRouter();
-  const me = useMe().data;
-  const budget = useBudget().data;
+  const meQuery = useMe();
+  const budgetQuery = useBudget();
+  const me = meQuery.data;
+  const budget = budgetQuery.data;
   const orderQuery = useOrder(orderId);
   const order = orderQuery.data;
   const back = () => {
@@ -27,6 +29,10 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
     budget !== undefined &&
     parseAokrw(order.amount) <= parseAokrw(budget.perOrderLimit);
   useBackToChat(orderQuery.isError || fits);
+  // A failed query ends in the bare screen, never a shape that waits forever.
+  if (orderQuery.isError || meQuery.isError || budgetQuery.isError) {
+    return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
+  }
   if (!me || !budget || !order) {
     return (
       <>

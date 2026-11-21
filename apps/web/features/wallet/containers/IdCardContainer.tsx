@@ -9,11 +9,17 @@ import { useIdCard } from '../hooks/useWallet';
 /** IdCard.dc.html: the dragon's ID card. */
 export function IdCardContainer() {
   const router = useTransitionRouter();
-  const me = useMe().data;
-  const card = useIdCard().data;
+  const meQuery = useMe();
+  const cardQuery = useIdCard();
+  const me = meQuery.data;
+  const card = cardQuery.data;
   const back = () => {
     router.push('/dragon');
   };
+  // A failed query ends in the bare screen, never a shape that waits forever.
+  if ((!me && meQuery.isError) || (!card && cardQuery.isError)) {
+    return <TopBar title="용이 신분증" onBack={back} />;
+  }
   if (!me || !card) {
     return (
       <>

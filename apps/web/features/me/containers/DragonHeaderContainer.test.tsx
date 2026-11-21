@@ -1,22 +1,25 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
+import { AppError, aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { ME } from '../../../lib/mock/fixtures';
 
 const push = vi.fn();
+const failing = vi.hoisted(() => ({ me: false }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 vi.mock('../../../lib/api', () => ({
   // Not the design value (10,000원), so a hard-coded caption cannot pass.
   api: {
     getMe: () =>
-      Promise.resolve({
-        ...ME,
-        dragonName: '봄봄',
-        dragonSpecies: 'water',
-        perOrderLimit: aokrwToString(okrwToAokrw(35_000n)),
-      }),
+      failing.me
+        ? Promise.reject(new AppError('UNAUTHENTICATED', 'no session'))
+        : Promise.resolve({
+            ...ME,
+            dragonName: '봄봄',
+            dragonSpecies: 'water',
+            perOrderLimit: aokrwToString(okrwToAokrw(35_000n)),
+          }),
   },
 }));
 
@@ -58,5 +61,20 @@ describe('DragonHeaderContainer', () => {
     );
     await userEvent.click(await screen.findByRole('button', { name: '주문 내역' }));
     expect(push).toHaveBeenCalledWith('/orders');
+  });
+
+  it('a failed /me leaves the header out instead of a shape that waits forever (D-23)', async () => {
+    failing.me = true;
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={qc}>
+        <DragonHeaderContainer />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(qc.getQueryState(['me'])?.status).toBe('error');
+    });
+    expect(container.querySelector('[data-shape]')).toBeNull();
+    failing.me = false;
   });
 });

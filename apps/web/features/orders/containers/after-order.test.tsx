@@ -165,4 +165,19 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
       expect(screen.queryByText('9,000원')).toBeNull();
     },
   );
+
+  it('a failed order query ends in the bare top bar, with no loading shape (D-23)', async () => {
+    getOrder.mockRejectedValue(new Error('500'));
+    const a = wrap(<OrderStatusContainer orderId="o1" />);
+    await waitFor(() => {
+      expect(a.container.querySelector('[data-shape]')).toBeNull();
+    });
+    expect(screen.getByRole('button', { name: '대화로 돌아가기' })).toBeInTheDocument();
+    a.unmount();
+    const b = wrap(<ReceiptContainer orderId="o1" />);
+    await waitFor(() => {
+      expect(b.container.querySelector('[data-shape]')).toBeNull();
+    });
+    expect(screen.getByText('주문 상세')).toBeInTheDocument();
+  });
 });

@@ -9,7 +9,9 @@ import { limitLine } from '../limit-line';
 /** Main.dc.html top row: the dragon, its name and per-order limit, order history, settings. */
 export function DragonHeaderContainer() {
   const router = useTransitionRouter();
-  const me = useMe().data;
+  const { data: me, isError } = useMe();
+  // A failed query leaves the header out, never a shape that waits forever.
+  if (!me && isError) return null;
   if (!me) return <LoadingShape kind="chatHeader" />;
   return (
     <ChatHeader

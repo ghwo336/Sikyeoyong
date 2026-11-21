@@ -198,4 +198,13 @@ describe('ID card and the sleeping dragon', () => {
       expect(push).toHaveBeenCalledWith('/');
     });
   });
+
+  it('IdCard: a failed query ends in the bare top bar, with no loading shape (D-23)', async () => {
+    getMe.mockRejectedValue(new AppError('UNAUTHENTICATED', 'no session'));
+    const { container } = wrap(<IdCardContainer />);
+    await waitFor(() => {
+      expect(container.querySelector('[data-shape]')).toBeNull();
+    });
+    expect(screen.getByText('용이 신분증')).toBeInTheDocument();
+  });
 });
