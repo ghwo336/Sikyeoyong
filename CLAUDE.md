@@ -84,6 +84,7 @@
 | `pnpm merchants:balances` / `pnpm merchants:sweep --to <주소> (--merchant <키>\|--all) [--dry-run]` | 가게 지갑 잔액 보기 / 주인이 손으로 돌리는 가게 지갑 회수 (D-33). 키는 `seed/.keys`(보관본 `archive/`), LLM과 서버 API에는 없다 |
 | `pnpm e2e:path-b --run` (또는 `--drain <에이전트 주소>`) | 경로 B 실제 테스트넷 결제 전 과정을 주인이 손으로 돌린다 (실제 트랜잭션, 일회용 에이전트, 끝에 회수). `OPERATOR_KEY`, `AGENT_KEY_ENCRYPTION_KEY` 필요, 키는 출력하지 않는다 |
 | `pnpm agent-keys:rotate -- --dry-run\|--run` | 에이전트 키를 현재 마스터 키(v2, HKDF)로 다시 봉인. 교체 절차는 security.md, 키는 출력하지 않는다 |
+| `pnpm topups:reconcile -- --dry-run\|--run [--older-than <분>]` | 해시 없이 남은 충전 보류(용돈 장부 `fund`)를 대사. 주문에 충전 표시가 없는 보류만 풀고 나머지는 보고만 한다. 재전송 없음, payment.md |
 | `pnpm demo:rehearse` | 데모 장면 1~8 자동 리허설 |
 | `pnpm check:dash` | em dash, en dash 검사 |
 | `pnpm verify` | 커밋 게이트 (`python3 -I scripts/verify.py`, 커밋 전에는 `pnpm verify --precommit`). 자체 테스트는 `pnpm verify:test` |
