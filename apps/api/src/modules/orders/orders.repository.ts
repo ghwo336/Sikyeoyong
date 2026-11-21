@@ -1,5 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  notInArray,
+  or,
+  sql,
+} from 'drizzle-orm';
 import type { TasteRating } from '@sikyeoyong/shared';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
@@ -204,6 +217,43 @@ export class OrdersRepository {
       .where(and(eq(orders.id, id), eq(orders.status, from)))
       .run();
     return r.changes === 1;
+  }
+
+  /**
+   * The top-up marker (payment.md "즉시 충전(fund)의 멱등성"): set before the fund call. Refused
+   * (false) while an earlier top-up of this order has a marker and no hash, in one conditional
+   * UPDATE so two requests cannot both fund.
+   */
+  markFundStart(id: string, amountAokrw: string, nowMs: number): boolean {
+    const r = this.handle.db
+      .update(orders)
+      .set({
+        fundStartedAt: nowMs,
+        fundTxHash: null,
+        fundAmountAokrw: amountAokrw,
+        updatedAt: nowMs,
+      })
+      .where(and(eq(orders.id, id), or(isNull(orders.fundStartedAt), isNotNull(orders.fundTxHash))))
+      .run();
+    return r.changes === 1;
+  }
+
+  /** The fund call returned: its hash settles the marker. */
+  recordFundTx(id: string, txHash: string, nowMs: number): void {
+    this.handle.db
+      .update(orders)
+      .set({ fundTxHash: txHash, updatedAt: nowMs })
+      .where(eq(orders.id, id))
+      .run();
+  }
+
+  /** Nothing was sent (the owner has not signed): take the marker back. */
+  clearFundStart(id: string, nowMs: number): void {
+    this.handle.db
+      .update(orders)
+      .set({ fundStartedAt: null, fundTxHash: null, fundAmountAokrw: null, updatedAt: nowMs })
+      .where(eq(orders.id, id))
+      .run();
   }
 
   /** The taste rating for one order: insert, or replace the earlier one. */

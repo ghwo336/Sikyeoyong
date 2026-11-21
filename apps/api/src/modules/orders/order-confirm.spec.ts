@@ -618,3 +618,58 @@ describe('requote then confirm (user-flow 12): the other rules still hold', () =
     ]);
   });
 });
+
+describe('confirm: the top-up is idempotent by order (payment.md "즉시 충전(fund)의 멱등성")', () => {
+  it('records the top-up on the order: marker, amount and the fund tx hash', async () => {
+    const { quote, confirm, row } = await setup();
+    const id = await quote();
+    await confirm(id);
+    const r = row(id);
+    expect(r?.status).toBe('paid');
+    expect(r?.fundStartedAt).toBe(NOW);
+    expect(r?.fundAmountAokrw).toBe(A('9000').toString());
+    expect(r?.fundTxHash).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  it('a top-up that lost its answer is never repeated by a retry of the same order', async () => {
+    const { payment, wallet, quote, confirm, row } = await setup();
+    // The fund call throws after it may have gone out: no result, balance not shown yet.
+    const fund = vi.spyOn(payment, 'fund').mockRejectedValueOnce(new Error('socket hang up'));
+    const pay = vi.spyOn(payment, 'pay');
+    const id = await quote();
+    expect(row(id)?.fundStartedAt).toBeNull();
+    await confirm(id);
+    expect(row(id)).toMatchObject({ status: 'failed', errorCode: 'INTERNAL', fundTxHash: null });
+    expect(row(id)?.fundStartedAt).toBe(NOW);
+    // Pressing again, even several times: no second fund, nothing paid.
+    await confirm(id);
+    await confirm(id);
+    expect(fund).toHaveBeenCalledTimes(1);
+    expect(pay).not.toHaveBeenCalled();
+    expect(row(id)?.status).toBe('failed');
+    // The first top-up shows up on chain: the same order now pays without funding again.
+    await payment.fund(wallet, A('9000'));
+    fund.mockClear();
+    await confirm(id);
+    expect(fund).not.toHaveBeenCalled();
+    expect(row(id)?.status).toBe('paid');
+  });
+
+  it('a top-up waiting for the owner signature takes its marker back, the next try may fund', async () => {
+    let calls = 0;
+    const owner: OwnerAuthority = {
+      mode: 'pouch',
+      prepare: (action) => {
+        calls += 1;
+        return Promise.resolve({ id: `p${String(calls)}`, action, signer: 'user' });
+      },
+      confirm: () => Promise.reject(new Error('must not confirm')),
+    };
+    const { quote, confirm, row } = await setup({ owner });
+    const id = await quote();
+    await confirm(id);
+    expect(row(id)?.fundStartedAt).toBeNull();
+    await confirm(id);
+    expect(calls).toBe(2);
+  });
+});

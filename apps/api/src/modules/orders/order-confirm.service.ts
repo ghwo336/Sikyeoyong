@@ -97,7 +97,7 @@ export class OrderConfirmService {
         amount: parseAokrw(row.amountAokrw),
         orderRef: row.orderRef as Hex,
       };
-      await this.topUp(userId, checked.wallet, req.amount, nowMs);
+      await this.topUp(userId, row, checked.wallet, req.amount, nowMs);
       const pre = await this.payment.preflight(req);
       if (!pre.ok) {
         this.settle(userId, row, pre.error.code, false, nowMs);
@@ -195,9 +195,14 @@ export class OrderConfirmService {
    * nothing. Refusing an order when the ledger is short is open (open-questions Q-38).
    * The money already moved when the ledger is written, so a ledger failure never turns the
    * payment into a failure: it is logged (user, tx) for reconciliation instead.
+   * Idempotent by order (payment.md "즉시 충전(fund)의 멱등성"): a marker on the order is committed
+   * before the fund call and the tx hash after it. A marker with no hash is a top-up with no
+   * result (the answer was lost); it is never repeated while the balance does not show it, so a
+   * retry of the same order cannot fund twice. Once the funds show, the balance check passes.
    */
   private async topUp(
     userId: string,
+    row: OrderRow,
     wallet: AgentWallet,
     amount: bigint,
     nowMs: number,
@@ -206,14 +211,25 @@ export class OrderConfirmService {
     // Path B has no paymaster: the wallet also keeps its gas share (D-25). Others reserve 0.
     const need = amount + (this.payment.gasReserveAokrw ?? 0n);
     if (balance >= need) return;
+    const unresolved = row.fundStartedAt !== null && row.fundTxHash === null;
+    if (unresolved || !this.repo.markFundStart(row.id, (need - balance).toString(), nowMs)) {
+      throw new AppError('INTERNAL', {
+        reason: 'an earlier top-up of this order has no result yet, not funding again',
+      });
+    }
     const r = await runOwnerAction(this.owner, {
       kind: 'fund',
       agent: wallet,
       amount: need - balance,
     });
-    if (!r.done) throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
+    if (!r.done) {
+      // Nothing was sent: the marker is taken back so the next try may fund.
+      this.repo.clearFundStart(row.id, nowMs);
+      throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
+    }
     // fund sends one transaction; its hash is the record's.
     const txHash = r.txHashes[0] ?? null;
+    if (txHash !== null) this.repo.recordFundTx(row.id, txHash, nowMs);
     try {
       this.allowance.record(userId, 'fund', need - balance, txHash, nowMs);
     } catch (e) {

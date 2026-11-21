@@ -115,7 +115,7 @@ interface PaymentProvider {
 - 이긴 요청만 이 순서로 간다: 사전 검사(부화, 멈춤, 가게, 지금 가격 다시 계산, 30일 상한, 승인 사유. 이 주문 금액 그대로 승인된 예산 초과는 건너뜀) → 부족분만 즉시 충전(`OwnerAuthority`의 `fund`, 사용자 서명을 기다리면 표시 전 `INTERNAL`로 재시도 가능 실패) → `preflight` → 제출 표시(`submit_started_at`) 커밋 → `pay`. 표시 전에 난 오류는 결제가 나가지 않았으니 재시도 가능 `failed`. 표시 뒤에는 `pay`가 **돌려준** 거절(`PayResult`)만 분류대로 상태를 바꾸고, **던진** 오류는 코드와 상관없이 `submitting` 유지(이미 나갔을 수 있다). `attempt`는 SQL에서 1 올린다(먼저 읽은 값을 쓰지 않음).
 - 응답은 `{ order: OrderView }`(`zOrderResult`, `GET /orders/:id`도 같은 `OrderViews.viewFor`). 최근 주문 목록 `GET /orders`(`zOrderList`, 최대 20개, `quoted` 제외)도 `OrderViews.listFor`가 항목마다 같은 변환을 써서 목록과 상태 화면의 상태가 어긋나지 않는다. 실패면 `errorCode`, 결제되면 `txHash`가 붙는다. 도착 시각은 결제를 시작한 때(`submit_started_at`)부터 센다. 상태별 용이 대사와 표정은 `modules/orders/order-view.ts`(Done, Tracking, Arrived 시안 문구). 실패한 주문의 대사는 그 코드의 대사이고, 값(`{max}`, `{resetAt}`)이 필요한 대사는 값을 저장하지 않으므로 사람 문장(`message`)으로 대신한다.
 - 경로 C는 실패 주문을 다시 결제하지 않는다 (Q-24). 가게의 `onchain_id`가 없으면(Q-34) 흉내 체인 밖에서는 `CHAIN_MERCHANT_INACTIVE`.
-- 아직: **충전 멱등성(아래 "즉시 충전(fund)의 멱등성": 요청 ID (orderRef, attempt), 충전 제출 표시, 결론 없는 충전이 있으면 다시 충전하지 않음, 확정된 충전만 잔액에). 실제 경로(A, B, C)를 붙이기 전에 반드시 한다.** 지금은 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 다시 누르면 아직 안 보이는 충전 몫을 또 충전할 수 있다(흉내 체인에서는 충전이 즉시 반영되어 생기지 않는다). `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서는 위 코드대로 있음, 커서 저장만 아직) `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
+- 충전 멱등성은 주문 단위로 있다 (아래 "즉시 충전(fund)의 멱등성" 코드 줄). 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 같은 주문을 다시 눌러도 결과 모를 충전은 반복하지 않는다. 아직: `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서는 위 코드대로 있음, 커서 저장만 아직) `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
 
 ### 견적 (`POST /orders`, `place_order`, 2026-11-20 코드)
 - `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 아래 순서로 본다.
@@ -166,6 +166,7 @@ interface PaymentProvider {
 ### 즉시 충전(fund)의 멱등성
 - 충전 요청 ID는 (orderRef, 시도 번호)에서 만든다. 시도 번호는 사람이 confirm을 다시 눌러 결제를 시작할 때마다 하나 늘린다. 한 시도 안에서는 충전이 많아야 한 번이다.
 - 충전에도 같은 순서로 제출 시작 표시를 먼저 쓴다 (tech-spec 4 `wallet_txs`의 `request_id`, `order_id`, `attempt`, `submit_started_at`, `nonce`, `maws_request_id`). 표시가 있는데 결론이 없는 충전이 있으면 다시 충전하지 않고 기다린다 (결과 모름). 잔액 계산에는 확정된 충전만 넣고, 새 충전 금액은 float 상한에서 확정 잔액과 결과 모름 충전을 뺀 만큼을 넘지 않는다. 그래서 재시도가 반복돼도 float 상한을 넘지 않는다.
+- 코드 (2026-11-21): 지금은 충전 요청 ID 대신 **주문 한 줄에** 남긴다 (`orders.fund_started_at`, `fund_tx_hash`, `fund_amount`, 마이그레이션 0012. `wallet_txs` 표는 아직 없음). `OrderConfirmService.topUp`: 잔액이 이미 덮으면 충전하지 않는다. 부족하면 충전 호출 **전에** 표시를 조건부 UPDATE로 남기고(이미 표시만 있고 해시가 없으면 거절), 호출이 돌아오면 해시를 남긴다. 표시만 있고 해시가 없는 주문(응답을 잃은 충전)은 잔액에 안 보이는 동안 같은 주문을 다시 눌러도 충전하지 않고 재시도 가능 `failed`(`INTERNAL`)로 끝난다. 그 충전이 잔액에 보이면 충전 없이 결제한다. 소유자 서명을 기다리는 충전은 아무것도 안 나갔으므로 표시를 되돌린다. 충전이 영영 도착하지 않으면 그 주문은 막히고 새 견적(새 orderRef)으로 간다. 아직: 시도 번호별 요청 ID, float 상한에서 결론 없는 충전을 빼기.
 - 확정된 충전 뒤 다른 주문이 잔액을 써서 `CHAIN_INSUFFICIENT_FUNDS`가 나면, 다음 시도(새 시도 번호)에서 다시 충전한다.
 
 ### 경로별 중복 orderRef 보호

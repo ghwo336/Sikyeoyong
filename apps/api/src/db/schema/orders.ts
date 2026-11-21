@@ -57,6 +57,14 @@ export const orders = sqliteTable(
     submitTxHash: text('submit_tx_hash'),
     submitNonce: integer('submit_nonce'),
     mawsRequestId: text('maws_request_id'),
+    /**
+     * The just-in-time top-up for this order (payment.md "즉시 충전(fund)의 멱등성"): the marker is
+     * committed before the fund call, the hash after it returned. A marker without a hash is a
+     * top-up with no result, which is never repeated.
+     */
+    fundStartedAt: integer('fund_started_at'),
+    fundTxHash: text('fund_tx_hash'),
+    fundAmountAokrw: text('fund_amount'),
     /** POST /orders idempotency key from the app (server-api.md "멱등성"); null for place_order. */
     clientOrderId: text('client_order_id'),
     createdAt: integer('created_at').notNull(),
