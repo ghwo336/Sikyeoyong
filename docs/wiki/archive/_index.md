@@ -3,6 +3,7 @@ node: internal
 parent: ../README.md
 children:
   - questions.md
+  - worklog.md
 ---
 
 # 보관함
@@ -12,3 +13,4 @@ children:
 | 보관 파일 | 내용 |
 | --- | --- |
 | [questions.md](questions.md) | 닫힌 질문 (Q-09, 11, 13, 14, 18, 29, 35, 36, 38, 39) |
+| [worklog.md](worklog.md) | 2026-11-18부터 11-20 초반까지 작업 기록 19개 (한 줄 요약과 원문) |
