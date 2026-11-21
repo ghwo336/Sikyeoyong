@@ -160,3 +160,14 @@ children: []
 - 실수 기록: 7c1761c 이후 없음. 검증에서 FAIL은 모두 수정 커밋으로 고침(amend 없음). 승인 필터는 3차에서 PASS.
 - 막힌 것: 운영자 잔액 약 1,691 tOKRW (가게 지갑 회수나 faucet 허락 필요), 남은 가게 19곳 등록, 실체인 화면 주문.
 - 후속: 승인 필터 미탐 몇 개(놨, 넣었, 날렸, 보내졌, 끝!, OK), tech-spec 로그인과 월 예산 문구, KakaoVerify "구글로 가입했어도", CSP(nonce 미들웨어), AgentLock 상한 시간, 충전 보류 대사 절차, 에이전트 키 HKDF와 교체, 내 주문 페이지 구현(시안 결정 뒤), worklog 11개(다음 정리 때 보관).
+
+### 2026-11-21 오후 (후속 큐)
+- 한 일 (Sonnet 개발, Sonnet 검증 PASS 뒤 main push, 마지막 ace25d1):
+  - 에이전트 키 HKDF v2와 마스터 키 교체(`pnpm agent-keys:rotate`). 재봉인 확인과 HKDF info 고정 테스트 보강, dry-run 문구 바로잡음.
+  - QA 7 남은 것: 답 첫 이벤트에서 "보내는 중" 지움, 붙여 쓴 가게+메뉴 이름 매칭(어묵탕은 재현 못 함, 원인이 모델 입력일 수 있음).
+  - 동작 줄이기가 `(root)` 화면 전환도 끈다(`!important`, 블록 맨 아래).
+  - 충전 보류 대사 `pnpm topups:reconcile`. 1차 FAIL(덮어써지는 주문 표시로 짝지어 돈이 나간 보류를 풀 수 있었음) 뒤 보류 행에 order_id와 fund_call_started_at(0016)을 두고, 호출 시작 전 보류만 푼다.
+  - nonce CSP를 `apps/web/proxy.ts`에서 요청마다. 1차 FAIL(루트 .env를 못 읽어 금고 출처가 어긋남) 뒤 기본값은 shared `config/pouchi.ts` 한 곳, next.config가 출처를 풀어 넘긴다.
+- 실수 기록: 없음. dev 웹 서버가 next.config 바뀜을 shared dist 빌드보다 먼저 읽어 한 번 죽음(재시작으로 해결).
+- 막힌 것: 운영자 잔액(가게 지갑 회수나 faucet 허락), 남은 가게 19곳 등록, 실체인 화면 주문, 내 주문 시안 결정.
+- 후속: `markFundCallStarted` 변경 행 수 확인, CSP 금고 출처는 빌드 때 박힘(문서화), 승인 필터 미탐 몇 개, tech-spec 문구, worklog 정리.
