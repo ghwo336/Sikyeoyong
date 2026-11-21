@@ -63,7 +63,7 @@ export const agentLimitHistory = sqliteTable(
 
 /**
  * Path B only (tech-spec 4, payment.md): one encrypted EOA private key per agent wallet. The key
- * is AES-256-GCM sealed with AGENT_KEY_ENCRYPTION_KEY; the address is bound in as AAD so a row's
+ * is AES-256-GCM sealed with a per-row key derived from AGENT_KEY_ENCRYPTION_KEY (v2); the address is bound in as AAD so a row's
  * ciphertext cannot be moved under another address. agent_id is filled when the agents row links
  * the wallet (the key is saved first, before anything on chain, so a crash never loses a key whose
  * address may hold money). Nothing here is ever logged or sent to the web.
@@ -82,7 +82,12 @@ export const agentKeys = sqliteTable(
     iv: text('iv').notNull(),
     /** 16 byte auth tag, hex. */
     tag: text('tag').notNull(),
-    /** Which master key sealed it (rotation, 2단계 KMS). */
+    /**
+     * 16 byte random HKDF salt, hex. Null on v1 rows, whose encryption key is the master key
+     * itself; every v2 row has one (the per-agent key is HKDF(master, salt, address)).
+     */
+    salt: text('salt'),
+    /** 1: sealed with the master key directly. 2: sealed with the HKDF per-agent key. */
     keyVersion: integer('key_version').notNull().default(1),
     createdAt: integer('created_at').notNull(),
   },

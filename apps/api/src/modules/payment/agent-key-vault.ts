@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:crypto';
 import { AppError, type Hex } from '@sikyeoyong/shared';
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 
@@ -11,6 +11,8 @@ export interface SealedKeyRow {
   readonly ciphertext: string;
   readonly iv: string;
   readonly tag: string;
+  /** HKDF salt (hex) of a v2 row; null on a v1 row. */
+  readonly salt: string | null;
   readonly keyVersion: number;
   readonly createdAt: number;
 }
@@ -26,8 +28,17 @@ export interface AgentKeyStore {
   setOnchainAgentId(address: string, onchainAgentId: string): void;
 }
 
-const KEY_VERSION = 1;
+/** v1: the master key seals directly. v2: a per-row HKDF-SHA256 key (security.md). */
+const KEY_VERSION_MASTER_DIRECT = 1;
+const KEY_VERSION_HKDF = 2;
 const IV_BYTES = 12;
+const SALT_BYTES = 16;
+const HKDF_INFO = 'sikyeoyong/agent-key/v2';
+
+/** The v2 encryption key of one agent: HKDF-SHA256(master, row salt, info + address). */
+function deriveAgentKey(master: Buffer, salt: Buffer, address: string): Buffer {
+  return Buffer.from(hkdfSync('sha256', master, salt, `${HKDF_INFO}${address}`, 32));
+}
 
 /** Parses AGENT_KEY_ENCRYPTION_KEY (32 bytes, base64). The error names the variable, never the value. */
 export function parseMasterKey(raw: string | undefined): Buffer {
@@ -44,7 +55,8 @@ export function parseMasterKey(raw: string | undefined): Buffer {
 
 /**
  * Path B key custody (payment.md, tech-spec 3.4). Agent EOA keys are made here, sealed with
- * AES-256-GCM and saved before the caller does anything on chain. A key is decrypted only for the
+ * AES-256-GCM under a per-agent key (HKDF of the master key, a random per-row salt and the
+ * address; v2, v1 rows sealed with the master key directly still open) and saved before the caller does anything on chain. A key is decrypted only for the
  * duration of one callback; the buffer is zeroed right after (the hex string viem needs lives as
  * long as the account object, so this is best effort). The address is the GCM additional data, so
  * a ciphertext copied under another address fails to open. Nothing is logged here; errors carry
@@ -74,18 +86,11 @@ export class AgentKeyVault {
     const priv = Buffer.from(generatePrivateKey().slice(2), 'hex');
     try {
       const address = privateKeyToAccount(`0x${priv.toString('hex')}`).address.toLowerCase();
-      const iv = randomBytes(IV_BYTES);
-      const cipher = createCipheriv('aes-256-gcm', this.masterKey, iv);
-      cipher.setAAD(Buffer.from(address));
-      const ciphertext = Buffer.concat([cipher.update(priv), cipher.final()]);
       this.store.insert({
         address,
         agentId: agentId ?? null,
         onchainAgentId: null,
-        ciphertext: ciphertext.toString('hex'),
-        iv: iv.toString('hex'),
-        tag: cipher.getAuthTag().toString('hex'),
-        keyVersion: KEY_VERSION,
+        ...this.seal(priv, address),
         createdAt: this.now(),
       });
       return address as Hex;
@@ -129,18 +134,53 @@ export class AgentKeyVault {
     }
   }
 
+  /** Seals a plaintext key as a v2 row (fresh salt and nonce). */
+  protected seal(
+    priv: Buffer,
+    address: string,
+  ): Pick<SealedKeyRow, 'ciphertext' | 'iv' | 'tag' | 'salt' | 'keyVersion'> {
+    const salt = randomBytes(SALT_BYTES);
+    const iv = randomBytes(IV_BYTES);
+    const key = deriveAgentKey(this.masterKey, salt, address);
+    try {
+      const cipher = createCipheriv('aes-256-gcm', key, iv);
+      cipher.setAAD(Buffer.from(address));
+      const ciphertext = Buffer.concat([cipher.update(priv), cipher.final()]);
+      return {
+        ciphertext: ciphertext.toString('hex'),
+        iv: iv.toString('hex'),
+        tag: cipher.getAuthTag().toString('hex'),
+        salt: salt.toString('hex'),
+        keyVersion: KEY_VERSION_HKDF,
+      };
+    } finally {
+      key.fill(0);
+    }
+  }
+
   private open(row: SealedKeyRow): Buffer {
-    if (row.keyVersion !== KEY_VERSION) {
+    if (row.keyVersion !== KEY_VERSION_MASTER_DIRECT && row.keyVersion !== KEY_VERSION_HKDF) {
       throw new AppError('INTERNAL', { reason: 'unknown agent key version' });
     }
+    const key =
+      row.keyVersion === KEY_VERSION_HKDF && row.salt !== null
+        ? deriveAgentKey(this.masterKey, Buffer.from(row.salt, 'hex'), row.address)
+        : row.keyVersion === KEY_VERSION_MASTER_DIRECT
+          ? this.masterKey
+          : undefined;
+    if (key === undefined) {
+      throw new AppError('INTERNAL', { reason: 'agent key could not be opened' });
+    }
     try {
-      const decipher = createDecipheriv('aes-256-gcm', this.masterKey, Buffer.from(row.iv, 'hex'));
+      const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(row.iv, 'hex'));
       decipher.setAAD(Buffer.from(row.address));
       decipher.setAuthTag(Buffer.from(row.tag, 'hex'));
       return Buffer.concat([decipher.update(Buffer.from(row.ciphertext, 'hex')), decipher.final()]);
     } catch {
       // The cause (wrong master key or a tampered row) is not echoed: it could hint at the key.
       throw new AppError('INTERNAL', { reason: 'agent key could not be opened' });
+    } finally {
+      if (key !== this.masterKey) key.fill(0);
     }
   }
 }

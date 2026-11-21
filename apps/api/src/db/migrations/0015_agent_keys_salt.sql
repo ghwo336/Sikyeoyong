@@ -1,0 +1,1 @@
+ALTER TABLE `agent_keys` ADD `salt` text;

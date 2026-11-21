@@ -1,6 +1,7 @@
-import { randomBytes } from 'node:crypto';
+import { createCipheriv, randomBytes } from 'node:crypto';
 import { AppError } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { AgentKeyVault, parseMasterKey, type SealedKeyRow } from './agent-key-vault.js';
@@ -63,7 +64,8 @@ describe('AgentKeyVault', () => {
     const vault = new AgentKeyVault(master(), store);
     const address = vault.create('agent-1');
     const row = store.find(address);
-    expect(row).toMatchObject({ address, agentId: 'agent-1', keyVersion: 1 });
+    expect(row).toMatchObject({ address, agentId: 'agent-1', keyVersion: 2 });
+    expect(row?.salt).toMatch(/^[0-9a-f]{32}$/);
     expect(row?.ciphertext).toMatch(/^[0-9a-f]{64}$/);
     expect(row?.iv).toMatch(/^[0-9a-f]{24}$/);
     expect(row?.tag).toMatch(/^[0-9a-f]{32}$/);
@@ -71,6 +73,68 @@ describe('AgentKeyVault', () => {
       Promise.resolve(a.address.toLowerCase()),
     );
     expect(opened).toBe(address);
+  });
+
+  /** A pre-HKDF row: the master key seals directly, no salt (what production holds today). */
+  function legacyRow(m: Buffer): { row: SealedKeyRow; priv: `0x${string}` } {
+    const priv = generatePrivateKey();
+    const address = privateKeyToAccount(priv).address.toLowerCase();
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', m, iv);
+    cipher.setAAD(Buffer.from(address));
+    const ciphertext = Buffer.concat([
+      cipher.update(Buffer.from(priv.slice(2), 'hex')),
+      cipher.final(),
+    ]);
+    return {
+      priv,
+      row: {
+        address,
+        agentId: null,
+        onchainAgentId: null,
+        ciphertext: ciphertext.toString('hex'),
+        iv: iv.toString('hex'),
+        tag: cipher.getAuthTag().toString('hex'),
+        salt: null,
+        keyVersion: 1,
+        createdAt: 1,
+      },
+    };
+  }
+
+  it('still opens a v1 row sealed with the master key directly', async () => {
+    const store = new MemoryStore();
+    const m = master();
+    const { row, priv } = legacyRow(m);
+    store.insert(row);
+    const vault = new AgentKeyVault(m, store);
+    const signer = await vault.withAccount(row.address, (a) => Promise.resolve(a.address));
+    expect(signer.toLowerCase()).toBe(row.address);
+    expect(privateKeyToAccount(priv).address.toLowerCase()).toBe(row.address);
+  });
+
+  it('gives each v2 row its own salt, and the salt is part of the key', async () => {
+    const store = new MemoryStore();
+    const vault = new AgentKeyVault(master(), store);
+    const a = vault.create();
+    const b = vault.create();
+    expect(store.find(a)?.salt).not.toBe(store.find(b)?.salt);
+    const row = store.find(a);
+    if (!row) throw new Error('row missing');
+    store.rows.set(a, { ...row, salt: randomBytes(16).toString('hex') });
+    await expect(vault.withAccount(a, () => Promise.resolve(1))).rejects.toBeInstanceOf(AppError);
+    store.rows.set(a, { ...row, salt: null });
+    await expect(vault.withAccount(a, () => Promise.resolve(1))).rejects.toBeInstanceOf(AppError);
+  });
+
+  it('refuses an unknown key version', async () => {
+    const store = new MemoryStore();
+    const vault = new AgentKeyVault(master(), store);
+    const a = vault.create();
+    const row = store.find(a);
+    if (!row) throw new Error('row missing');
+    store.rows.set(a, { ...row, keyVersion: 3 });
+    await expect(vault.withAccount(a, () => Promise.resolve(1))).rejects.toBeInstanceOf(AppError);
   });
 
   it('two keys differ and each has its own nonce', () => {
@@ -149,7 +213,7 @@ describe('AgentKeysRepository (agent_keys, migration 0010)', () => {
       const vault = new AgentKeyVault(randomBytes(32), repo);
       const address = vault.create();
       const row = repo.find(address);
-      expect(row).toMatchObject({ address, agentId: null, keyVersion: 1 });
+      expect(row).toMatchObject({ address, agentId: null, keyVersion: 2 });
       if (!row) throw new Error('row missing');
       expect(() => {
         repo.insert(row);
