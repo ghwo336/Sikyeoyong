@@ -10,6 +10,7 @@ import { UsersModule } from '../users/users.module.js';
 import { OrderApprovalEffects } from './order-approval-effects.service.js';
 import { OrderApprovalRequests } from './order-approval-request.service.js';
 import { OrderBootRecheck } from './order-boot-recheck.service.js';
+import { OrderIndexer } from './order-indexer.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
 import { OrderViews } from './order-views.service.js';
 import { OrderQuoteService } from './order-quote.service.js';
@@ -40,6 +41,7 @@ import { OrderSpend } from './order-spend.service.js';
     OrderQuoteService,
     OrderConfirmService,
     OrderBootRecheck,
+    OrderIndexer,
     OrderViews,
     OrderRatingService,
     OrderRequoteService,

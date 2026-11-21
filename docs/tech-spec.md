@@ -516,6 +516,7 @@ score(merchant, menu) =
 - viem `publicClient` (HTTP `MAROO_RPC_URL`, WebSocket은 2단계). 체인 ID는 부팅 시 `eth_chainId`로 읽어 `CHAIN_ID` 환경 변수와 다르면 경고 후 RPC 값 사용 (D-05 하드코딩 금지).
 - 인덱서: 3초 간격 `getLogs(address=ORDERS_CONTRACT, fromBlock=cursor+1, toBlock=latest)`, 한 번에 최대 2,000블록. 이벤트별 핸들러가 DB upsert(멱등: `(txHash, logIndex)` 유니크). 처리 후 `chain_cursor` 갱신(같은 DB 트랜잭션).
 - 재시작: `chain_cursor.last_block`부터 재개. 최초 실행은 `ORDERS_DEPLOY_BLOCK`.
+- 코드 (2026-11-21, 경로 B만): `OrderIndexer`(`modules/orders/order-indexer.service.ts`)가 `ORDER_EVENTS`(`modules/chain/order-events.ts`, `OrderPlaced`만)로 3초 간격 읽는다. 배포 기록의 `deployBlock`(또는 `ORDERS_DEPLOY_BLOCK`)에서 시작해 2,000블록씩. 지금은 커서를 메모리에만 두고(재시작하면 배포 블록부터 다시 읽음, 멱등이라 안전), `chain_cursor` 테이블과 `OrderPlaced` 외 이벤트는 아직이다. 목 경로는 인덱서 없음.
 - 확정성: 마루는 BFT 합의라 즉시 확정으로 (추론). 1블록 확인 후 확정 처리, 안전을 위해 `CONFIRMATIONS=1` 설정값.
 - 읽기 함수: `contractPeriodicVolume(proxy, agent, placeOrderSelector, "atokrw")`로 30일 사용량, IdentityRegistry `getMetadata(agentId, "TransferLimit")`, `IAgent.getAgentIds(wallet)`.
 

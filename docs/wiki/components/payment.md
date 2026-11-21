@@ -115,7 +115,7 @@ interface PaymentProvider {
 - 이긴 요청만 이 순서로 간다: 사전 검사(부화, 멈춤, 가게, 지금 가격 다시 계산, 30일 상한, 승인 사유. 이 주문 금액 그대로 승인된 예산 초과는 건너뜀) → 부족분만 즉시 충전(`OwnerAuthority`의 `fund`, 사용자 서명을 기다리면 표시 전 `INTERNAL`로 재시도 가능 실패) → `preflight` → 제출 표시(`submit_started_at`) 커밋 → `pay`. 표시 전에 난 오류는 결제가 나가지 않았으니 재시도 가능 `failed`. 표시 뒤에는 `pay`가 **돌려준** 거절(`PayResult`)만 분류대로 상태를 바꾸고, **던진** 오류는 코드와 상관없이 `submitting` 유지(이미 나갔을 수 있다). `attempt`는 SQL에서 1 올린다(먼저 읽은 값을 쓰지 않음).
 - 응답은 `{ order: OrderView }`(`zOrderResult`, `GET /orders/:id`도 같은 `OrderViews.viewFor`). 최근 주문 목록 `GET /orders`(`zOrderList`, 최대 20개, `quoted` 제외)도 `OrderViews.listFor`가 항목마다 같은 변환을 써서 목록과 상태 화면의 상태가 어긋나지 않는다. 실패면 `errorCode`, 결제되면 `txHash`가 붙는다. 도착 시각은 결제를 시작한 때(`submit_started_at`)부터 센다. 상태별 용이 대사와 표정은 `modules/orders/order-view.ts`(Done, Tracking, Arrived 시안 문구). 실패한 주문의 대사는 그 코드의 대사이고, 값(`{max}`, `{resetAt}`)이 필요한 대사는 값을 저장하지 않으므로 사람 문장(`message`)으로 대신한다.
 - 경로 C는 실패 주문을 다시 결제하지 않는다 (Q-24). 가게의 `onchain_id`가 없으면(Q-34) 흉내 체인 밖에서는 `CHAIN_MERCHANT_INACTIVE`.
-- 아직: **충전 멱등성(아래 "즉시 충전(fund)의 멱등성": 요청 ID (orderRef, attempt), 충전 제출 표시, 결론 없는 충전이 있으면 다시 충전하지 않음, 확정된 충전만 잔액에). 실제 경로(A, B, C)를 붙이기 전에 반드시 한다.** 지금은 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 다시 누르면 아직 안 보이는 충전 몫을 또 충전할 수 있다(흉내 체인에서는 충전이 즉시 반영되어 생기지 않는다). `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인은 위 코드대로 있음) 인덱서로 `submitting`을 `paid`로 끝내기, `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
+- 아직: **충전 멱등성(아래 "즉시 충전(fund)의 멱등성": 요청 ID (orderRef, attempt), 충전 제출 표시, 결론 없는 충전이 있으면 다시 충전하지 않음, 확정된 충전만 잔액에). 실제 경로(A, B, C)를 붙이기 전에 반드시 한다.** 지금은 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 다시 누르면 아직 안 보이는 충전 몫을 또 충전할 수 있다(흉내 체인에서는 충전이 즉시 반영되어 생기지 않는다). `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서는 위 코드대로 있음, 커서 저장만 아직) `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
 
 ### 견적 (`POST /orders`, `place_order`, 2026-11-20 코드)
 - `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 아래 순서로 본다.
@@ -146,6 +146,7 @@ interface PaymentProvider {
 
 ### `submitting`을 끝내는 규칙
 - 인덱서가 `OrderPlaced(orderRef)`를 보면 `paid`.
+  - 코드 (2026-11-21): `OrderIndexer`(`modules/orders/order-indexer.service.ts`, tech-spec 3.9). 로그의 orderRef로 주문을 찾아 `submitting`과 `failed`만 `paid`(체인의 tx hash)로 맞춘다 (멱등: 이미 `paid`면 그대로, 체인 이벤트는 `(tx_hash, log_index)`로 한 번만 `order_events`에). 모르는 orderRef는 경고 로그만 남기고 무시, 결제를 시작한 적 없는 주문(`quoted`, `pending_approval`)의 로그는 믿지 않고 오류 로그. 읽기만 하며 결제하지 않는다. 경로 B만 켜지고 목 경로는 아무것도 하지 않는다.
 - 제출 트랜잭션의 영수증이 revert면 그 사유로 위 분류를 따른다.
 - **제출 시작 표시와 순서**: 표시는 체인이나 MAWS에 무엇이든 내보내기 **전에** DB에 커밋한다.
   - 경로 B: nonce 예약 → 서명 → (`submit_tx_hash`, `submit_nonce`, `submit_started_at`)를 DB에 커밋 → 그다음 브로드캐스트.

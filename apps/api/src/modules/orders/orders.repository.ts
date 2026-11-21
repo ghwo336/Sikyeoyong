@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-o
 import type { TasteRating } from '@sikyeoyong/shared';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
-import { ORDER_STATUSES, orderRatings, orders } from '../../db/schema/index.js';
+import { ORDER_STATUSES, orderEvents, orderRatings, orders } from '../../db/schema/index.js';
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type OrderRow = typeof orders.$inferSelect;
@@ -129,6 +129,43 @@ export class OrdersRepository {
       .where(eq(orders.status, status))
       .orderBy(asc(orders.createdAt), asc(orders.id))
       .all();
+  }
+
+  findByOrderRef(orderRef: string): OrderRow | undefined {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(eq(orders.orderRef, orderRef.toLowerCase()))
+      .get();
+  }
+
+  /**
+   * One chain event of an order, idempotent on (tx_hash, log_index) (data.md). Returns whether
+   * it was new.
+   */
+  recordChainEvent(
+    orderId: string,
+    type: string,
+    txHash: string,
+    logIndex: number,
+    payload: object,
+    nowMs: number,
+  ): boolean {
+    const r = this.handle.db
+      .insert(orderEvents)
+      .values({
+        id: `${txHash}:${String(logIndex)}`,
+        orderId,
+        type,
+        payloadJson: JSON.stringify(payload),
+        source: 'chain',
+        txHash,
+        logIndex,
+        createdAt: nowMs,
+      })
+      .onConflictDoNothing()
+      .run();
+    return r.changes === 1;
   }
 
   findForUser(id: string, userId: string): OrderRow | undefined {

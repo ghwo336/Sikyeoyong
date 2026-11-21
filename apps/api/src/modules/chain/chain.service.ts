@@ -1,3 +1,5 @@
+import type { Hex } from '@sikyeoyong/shared';
+
 /**
  * Chain reads other modules need (chain-and-pcl.md, tech-spec 3.9). Only the
  * chain module talks to the RPC; others get this interface by token.
@@ -19,6 +21,28 @@ export interface ChainReader {
 }
 
 export const CHAIN_READER = Symbol('CHAIN_READER');
+
+/** One OrderPlaced log of the orders proxy. */
+export interface PlacedLog {
+  readonly orderRef: Hex;
+  readonly txHash: Hex;
+  readonly logIndex: number;
+  readonly blockNumber: bigint;
+}
+
+/**
+ * What the indexer reads from the chain (chain-and-pcl.md, tech-spec 3.9). The orders module gets
+ * this by token and decides what a log means.
+ */
+export interface OrderEventsReader {
+  /** The first block to read: the deployment block of the orders proxy. */
+  readonly startBlock: bigint;
+  latestBlock(): Promise<bigint>;
+  /** OrderPlaced logs of the proxy in [from, to], both inclusive. */
+  orderPlaced(from: bigint, to: bigint): Promise<readonly PlacedLog[]>;
+}
+
+export const ORDER_EVENTS = Symbol('ORDER_EVENTS');
 
 // The reader factory, for owner-run scripts that build their own reader (payment e2e).
 export { createChainReader } from './chain-reader.factory.js';
