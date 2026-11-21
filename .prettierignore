@@ -19,3 +19,4 @@ packages/shared/src/abi
 .claude
 packages/ui/src/tokens/tokens.css
 apps/api/src/db/migrations
+dist-rehearsal

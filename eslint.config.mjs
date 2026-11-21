@@ -89,6 +89,7 @@ export default tseslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/dist-rehearsal/**',
       '**/.next/**',
       '**/.next-rehearsal/**',
       '**/coverage/**',
