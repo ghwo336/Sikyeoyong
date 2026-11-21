@@ -177,13 +177,49 @@ export function noveltyFit(
   return lately ? 0 : 100;
 }
 
-/** Words of the craving worth matching (2 characters or more). */
+/**
+ * Spoken craving stems and the seed tags they stand for. A stem is matched at the start of a
+ * word, so "매콤한", "매운", "얼큰한" and "따끈한" all reach the tags the stores wrote ("매콤",
+ * "국물", "따뜻한"). Real use: "매콤한 거" came back empty although many menus are spicy.
+ */
+const CRAVING_SYNONYMS: ReadonlyArray<readonly [readonly string[], readonly string[]]> = [
+  [
+    ['매콤', '매운', '매워', '맵', '칼칼', '얼얼'],
+    ['매콤', '매운'],
+  ],
+  [['얼큰'], ['매콤', '매운', '국물']],
+  [
+    ['따끈', '따뜻', '뜨끈', '뜨거'],
+    ['따뜻한', '국물'],
+  ],
+  [
+    ['가벼', '담백', '깔끔', '산뜻'],
+    ['가벼운', '깔끔한', '건강'],
+  ],
+  [['든든', '배부', '푸짐', '배고'], ['든든한']],
+  [['시원', '차가', '차갑'], ['시원한']],
+  [
+    ['달달', '달콤', '달아'],
+    ['달달한', '달짝'],
+  ],
+];
+/** Filler in a craving ("매콤한 거", "국물 음식") that names no dish. */
+const CRAVING_FILLER = new Set(['거', '것', '음식', '메뉴', '종류', '뭐', '좀', '아무거나']);
+
+/** Words of the craving worth matching (2 characters or more), with spoken forms mapped to tags. */
 export function cravingWords(craving: string | undefined): string[] {
   if (craving === undefined) return [];
-  return craving
+  const spoken = craving
     .split(/[\s,.!?~()]+/)
     .map((w) => w.trim())
-    .filter((w) => w.length >= MIN_CRAVING_WORD);
+    .filter((w) => w.length >= MIN_CRAVING_WORD && !CRAVING_FILLER.has(w));
+  const out = new Set(spoken);
+  for (const w of spoken) {
+    for (const [stems, tags] of CRAVING_SYNONYMS) {
+      if (stems.some((stem) => w.startsWith(stem))) for (const t of tags) out.add(t);
+    }
+  }
+  return [...out];
 }
 
 function wordHits(words: readonly string[], name: string, tags: readonly string[]): boolean {
