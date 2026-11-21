@@ -15,7 +15,7 @@ children: []
 규칙 목록 계산 (서버 영수증)
 
 ## props
-`txHash: string`, `agentId: string`, `rules: readonly string[]` (서버 영수증이 준 규칙 이름 그대로), `explorerUrl: string`, `defaultOpen?: boolean`
+`txHash: string`, `agentId: string`, `rules: readonly string[]` (서버 영수증이 준 규칙 이름 그대로), `explorerUrl?: string` (없으면 링크를 그리지 않는다), `defaultOpen?: boolean`
 
 ## 하네스 상태
 `ReceiptDetails.stories.tsx`에 아래를 전부 만든다.

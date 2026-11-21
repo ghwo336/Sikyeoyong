@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChatEvent } from '@sikyeoyong/shared';
 import { api, type OrderQuote } from '../../../lib/api';
 import { chatStamp } from '../../../lib/format';
+import { APPROVALS_KEY } from '../../approvals/hooks/useApprovals';
+import { ORDERS_KEY } from '../../orders/hooks/useOrders';
 import { type ChatEntry, dragonTurn, historyEntries, LOCAL_LINE_PREFIX } from './entries';
 
 export interface ChatThreadData {
@@ -29,7 +31,12 @@ export function handQuoteToChat(qc: QueryClient, quote: OrderQuote): void {
  * The thread lives in the query cache so it survives a trip to the order screen and back.
  * The confirm card the dragon quotes is held here until the sheet is closed; nothing here pays.
  */
-export function useChat() {
+export function useChat(
+  on: {
+    /** The dragon placed an order that waits for the owner (reason as the server says). */
+    readonly onApprovalRequest?: (a: { orderId: string; reason: string }) => void;
+  } = {},
+) {
   const qc = useQueryClient();
   const thread = useQuery({
     queryKey: THREAD_KEY,
@@ -92,6 +99,12 @@ export function useChat() {
       setStatus(id, 'sent');
       const turn = showTurn(id, events);
       if (turn.quote) showQuote(turn.quote);
+      if (turn.approval) {
+        // The waiting order's card must show now, not after the next poll.
+        void qc.invalidateQueries({ queryKey: APPROVALS_KEY });
+        void qc.invalidateQueries({ queryKey: ORDERS_KEY });
+        on.onApprovalRequest?.(turn.approval);
+      }
     },
     onError: (_err, { id }) => {
       setStatus(id, 'failed');

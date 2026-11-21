@@ -125,4 +125,11 @@ describe('ReceiptDetails (ReceiptDetails.md 테스트 기준)', () => {
     expect(rule('.link')).toMatch(/min-height:\s*var\(--size-touch-min\)/);
     expect(rule('.link')).toMatch(/color:\s*var\(--theme-accent\)/);
   });
+
+  it('draws no link when there is no explorer URL (a chain without one)', () => {
+    const { explorerUrl: _omit, ...rest } = base;
+    render(<ReceiptDetails {...rest} defaultOpen />);
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByText(/0x8f3a/)).toBeInTheDocument();
+  });
 });

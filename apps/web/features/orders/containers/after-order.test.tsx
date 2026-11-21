@@ -209,6 +209,20 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     expect(screen.queryByText(/지금/)).toBeNull();
   });
 
+  it('a receipt with no explorer link draws no link (a chain without an explorer)', async () => {
+    localStorage.setItem('sikyeoyong.details', 'on');
+    const { explorerUrl: _drop, ...receipt } = base.receipt as NonNullable<typeof base.receipt>;
+    getOrder.mockResolvedValue({ order: { ...base, status: 'delivered' } });
+    const withLink = wrap(<ReceiptContainer orderId="o1" />);
+    expect(await screen.findByRole('link', { name: /탐색기/ })).toBeInTheDocument();
+    withLink.unmount();
+    getOrder.mockResolvedValue({ order: { ...base, status: 'delivered', receipt } });
+    wrap(<ReceiptContainer orderId="o1" />);
+    await screen.findByText('결제 수단');
+    expect(screen.queryByRole('link', { name: /탐색기/ })).toBeNull();
+    localStorage.clear();
+  });
+
   it.each(['failed', 'cancelled', 'refunded'] as const)(
     'a %s order shows no receipt: nothing looks paid',
     async (status) => {

@@ -44,7 +44,13 @@ export interface ChatContainerProps {
  */
 export function ChatContainer({ header, top }: ChatContainerProps) {
   const router = useRouter();
-  const chat = useChat();
+  const chat = useChat({
+    // Over the per-order limit the way out is the Blocked screen; a new store or the 30 days
+    // come back as the owner's card in the chat (user-flow 12, 13).
+    onApprovalRequest: ({ orderId, reason }) => {
+      if (reason === 'OVER_LEVEL_LIMIT') router.push(`/limit/${encodeURIComponent(orderId)}`);
+    },
+  });
   const me = useMe().data;
   const budget = useBudget().data;
   // Main.dc.html's "오늘 저녁도 부탁해" assumes earlier orders; a first owner gets a plain ask.

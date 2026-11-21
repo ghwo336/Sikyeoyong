@@ -12,12 +12,14 @@ export interface ReceiptDetailsProps {
   readonly agentId: string;
   /** Rule names the chain actually checked, from the server receipt (tech-spec 2.5). */
   readonly rules: readonly string[];
-  readonly explorerUrl: string;
+  /** No link on a chain without an explorer (the mock chain): nothing is drawn then. */
+  readonly explorerUrl?: string | undefined;
   readonly defaultOpen?: boolean;
 }
 
 /** Only https links leave the app (no javascript: or plain http). */
-function isHttps(url: string): boolean {
+function isHttps(url: string | undefined): url is string {
+  if (url === undefined) return false;
   try {
     return new URL(url).protocol === 'https:';
   } catch {

@@ -40,6 +40,8 @@ export interface DragonTurn {
   readonly entries: readonly ChatEntry[];
   /** The confirm card, if the dragon quoted an order. Only its button pays. */
   readonly quote: OrderQuote | undefined;
+  /** The order the dragon placed that now waits for the owner (approval_request). */
+  readonly approval: { readonly orderId: string; readonly reason: string } | undefined;
 }
 
 /**
@@ -54,6 +56,7 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
   let text = '';
   let cardBreak = false;
   let quote: OrderQuote | undefined;
+  let approval: DragonTurn['approval'];
   // The model may look the same list up twice in one turn; the thread shows it once (QA 3).
   const seenLists = new Set<string>();
   const flushText = () => {
@@ -92,6 +95,9 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
       case 'order_confirm':
         quote = e.quote;
         break;
+      case 'approval_request':
+        approval = { orderId: e.orderId, reason: e.reason };
+        break;
       case 'limit_change_card':
         cardBreak = true;
         limitCards.push({ kind: 'limit_change', id: e.card.cardId, card: e.card });
@@ -104,7 +110,7 @@ export function dragonTurn(messageId: string, events: readonly ChatEvent[]): Dra
   let at = entries.length;
   while (at > 0 && entries[at - 1]?.kind === 'quick_replies') at -= 1;
   entries.splice(at, 0, ...limitCards);
-  return { entries, quote };
+  return { entries, quote, approval };
 }
 
 export function historyEntries(messages: readonly ChatHistoryMessage[]): ChatEntry[] {

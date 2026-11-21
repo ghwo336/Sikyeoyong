@@ -74,6 +74,8 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
       },
     );
   }
+  // Optional on a chain with no explorer (the mock chain): then no link is drawn.
+  const explorerUrl: string | undefined = order.receipt?.explorerUrl;
   return (
     <>
       <TopBar title="주문 상세" onBack={back} />
@@ -94,7 +96,7 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
           agentId={order.receipt.agentId}
           // The list is headed "통과한 마루 규칙": only the chain's own checks belong under it.
           rules={order.receipt.rules.filter((r) => r.layer === 'chain').map((r) => r.label)}
-          explorerUrl={order.receipt.explorerUrl}
+          explorerUrl={explorerUrl}
           defaultOpen={details}
         />
       )}

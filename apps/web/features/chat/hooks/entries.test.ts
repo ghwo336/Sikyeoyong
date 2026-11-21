@@ -19,6 +19,15 @@ describe('dragonTurn', () => {
     expect(turn.quote).toBeUndefined();
   });
 
+  it('keeps the approval_request of a turn (orderId and reason) and draws nothing for it', () => {
+    const turn = dragonTurn('m', [
+      { type: 'approval_request', orderId: 'o9', reason: 'OVER_LEVEL_LIMIT' },
+      { type: 'done', messageId: 'm' },
+    ]);
+    expect(turn.approval).toEqual({ orderId: 'o9', reason: 'OVER_LEVEL_LIMIT' });
+    expect(turn.entries).toEqual([]);
+  });
+
   it('draws the same recommendation list once when the model fetched it twice', () => {
     const other = { id: 'r2', menu: '순대국' } as RecommendationCard;
     const turn = dragonTurn('m', [

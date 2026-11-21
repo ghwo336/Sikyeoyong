@@ -24,6 +24,7 @@ children: []
 - 허락하기의 답(견적)과 안 시킬래요의 후속은 `useDecideApproval`의 훅 수준 `onSuccess`에서 부모에게 넘긴다. 답이 자기 카드를 목록에서 지우면 컨테이너가 사라져 `mutate()` 호출별 콜백이 버려지기 때문이다 (QA 6차: 시트가 안 열림). 같은 추천을 다시 누르면 새 주문 대신 `features/orders/same-pick.ts`로 기존 주문을 쓴다: 허락 대기 중이면 용이가 카드 쪽을 안내하거나(한도 대기는 막힘 화면), 닫은 확인 카드는 다시 연다. 서버에는 같은 메뉴를 알아보는 키가 없다.
 - 읽기가 실패하면 그 자리에 `RetryLine`(오류 한 줄과 다시 불러오기)을 둔다. 블록을 말없이 빼지 않는다: 용돈 화면의 한도 줄(`/budget` 실패), 주문 내역(`/orders` 실패). 용이 모습과 신분증 줄은 예산 없이도 보이고, 멈추기 줄만 예산을 기다린다 (QA 6차).
 - 멈춘 주문 화면의 용이 대사는 `features/orders/failed.ts` `stoppedLine`이 정한다: 다시 시도가 없는 주문에서 서버 대사가 "그래도 시킬까용?" 같은 질문이면 대화로 가라는 평서문으로 바꾼다 (버튼이 대화로 돌아가기뿐이라서, QA 6차). 한도 변경(`useSetLimits`)은 예산 재조회를 기다리지 않는다: 체인을 읽는 `/budget`이 느려도 누른 버튼이 "확인 중"에 머물지 않는다.
+- 대화 SSE `approval_request {orderId, reason}`를 받으면(`useChat`의 `onApprovalRequest`) approvals와 orders 목록을 바로 다시 받아 허락 카드가 뜨게 하고, reason이 `OVER_LEVEL_LIMIT`이면 막힘 화면(`/limit/<orderId>`)으로 보낸다. 영수증의 `explorerUrl`은 없을 수 있다(탐색기 없는 흉내 체인): 없으면 "마루 탐색기에서 보기" 링크를 그리지 않는다.
 - 서버 상태는 TanStack Query. 로컬 상태는 컴포넌트 안 `useState`로 충분하면 그것만, 여러 화면이 같이 쓰면 zustand.
 - 대화 스트리밍은 API의 SSE(`packages/shared/src/api/chat.ts`의 `zChatEvent`). 이벤트를 프레임 단위로 묶어 그린다.
 
