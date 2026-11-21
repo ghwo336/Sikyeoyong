@@ -102,13 +102,39 @@ body {
   padding: var(--size-hatch-top) var(--space-6) var(--space-8);
 }
 
-/* Screen to screen (D-23): a short cross-fade through View Transitions, opacity only (the
-   browser composites it). lib/transition-router.tsx starts it; browsers without the API and
-   people who ask for reduced motion simply get the new screen. */
+/* Screen to screen (D-23): the old screen leaves fast and the new one arrives a beat later with
+   a short rise, so the two never sit half-visible on top of each other (browser QA 4: a plain
+   cross-fade showed both at mid-point). Opacity and transform only (the browser composites it).
+   lib/transition-router.tsx starts it; browsers without the API and people who ask for reduced
+   motion simply get the new screen. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 220ms;
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  animation-fill-mode: both;
+}
+
+::view-transition-old(root) {
+  animation-name: screen-out;
+  animation-duration: 110ms;
+}
+
+::view-transition-new(root) {
+  animation-name: screen-in;
+  animation-duration: 220ms;
+  animation-delay: 80ms;
+}
+
+@keyframes screen-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
