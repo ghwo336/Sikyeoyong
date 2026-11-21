@@ -15,7 +15,7 @@ export interface KakaoVerifyProps {
 }
 
 const TEXT: Record<VerifyMode, { button: string; note: string }> = {
-  kakao: { button: '카카오톡으로 본인 인증', note: '구글로 가입했어도 카카오톡으로 인증해요' },
+  kakao: { button: '카카오톡으로 본인 인증', note: '이메일로 가입했어도 카카오톡으로 인증해요' },
   mock: { button: '체험용으로 인증하기', note: '체험판이라 실제 본인 인증 없이 넘어가요' },
 };
 

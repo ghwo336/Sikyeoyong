@@ -24,7 +24,7 @@ describe('KakaoVerify (KakaoVerify.md 테스트 기준)', () => {
     const button = screen.getByRole('button', { name: '카카오톡으로 본인 인증' });
     expect(button).toHaveClass(buttonStyles.kakao ?? 'kakao');
     expect(container.querySelector('.kakaoMark')).not.toBeNull();
-    expect(screen.getByText('구글로 가입했어도 카카오톡으로 인증해요')).toBeInTheDocument();
+    expect(screen.getByText('이메일로 가입했어도 카카오톡으로 인증해요')).toBeInTheDocument();
   });
 
   it('in mock mode changes the words, and drops the Kakao look (brand guide)', () => {
