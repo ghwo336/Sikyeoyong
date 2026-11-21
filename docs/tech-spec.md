@@ -1040,6 +1040,7 @@ BIZNO_HMAC_KEY=
 
 ### 9.5 레이트 리밋
 - 사용자당: 대화 20회/분, 주문 5회/10분, 승인 30회/시간. IP당: 로그인 10회/분.
+- 쓰기 경로 구현(`UserRateLimitGuard`, 세션 사용자별 슬라이딩 윈도우, 넘으면 `RATE_LIMITED` 429): `POST /orders` 5회/10분, `POST /orders/:id/confirm`과 `/requote` 합쳐 10회/10분, `POST /orders/:id/rating` 30회/시간, `POST /approvals/:id/approve`와 `/reject` 합쳐 30회/시간, `POST /identity/verify` 10회/시간. 값은 `common/rate-limit/user-rate-limit.guard.ts`의 `USER_RATES`.
 - LLM 비용 상한: 사용자당 하루 토큰 예산(설정값), 넘으면 드래곤이 "오늘은 피곤해용" 응답.
 
 ### 9.6 운영자 키 권한 분리

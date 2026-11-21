@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
+import { userRateNameOf } from '../../common/rate-limit/user-rate-limit.guard.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -14,6 +15,7 @@ import { identityChecks, users } from '../../db/schema/index.js';
 import { AuthService } from '../auth/auth.service.js';
 import { IdentityModule } from './identity.module.js';
 import { IdentityService } from './identity.service.js';
+import { IdentityController } from './identity.controller.js';
 
 const NOW = Date.parse('2026-12-10T03:00:00.000Z');
 const open: { app: INestApplication; h: DbHandle }[] = [];
@@ -73,6 +75,14 @@ describe('POST /api/identity/verify (D-16)', () => {
     expect(h.db.select().from(identityChecks).all()).toHaveLength(0);
   });
 
+  it('answers 429 RATE_LIMITED after 10 calls in an hour (tech-spec 9.5)', async () => {
+    const { verify } = await setup({ VERIFY_MODE: 'mock' });
+    for (let i = 0; i < 10; i += 1) expect((await verify()).status).toBe(200);
+    const res = await verify();
+    expect(res.status).toBe(429);
+    expect((res.body as { error: { code: string } }).error.code).toBe('RATE_LIMITED');
+  });
+
   it('needs a session (401) and the fetch header (403)', async () => {
     const { h, http, token } = await setup({ VERIFY_MODE: 'mock' });
     expect((await http().post('/api/identity/verify')).status).toBe(401);
@@ -90,5 +100,14 @@ describe('GET /api/identity (the front door)', () => {
     await verify();
     expect((await get()).body).toEqual({ verified: true });
     expect((await http().get('/api/identity')).status).toBe(401);
+  });
+});
+
+describe('write routes carry their rate limit (tech-spec 9.5)', () => {
+  it.each([['verify', 'verify']])('IdentityController.%s is %s', (method, name) => {
+    const handler = (IdentityController.prototype as unknown as Record<string, () => unknown>)[
+      method
+    ];
+    expect(handler === undefined ? undefined : userRateNameOf(handler)).toBe(name);
   });
 });

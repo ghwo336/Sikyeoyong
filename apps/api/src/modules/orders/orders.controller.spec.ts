@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { configureApp } from '../../app.setup.js';
+import { userRateNameOf } from '../../common/rate-limit/user-rate-limit.guard.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -19,6 +20,7 @@ import { CHAIN_READER, type PeriodicVolume } from '../chain/chain.service.js';
 import { orderRefOf } from './order-ref.js';
 import { OrdersModule } from './orders.module.js';
 import { OrdersRepository } from './orders.repository.js';
+import { OrdersController } from './orders.controller.js';
 
 // Amounts written by hand: N won = N * 10^18 aokrw. Default policy: Lv1 10,000 per order, 500,000 / 30 days.
 const W = (won: string) => `${won}000000000000000000`;
@@ -614,5 +616,19 @@ describe('POST /api/orders/:id/requote: the waiting order after a per-order rais
       .post(`/api/orders/${id}/requote`)
       .set('X-Requested-With', 'fetch');
     expect(signedOut.status).toBe(401);
+  });
+});
+
+describe('write routes carry their rate limit (tech-spec 9.5)', () => {
+  it.each([
+    ['create', 'order'],
+    ['confirm', 'orderStep'],
+    ['requote', 'orderStep'],
+    ['rate', 'rating'],
+  ])('OrdersController.%s is %s', (method, name) => {
+    const handler = (OrdersController.prototype as unknown as Record<string, () => unknown>)[
+      method
+    ];
+    expect(handler === undefined ? undefined : userRateNameOf(handler)).toBe(name);
   });
 });

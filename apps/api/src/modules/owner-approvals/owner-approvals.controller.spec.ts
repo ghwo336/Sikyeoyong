@@ -13,6 +13,7 @@ import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { configureApp } from '../../app.setup.js';
+import { userRateNameOf } from '../../common/rate-limit/user-rate-limit.guard.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -25,6 +26,7 @@ import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { OwnerApprovalsModule } from './owner-approvals.module.js';
+import { OwnerApprovalsController } from './owner-approvals.controller.js';
 
 // Amounts by hand: N won = N * 10^18 aokrw. Fixture: 10,000 per order; the owner's 30-day limit 300,000.
 const W = (won: string) => `${won}000000000000000000`;
@@ -309,5 +311,17 @@ describe('POST /api/approvals/:id/reject', () => {
     expect(
       h.db.select().from(allowedMerchants).where(eq(allowedMerchants.merchantId, 'm2')).all(),
     ).toHaveLength(0);
+  });
+});
+
+describe('write routes carry their rate limit (tech-spec 9.5)', () => {
+  it.each([
+    ['approve', 'approval'],
+    ['reject', 'approval'],
+  ])('OwnerApprovalsController.%s is %s', (method, name) => {
+    const handler = (
+      OwnerApprovalsController.prototype as unknown as Record<string, () => unknown>
+    )[method];
+    expect(handler === undefined ? undefined : userRateNameOf(handler)).toBe(name);
   });
 });

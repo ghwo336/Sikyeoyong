@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RateLimitModule } from '../../common/rate-limit/rate-limit.module.js';
 import { AllowanceModule } from '../allowance/allowance.module.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import { ApprovalsModule } from '../approvals/approvals.module.js';
@@ -25,6 +26,7 @@ import { OrderSpend } from './order-spend.service.js';
 
 @Module({
   imports: [
+    RateLimitModule,
     AuthModule,
     AgentsModule,
     UsersModule,

@@ -10,6 +10,10 @@ import {
   zRateOrderBody,
 } from '@sikyeoyong/shared';
 import { CurrentUser, SessionGuard } from '../../common/guards/session.guard.js';
+import {
+  UserRateLimitGuard,
+  UserRateLimited,
+} from '../../common/rate-limit/user-rate-limit.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
@@ -20,7 +24,7 @@ import { OrderViews } from './order-views.service.js';
 
 /** /api/orders (tech-spec 3.2). HTTP only: the user comes from the session. */
 @Controller('orders')
-@UseGuards(SessionGuard)
+@UseGuards(SessionGuard, UserRateLimitGuard)
 export class OrdersController {
   constructor(
     private readonly quotes: OrderQuoteService,
@@ -33,6 +37,7 @@ export class OrdersController {
   /** A quote for the app's own order button. Never pays (CLAUDE.md rule 3). */
   @Post()
   @HttpCode(200)
+  @UserRateLimited('order')
   create(
     @CurrentUser() user: SessionUser,
     @Body(new ZodValidationPipe(zCreateOrderBody)) body: CreateOrderBody,
@@ -49,6 +54,7 @@ export class OrdersController {
   /** The card's button. The only call that pays (CLAUDE.md rule 3, payment.md "confirm 상태 규칙"). */
   @Post(':id/confirm')
   @HttpCode(200)
+  @UserRateLimited('orderStep')
   confirm(
     @CurrentUser() user: SessionUser,
     @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
@@ -62,6 +68,7 @@ export class OrdersController {
    */
   @Post(':id/requote')
   @HttpCode(200)
+  @UserRateLimited('orderStep')
   requote(
     @CurrentUser() user: SessionUser,
     @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,
@@ -72,6 +79,7 @@ export class OrdersController {
   /** Arrived screen taste rating. Moves no money. */
   @Post(':id/rating')
   @HttpCode(204)
+  @UserRateLimited('rating')
   rate(
     @CurrentUser() user: SessionUser,
     @Param('id', new ZodValidationPipe(zOrderIdParam)) id: string,

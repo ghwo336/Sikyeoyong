@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RateLimitModule } from '../../common/rate-limit/rate-limit.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { IdentityController } from './identity.controller.js';
 import { IdentityRepository } from './identity.repository.js';
@@ -6,7 +7,7 @@ import { IdentityService } from './identity.service.js';
 
 /** The owner's identity check (D-16). */
 @Module({
-  imports: [AuthModule],
+  imports: [RateLimitModule, AuthModule],
   controllers: [IdentityController],
   providers: [IdentityRepository, IdentityService],
   exports: [IdentityService],
