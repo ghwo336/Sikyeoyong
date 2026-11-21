@@ -9,6 +9,8 @@ children:
   - ChatHeader.md
   - ChatLayout.md
   - TypingIndicator.md
+  - SessionDivider.md
+  - PastLine.md
 ---
 
 # 대화 (chat)
@@ -26,3 +28,5 @@ children:
 | [ChatThread](ChatThread.md) | 대화 메시지 목록을 위에서 아래로 쌓고 새 메시지에 스크롤한다. |
 | [ChatHeader](ChatHeader.md) | 대화 화면 맨 위 줄(용이, 이름, 한도 한 줄, 설정 버튼)을 그린다. |
 | [ChatLayout](ChatLayout.md) | 대화 화면의 띠(위 줄, 예산, 대화, 입력칸)를 시안 여백으로 배치한다. |
+| [SessionDivider](SessionDivider.md) | 지난 대화 위에 날짜와 끼니 한 줄을 그린다. |
+| [PastLine](PastLine.md) | 지난 대화의 카드를 버튼 없는 한 줄 요약으로 그린다. |

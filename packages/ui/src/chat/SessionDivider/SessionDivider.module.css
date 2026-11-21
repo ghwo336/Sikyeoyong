@@ -1,0 +1,8 @@
+/* Same voice as the thread's top time stamp (ChatThread): small, quiet, centered. */
+.divider {
+  align-self: center;
+  margin: 0;
+  font-size: var(--type-stamp-size);
+  font-weight: var(--type-stamp-weight);
+  color: var(--color-ink-secondary);
+}

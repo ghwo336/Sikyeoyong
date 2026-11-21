@@ -1,0 +1,11 @@
+.line {
+  align-self: center;
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--type-stamp-size);
+  font-weight: var(--type-stamp-weight);
+  color: var(--color-ink-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
