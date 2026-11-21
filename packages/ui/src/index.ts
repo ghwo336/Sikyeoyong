@@ -50,6 +50,7 @@ export * from './order/OrderConfirmSheet';
 export * from './order/OrderLines';
 export * from './order/OrderStatusHeader';
 export * from './order/OrderSummary';
+export * from './order/OwnerApprovalCard';
 export * from './order/ReceiptDetails';
 export * from './order/RecommendationList';
 export * from './order/TasteRating';

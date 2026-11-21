@@ -1,0 +1,18 @@
+/* The same card as LimitChat.dc.html 36-50 (2px frame in the app color, the facts, the two
+   buttons). The design has no owner-approval card; this is its closest sibling (web.md). */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-limits-gap);
+  padding: var(--space-4);
+  border: 2px solid var(--theme-accent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-label-weight);
+  color: var(--theme-accent);
+}

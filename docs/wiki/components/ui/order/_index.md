@@ -11,6 +11,7 @@ children:
   - TasteRating.md
   - ReceiptDetails.md
   - ActiveOrderCard.md
+  - OwnerApprovalCard.md
 ---
 
 # 주문 (order)
@@ -30,3 +31,4 @@ children:
 | [TasteRating](TasteRating.md) | 맛 평가 세 가지 중 하나를 고르게 한다. |
 | [ActiveOrderCard](ActiveOrderCard.md) | 대화 화면 예산 카드 아래에 진행 중인 주문 하나(무엇, 단계, 시간 한 줄, 단계 막대)를 누를 수 있게 그린다. |
 | [ReceiptDetails](ReceiptDetails.md) | 자세히 보기를 접고 펼치며 결제 기록 번호, 신분증 번호, 통과한 마루 규칙, 탐색기 링크를 그린다. |
+| [OwnerApprovalCard](OwnerApprovalCard.md) | 주인 허락을 기다리는 주문(처음 시키는 가게, 30일에 쓸 돈 넘음)의 가게와 금액, 허락하기와 안 시킬래요를 카드로 그린다. |
