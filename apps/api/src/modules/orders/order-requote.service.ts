@@ -3,7 +3,7 @@ import { AppError, type CreateOrderResult, aokrwToString, parseAokrw } from '@si
 import { AgentsService } from '../agents/agents.service.js';
 import { ApprovalsService } from '../approvals/approvals.service.js';
 import { OrderApprovalEffects } from './order-approval-effects.service.js';
-import { OrdersRepository } from './orders.repository.js';
+import { type OrderRow, OrdersRepository } from './orders.repository.js';
 
 /**
  * POST /orders/:id/requote (user-flow 12 "O -> I"): after the owner raised the per-order limit
@@ -31,27 +31,45 @@ export class OrderRequoteService {
     const row = this.repo.findForUser(orderId, userId);
     if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'order not found' });
     if (row.status === 'pending_approval') {
-      const approval = this.approvals.pendingForOrder(orderId);
-      const perOrderLimit = this.agents.getForUser(userId).perOrderLimitAokrw;
-      const fits = parseAokrw(row.amountAokrw) <= perOrderLimit;
-      if (
-        approval !== undefined &&
-        approval.reason === 'OVER_LEVEL_LIMIT' &&
-        approval.expiresAt > nowMs &&
-        fits
-      ) {
-        this.approvals.decide(
-          approval,
-          'approved',
-          () => {
-            this.effects.reopen(orderId, nowMs);
-            // It is quoted again under the raised limit: that is the limit it fit.
-            this.repo.setPerOrderLimitAtQuote(orderId, aokrwToString(perOrderLimit), nowMs);
-          },
-          nowMs,
-        );
-      }
+      this.reopenIfFits(row, this.agents.getForUser(userId).perOrderLimitAokrw, nowMs);
     }
+    // QA 6 M1: the owner raised the limit once, so the user's other orders that waited on it and
+    // now fit come back too, by the same rules (they would otherwise stay "waiting" for good).
+    this.requoteWaiting(userId, orderId, nowMs);
     return this.effects.card(userId, orderId, nowMs);
+  }
+
+  /** The user's other waiting orders (not `exceptId`) that now fit move back to quoted. */
+  private requoteWaiting(userId: string, exceptId: string, nowMs: number): void {
+    const perOrderLimit = this.agents.getForUser(userId).perOrderLimitAokrw;
+    for (const other of this.repo.pendingApproval(userId)) {
+      if (other.id !== exceptId) this.reopenIfFits(other, perOrderLimit, nowMs);
+    }
+  }
+
+  /**
+   * Only an order waiting on OVER_LEVEL_LIMIT with a live approval and an amount that fits the
+   * stored per-order limit moves: the approval is closed as approved and the order is quoted again.
+   */
+  private reopenIfFits(row: OrderRow, perOrderLimit: bigint, nowMs: number): void {
+    const approval = this.approvals.pendingForOrder(row.id);
+    if (
+      approval === undefined ||
+      approval.reason !== 'OVER_LEVEL_LIMIT' ||
+      approval.expiresAt <= nowMs ||
+      parseAokrw(row.amountAokrw) > perOrderLimit
+    ) {
+      return;
+    }
+    this.approvals.decide(
+      approval,
+      'approved',
+      () => {
+        this.effects.reopen(row.id, nowMs);
+        // It is quoted again under the raised limit: that is the limit it fit.
+        this.repo.setPerOrderLimitAtQuote(row.id, aokrwToString(perOrderLimit), nowMs);
+      },
+      nowMs,
+    );
   }
 }

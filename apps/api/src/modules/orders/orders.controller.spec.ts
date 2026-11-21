@@ -586,6 +586,34 @@ describe('POST /api/orders/:id/requote: the waiting order after a per-order rais
     expect(h.db.select().from(approvals).all()).toHaveLength(1);
   });
 
+  it('QA 6 M1: one requote also brings back the other waiting orders that now fit, not the ones still over', async () => {
+    const { h, as, id, requote } = await overOrder();
+    const second = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c-over-2'))).body,
+    ).order.id;
+    const big = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 3 }], 'm1', 'c-over-3'))).body,
+    ).order.id;
+    raiseTo(h, '20000');
+    await requote();
+    const status = (oid: string) =>
+      h.db.select().from(orders).where(eq(orders.id, oid)).get()?.status;
+    expect(status(id)).toBe('quoted');
+    expect(status(second)).toBe('quoted');
+    expect(status(big)).toBe('pending_approval');
+    const rows = h.db.select().from(approvals).all();
+    expect(rows.filter((a) => a.status === 'approved')).toHaveLength(2);
+    expect(rows.filter((a) => a.status === 'pending')).toHaveLength(1);
+    // Nothing was paid by the sweep.
+    expect(
+      h.db
+        .select()
+        .from(orders)
+        .all()
+        .filter((o) => o.status === 'paid'),
+    ).toHaveLength(0);
+  });
+
   it('exactly the new limit is enough: quoted', async () => {
     const { h, id, requote } = await overOrder();
     raiseTo(h, '18000');
