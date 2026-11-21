@@ -17,6 +17,7 @@ import { RecommendService, WeatherService } from '../../recommend/recommend.serv
 import { UsersService } from '../../users/users.service.js';
 import type { SessionContext, ToolHandlers } from '../runtime.js';
 import type { ToolName } from './definitions.js';
+import { cleanApprovalMessage } from './approval-message.js';
 import { limitCardReply } from './limit-card-views.js';
 import { menuForModel, recommendReply } from './merchant-views.js';
 import { approvalRequestReply, placeOrderReply } from './order-views.js';
@@ -98,18 +99,21 @@ export class LlmToolHandlers {
           )
           .then(placeOrderReply),
       // Asks the owner; never approves or pays. The reason input is ignored: the server decides.
-      request_owner_approval: (ctx, input) =>
-        this.orders
+      // The free message reaches the owner's card, so only plain short talk passes.
+      request_owner_approval: (ctx, input) => {
+        const message = cleanApprovalMessage(input.message);
+        return this.orders
           .requestApproval(
             ctx.userId,
             {
               ...(input.merchantId === undefined ? {} : { merchantId: input.merchantId }),
               ...(input.items === undefined ? {} : { items: input.items }),
-              ...(input.message === undefined ? {} : { message: input.message }),
+              ...(message === undefined ? {} : { message }),
             },
             now(),
           )
-          .then(approvalRequestReply),
+          .then(approvalRequestReply);
+      },
       // A card only, never a change (CLAUDE.md rule 3, D-21, D-31). The runtime already checked
       // the user's own words; range, step, same value and the card's numbers are the server's.
       propose_limit_change: (ctx, input) =>

@@ -78,6 +78,19 @@ children: []
 - [ ] 정책 admin이 운영자 키(또는 멀티시그)로 지정됨 (`/api/admin/policies`)
 - [ ] 경로 B면 에이전트 키 암호화 확인
 
+## 프롬프트 인젝션
+모델이 인젝션에 완전히 속아도 해가 없어야 한다. 방어는 모델 밖(서버)에서 한다. 감사 결과 (확인, 코드와 테스트로):
+
+| 점검 | 결과 | 근거 |
+| --- | --- | --- |
+| 신원은 세션에서만 | 통과. 모든 핸들러가 `ctx.userId`만 쓴다. 입력 스키마는 `.strict()`라 `userId` 같은 키는 거부 | `runtime.spec.ts` "takes the user from the session" |
+| `place_order`가 금액을 무시 | 통과. 입력에 금액, 주소, 가격 키가 없고 `.strict()`가 거부. 가게, 메뉴, 값, 수수료는 서버가 DB로 다시 계산 | `runtime.spec.ts` "rejects amounts and unknown fields" |
+| 카드 도구는 카드만 | 통과. `propose_limit_change`는 사용자 원문 한도 의도 키워드가 있을 때만, 바꾸지 않는다. `request_owner_approval`은 사유를 무시하고 서버가 정한다 | `runtime.spec.ts`, `handlers.spec.ts` |
+| 외부 글은 `<data>`, 닫는 태그 이스케이프 | 통과. `wrapData`가 `<`, `>`를 `<`, `>`로 바꾼다 | `merchant-handlers.spec.ts`, `tools/injection.spec.ts` |
+| 승인 요청 `message` | 틈 발견, 고침. 모델이 쓴 자유 글이 주인 승인 카드에 그대로 실렸다. 링크, 주소 모양, 코드, 태그, 긴 숫자가 있으면 글을 버린다 (`approval-message.ts`) | `approval-message.spec.ts` |
+
+남은 위험 (추론): 모델이 사용자에게 보이는 말로 엉뚱한 글을 쓰는 것은 출력 가드(길이, 코드 제거, 범위 밖 문구)가 막는다.
+
 ## 확장 지점
 - 2단계: 외부 보안 리뷰, 멀티시그 업그레이드 권한, 레이트 리밋 강화.
 
