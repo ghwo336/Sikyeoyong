@@ -40,17 +40,46 @@ function deriveAgentKey(master: Buffer, salt: Buffer, address: string): Buffer {
   return Buffer.from(hkdfSync('sha256', master, salt, `${HKDF_INFO}${address}`, 32));
 }
 
-/** Parses AGENT_KEY_ENCRYPTION_KEY (32 bytes, base64). The error names the variable, never the value. */
-export function parseMasterKey(raw: string | undefined): Buffer {
+/** Parses a master key variable (32 bytes, base64). The error names the variable, never the value. */
+export function parseMasterKey(
+  raw: string | undefined,
+  variable = 'AGENT_KEY_ENCRYPTION_KEY',
+): Buffer {
   const key = raw === undefined ? Buffer.alloc(0) : Buffer.from(raw, 'base64');
   // Buffer.from skips bad characters; only the canonical encoding of the 32 bytes is accepted.
   if (key.length !== 32 || key.toString('base64') !== raw) {
     throw new AppError('INTERNAL', {
-      reason: 'AGENT_KEY_ENCRYPTION_KEY must be 32 bytes, base64',
-      variables: ['AGENT_KEY_ENCRYPTION_KEY'],
+      reason: `${variable} must be 32 bytes, base64`,
+      variables: [variable],
     });
   }
   return key;
+}
+
+/** The master keys of a rotation: the current one and, optionally, the one it replaces. */
+export interface MasterKeys {
+  readonly current: Buffer;
+  readonly previous: Buffer | undefined;
+}
+
+/**
+ * Parses AGENT_KEY_ENCRYPTION_KEY and the optional AGENT_KEY_ENCRYPTION_KEY_PREVIOUS (an empty
+ * value counts as unset). A previous key equal to the current one is a mistake, not a rotation.
+ */
+export function parseMasterKeys(
+  current: string | undefined,
+  previous: string | undefined,
+): MasterKeys {
+  const cur = parseMasterKey(current);
+  if (previous === undefined || previous === '') return { current: cur, previous: undefined };
+  const prev = parseMasterKey(previous, 'AGENT_KEY_ENCRYPTION_KEY_PREVIOUS');
+  if (prev.equals(cur)) {
+    throw new AppError('INTERNAL', {
+      reason: 'AGENT_KEY_ENCRYPTION_KEY_PREVIOUS must differ from AGENT_KEY_ENCRYPTION_KEY',
+      variables: ['AGENT_KEY_ENCRYPTION_KEY_PREVIOUS'],
+    });
+  }
+  return { current: cur, previous: prev };
 }
 
 /**
@@ -67,8 +96,10 @@ export class AgentKeyVault {
     private readonly masterKey: Buffer,
     private readonly store: AgentKeyStore,
     private readonly now: () => number = Date.now,
+    /** The key a rotation is replacing. Only used to open rows; nothing is ever sealed with it. */
+    private readonly previousKey?: Buffer,
   ) {
-    if (masterKey.length !== 32) {
+    if (masterKey.length !== 32 || (previousKey !== undefined && previousKey.length !== 32)) {
       throw new AppError('INTERNAL', { reason: 'vault master key must be 32 bytes' });
     }
   }
@@ -159,28 +190,64 @@ export class AgentKeyVault {
   }
 
   private open(row: SealedKeyRow): Buffer {
+    return this.openWith(row).priv;
+  }
+
+  /**
+   * Opens a row with the current master key, then with the previous one if there is one. The cause
+   * of a failure (wrong key or a tampered row) is not echoed: it could hint at the key.
+   */
+  private openWith(row: SealedKeyRow): { priv: Buffer; usedPrevious: boolean } {
     if (row.keyVersion !== KEY_VERSION_MASTER_DIRECT && row.keyVersion !== KEY_VERSION_HKDF) {
       throw new AppError('INTERNAL', { reason: 'unknown agent key version' });
     }
-    const key =
-      row.keyVersion === KEY_VERSION_HKDF && row.salt !== null
-        ? deriveAgentKey(this.masterKey, Buffer.from(row.salt, 'hex'), row.address)
-        : row.keyVersion === KEY_VERSION_MASTER_DIRECT
-          ? this.masterKey
-          : undefined;
-    if (key === undefined) {
-      throw new AppError('INTERNAL', { reason: 'agent key could not be opened' });
-    }
+    const current = openRow(row, this.masterKey);
+    if (current !== undefined) return { priv: current, usedPrevious: false };
+    const previous = this.previousKey && openRow(row, this.previousKey);
+    if (previous) return { priv: previous, usedPrevious: true };
+    throw new AppError('INTERNAL', { reason: 'agent key could not be opened' });
+  }
+
+  /**
+   * Rotation: the row re-sealed as v2 under the current master key, or undefined when it already
+   * is one (v2 and opens with the current key alone). Throws when the row opens with neither key.
+   * The new seal is opened again before it is returned; the plaintext is zeroed on every path.
+   */
+  resealed(
+    row: SealedKeyRow,
+  ): Pick<SealedKeyRow, 'ciphertext' | 'iv' | 'tag' | 'salt' | 'keyVersion'> | undefined {
+    const { priv, usedPrevious } = this.openWith(row);
     try {
-      const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(row.iv, 'hex'));
-      decipher.setAAD(Buffer.from(row.address));
-      decipher.setAuthTag(Buffer.from(row.tag, 'hex'));
-      return Buffer.concat([decipher.update(Buffer.from(row.ciphertext, 'hex')), decipher.final()]);
-    } catch {
-      // The cause (wrong master key or a tampered row) is not echoed: it could hint at the key.
-      throw new AppError('INTERNAL', { reason: 'agent key could not be opened' });
+      if (row.keyVersion === KEY_VERSION_HKDF && !usedPrevious) return undefined;
+      const next = this.seal(priv, row.address);
+      const check = this.openWith({ ...row, ...next });
+      const same = check.priv.equals(priv);
+      check.priv.fill(0);
+      if (!same || check.usedPrevious) {
+        throw new AppError('INTERNAL', { reason: 'agent key re-seal did not verify' });
+      }
+      return next;
     } finally {
-      if (key !== this.masterKey) key.fill(0);
+      priv.fill(0);
     }
+  }
+}
+
+/** One AES-256-GCM open attempt with `master` as the master key of the row's version. */
+function openRow(row: SealedKeyRow, master: Buffer): Buffer | undefined {
+  let key: Buffer;
+  if (row.keyVersion === KEY_VERSION_MASTER_DIRECT) key = master;
+  else if (row.salt !== null)
+    key = deriveAgentKey(master, Buffer.from(row.salt, 'hex'), row.address);
+  else return undefined;
+  try {
+    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(row.iv, 'hex'));
+    decipher.setAAD(Buffer.from(row.address));
+    decipher.setAuthTag(Buffer.from(row.tag, 'hex'));
+    return Buffer.concat([decipher.update(Buffer.from(row.ciphertext, 'hex')), decipher.final()]);
+  } catch {
+    return undefined;
+  } finally {
+    if (key !== master) key.fill(0);
   }
 }

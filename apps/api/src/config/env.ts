@@ -95,6 +95,8 @@ const schema = z.object({
   OWNER_MODE: z.enum(['custodial', 'pouch']).default('custodial'),
   WAAS_AUTH_TOKEN: optionalText,
   AGENT_KEY_ENCRYPTION_KEY: optionalText,
+  /** Only during a master key rotation: the key being replaced, used to open old rows (security.md). */
+  AGENT_KEY_ENCRYPTION_KEY_PREVIOUS: optionalText,
   AGENT_FLOAT_MULTIPLIER: int(1).default(2),
   /** Path B: OKRW kept in each agent wallet for gas on top of the float (D-25, tech-spec 3.4). Default 100, at most 1,000. */
   AGENT_GAS_SHARE_OKRW: int(0, 1000).default(100),
@@ -171,6 +173,7 @@ export interface AppConfig {
     readonly operatorKey: string | undefined;
     readonly waasAuthToken: string | undefined;
     readonly agentKeyEncryptionKey: string | undefined;
+    readonly agentKeyEncryptionKeyPrevious: string | undefined;
     readonly kakaoRestApiKey: string | undefined;
     readonly kakaoClientSecret: string | undefined;
     readonly googleClientIdWeb: string | undefined;
@@ -305,6 +308,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
       operatorKey: env.OPERATOR_KEY,
       waasAuthToken: env.WAAS_AUTH_TOKEN,
       agentKeyEncryptionKey: env.AGENT_KEY_ENCRYPTION_KEY,
+      agentKeyEncryptionKeyPrevious: env.AGENT_KEY_ENCRYPTION_KEY_PREVIOUS,
       kakaoRestApiKey: env.KAKAO_REST_API_KEY,
       kakaoClientSecret: env.KAKAO_CLIENT_SECRET,
       googleClientIdWeb: env.GOOGLE_CLIENT_ID_WEB,

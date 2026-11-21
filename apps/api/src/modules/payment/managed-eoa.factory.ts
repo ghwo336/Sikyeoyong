@@ -3,7 +3,7 @@ import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { createMarooPublicClient, createMarooWalletClient } from '../../common/onchain/clients.js';
 import { resolveOrdersTarget } from '../../common/onchain/orders-target.js';
 import type { AppConfig } from '../../config/env.js';
-import { AgentKeyVault, type AgentKeyStore, parseMasterKey } from './agent-key-vault.js';
+import { AgentKeyVault, type AgentKeyStore, parseMasterKeys } from './agent-key-vault.js';
 import {
   ManagedEoaPaymentProvider,
   type PublicPort,
@@ -34,7 +34,11 @@ export function createManagedEoaProvider(
   store: AgentKeyStore,
 ): ManagedEoaPaymentProvider {
   const operator = operatorAccountOf(config.secrets.operatorKey);
-  const vault = new AgentKeyVault(parseMasterKey(config.secrets.agentKeyEncryptionKey), store);
+  const keys = parseMasterKeys(
+    config.secrets.agentKeyEncryptionKey,
+    config.secrets.agentKeyEncryptionKeyPrevious,
+  );
+  const vault = new AgentKeyVault(keys.current, store, Date.now, keys.previous);
   const target = resolveOrdersTarget(config);
   const publicClient = createMarooPublicClient(config.chain);
   const port = (client: ReturnType<typeof createMarooWalletClient>): WalletPort => client;
