@@ -501,6 +501,9 @@ export const mockApi: ApiClient = {
     // Only a confirmed order exists. A reload loses the mock's memory, like a server restart.
     const p = paid.get(orderId);
     const w = waiting.get(orderId) ?? ownerWaits.get(orderId)?.rec;
+    // The history's 멈춤 row opens its status screen (QA 5).
+    if (!p && orderId === 'order-stopped-example')
+      return later({ order: stoppedExample(Date.now()) });
     if (!p && w) return later({ order: waitingView(w, Date.now()) });
     const r = rejected.get(orderId);
     if (!p && r) return later({ order: stoppedView(r.rec, Date.now(), r.code) });

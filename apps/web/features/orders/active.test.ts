@@ -68,9 +68,13 @@ describe('orderHref and historyLabel (주문 내역)', () => {
     expect(orderHref(over, limit)).toBe('/limit/o1');
   });
 
+  it('a failed order opens its status screen (QA 5)', () => {
+    expect(orderHref(view('o1', 'failed'), undefined)).toBe('/orders/o1');
+  });
+
   it('stopped orders and waits that are not over the limit open nothing (browser QA)', () => {
     const limit = okrwToAokrw(10_000n);
-    for (const s of ['failed', 'cancelled', 'refunded', 'quoted'] as const) {
+    for (const s of ['cancelled', 'refunded', 'quoted'] as const) {
       expect(orderHref(view('o1', s), limit)).toBeUndefined();
     }
     const within = { ...view('o1', 'pending_approval'), amount: okrwToAokrw(9_000n).toString() };

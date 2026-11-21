@@ -208,13 +208,20 @@ describe('OrderHistoryContainer (주문 내역, ListRow list)', () => {
     expect(screen.queryByRole('region', { name: '주인님 허락' })).toBeNull();
   });
 
-  it('shows the stopped order as a 멈춤 row that cannot be opened', async () => {
+  it('a 멈춤 row opens the order status screen (QA 5)', async () => {
     listOrders.mockResolvedValue({
       orders: [view('o4', 'failed', { errorCode: 'SERVER_NEW_MERCHANT' })],
     });
     wrap(<OrderHistoryContainer />);
-    expect(await screen.findByText('돼지국밥, 멈춤')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /멈춤/ })).toBeNull();
+    await userEvent.click(await screen.findByRole('button', { name: /멈춤/ }));
+    expect(push).toHaveBeenCalledWith('/orders/o4');
+  });
+
+  it('a cancelled row cannot be opened', async () => {
+    listOrders.mockResolvedValue({ orders: [view('o5', 'cancelled')] });
+    wrap(<OrderHistoryContainer />);
+    expect(await screen.findByText('돼지국밥, 취소')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /취소/ })).toBeNull();
   });
 
   it('back goes to the chat', async () => {

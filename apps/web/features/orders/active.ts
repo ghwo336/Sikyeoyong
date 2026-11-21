@@ -42,8 +42,8 @@ export function activeCard(order: OrderView): {
 /**
  * Where an order in the history opens, or undefined when it has no screen to open: its status
  * screen while on its way, its receipt once it arrived, the limit screen while it waits only
- * because it is over the per-order limit (perOrderLimit, aokrw). A stopped order (failed,
- * cancelled, refunded) and one waiting for another reason (a new store, the 30-day limit) have
+ * because it is over the per-order limit (perOrderLimit, aokrw), a failed order's status
+ * screen (the dragon's reason, retry). A cancelled or refunded order and one waiting for another reason (a new store, the 30-day limit) have
  * no screen yet, so the row is not pressable (browser QA: they opened blank screens).
  */
 export function orderHref(order: OrderView, perOrderLimit: bigint | undefined): string | undefined {
@@ -55,6 +55,8 @@ export function orderHref(order: OrderView, perOrderLimit: bigint | undefined): 
       : undefined;
   }
   if (order.status === 'delivered') return `/orders/${id}/receipt`;
+  // A failed order opens its status screen: why it stopped and the next step.
+  if (order.status === 'failed') return `/orders/${id}`;
   return step !== null && step < ORDER_STEPS.length ? `/orders/${id}` : undefined;
 }
 

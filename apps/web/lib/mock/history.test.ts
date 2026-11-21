@@ -21,8 +21,8 @@ describe('mock order history', () => {
     expect(stopped).toBeDefined();
     if (!stopped) return;
     expect(historyLabel(stopped)).toMatch(/, 멈춤$/);
-    // Nothing to open for it (no blank screen), and no payment record.
-    expect(orderHref(stopped, 10n ** 30n)).toBeUndefined();
+    // It opens the failed status screen, and has no payment record.
+    expect(orderHref(stopped, 10n ** 30n)).toBe('/orders/order-stopped-example');
     expect(stopped.txHash).toBeUndefined();
   });
 

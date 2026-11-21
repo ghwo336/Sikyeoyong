@@ -89,5 +89,8 @@ describe('mock look and order list (D-32)', () => {
       'order-stopped-example',
     ]);
     expect(orders[0]?.status).toBe('preparing');
+    // The 멈춤 row opens its status screen, so the mock can answer for it (QA 5).
+    const stopped = await mockApi.getOrder('order-stopped-example');
+    expect(stopped.order).toMatchObject({ status: 'failed', errorCode: 'CHAIN_PERIODIC_LIMIT' });
   });
 });

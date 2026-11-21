@@ -11,12 +11,14 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }
 
 const getOrder = vi.fn();
 const rateOrder = vi.fn();
+const confirmOrder = vi.fn();
 vi.mock('../../../lib/api', () => ({
   api: {
     getMe: () => Promise.resolve(ME),
     getBudget: () => Promise.resolve(BUDGET),
     getWallet: () => Promise.resolve(WALLET),
     getOrder: (id: string) => getOrder(id) as unknown,
+    confirmOrder: (id: string) => confirmOrder(id) as unknown,
     rateOrder: (id: string, v: string) => rateOrder(id, v) as unknown,
   },
 }));
@@ -63,6 +65,7 @@ beforeEach(() => {
   push.mockReset();
   getOrder.mockReset();
   rateOrder.mockReset();
+  confirmOrder.mockReset();
   rateOrder.mockResolvedValue(undefined);
   localStorage.clear();
 });
@@ -79,6 +82,63 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     });
     wrap(<OrderStatusContainer orderId="o1" />);
     expect(await screen.findByRole('img', { name: /경로 지도/ })).toBeInTheDocument();
+  });
+
+  it('a failed order shows the dragon line, no progress, and retries the same order on a press (QA 5)', async () => {
+    const failed: OrderView = {
+      ...base,
+      status: 'failed',
+      errorCode: 'CHAIN_INSUFFICIENT_FUNDS',
+      dragonLine: '용돈이 모자라용',
+      dragonMood: 'worried',
+    };
+    getOrder.mockResolvedValue({ order: failed });
+    confirmOrder.mockResolvedValue({ order: { ...base, status: 'preparing' } });
+    wrap(<OrderStatusContainer orderId="o1" />);
+    expect(await screen.findByText('용돈이 모자라용')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '주문이 멈췄어요' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /진행/ })).toBeNull();
+    // Never on its own: nothing paid until the press.
+    expect(confirmOrder).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: '다시 시도하기' }));
+    expect(confirmOrder).toHaveBeenCalledTimes(1);
+    expect(confirmOrder).toHaveBeenCalledWith('o1');
+    expect(await screen.findByText('국밥 끓이는 중이에용.')).toBeInTheDocument();
+  });
+
+  it('a failed order that needs a new quote offers only the way back to the chat', async () => {
+    getOrder.mockResolvedValue({
+      order: {
+        ...base,
+        status: 'failed',
+        errorCode: 'CHAIN_MERCHANT_INACTIVE',
+        dragonLine: '이 가게는 등록이 안 돼 있어용',
+      },
+    });
+    wrap(<OrderStatusContainer orderId="o1" />);
+    expect(await screen.findByText('이 가게는 등록이 안 돼 있어용')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '다시 시도하기' })).toBeNull();
+    await userEvent.click(
+      screen.getAllByRole('button', { name: '대화로 돌아가기' })[1] as HTMLElement,
+    );
+    expect(push).toHaveBeenCalledWith('/');
+  });
+
+  it('a retry that fails again says so and keeps the button (no automatic retry)', async () => {
+    getOrder.mockResolvedValue({
+      order: {
+        ...base,
+        status: 'failed',
+        errorCode: 'SERVER_FROZEN',
+        dragonLine: '쉬고 있을게용.',
+      },
+    });
+    confirmOrder.mockRejectedValue(new Error('500'));
+    wrap(<OrderStatusContainer orderId="o1" />);
+    await userEvent.click(await screen.findByRole('button', { name: '다시 시도하기' }));
+    expect(await screen.findByText(/다시 시도하지 못했어요/)).toBeInTheDocument();
+    expect(confirmOrder).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: '다시 시도하기' })).toBeInTheDocument();
   });
 
   it('while cooking it asks again every 2 seconds; once arrived it stops', async () => {

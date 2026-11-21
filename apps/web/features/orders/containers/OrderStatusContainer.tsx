@@ -18,6 +18,7 @@ import { useOrder } from '../hooks/useOrder';
 import { DEMO_ROAD, riderProgress } from '../map';
 import { ORDER_STEPS, orderStep } from '../status';
 import { ArrivedContainer } from './ArrivedContainer';
+import { FailedOrderContainer } from './FailedOrderContainer';
 
 /** Order status: cooking (Done.dc.html), on the road (Tracking.dc.html), arrived (Arrived.dc.html). */
 export function OrderStatusContainer({ orderId }: { readonly orderId: string }) {
@@ -31,7 +32,7 @@ export function OrderStatusContainer({ orderId }: { readonly orderId: string }) 
   };
   const step = order ? orderStep(order.status) : null;
   // Loading, unknown, unpaid or stopped orders show no progress: a failed or refunded order
-  // must never look accepted. Their own screens are not built yet (web.md).
+  // must never look accepted. A failed order has its own screen; the rest are not built yet (web.md).
   // A failed query ends in an error line with a retry, never a blank screen or a shape that
   // waits forever (QA 4).
   if ((!order && isError) || (!me && meQuery.isError)) {
@@ -57,6 +58,9 @@ export function OrderStatusContainer({ orderId }: { readonly orderId: string }) 
         <LoadingShape kind="orderStatus" />
       </>
     );
+  }
+  if (order.status === 'failed') {
+    return <FailedOrderContainer order={order} species={me.dragonSpecies} />;
   }
   if (step === null) {
     return <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />;
