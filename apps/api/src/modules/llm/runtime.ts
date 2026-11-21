@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { AppError, hasLimitIntent } from '@sikyeoyong/shared';
 import type { ApprovalReason } from '../approvals/approvals.service.js';
 import { ApprovalClaimScreen, stripApprovalClaims } from './approval-claims.js';
+import { stripStaleState } from './stale-state.js';
 import { MenuCatalog } from './chosen-menu.js';
 import type { LlmProvider } from './llm-provider.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
@@ -33,7 +34,10 @@ export function screenText(text: string): string {
 /** Said when the model's whole answer was an approval claim and nothing else was shown. */
 export const NOTHING_DECIDED = '주인님이 아직 정하신 건 없어용.';
 
-/** What the model sees of its own earlier turns: no claim it could repeat next message. */
+/**
+ * What the model sees of its own earlier turns: no claim it could repeat next message, and no
+ * order, quote or approval state (stale-state.ts): that comes from a read tool this turn.
+ */
 function withoutApprovalClaims<B extends { readonly type: string }>(content: readonly B[]): B[] {
   const kept: B[] = [];
   for (const b of content) {
@@ -42,7 +46,7 @@ function withoutApprovalClaims<B extends { readonly type: string }>(content: rea
       continue;
     }
     const block = b as unknown as { text: string };
-    const text = stripApprovalClaims(block.text).text;
+    const text = stripStaleState(stripApprovalClaims(block.text).text);
     if (text.trim() !== '') kept.push({ ...b, text });
   }
   // A turn must not end up empty (the API refuses it); the original blocks were not empty.
@@ -172,14 +176,14 @@ export class AgentRuntime {
   ): Promise<Anthropic.MessageParam[]> {
     const messages: Anthropic.MessageParam[] = [
       // Older turns saved before this guard may still hold a claim the model would repeat.
-      ...input.history.map((m) =>
-        m.role === 'assistant' && Array.isArray(m.content)
-          ? {
-              ...m,
-              content: withoutApprovalClaims(m.content),
-            }
-          : m,
-      ),
+      ...input.history.map((m) => {
+        if (m.role !== 'assistant') return m;
+        // The chat module sends earlier turns as plain strings; blocks come from other callers.
+        if (typeof m.content !== 'string')
+          return { ...m, content: withoutApprovalClaims(m.content) };
+        const kept = withoutApprovalClaims([{ type: 'text' as const, text: m.content }]);
+        return { ...m, content: kept.map((b) => b.text).join('') };
+      }),
       { role: 'user', content: input.userText },
     ];
     const intent = hasLimitIntent(input.userText);

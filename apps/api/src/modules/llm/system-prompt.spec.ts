@@ -22,6 +22,14 @@ describe('SYSTEM_PROMPT (agent-runtime.md)', () => {
     expect(SYSTEM_PROMPT).toContain('먼저 recommend_merchants를 부른다');
   });
 
+  it('states no fact without data and no order state it did not read this turn', () => {
+    // Real use: "비 오니까" with no weather, and an old approval repeated long after.
+    expect(SYSTEM_PROMPT).toContain('기온, 날씨, 지금 시각');
+    expect(SYSTEM_PROMPT).toContain('도구 결과에 없으면 말하지 않는다');
+    expect(SYSTEM_PROMPT).toContain('이번 턴에 get_order_history로 읽은 결과로만');
+    expect(SYSTEM_PROMPT).toContain('앞선 대화에서 말한 상태는 이미 바뀌었을 수 있어서');
+  });
+
   it('keeps the money rules and has no dashes or dates (stable cache prefix, CLAUDE.md 1)', () => {
     expect(SYSTEM_PROMPT).toContain('결제는 사용자가 카드 버튼을 누를 때 서버가 한다');
     // QA 2026-11-20: after APPROVAL_REQUIRED the dragon said it had approved and made the card.
