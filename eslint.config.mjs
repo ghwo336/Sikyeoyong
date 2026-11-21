@@ -92,6 +92,7 @@ export default tseslint.config(
       '**/dist-rehearsal/**',
       '**/.next/**',
       '**/.next-rehearsal/**',
+      '**/.next-*/**',
       '**/coverage/**',
       '**/storybook-static/**',
       '**/next-env.d.ts',

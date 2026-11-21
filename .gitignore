@@ -6,6 +6,8 @@ dist-rehearsal/
 build/
 .next/
 .next-rehearsal/
+# NEXT_DIST_DIR로 따로 띄운 웹의 빌드 폴더
+.next-*/
 out/
 .turbo/
 coverage/
