@@ -60,6 +60,7 @@ const config: NextConfig = {
   poweredByHeader: false,
   // next dev writes an AGENTS.md (with em dashes) when run by a coding agent; keep the tree clean.
   agentRules: false,
+  devIndicators: false,
   headers() {
     return Promise.resolve([
       { source: '/:path*', headers: securityHeaders.map((h) => ({ ...h })) },
