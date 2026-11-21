@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHAIN_WORDS,
   exitCodeOf,
   findChainWords,
   formatTable,
   isBenignConsole,
   type Outcome,
 } from './checks.ts';
+
+describe('CHAIN_WORDS', () => {
+  it('is exactly the list CLAUDE.md rule 12 names (changing it is a decision)', () => {
+    expect([...CHAIN_WORDS]).toEqual([
+      '지갑',
+      '토큰',
+      '트랜잭션',
+      'KYC',
+      'PCL',
+      '블록체인',
+      '가스',
+    ]);
+  });
+});
 
 describe('findChainWords', () => {
   it('finds blockchain words on a user screen', () => {
