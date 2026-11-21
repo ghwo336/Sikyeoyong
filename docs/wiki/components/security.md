@@ -41,6 +41,10 @@ children: []
 - 비밀 목록과 보관 위치는 `infra.md`.
 - 의존성 업데이트 시 lockfile 고정, 알 수 없는 패키지 추가는 리뷰.
 
+## 웹 응답 헤더
+- `apps/web/next.config.ts`의 `securityHeaders`가 모든 경로에 붙인다 (2026-11-21): `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy`(카메라, 마이크, 위치, 결제, USB 끔). 모양은 `lib/next-config.test.ts`가 지킨다.
+- CSP는 아직 없다. Next가 하이드레이션용 인라인 스크립트를 직접 넣어서, 요청마다 nonce를 넣는 미들웨어 없이는 `THEME_BOOT_SCRIPT` 해시 하나만으로 막으면 앱이 깨진다. 후속 과제: nonce 미들웨어로 `script-src 'nonce-...' 'strict-dynamic'`, 개발 서버(`next dev`)는 `unsafe-eval` 예외를 따로 두고 도입한다. 그 전까지 세션은 httpOnly 쿠키로 지킨다.
+
 ## 하지 말 것 (MUST NOT)
 - 디버그용 "관리자 송금" 기능을 만들지 않는다.
 - 사용자 입력이나 외부 데이터를 정책값·주소로 쓰지 않는다.

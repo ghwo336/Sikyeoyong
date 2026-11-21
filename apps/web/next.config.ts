@@ -31,6 +31,20 @@ const DEMO_MODE =
   set(rootEnv.DEMO_MODE) ??
   'false';
 
+// Headers on every response (security.md "웹 응답 헤더"). No CSP yet: Next inlines its own
+// bootstrap scripts, so a CSP needs per-request nonces (a middleware) or a hash for each, and a
+// hash for THEME_BOOT_SCRIPT alone would block them. Follow-up in security.md.
+export const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  // Nothing in the app needs these browser features.
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  },
+] as const;
+
 const config: NextConfig = {
   reactStrictMode: true,
   env: {
@@ -44,6 +58,11 @@ const config: NextConfig = {
   poweredByHeader: false,
   // next dev writes an AGENTS.md (with em dashes) when run by a coding agent; keep the tree clean.
   agentRules: false,
+  headers() {
+    return Promise.resolve([
+      { source: '/:path*', headers: securityHeaders.map((h) => ({ ...h })) },
+    ]);
+  },
   rewrites() {
     if (process.env.NODE_ENV !== 'development') return Promise.resolve([]);
     return Promise.resolve([
