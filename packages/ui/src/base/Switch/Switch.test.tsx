@@ -63,11 +63,11 @@ describe('Switch (Switch.md 테스트 기준)', () => {
     expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
   });
 
-  // Wallet.dc.html: 52 x 32 track, 26 knob, leaf on, line-strong off, 44px touch target.
+  // Wallet.dc.html: 52 x 32 track, 26 knob, leaf on, ink-secondary off, 44px touch target.
   it('matches the design sizes, colors and touch target', () => {
     expect(rule('.track')).toMatch(/width:\s*var\(--size-switch-width\)/);
     expect(rule('.track')).toMatch(/height:\s*var\(--size-switch-height\)/);
-    expect(rule('.track')).toMatch(/background:\s*var\(--color-line-strong\)/);
+    expect(rule('.track')).toMatch(/background:\s*var\(--color-ink-secondary\)/);
     expect(rule(".hit[aria-checked='true'] .track")).toMatch(/background:\s*var\(--theme-accent\)/);
     expect(rule('.knob')).toMatch(/width:\s*var\(--size-switch-knob\)/);
     expect(rule('.knob')).toMatch(/background:\s*var\(--color-surface\)/);
@@ -109,5 +109,35 @@ describe('Switch (Switch.md 테스트 기준)', () => {
     fireEvent.pointerDown(screen.getByRole('switch'), { isPrimary: true, button: 0 });
     await new Promise((r) => setTimeout(r, 100));
     expect(knob?.style.transform ?? '').not.toMatch(/scaleX/);
+  });
+});
+
+// WCAG 1.4.11: the off track is the only sign of the control's edge, so 3:1 against both grounds.
+describe('Switch off track contrast', () => {
+  const tokens = JSON.parse(
+    readFileSync(resolve(__dirname, '../../../../../design/tokens.json'), 'utf8'),
+  ) as { color: Record<string, string> };
+  const luminance = (hex: string) => {
+    const [r = 0, g = 0, b = 0] = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a: string, b: string) => {
+    const [hi = 0, lo = 0] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const offColor = () => {
+    const name = /background:\s*var\(--color-([a-z-]+)\)/.exec(rule('.track'))?.[1] ?? '';
+    return tokens.color[name.replace(/-([a-z])/g, (_m, c: string) => c.toUpperCase())] ?? '';
+  };
+
+  it.each(['ground', 'surface'])('is at least 3:1 against %s', (ground) => {
+    expect(ratio(offColor(), tokens.color[ground] ?? '')).toBeGreaterThanOrEqual(3);
+  });
+
+  it('the old line-strong would fail (the check can fail)', () => {
+    expect(ratio(tokens.color.lineStrong ?? '', tokens.color.ground ?? '')).toBeLessThan(3);
   });
 });
