@@ -20,24 +20,6 @@ children: []
 
 ## 기록
 
-### 2026-11-20 실제 LLM 대화, 한도 금액(D-31), 캔버스 시안과 종별 테마(D-32), 체인 확인
-- 한 일:
-  - 대화: OpenAI 공급자(D-30), 음식 주제 제한, 쓰는 중 점 셋과 스트리밍, 회색 스크롤바 숨김, 위로 올려 읽다가 보내면 맨 아래로(followKey).
-  - 목 체인 30일 사용량, 배달 단계 흉내(목과 데모만), 검증 FAIL 수정 커밋들.
-  - 테스트넷 준비: 운영자 키를 .env에 새로 만듦(주소 0xBb71B672BC33745283842ce701F5b0FC28d023d3, 값은 출력 안 함), faucet 5,000 tOKRW 1회. 배포는 아직. `@maroo-chain/viem` 0.5.0 타입으로 deployPclProxy(kind Transparent 1, UUPS 2, initializer 같이)와 policy 빌더(agentOkrwTransferLimit, periodicVolume, and, eas)를 확인(Q-13 후속).
-  - D-31 (7803f0c): 한도는 사용자가 금액으로, 레벨 없앰, 월 예산은 내 30일 한도로 합침, 드래곤은 금액 구간으로 자람. PUT /agents/me/limits, 마이그레이션 0009.
-  - 캔버스 시안 반영과 D-32 (b774a33): 종별 테마 색, Look, Themes. 들어온 시안이 D-31 전 것이라 D-31 문구를 다시 얹음.
-  - 체인 읽기: 파우치 EntryPoint v9가 PCL entrypoints에 있음(Q-39), KYC recipient는 스마트 지갑(Q-19, Q-40).
-  - main 머지와 push (c31890b까지).
-- 실수 기록 (amend 안 함, dev-loop.md):
-  - 7fa0080은 게이트 FAIL(D18 경계, lint) 상태로 커밋됐다. 게이트 출력을 `tail`로 넘겨 종료 코드를 보지 않았다. 3c4d4da로 고쳤고, 이후 커밋은 게이트 종료 코드가 0일 때만 한다.
-  - 7c1761c 제목의 종류 `design`은 허용 목록에 없다(G2). 시안 커밋은 `docs(design)`으로 쓴다.
-  - b774a33에 Verify 행의 KYC recipient 내용(Q-19 반영)이 같이 들어갔다. 원래 37d9d70의 일이다.
-- 막힌 것: 테스트넷 배포는 faucet 두 번째 수령을 멈춘 뒤 호재 님 지시 대기.
-- 열린 질문: Q-37(아낀 돈, D-31 뒤 뜻 바뀜), Q-38, Q-40(마루 KYC 담당자께).
-- 후속: web.md의 레벨 설명(43, 75, 81, 87행)과 Chip `lg` 죽은 크기는 D-32 UI 작업(별도 worktree)과 겹쳐 그 브랜치를 합친 뒤 고친다(7803f0c 검증 지적). 충전 코드가 floatCapAokrw를 쓰게, web 테스트가 turbo 병렬에서 5초 타임아웃(불안정), D-32 tech-spec과 위키 반영, 시작 화면 아래 한 줄은 D-17 설명 문구에 가까움(지울지 판단).
-- 다음 할 일: D-32 구현(테마 CSS 변수, Look), Splash, 진행 중 주문 카드, 주문 내역 버튼, 브라우저 QA 결과 반영.
-
 ### 2026-11-20 브라우저 QA 반영과 5a071b5..e206c2c 검증 지적
 - 한 일:
   - 숨은 글자(.srOnly)가 문서를 길게 만들던 것 (6cd3aeb), 한도 올린 뒤 기다리던 주문을 다시 견적으로 `POST /orders/:id/requote` (fd1c510)와 웹에서 확인 시트를 연 채로 대화로 (39db1ca), 멈추기 바로 이동과 멈춘 동안 입력 끔 (aacd6eb), 한 번에 > 30일 금지(D-31 한 줄, 52dbee1), 지난 한도 카드와 지난 한도 링크 (9090db9), "집으로"와 처음 사용자 안내 글 (21d6cf5), 스위치 44px (efd343b).
@@ -129,3 +111,13 @@ children: []
 - 한 일: 작업 기록 3개 보관(최근 10개 유지, 원문은 `archive/worklog.md`). 오늘 변경 반영: tech-spec 환경 변수에 `AGENT_KEY_ENCRYPTION_KEY_PREVIOUS`와 HKDF v2 표기, security.md CSP 절에 기본 금고 주소가 `packages/shared/src/config/pouchi.ts` 한 곳임을 적음. HKDF 교체, `topups:reconcile`, nonce CSP(`proxy.ts`)는 이미 security, payment, web 문서와 CLAUDE.md 명령표에 있어 고칠 것 없음. 낡은 용어 후보 6건 중 멤풀 3건은 바른 문장, 나머지 3건은 보관 문서라 그대로. 닫을 질문 없음.
 - 정리 보류 (사람 판단 필요): 1차 보류 항목 그대로(tech-spec 로그인과 월 예산 문구, plan.md 본문, 사장님 카카오 로그인, KakaoVerify 문구). 내 주문 시안 결정 대기.
 - 다음 할 일: 위 보류 결정.
+
+### 2026-11-21 위키 정리 3차와 구현 점검 (wiki-gardener)
+- 한 일: 위키 주장을 코드와 대조(UI 문서 64개와 `packages/ui` 폴더 64개 일치, 스토리와 테스트 모두 있음, API 라우트, LLM 도구 8개, 마이그레이션 0000~0016, 환경 변수). 고친 것 6: ROOT 트리 지도 UI 문서 수(59 → 64), contracts.md의 `deploy-orders.ts` "아직 없음"과 없는 `seed-merchants.ts`를 `register-merchants.ts`로, merchants.md 보이는 가게 문단(46곳 등록, 19곳 미등록)과 `pnpm merchants:sync-onchain` 명령, Q-34 진행 줄. 작업 기록 1개 보관(`archive/worklog.md`). 낡은 용어 후보 6건은 1, 2차와 같이 고칠 것 없음.
+- 점검 결과: typecheck, test(shared 342, ui 688, infra 67, api 1176, web 379), lint, check:wiki, check:dash, verify 모두 통과.
+- 정리 보류 (사람 판단 필요):
+  - CLAUDE.md는 에이전트가 고치지 않는다: 6절 표의 `infra/scripts/seed-merchants.ts`(없음, 실제는 `register-merchants.ts`), 7절 명령표에 `topups:reconcile`, `merchants:register`, `merchants:sync-onchain`, `dev:certs`, `dev:web:https`가 없음(2차 기록의 "CLAUDE.md 명령표에 있음"은 틀림).
+  - code-style.md "ABI는 forge 산출물에서 생성해 `packages/shared/src/abi`에 둔다"와 실제(`apps/api/src/common/onchain/orders-abi.ts`에 손으로 씀, 선택자 테스트로 맞춤)가 다르다. 규약을 고칠지 코드를 옮길지.
+  - infra.md의 `infra/deploy.sh`는 아직 없다 (배포 전 규칙이라 그대로 둠).
+  - 1, 2차 보류 항목 그대로.
+- 다음 할 일: Q-34 결정, 위 CLAUDE.md 명령표 보강.

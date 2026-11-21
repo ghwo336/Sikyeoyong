@@ -30,7 +30,7 @@ docs/wiki/README.md                 ← ROOT (여기서 시작)
 ├── components/_index.md            컴포넌트별 규칙 (같은 양식)
 │   ├── web.md                      Next.js 웹 (페이지는 조립만)
 │   ├── ui/_index.md                UI 컴포넌트 (packages/ui, 컴포넌트마다 하네스)
-│   │   ├── base/ dragon/ chat/ order/ limits/ onboarding/ wallet/  영역별 _index와 컴포넌트 문서 59개
+│   │   ├── base/ dragon/ chat/ order/ limits/ onboarding/ wallet/  영역별 _index와 컴포넌트 문서 64개
 │   ├── auth.md                     파우치 로그인(D-29), 세션
 │   ├── server-api.md               NestJS API 규약
 │   ├── agent-runtime.md            LLM 도구, 인젝션 방어, 승인

@@ -270,6 +270,7 @@ decisions.md D-11의 질문을 추적한다. 새 질문은 맨 아래에 번호�
 - 상태: 열림
 - 우선순위: P1
 - 배경: merchants.md MUST는 "온체인 등록이 성공하고 Active인 가게만 추천·주문 대상"이다. 그런데 체인 등록 스크립트(`infra/scripts/seed-merchants.ts`)가 아직 없어 시드 가게는 모두 `onchain_id=null`이다. 지금 `MerchantsService`는 DB의 `verified`와 `active`만 본다 (2026-11-20).
+- 진행 (2026-11-21 wiki-gc): 등록 스크립트는 `infra/scripts/register-merchants.ts`(`pnpm merchants:register`)로 생겼고 데모 프로필에 46곳이 등록됐다. 보이는 가게 판정은 아직 `verified`와 `active`만 본다. 등록 안 된 19곳은 추천에 보이지만 경로 B confirm에서 `CHAIN_MERCHANT_INACTIVE`로 멈춘다.
 - 확인 방법: 컨트랙트 배포와 체인 등록 스크립트가 생기는 커밋에서 보이는 가게 조건에 `onchain_id`가 있어야 한다는 조건을 더하고 merchants.md를 고친다. 체인의 Active 상태를 서버가 어떻게 따라갈지(인덱서 `MerchantStatusChanged`)도 같이 정한다.
 - 담당: 컨트랙트, 시드 작업자
 - 결론:
