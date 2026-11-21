@@ -30,7 +30,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
-import { AgentsService } from '../agents/agents.service.js';
+import { AgentLockTimeout, AgentsService } from '../agents/agents.service.js';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
@@ -385,6 +385,39 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
   it('a throw after the marker is an unknown result: stays submitting, a new press pays nothing', async () => {
     const { payment, quote, confirm, row } = await setup();
     const pay = vi.spyOn(payment, 'pay').mockRejectedValueOnce(new Error('socket hang up'));
+    const id = await quote();
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order.status).toBe('submitting');
+    expect(row(id)).toMatchObject({ status: 'submitting', submitStartedAt: NOW });
+    await confirm(id);
+    expect(pay).toHaveBeenCalledTimes(1);
+  });
+
+  it('a lock wait timeout sends nothing: the order fails as retryable and can be pressed again', async () => {
+    const { payment, quote, confirm, row, lock } = await setup();
+    const pay = vi.spyOn(payment, 'pay');
+    vi.spyOn(lock, 'exclusive').mockRejectedValueOnce(new AgentLockTimeout('wait'));
+    const id = await quote();
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order.status).toBe('failed');
+    expect(row(id)?.errorCode).toBe('INTERNAL');
+    expect(pay).not.toHaveBeenCalled();
+    expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('paid');
+    expect(pay).toHaveBeenCalledTimes(1);
+  });
+
+  it('a hold timeout after the marker keeps the recorded state and never sends again', async () => {
+    const { payment, quote, confirm, row, lock } = await setup();
+    const hung = new Promise<never>(() => undefined);
+    const pay = vi.spyOn(payment, 'pay').mockReturnValueOnce(hung);
+    const realExclusive = lock.exclusive.bind(lock);
+    vi.spyOn(lock, 'exclusive').mockImplementationOnce(async (agentId, fn) => {
+      void realExclusive(agentId, fn);
+      await vi.waitFor(() => {
+        expect(pay).toHaveBeenCalled();
+      });
+      throw new AgentLockTimeout('hold');
+    });
     const id = await quote();
     const res = zOrderResult.parse((await confirm(id)).body);
     expect(res.order.status).toBe('submitting');

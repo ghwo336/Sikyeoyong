@@ -101,6 +101,9 @@ export class OrderConfirmService {
       // payment may be out, so the order stays submitting (D-19 "결과 모름"). Only a
       // returned PayResult settles it. Before the marker no payment went out.
       if (state.marked) return;
+      // A lock timeout (AgentLockTimeout, RATE_LIMITED) before the marker sent nothing: the settler
+      // stores an unrelated code as INTERNAL, which is retryable before the marker. A stale turn
+      // still running cannot mark the order later, the transition needs it to be submitting.
       this.settler.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', false, nowMs);
     }
   }

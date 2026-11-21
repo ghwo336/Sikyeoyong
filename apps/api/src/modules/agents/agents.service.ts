@@ -18,6 +18,9 @@ import { AgentLock } from './agent-lock.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
 import { AgentsRepository } from './agents.repository.js';
 
+/** Other modules see the lock's timeout error only through this file (architecture.md). */
+export { AgentLockTimeout } from './agent-lock.service.js';
+
 export interface AgentSummary {
   readonly id: string;
   /** The per-order limit the owner picked (D-31); the chain's TransferLimit holds the same. */
