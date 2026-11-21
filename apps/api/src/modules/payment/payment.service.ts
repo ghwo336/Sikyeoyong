@@ -45,7 +45,15 @@ export function createPaymentProvider(
   keyStore?: AgentKeyStore,
 ): PaymentProvider {
   const path = config.payment.path;
-  if (path === 'mock') return new MockPaymentProvider(config.policy);
+  if (path === 'mock') {
+    // The demo's mock keeps the gas share in the pocket like path B does (D-25), so the pocket
+    // is not empty after an order and 돌려받기 can be shown. It spends none: the mock has no gas.
+    return new MockPaymentProvider(
+      config.policy,
+      Date.now,
+      config.demo.enabled ? config.payment.gasShareAokrw : 0n,
+    );
+  }
   if (path === 'B') {
     try {
       if (keyStore === undefined) {

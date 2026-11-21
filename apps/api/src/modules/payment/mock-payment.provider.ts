@@ -49,11 +49,16 @@ export class MockPaymentProvider implements PaymentProvider {
   private agents = 0n;
   private block = 0n;
   private txs = 0;
+  /** Like path B's gas share: the pocket is topped up with it and it stays after an order (0: none). */
+  readonly gasReserveAokrw: bigint;
 
   constructor(
     private readonly policy: PolicyConfig,
     private readonly now: () => number = Date.now,
-  ) {}
+    gasReserveAokrw: bigint = 0n,
+  ) {
+    this.gasReserveAokrw = gasReserveAokrw;
+  }
 
   createAgent(input: { readonly userId: string; readonly name: string }): Promise<AgentWallet> {
     const address = hex(`agent:${input.userId}`, 20);

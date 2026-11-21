@@ -33,6 +33,13 @@ const req = (agent: Awaited<ReturnType<typeof ready>>, amount: bigint, ref = 1) 
   orderRef: REF(ref),
 });
 
+describe('gas share (demo mock)', () => {
+  it('exposes the reserve it was built with, none by default', () => {
+    expect(new MockPaymentProvider(getPolicy('demo')).gasReserveAokrw).toBe(0n);
+    expect(new MockPaymentProvider(getPolicy('demo'), Date.now, 5n).gasReserveAokrw).toBe(5n);
+  });
+});
+
 describe('MockPaymentProvider (refusals follow chain-and-pcl.md)', () => {
   it('creates a stable wallet per user, owned by the operator', async () => {
     const { p } = setup();
@@ -277,6 +284,13 @@ describe('MockPaymentProvider refusal order when reasons overlap ((추론), paym
 describe('createPaymentProvider (D-05)', () => {
   it('gives the mock for PAYMENT_PATH=mock', () => {
     expect(createPaymentProvider(loadConfig({ PAYMENT_PATH: 'mock' })).path).toBe('mock');
+  });
+
+  it('keeps the gas share in the mock pocket only in demo mode', () => {
+    const plain = createPaymentProvider(loadConfig({ PAYMENT_PATH: 'mock' }));
+    const demo = createPaymentProvider(loadConfig({ PAYMENT_PATH: 'mock', DEMO_MODE: 'true' }));
+    expect(plain.gasReserveAokrw).toBe(0n);
+    expect(demo.gasReserveAokrw).toBe(won(100n));
   });
 
   it.each(['A', 'B', 'C'] as const)(

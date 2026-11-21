@@ -835,7 +835,8 @@ describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (
   it('DEMO_MODE still tops up with an empty allowance (the ledger goes negative)', async () => {
     const { quote, confirm, allowance } = await setup({ demo: true, allowanceWon: '0' });
     expect(zOrderResult.parse((await confirm(await quote())).body).order.status).toBe('paid');
-    expect(allowance.balanceAokrw('u1')).toBe(-A('9000'));
+    // The demo mock keeps a gas share in the pocket like path B (100 OKRW by default, D-25).
+    expect(allowance.balanceAokrw('u1')).toBe(-A('9100'));
   });
 });
 
