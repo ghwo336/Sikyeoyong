@@ -84,7 +84,7 @@ describe('GET /api/wallet', () => {
     expect(view.owner).toBe('0');
   });
 
-  it('saved this month is the 30-day limit minus what was paid, and 0 when spent reaches or passes it', async () => {
+  it('saved this month is the 30-day limit minus what was paid, 0 with no paid order, and 0 when spent reaches or passes it', async () => {
     const { h, get } = await setup();
     // u1's 30-day limit is 50,000 won, the range's lowest (the fixture default is 300,000).
     h.db
@@ -113,7 +113,8 @@ describe('GET /api/wallet', () => {
         .run();
     };
     const saved = async () => zWalletView.parse((await get('u1')).body).savedThisMonth;
-    expect(await saved()).toBe(s(50_000n));
+    // No paid order yet: nothing saved, not the whole limit.
+    expect(await saved()).toBe('0');
     paid(49_000n);
     expect(await saved()).toBe(s(1_000n));
     paid(1_000n); // exactly the limit

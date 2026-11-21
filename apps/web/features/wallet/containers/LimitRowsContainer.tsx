@@ -52,7 +52,8 @@ export function LimitRowsContainer() {
           />
         }
       />
-      {wallet && (
+      {/* Zero saved (a new owner with no orders) shows no row rather than "0원" in accent. */}
+      {wallet && parseAokrw(wallet.savedThisMonth) > 0n && (
         <ListRow
           label="이번 달 아낀 돈"
           value={formatOkrw(parseAokrw(wallet.savedThisMonth))}

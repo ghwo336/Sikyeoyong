@@ -71,6 +71,19 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     expect(screen.queryByText('이번 달 예산')).toBeNull();
   });
 
+  it('a new owner with nothing saved sees no "이번 달 아낀 돈" row', async () => {
+    getWallet.mockResolvedValue({ ...WALLET, savedThisMonth: '0' });
+    wrap(
+      <>
+        <AllowanceContainer />
+        <LimitRowsContainer />
+      </>,
+    );
+    expect(await screen.findByText('81,000원')).toBeInTheDocument();
+    expect(await screen.findByText('30일에 쓸 돈')).toBeInTheDocument();
+    expect(screen.queryByText('이번 달 아낀 돈')).toBeNull();
+  });
+
   it('a failed wallet read keeps its place with a retry line, no numbers, and retry works', async () => {
     getWallet.mockRejectedValueOnce(new AppError('INTERNAL'));
     wrap(

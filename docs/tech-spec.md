@@ -246,7 +246,7 @@ apps/api/src/
 | POST | `/agents/me/fund` | user | `{ amount }` (aokrw 문자열) | `{ txHash }` |
 | POST | `/agents/me/drain` | user | | `RefundResult` (`{ refunded, txHashes }`, `api/wallet.ts`, 멈춤 화면 "돌려받기"). 멈춘 용이만(아니면 409 `CONFLICT`, 멈춘 동안은 주문 확정이 막혀 주머니가 다른 데서 움직이지 않는다). 소유자 포트 drain 뒤 잔액 차이(전 - 후)를 주인 용돈 장부 `refund`로 기록. 같은 용이의 동시 요청은 하나만 옮긴다(프로세스 안 잠금). 실패하면 아무것도 기록하지 않고 주인이 다시 누른다. 2026-11-20 구현 (`agents/agent-refund.service.ts`) |
 | GET | `/budget` | user | | `BudgetView` (아래) |
-| GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 내 30일 한도(D-31, 예전 월 예산)에서 이번 달(KST) 쓴 돈을 뺀 값(0 아래로 안 감, Q-37). 용이 없으면 404 |
+| GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 내 30일 한도(D-31, 예전 월 예산)에서 이번 달(KST) 쓴 돈을 뺀 값(0 아래로 안 감, 이번 달 결제가 없으면 0, Q-37). 용이 없으면 404 |
 | GET | `/demo/leak-compare` | user | | `LeakCompareView` (`api/demo.ts`, 키 유출 비교, 데모 5번, 9.3). `DEMO_MODE`가 꺼지면 404 `NOT_FOUND`. `perOrderLimit`은 내 건당 한도, `periodicCap`과 `periodicPeriodSec`은 정책의 30일 상한, `floatAtRisk`는 건당 한도 x `AGENT_FLOAT_MULTIPLIER` + `AGENT_GAS_SHARE_OKRW`(D-06, D-25), `pocket`은 용이 지갑의 지금 잔액. 읽기만 한다 (`demo` 모듈) |
 | POST | `/chat/messages` | user | `{ text, clientMessageId }` | SSE `ChatEvent` 스트림 |
 | GET | `/chat/history` | user | `?cursor` | `ChatHistory` (`{ startedAt, messages, nextCursor }`, `api/chat.ts`). 용의 말은 그 말을 만든 `ChatEvent` 목록으로 돌려준다. 각 메시지에 `sessionId`(D-34 끼니 단위 대화, 세션 도입 전 행은 없음)가 있고 화면은 가장 새 세션과 다른 것을 접는다 |

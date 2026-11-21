@@ -17,6 +17,8 @@ import { UsersService } from '../users/users.service.js';
  * - pocket: what the dragon's wallet holds on chain now (0 before hatching wrote a wallet).
  * - savedThisMonth: the owner's 30-day limit (D-31, was the monthly budget) minus what was
  *   spent this KST month, never below zero (default reading of "이번 달 아낀 돈", Q-37).
+ *   Nothing paid this month means nothing saved: 0, not the whole limit (a new owner saw
+ *   "아낀 돈 60,000원" with no orders).
  */
 @Injectable()
 export class WalletService {
@@ -37,7 +39,7 @@ export class WalletService {
     return {
       owner: aokrwToString(owner > 0n ? owner : 0n),
       pocket: aokrwToString(pocket),
-      savedThisMonth: aokrwToString(budget > spent ? budget - spent : 0n),
+      savedThisMonth: aokrwToString(spent > 0n && budget > spent ? budget - spent : 0n),
     };
   }
 }
