@@ -1,9 +1,24 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApprovalDecision, OrderQuote } from '../../../lib/api';
 import type { OwnerApproval } from '../owner';
+
+// The real card, with its props handed to the test so two callbacks can fire back to back.
+const cardProps = vi.hoisted(() => ({
+  current: null as null | ((p: { onApprove: () => void; onReject: () => void }) => void),
+}));
+vi.mock('@sikyeoyong/ui', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@sikyeoyong/ui')>();
+  return {
+    ...real,
+    OwnerApprovalCard: (p: React.ComponentProps<typeof real.OwnerApprovalCard>) => {
+      cardProps.current?.(p);
+      return <real.OwnerApprovalCard {...p} />;
+    },
+  };
+});
 
 const approveApproval = vi.fn();
 const rejectApproval = vi.fn();
@@ -48,6 +63,7 @@ function setup(props: { onQuote?: () => void; onRejected?: () => void } = {}) {
 
 beforeEach(() => {
   for (const f of [approveApproval, rejectApproval, confirmOrder]) f.mockReset();
+  cardProps.current = null;
 });
 
 describe('OwnerApprovalContainer', () => {
@@ -103,6 +119,24 @@ describe('OwnerApprovalContainer', () => {
       expect(onQuote).toHaveBeenCalledTimes(1);
     });
     expect(approveApproval).toHaveBeenCalledTimes(2);
+  });
+
+  it('two quick answers before the next render send one request (card mocked)', async () => {
+    approveApproval.mockReturnValue(new Promise(() => undefined));
+    let props: { onApprove: () => void; onReject: () => void } | undefined;
+    cardProps.current = (p) => {
+      props = p;
+    };
+    setup();
+    act(() => {
+      props?.onApprove();
+      props?.onApprove();
+      props?.onReject();
+    });
+    await waitFor(() => {
+      expect(approveApproval).toHaveBeenCalledTimes(1);
+    });
+    expect(rejectApproval).not.toHaveBeenCalled();
   });
 
   it('while the approval is on its way the other answer cannot be sent', async () => {

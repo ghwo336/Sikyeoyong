@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { parseAokrw } from '@sikyeoyong/shared';
 import { OwnerApprovalCard, type OwnerApprovalStatus } from '@sikyeoyong/ui';
 import type { OrderQuote } from '../../../lib/api';
@@ -24,6 +25,9 @@ export function OwnerApprovalContainer({
   readonly onRejected?: () => void;
 }) {
   const { approve, reject } = useDecideApproval();
+  // One answer per card, decided at the tap (a ref, not render state: two taps before the next
+  // render must still send once). A failed answer gives the card back so it can be sent again.
+  const sent = useRef(false);
   // An answer that went through keeps the card busy until the refetch takes it away, so a late
   // second tap cannot answer twice.
   const status: OwnerApprovalStatus =
@@ -41,16 +45,26 @@ export function OwnerApprovalContainer({
       amount={parseAokrw(approval.amount)}
       status={status}
       onApprove={() => {
-        if (approve.isPending || reject.isPending) return;
+        if (sent.current) return;
+        sent.current = true;
         approve.mutate(approval.id, {
           onSuccess: (res) => {
             if (res.quote) onQuote(res.quote);
           },
+          onError: () => {
+            sent.current = false;
+          },
         });
       }}
       onReject={() => {
-        if (approve.isPending || reject.isPending) return;
-        reject.mutate(approval.id, { onSuccess: () => onRejected?.() });
+        if (sent.current) return;
+        sent.current = true;
+        reject.mutate(approval.id, {
+          onSuccess: () => onRejected?.(),
+          onError: () => {
+            sent.current = false;
+          },
+        });
       }}
     />
   );
