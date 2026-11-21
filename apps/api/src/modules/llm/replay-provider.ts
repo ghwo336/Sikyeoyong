@@ -1,4 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import { DEMO_TURNS } from './harness/demo-turns.js';
 import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
 
 /**
@@ -6,17 +7,21 @@ import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
  * user's latest words and plays a fixed turn: food words call recommend_merchants, budget
  * words call get_budget, then one line. The tools are the real server ones, so the cards
  * and numbers are real; only the dragon's words are fixed. It never calls place_order or
- * anything that writes (the orders come from the user's taps on the cards).
+ * anything that writes (the orders come from the user's taps on the cards). The demo scenes'
+ * hand-written turns (`harness/demo-turns.ts`) come first; they may also call the card tool
+ * `propose_limit_change`, which shows a card and changes nothing.
  */
 const FOOD_WORDS = ['시켜', '추천', '점심', '저녁', '배고', '먹', '골라'];
 const BUDGET_WORDS = ['예산', '다 쓴', '다쓴', '남았', '얼마', '한도'];
 
 type Step =
-  | { readonly kind: 'tool'; readonly tool: string }
+  | { readonly kind: 'tool'; readonly tool: string; readonly input?: unknown }
   | { readonly kind: 'line'; readonly line: string };
 
-/** Exported for tests: every tool a replay plan may call (they must all be read tools). */
+/** Exported for tests: every tool a replay plan may call (read tools, or the card tool). */
 export function plan(words: string): readonly Step[] {
+  const demo = DEMO_TURNS.find((t) => t.matches(words));
+  if (demo) return demo.steps(words);
   if (FOOD_WORDS.some((w) => words.includes(w))) {
     return [
       { kind: 'tool', tool: 'recommend_merchants' },
@@ -73,7 +78,7 @@ export class ReplayProvider implements LlmProvider {
         type: 'tool_use',
         id: `toolu_replay_${String(after)}`,
         name: step.tool,
-        input: {},
+        input: step.input ?? {},
       } as Anthropic.ToolUseBlock);
       stop = 'tool_use';
     } else if (step?.kind === 'line') {
