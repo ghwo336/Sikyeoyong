@@ -18,6 +18,7 @@ import { MerchantsService } from '../merchants/merchants.service.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
 import { isRetryableFailure } from './failure-class.js';
 import { parseStoredLines, priceLines } from './order-lines.js';
+import { OrderReceipts } from './order-receipts.service.js';
 import { OrderSettler } from './order-settler.service.js';
 import { OrderRules } from './order-rules.service.js';
 import { OrderViews } from './order-views.service.js';
@@ -49,6 +50,7 @@ export class OrderConfirmService {
     private readonly approvals: ApprovalsService,
     private readonly allowance: AllowanceService,
     private readonly settler: OrderSettler,
+    private readonly receipts: OrderReceipts,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -67,12 +69,7 @@ export class OrderConfirmService {
       // A person pressed again: ask the chain first, then the same orderRef (D-19).
       const paid = await this.payment.findPaid(row.orderRef as Hex);
       if (paid !== null) {
-        this.repo.transition(
-          row.id,
-          'failed',
-          { status: 'paid', txHash: paid.txHash, errorCode: null },
-          nowMs,
-        );
+        this.receipts.markPaid(row, 'failed', paid.txHash, nowMs);
       } else if (
         this.repo.transition(row.id, 'failed', toSubmitting, nowMs, { bumpAttempt: true })
       ) {
@@ -150,7 +147,7 @@ export class OrderConfirmService {
       },
     });
     if (result.ok) {
-      this.repo.transition(row.id, 'submitting', { status: 'paid', txHash: result.txHash }, nowMs);
+      this.receipts.markPaid(row, 'submitting', result.txHash, nowMs);
       return;
     }
     this.settler.settle(userId, row, result.error.code, true, nowMs);

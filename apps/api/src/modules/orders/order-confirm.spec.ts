@@ -109,7 +109,11 @@ async function setup(
   if (opts.path !== 'C') await payment.setTransferLimit(wallet, A(opts.limitWon ?? '10000'));
   h.db
     .update(agents)
-    .set({ walletAddress: wallet.address, ownerAddress: wallet.ownerAddress })
+    .set({
+      walletAddress: wallet.address,
+      ownerAddress: wallet.ownerAddress,
+      onchainAgentId: wallet.onchainAgentId?.toString() ?? null,
+    })
     .where(eq(agents.id, 'a-u1'))
     .run();
   const allowanceSvc = moduleRef.get(AllowanceService);
@@ -191,6 +195,20 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
       txHash: paid?.txHash,
     });
     expect(order.txHash).toBe(paid?.txHash);
+    // The receipt is written with the payment (payment.md "영수증"): mock chain, so it says so.
+    expect(order.receipt?.rules.map((r) => [r.layer, r.status])).toEqual([
+      ['server', 'passed'],
+      ['server', 'passed'],
+      ['server', 'passed'],
+      ['chain', 'passed'],
+      ['chain', 'passed'],
+    ]);
+    expect(order.receipt?.rules.filter((r) => r.layer === 'chain').map((r) => r.label)).toEqual([
+      '건당 한도 (흉내 체인)',
+      '30일 한도 (흉내 체인)',
+    ]);
+    expect(order.receipt?.explorerUrl.endsWith(`/tx/${paid?.txHash ?? ''}`)).toBe(true);
+    expect(row(id)?.receiptJson).not.toBeNull();
     // The top-up came out of the owner allowance ledger (wallet screen).
     expect(allowance.balanceAokrw('u1')).toBe(credit - A('9000'));
   });

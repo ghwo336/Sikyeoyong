@@ -1,5 +1,8 @@
-import { okrwToAokrw } from '@sikyeoyong/shared';
+import { NETWORKS, okrwToAokrw } from '@sikyeoyong/shared';
 import type { Db } from '../db/client.js';
+import type { AppConfig } from '../config/env.js';
+import type { AgentsService } from '../modules/agents/agents.service.js';
+import { OrderReceipts } from '../modules/orders/order-receipts.service.js';
 import { agents, identityChecks, menus, merchants, users } from '../db/schema/index.js';
 
 /*
@@ -94,4 +97,18 @@ export function insertMenu(
       available: opts.available ?? true,
     })
     .run();
+}
+
+/** The receipt writer with a stand-in dragon id and chain config (specs that build orders by hand). */
+export function fakeReceipts(
+  repo: ConstructorParameters<typeof OrderReceipts>[0],
+  path: 'B' | 'mock' = 'B',
+  onchainAgentId: string | null = '1042',
+): OrderReceipts {
+  const agentsStub = { onchainAgentIdOf: () => onchainAgentId } as unknown as AgentsService;
+  const config = {
+    payment: { path },
+    chain: NETWORKS['maroo-testnet'],
+  } as unknown as AppConfig;
+  return new OrderReceipts(repo, agentsStub, config);
 }

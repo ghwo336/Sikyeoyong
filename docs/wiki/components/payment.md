@@ -64,6 +64,9 @@ interface PaymentProvider {
 - **체인 읽기**: `ChainReader`는 `contractPeriodicVolume`(`modules/chain/onchain-chain-reader.ts`, chain-and-pcl.md).
 - **실제 실행** (owner-run, 실제 테스트넷 트랜잭션): `pnpm e2e:path-b -- --run`. 결과 기록은 worklog 2026-11-21.
 
+## 영수증 (2026-11-21)
+주문이 `paid`가 되는 세 곳(confirm 정산, 부팅 재확인, 인덱서)은 모두 `modules/orders/order-receipts.service.ts`의 `OrderReceipts.markPaid`를 지난다. 상태 변경과 같은 UPDATE로 `orders.receipt_json`(shared `zOrderReceipt`)을 쓰고, `GET /orders/:id`가 `OrderView.receipt`로 내보낸다. 내용: 용이 신분증 번호(8004 agentId, 없으면 영수증을 쓰지 않는다), 통과한 규칙(서버 층 3개: 멈춤 아님, 내 30일 한도, 새 가게 허락. 체인 층 3개: `AGENT_OKRW_TRANSFER_LIMIT_POLICY`, `PERIODIC_VOLUME_POLICY`, 전역 KYC 한도), 탐색기 링크(shared 체인 설정). 정책 이름은 자세히 보기 안에서만 보인다. paid가 된 주문은 서버 규칙을 통과했고 체인이 실행했으므로 목록은 통과한 것뿐이다 (추론: 승인으로 풀린 규칙도 그 승인 뒤 통과). 목 체인(`PAYMENT_PATH=mock`)은 체인 층을 "건당 한도 (흉내 체인)", "30일 한도 (흉내 체인)" 둘만 쓰고 KYC는 쓰지 않는다 (흉내 내지 않은 검사를 통과했다고 하지 않는다). 영수증을 못 만들어도(예: 신분증 번호 없음) 결제된 주문의 paid 전이는 막지 않는다. 블록 번호는 영수증 칸에 아직 없다. 웹 영수증 화면은 체인 층 규칙만 "통과한 마루 규칙"으로 보인다.
+
 ## 모드 P와 float (D-06, 확인된 이유)
 - 컨트랙트 범위 `AGENT_OKRW_TRANSFER_LIMIT_POLICY`는 직접 sender 귀속만 하고 실행 전 call value를 검사한다. 그래서 돈은 에이전트가 `msg.value`로 직접 낸다 (모드 P).
 - 에이전트 지갑에는 **float = 그 에이전트의 한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`(기본 2)** (`floatCapAokrw(perOrderLimitAokrw, multiplier)`, D-31. 서버의 충전 코드는 아직 이 함수를 부르지 않는다) 만 둔다. 경로 B와 SELF 가스면 가스 몫을 더한다.
@@ -118,7 +121,7 @@ interface PaymentProvider {
 - 응답은 `{ order: OrderView }`(`zOrderResult`, `GET /orders/:id`도 같은 `OrderViews.viewFor`). 최근 주문 목록 `GET /orders`(`zOrderList`, 최대 20개, `quoted` 제외)도 `OrderViews.listFor`가 항목마다 같은 변환을 써서 목록과 상태 화면의 상태가 어긋나지 않는다. 실패면 `errorCode`, 결제되면 `txHash`가 붙는다. 도착 시각은 결제를 시작한 때(`submit_started_at`)부터 센다. 상태별 용이 대사와 표정은 `modules/orders/order-view.ts`(Done, Tracking, Arrived 시안 문구). 실패한 주문의 대사는 그 코드의 대사이고, 값(`{max}`, `{resetAt}`)이 필요한 대사는 값을 저장하지 않으므로 사람 문장(`message`)으로 대신한다.
 - 경로 C는 실패 주문을 다시 결제하지 않는다 (Q-24). 가게의 `onchain_id`가 없으면(Q-34) 흉내 체인 밖에서는 `CHAIN_MERCHANT_INACTIVE`.
 - 견적 때 한도 (2026-11-21): 주문이 견적을 만들 때 그 시점의 한 번에 쓸 돈(`per_order_limit_at_quote`)과 체인 공통 30일 상한(`period_cap_at_quote`)을 저장한다(마이그레이션 0013, aokrw 문자열, 그 전 주문은 null). 한도를 올린 뒤 `requote`가 주문을 견적으로 되돌릴 때는 한 번에 쓸 돈을 올린 값으로 다시 쓴다. `GET /orders/:id`, confirm 답의 `OrderView.limitsAtOrder`(shared `zOrderView`, 선택 칸)로 나가며 영수증이 "그때" 값을 보일 수 있다. 칸이 없으면(옛 주문) 화면은 "지금" 값을 그대로 쓴다. 웹의 영수증 화면은 이 칸이 있으면 그때 값을, 없으면 지금 값을 "지금" 표시로 보인다. 승인(새 가게, 예산)으로 다시 열리는 주문은 처음 견적 값을 그대로 둔다.
-- 충전 멱등성은 주문 단위로 있다 (아래 "즉시 충전(fund)의 멱등성" 코드 줄). 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 같은 주문을 다시 눌러도 결과 모를 충전은 반복하지 않는다. 아직: `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서, 인덱서 커서 저장은 위 코드대로 있음) `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
+- 충전 멱등성은 주문 단위로 있다 (아래 "즉시 충전(fund)의 멱등성" 코드 줄). 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 같은 주문을 다시 눌러도 결과 모를 충전은 반복하지 않는다. 아직: `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서, 인덱서 커서 저장은 위 코드대로 있음) `DEMO_BYPASS_SERVER_LIMIT`.
 
 ### 견적 (`POST /orders`, `place_order`, 2026-11-20 코드)
 - `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 아래 순서로 본다.

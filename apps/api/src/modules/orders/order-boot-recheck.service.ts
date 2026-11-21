@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs
 import type { AppErrorCode, Hex, PaymentProvider } from '@sikyeoyong/shared';
 import { classify } from './failure-class.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
+import { OrderReceipts } from './order-receipts.service.js';
 import { OrderSettler } from './order-settler.service.js';
 import { type OrderRow, OrdersRepository } from './orders.repository.js';
 
@@ -39,6 +40,7 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
     private readonly repo: OrdersRepository,
     private readonly settler: OrderSettler,
+    private readonly receipts: OrderReceipts,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -78,12 +80,7 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
         );
       }
       if (found !== null) {
-        const moved = this.repo.transition(
-          row.id,
-          'submitting',
-          { status: 'paid', txHash: found.txHash, errorCode: null },
-          nowMs,
-        );
+        const moved = this.receipts.markPaid(row, 'submitting', found.txHash, nowMs);
         if (moved) paid += 1;
         continue;
       }

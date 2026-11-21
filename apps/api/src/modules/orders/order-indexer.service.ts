@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ORDER_EVENTS, type OrderEventsReader, type PlacedLog } from '../chain/chain.service.js';
 import { MerchantsService } from '../merchants/merchants.service.js';
+import { OrderReceipts } from './order-receipts.service.js';
 import { OrdersRepository } from './orders.repository.js';
 
 /** How often the chain is asked for new blocks. */
@@ -42,6 +43,7 @@ export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
     @Inject(ORDER_EVENTS) private readonly reader: OrderEventsReader | null,
     private readonly repo: OrdersRepository,
     private readonly merchants: MerchantsService,
+    private readonly receipts: OrderReceipts,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -135,11 +137,6 @@ export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
       }
       return false;
     }
-    return this.repo.transition(
-      row.id,
-      row.status,
-      { status: 'paid', txHash: log.txHash, errorCode: null },
-      nowMs,
-    );
+    return this.receipts.markPaid(row, row.status, log.txHash, nowMs);
   }
 }

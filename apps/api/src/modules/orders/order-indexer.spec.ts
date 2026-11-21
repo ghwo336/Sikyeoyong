@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { orderEvents, orders } from '../../db/schema/index.js';
-import { insertMerchant, insertUser } from '../../test/fixtures.js';
+import { fakeReceipts, insertMerchant, insertUser } from '../../test/fixtures.js';
 import type { OrderEventsReader, PlacedLog } from '../chain/chain.service.js';
 import type { MerchantsService } from '../merchants/merchants.service.js';
 import { INDEXER_CHUNK_BLOCKS, OrderIndexer } from './order-indexer.service.js';
@@ -62,7 +62,12 @@ function setup(logs: PlacedLog[], opts: { latest?: bigint; start?: bigint } = {}
   const merchants = {
     orderInfoOf: () => ({ name: 'm', etaMin: 1, onchainId: 77n }),
   } as unknown as MerchantsService;
-  const indexer = new OrderIndexer(reader, new OrdersRepository(h), merchants);
+  const indexer = new OrderIndexer(
+    reader,
+    new OrdersRepository(h),
+    merchants,
+    fakeReceipts(new OrdersRepository(h)),
+  );
   const read = (n: number) =>
     h.db
       .select()
@@ -78,6 +83,7 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     t.add(1, 'submitting');
     expect(await t.indexer.tick(99)).toBe(1);
     expect(t.read(1)).toMatchObject({ status: 'paid', txHash: hash(1), errorCode: null });
+    expect(t.read(1)?.receiptJson).toContain(hash(1));
   });
 
   it('confirms a retryable failed order whose transaction landed after all', async () => {
@@ -91,7 +97,12 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     const t = setup([log(1), log(1)]);
     t.add(1, 'submitting');
     expect(await t.indexer.tick()).toBe(1);
-    const again = new OrderIndexer(t.reader, new OrdersRepository(t.h), t.merchants);
+    const again = new OrderIndexer(
+      t.reader,
+      new OrdersRepository(t.h),
+      t.merchants,
+      fakeReceipts(new OrdersRepository(t.h)),
+    );
     expect(await again.tick()).toBe(0);
     expect(t.read(1)?.status).toBe('paid');
     expect(t.h.db.select().from(orderEvents).all()).toHaveLength(1);
@@ -127,7 +138,12 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     const none = {
       orderInfoOf: () => ({ name: 'm', etaMin: 1, onchainId: null }),
     } as unknown as MerchantsService;
-    const indexer = new OrderIndexer(t.reader, new OrdersRepository(t.h), none);
+    const indexer = new OrderIndexer(
+      t.reader,
+      new OrdersRepository(t.h),
+      none,
+      fakeReceipts(new OrdersRepository(t.h)),
+    );
     expect(await indexer.tick()).toBe(0);
     expect(t.read(1)?.status).toBe('submitting');
   });
@@ -217,7 +233,12 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
 
   it('does nothing without a reader (the mock path)', async () => {
     const t = setup([]);
-    const none = new OrderIndexer(null, new OrdersRepository(t.h), t.merchants);
+    const none = new OrderIndexer(
+      null,
+      new OrdersRepository(t.h),
+      t.merchants,
+      fakeReceipts(new OrdersRepository(t.h)),
+    );
     none.onApplicationBootstrap();
     expect(await none.tick()).toBe(0);
     none.onModuleDestroy();

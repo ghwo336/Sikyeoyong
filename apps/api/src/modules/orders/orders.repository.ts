@@ -242,7 +242,13 @@ export class OrdersRepository {
     set: Partial<
       Pick<
         OrderRow,
-        'status' | 'errorCode' | 'txHash' | 'submitStartedAt' | 'submitTxHash' | 'submitNonce'
+        | 'status'
+        | 'errorCode'
+        | 'txHash'
+        | 'receiptJson'
+        | 'submitStartedAt'
+        | 'submitTxHash'
+        | 'submitNonce'
       >
     >,
     nowMs: number,

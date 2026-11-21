@@ -7,6 +7,7 @@ import {
   renderDragonLine,
 } from '@sikyeoyong/shared';
 import { parseStoredLines, toItemLines } from './order-lines.js';
+import { parseReceiptJson } from './order-receipt.js';
 import type { OrderRow } from './orders.repository.js';
 
 /** What the view needs from other modules, read by the caller. */
@@ -81,6 +82,7 @@ export function toOrderView(row: OrderRow, ctx: OrderViewContext, nowMs: number)
   const etaAt = startMs + ctx.etaMin * 60_000;
   const remainingMin = Math.min(MAX_MIN, Math.max(0, Math.ceil((etaAt - nowMs) / 60_000)));
   const code = asCode(row.errorCode);
+  const receipt = parseReceiptJson(row.receiptJson);
   const status =
     ctx.simulateDelivery === true
       ? deliveryStatus(row.status, startMs, ctx.etaMin, nowMs)
@@ -101,6 +103,7 @@ export function toOrderView(row: OrderRow, ctx: OrderViewContext, nowMs: number)
     dragonMood,
     ...(status === 'failed' && code !== null ? { errorCode: code } : {}),
     ...(row.txHash === null ? {} : { txHash: row.txHash }),
+    ...(receipt === undefined ? {} : { receipt }),
     ...(row.perOrderLimitAtQuote === null || row.periodCapAtQuote === null
       ? {}
       : {

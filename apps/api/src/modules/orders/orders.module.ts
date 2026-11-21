@@ -12,6 +12,7 @@ import { OrderApprovalEffects } from './order-approval-effects.service.js';
 import { OrderApprovalRequests } from './order-approval-request.service.js';
 import { OrderBootRecheck } from './order-boot-recheck.service.js';
 import { OrderIndexer } from './order-indexer.service.js';
+import { OrderReceipts } from './order-receipts.service.js';
 import { OrderSettler } from './order-settler.service.js';
 import { OrderConfirmService } from './order-confirm.service.js';
 import { OrderViews } from './order-views.service.js';
@@ -43,6 +44,7 @@ import { OrderSpend } from './order-spend.service.js';
     OrderRules,
     OrderQuoteService,
     OrderSettler,
+    OrderReceipts,
     OrderConfirmService,
     OrderBootRecheck,
     OrderIndexer,

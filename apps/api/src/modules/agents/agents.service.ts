@@ -77,6 +77,11 @@ export class AgentsService {
     };
   }
 
+  /** The dragon's ERC-8004 id by its row id (the receipt's ID card number), null when it has none. */
+  onchainAgentIdOf(agentRowId: string): string | null {
+    return this.repo.findById(agentRowId)?.onchainAgentId ?? null;
+  }
+
   /**
    * The wallet the payment path pays from. Before hatching wrote the wallet and
    * its owner, ordering is CHAIN_AGENT_LIMIT_UNSET (user-flow 4).

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { approvals, orders } from '../../db/schema/index.js';
-import { insertMerchant, insertUser } from '../../test/fixtures.js';
+import { fakeReceipts, insertMerchant, insertUser } from '../../test/fixtures.js';
 import type { ApprovalsService, OpenApprovalInput } from '../approvals/approvals.service.js';
 import { OrderBootRecheck } from './order-boot-recheck.service.js';
 import { OrderSettler } from './order-settler.service.js';
@@ -89,7 +89,7 @@ function setup(
   const settler = new OrderSettler(repo, fakeApprovals);
   const approvalRows = () => h.db.select().from(approvals).all();
   return {
-    svc: new OrderBootRecheck(payment, repo, settler),
+    svc: new OrderBootRecheck(payment, repo, settler, fakeReceipts(repo)),
     add,
     find,
     pay,
@@ -105,6 +105,7 @@ describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () =>
     t.add(1, 'submitting', { startedAt: 5, txHash: `0x${'cd'.repeat(32)}` });
     expect(await t.svc.run(99)).toEqual({ paid: 1, failed: 0, waiting: 0 });
     expect(t.find).toHaveBeenCalledWith(ref(1));
+    expect(t.read(1)?.receiptJson).toContain(`0x${'ab'.repeat(32)}`);
     expect(t.read(1)).toMatchObject({ status: 'paid', txHash: `0x${'ab'.repeat(32)}` });
     expect(t.pay).not.toHaveBeenCalled();
   });

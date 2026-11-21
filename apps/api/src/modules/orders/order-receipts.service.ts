@@ -1,0 +1,41 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { APP_CONFIG } from '../../config/config.module.js';
+import type { AppConfig } from '../../config/env.js';
+import { AgentsService } from '../agents/agents.service.js';
+import { buildReceiptJson } from './order-receipt.js';
+import { type OrderRow, OrdersRepository, type OrderStatus } from './orders.repository.js';
+
+/**
+ * Moves an order to paid and writes its receipt in the same UPDATE (confirm, boot recheck and
+ * the indexer all end here), so a paid order never lacks the checks it passed.
+ */
+@Injectable()
+export class OrderReceipts {
+  constructor(
+    private readonly repo: OrdersRepository,
+    private readonly agents: AgentsService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
+
+  /** Returns whether this call won the order into paid. */
+  markPaid(row: OrderRow, from: OrderStatus, txHash: string, nowMs: number): boolean {
+    let receiptJson: string | null;
+    try {
+      receiptJson = buildReceiptJson({
+        onchainAgentId: this.agents.onchainAgentIdOf(row.agentId),
+        txHash,
+        path: this.config.payment.path,
+        chain: this.config.chain,
+      });
+    } catch {
+      // A receipt that cannot be built must not hold back a payment that already happened.
+      receiptJson = null;
+    }
+    return this.repo.transition(
+      row.id,
+      from,
+      { status: 'paid', txHash, errorCode: null, ...(receiptJson === null ? {} : { receiptJson }) },
+      nowMs,
+    );
+  }
+}
