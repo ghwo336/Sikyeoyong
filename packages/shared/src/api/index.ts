@@ -100,6 +100,7 @@ export {
   type ApprovalList,
   type ApprovalView,
 } from './approvals.js';
+export { zLeakCompareView, type LeakCompareView } from './demo.js';
 export {
   zFreezeResult,
   zIdCardView,

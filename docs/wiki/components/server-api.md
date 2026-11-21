@@ -24,7 +24,7 @@ children: []
 
 ## 반드시 지킬 규칙 (MUST)
 - **모듈 하나 = 책임 하나.** 컨트롤러는 HTTP만, 서비스는 일, 저장소는 쿼리만. 다른 모듈은 `exports`한 서비스로만 부른다.
-- **라우트 네이밍**: 사용자 `/api/...`, 판매자 `/api/merchant/...`(2단계), 운영자 `/api/admin/...`, 데모 `/api/demo/...`(`DEMO_MODE`일 때만 모듈 등록). 복수 명사, kebab-case. 동작은 하위 경로 동사 (`POST /api/orders/:id/cancel`).
+- **라우트 네이밍**: 사용자 `/api/...`, 판매자 `/api/merchant/...`(2단계), 운영자 `/api/admin/...`, 데모 `/api/demo/...`(모듈은 늘 등록하고, `DEMO_MODE`가 꺼져 있으면 서비스가 404 `NOT_FOUND`를 낸다). 복수 명사, kebab-case. 동작은 하위 경로 동사 (`POST /api/orders/:id/cancel`).
 - **검증**: 모든 입력(body, query, params)을 공유 zod 스키마 파이프로 검증. 실패는 400.
 - **에러 형식** (모든 에러 동일, 예외 필터 하나가 만든다):
   ```json
