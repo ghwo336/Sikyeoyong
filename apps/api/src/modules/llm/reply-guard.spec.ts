@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { Logger } from '@nestjs/common';
-import { SCOPE_LINE } from '@sikyeoyong/shared';
+import { REPLY_JUDGE_MAX_OUTPUT_TOKENS, SCOPE_LINE } from '@sikyeoyong/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DailyCapProvider } from './daily-cap-provider.js';
 import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
@@ -77,7 +77,7 @@ describe('LlmReplyJudge (D-35 layer 2)', () => {
     const req = m.requests[0];
     expect(req?.tools).toEqual([]);
     expect(req?.system).toBe(JUDGE_SYSTEM);
-    expect(req?.maxTokens).toBeLessThanOrEqual(64);
+    expect(req?.maxTokens).toBe(REPLY_JUDGE_MAX_OUTPUT_TOKENS);
     expect(req?.messages).toHaveLength(1);
     const content = req?.messages[0]?.content;
     expect(typeof content).toBe('string');

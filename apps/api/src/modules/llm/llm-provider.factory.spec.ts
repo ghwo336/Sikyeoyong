@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
-import { AppError } from '@sikyeoyong/shared';
+import { AppError, REPLY_JUDGE_MAX_OUTPUT_TOKENS } from '@sikyeoyong/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { openDb } from '../../db/client.js';
@@ -9,8 +9,12 @@ import { DB } from '../../db/db.module.js';
 import { loadConfig } from '../../config/env.js';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { DailyCapProvider } from './daily-cap-provider.js';
-import { OpenAiProvider } from './openai-provider.js';
-import { createLlmProvider, defaultMessagesClient } from './llm-provider.factory.js';
+import { type ChatClient, OpenAiProvider } from './openai-provider.js';
+import {
+  createLlmProvider,
+  createReplyGuard,
+  defaultMessagesClient,
+} from './llm-provider.factory.js';
 import { ReplayProvider, TIRED_LINE } from './replay-provider.js';
 import { LLM_PROVIDER } from './llm-provider.js';
 import { LlmModule } from './llm.module.js';
@@ -210,5 +214,68 @@ describe('createLlmProvider with LLM_PROVIDER=openai (D-30)', () => {
       code: 'INTERNAL',
       detail: { variables: ['OPENAI_API_KEY'] },
     });
+  });
+});
+
+describe('createReplyGuard (D-35)', () => {
+  const GOOD = '국밥 어때용?';
+
+  it('Claude judge: guard model, no effort setting, room for the answer', async () => {
+    const stream = vi.fn((_params: unknown) => ({
+      on: () => undefined,
+      finalMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'text', text: 'PASS' }],
+          stop_reason: 'end_turn',
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }),
+    }));
+    const config = loadConfig({
+      LLM_MODEL: 'big',
+      LLM_GUARD_MODEL: 'small',
+      ANTHROPIC_API_KEY: 'k',
+    });
+    const guard = createReplyGuard(
+      config,
+      createLlmProvider(config),
+      () => ({ messages: { stream } }) as unknown as MessagesClient,
+    );
+    expect(await guard.vet(GOOD, 'u1')).toEqual({ ok: true });
+    const params = stream.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(params.model).toBe('small');
+    expect(params.max_tokens).toBe(REPLY_JUDGE_MAX_OUTPUT_TOKENS);
+    expect(params).not.toHaveProperty('output_config');
+    expect(params.tools).toEqual([]);
+  });
+
+  it('OpenAI judge: lowest supported reasoning effort and room past the thinking tokens', async () => {
+    const create = vi.fn((_body: unknown) =>
+      Promise.resolve(
+        (async function* () {
+          await Promise.resolve();
+          yield {
+            choices: [{ delta: { content: 'PASS' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 1, completion_tokens: 1 },
+          };
+        })(),
+      ),
+    );
+    const config = loadConfig({ LLM_PROVIDER: 'openai', LLM_MODEL: 'big', OPENAI_API_KEY: 'k' });
+    const guard = createReplyGuard(
+      config,
+      createLlmProvider(config),
+      undefined,
+      () => ({ chat: { completions: { create } } }) as unknown as ChatClient,
+    );
+    expect(await guard.vet(GOOD, 'u1')).toEqual({ ok: true });
+    const body = create.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(body.reasoning_effort).toBe('low');
+    expect(body.max_completion_tokens).toBe(REPLY_JUDGE_MAX_OUTPUT_TOKENS);
+  });
+
+  it('replay mode judges nothing: rules only', async () => {
+    const config = loadConfig({ LLM_MODE: 'replay' });
+    const guard = createReplyGuard(config, createLlmProvider(config));
+    expect(await guard.vet(GOOD)).toEqual({ ok: true });
   });
 });

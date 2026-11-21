@@ -78,7 +78,7 @@ export function createReplyGuard(
   const apiKey = openai ? config.secrets.openaiApiKey : config.secrets.anthropicApiKey;
   if (model === undefined || apiKey === undefined) return new ReplyGuard(null);
   const provider: LlmProvider = openai
-    ? new OpenAiProvider(makeChatClient(apiKey), { model })
+    ? new OpenAiProvider(makeChatClient(apiKey), { model, effort: 'low' })
     : new AnthropicProvider(makeClient(apiKey), { model });
   const budget = chat instanceof DailyCapProvider ? chat : null;
   return new ReplyGuard(new LlmReplyJudge(provider, budget));

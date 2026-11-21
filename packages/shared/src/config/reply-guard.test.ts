@@ -13,7 +13,7 @@ describe('reply guard config (D-35)', () => {
     expect(REPLY_MAX_CHARS).toBeLessThanOrEqual(300);
     expect(REPLY_MAX_OUTPUT_TOKENS).toBeLessThanOrEqual(4096);
     expect(REPLY_MAX_OUTPUT_TOKENS).toBeGreaterThanOrEqual(1024);
-    expect(REPLY_JUDGE_MAX_OUTPUT_TOKENS).toBeLessThanOrEqual(64);
+    expect(REPLY_JUDGE_MAX_OUTPUT_TOKENS).toBeGreaterThanOrEqual(256);
     expect(REPLY_JUDGE_TIMEOUT_MS).toBeLessThanOrEqual(10_000);
   });
   it('the scope line is short, in the dragon tone and has no dash', () => {

@@ -19,5 +19,5 @@ export const SCOPE_LINE = '저는 배달만 도와드릴 수 있어용. 뭐 먹�
 
 /** The topic judge must answer within this, or the reply is blocked (fail closed). */
 export const REPLY_JUDGE_TIMEOUT_MS = 5_000;
-/** The judge answers one word. */
-export const REPLY_JUDGE_MAX_OUTPUT_TOKENS = 16;
+/** The judge answers one word, but a reasoning model spends tokens thinking first (OpenAI), so leave room. */
+export const REPLY_JUDGE_MAX_OUTPUT_TOKENS = 256;
