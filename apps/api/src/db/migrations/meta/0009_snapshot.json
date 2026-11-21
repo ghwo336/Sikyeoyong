@@ -53,10 +53,7 @@
       "indexes": {
         "agent_limit_history_agent_idx": {
           "name": "agent_limit_history_agent_idx",
-          "columns": [
-            "agent_id",
-            "created_at"
-          ],
+          "columns": ["agent_id", "created_at"],
           "isUnique": false
         }
       },
@@ -64,13 +61,9 @@
         "agent_limit_history_agent_id_agents_id_fk": {
           "name": "agent_limit_history_agent_id_agents_id_fk",
           "tableFrom": "agent_limit_history",
-          "columnsFrom": [
-            "agent_id"
-          ],
+          "columnsFrom": ["agent_id"],
           "tableTo": "agents",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -184,16 +177,12 @@
       "indexes": {
         "agents_user_id_unique": {
           "name": "agents_user_id_unique",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": true
         },
         "agents_wallet_address_unique": {
           "name": "agents_wallet_address_unique",
-          "columns": [
-            "wallet_address"
-          ],
+          "columns": ["wallet_address"],
           "isUnique": true
         }
       },
@@ -201,13 +190,9 @@
         "agents_user_id_users_id_fk": {
           "name": "agents_user_id_users_id_fk",
           "tableFrom": "agents",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -267,36 +252,25 @@
         "allowed_merchants_user_id_users_id_fk": {
           "name": "allowed_merchants_user_id_users_id_fk",
           "tableFrom": "allowed_merchants",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "allowed_merchants_merchant_id_merchants_id_fk": {
           "name": "allowed_merchants_merchant_id_merchants_id_fk",
           "tableFrom": "allowed_merchants",
-          "columnsFrom": [
-            "merchant_id"
-          ],
+          "columnsFrom": ["merchant_id"],
           "tableTo": "merchants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {
         "allowed_merchants_user_id_merchant_id_pk": {
-          "columns": [
-            "user_id",
-            "merchant_id"
-          ],
+          "columns": ["user_id", "merchant_id"],
           "name": "allowed_merchants_user_id_merchant_id_pk"
         }
       },
@@ -375,17 +349,12 @@
       "indexes": {
         "approvals_user_status_idx": {
           "name": "approvals_user_status_idx",
-          "columns": [
-            "user_id",
-            "status"
-          ],
+          "columns": ["user_id", "status"],
           "isUnique": false
         },
         "approvals_pending_order_uq": {
           "name": "approvals_pending_order_uq",
-          "columns": [
-            "order_id"
-          ],
+          "columns": ["order_id"],
           "where": "\"approvals\".\"status\" = 'pending'",
           "isUnique": true
         }
@@ -394,39 +363,27 @@
         "approvals_user_id_users_id_fk": {
           "name": "approvals_user_id_users_id_fk",
           "tableFrom": "approvals",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "approvals_agent_id_agents_id_fk": {
           "name": "approvals_agent_id_agents_id_fk",
           "tableFrom": "approvals",
-          "columnsFrom": [
-            "agent_id"
-          ],
+          "columnsFrom": ["agent_id"],
           "tableTo": "agents",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "approvals_order_id_orders_id_fk": {
           "name": "approvals_order_id_orders_id_fk",
           "tableFrom": "approvals",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -500,25 +457,17 @@
       "indexes": {
         "chat_messages_user_created_idx": {
           "name": "chat_messages_user_created_idx",
-          "columns": [
-            "user_id",
-            "created_at"
-          ],
+          "columns": ["user_id", "created_at"],
           "isUnique": false
         },
         "chat_messages_client_id_uq": {
           "name": "chat_messages_client_id_uq",
-          "columns": [
-            "user_id",
-            "client_message_id"
-          ],
+          "columns": ["user_id", "client_message_id"],
           "isUnique": true
         },
         "chat_messages_reply_to_uq": {
           "name": "chat_messages_reply_to_uq",
-          "columns": [
-            "reply_to_id"
-          ],
+          "columns": ["reply_to_id"],
           "isUnique": true
         }
       },
@@ -526,13 +475,9 @@
         "chat_messages_user_id_users_id_fk": {
           "name": "chat_messages_user_id_users_id_fk",
           "tableFrom": "chat_messages",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -576,13 +521,9 @@
         "identity_checks_user_id_users_id_fk": {
           "name": "identity_checks_user_id_users_id_fk",
           "tableFrom": "identity_checks",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -655,9 +596,7 @@
       "indexes": {
         "menus_merchant_id_idx": {
           "name": "menus_merchant_id_idx",
-          "columns": [
-            "merchant_id"
-          ],
+          "columns": ["merchant_id"],
           "isUnique": false
         }
       },
@@ -665,13 +604,9 @@
         "menus_merchant_id_merchants_id_fk": {
           "name": "menus_merchant_id_merchants_id_fk",
           "tableFrom": "menus",
-          "columnsFrom": [
-            "merchant_id"
-          ],
+          "columnsFrom": ["merchant_id"],
           "tableTo": "merchants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -794,16 +729,12 @@
       "indexes": {
         "merchants_onchain_id_unique": {
           "name": "merchants_onchain_id_unique",
-          "columns": [
-            "onchain_id"
-          ],
+          "columns": ["onchain_id"],
           "isUnique": true
         },
         "merchants_payout_address_unique": {
           "name": "merchants_payout_address_unique",
-          "columns": [
-            "payout_address"
-          ],
+          "columns": ["payout_address"],
           "isUnique": true
         }
       },
@@ -873,11 +804,7 @@
       "indexes": {
         "nag_events_user_month_level_uq": {
           "name": "nag_events_user_month_level_uq",
-          "columns": [
-            "user_id",
-            "month_kst",
-            "level"
-          ],
+          "columns": ["user_id", "month_kst", "level"],
           "isUnique": true
         }
       },
@@ -885,13 +812,9 @@
         "nag_events_user_id_users_id_fk": {
           "name": "nag_events_user_id_users_id_fk",
           "tableFrom": "nag_events",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -962,10 +885,7 @@
       "indexes": {
         "oauth_accounts_provider_user_uq": {
           "name": "oauth_accounts_provider_user_uq",
-          "columns": [
-            "provider",
-            "provider_user_id"
-          ],
+          "columns": ["provider", "provider_user_id"],
           "isUnique": true
         }
       },
@@ -973,13 +893,9 @@
         "oauth_accounts_user_id_users_id_fk": {
           "name": "oauth_accounts_user_id_users_id_fk",
           "tableFrom": "oauth_accounts",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1057,17 +973,12 @@
       "indexes": {
         "order_events_tx_log_uq": {
           "name": "order_events_tx_log_uq",
-          "columns": [
-            "tx_hash",
-            "log_index"
-          ],
+          "columns": ["tx_hash", "log_index"],
           "isUnique": true
         },
         "order_events_order_idx": {
           "name": "order_events_order_idx",
-          "columns": [
-            "order_id"
-          ],
+          "columns": ["order_id"],
           "isUnique": false
         }
       },
@@ -1075,13 +986,9 @@
         "order_events_order_id_orders_id_fk": {
           "name": "order_events_order_id_orders_id_fk",
           "tableFrom": "order_events",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1132,26 +1039,18 @@
         "order_ratings_order_id_orders_id_fk": {
           "name": "order_ratings_order_id_orders_id_fk",
           "tableFrom": "order_ratings",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "order_ratings_user_id_users_id_fk": {
           "name": "order_ratings_user_id_users_id_fk",
           "tableFrom": "order_ratings",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1313,32 +1212,22 @@
       "indexes": {
         "orders_order_ref_unique": {
           "name": "orders_order_ref_unique",
-          "columns": [
-            "order_ref"
-          ],
+          "columns": ["order_ref"],
           "isUnique": true
         },
         "orders_user_created_idx": {
           "name": "orders_user_created_idx",
-          "columns": [
-            "user_id",
-            "created_at"
-          ],
+          "columns": ["user_id", "created_at"],
           "isUnique": false
         },
         "orders_status_idx": {
           "name": "orders_status_idx",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         },
         "orders_user_client_order_uq": {
           "name": "orders_user_client_order_uq",
-          "columns": [
-            "user_id",
-            "client_order_id"
-          ],
+          "columns": ["user_id", "client_order_id"],
           "isUnique": true
         }
       },
@@ -1346,39 +1235,27 @@
         "orders_user_id_users_id_fk": {
           "name": "orders_user_id_users_id_fk",
           "tableFrom": "orders",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "orders_agent_id_agents_id_fk": {
           "name": "orders_agent_id_agents_id_fk",
           "tableFrom": "orders",
-          "columnsFrom": [
-            "agent_id"
-          ],
+          "columnsFrom": ["agent_id"],
           "tableTo": "agents",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "orders_merchant_id_merchants_id_fk": {
           "name": "orders_merchant_id_merchants_id_fk",
           "tableFrom": "orders",
-          "columnsFrom": [
-            "merchant_id"
-          ],
+          "columnsFrom": ["merchant_id"],
           "tableTo": "merchants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1445,16 +1322,12 @@
       "indexes": {
         "owner_allowance_user_idx": {
           "name": "owner_allowance_user_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "owner_allowance_trial_uq": {
           "name": "owner_allowance_trial_uq",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "where": "\"owner_allowance_entries\".\"kind\" = 'trial'",
           "isUnique": true
         }
@@ -1463,13 +1336,9 @@
         "owner_allowance_entries_user_id_users_id_fk": {
           "name": "owner_allowance_entries_user_id_users_id_fk",
           "tableFrom": "owner_allowance_entries",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1526,9 +1395,7 @@
       "indexes": {
         "pouchi_accounts_user_id_unique": {
           "name": "pouchi_accounts_user_id_unique",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": true
         }
       },
@@ -1536,13 +1403,9 @@
         "pouchi_accounts_user_id_users_id_fk": {
           "name": "pouchi_accounts_user_id_users_id_fk",
           "tableFrom": "pouchi_accounts",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1593,9 +1456,7 @@
       "indexes": {
         "sessions_user_id_idx": {
           "name": "sessions_user_id_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -1603,13 +1464,9 @@
         "sessions_user_id_users_id_fk": {
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }

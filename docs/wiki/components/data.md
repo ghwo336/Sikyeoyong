@@ -22,7 +22,7 @@ children: []
 - **시간**: `integer` unix ms (UTC). 표시 변환은 앱. 예외: 체인 `resetAt`은 unix 초 그대로 받아 변환한다. 개인 예산 달은 `month_kst` 문자열(`2026-12`).
 - **CHECK 도우미**: 금액 칸은 `schema/checks.ts`의 `aokrwCheck`, 상태 같은 enum 칸은 `enumCheck`(코드 상수만 받아 DDL에 그대로 넣는다)로 DB에서도 막는다.
 - **ID**: 내부 ID는 `text` UUID v7. `orderRef`(bytes32 hex)는 별도 컬럼 `order_ref`(유니크).
-- **마이그레이션**: `drizzle-kit`으로 생성(`pnpm --filter @sikyeoyong/api db:generate`), 커밋. 적용은 `pnpm db:migrate`. 스키마는 `apps/api/src/db/schema/`, SQL은 `apps/api/src/db/migrations/`(빌드 때 dist로 복사).
+- **마이그레이션**: `drizzle-kit`으로 생성(`pnpm --filter @sikyeoyong/api db:generate`), 커밋. 적용은 `pnpm db:migrate`. 서버는 켤 때 폴더의 마이그레이션이 모두 적용됐는지 본다(`db/migration-check.ts`, `DbModule`): 개발과 테스트는 밀린 것을 자동으로 적용하고 로그에 남기고, production은 밀린 이름과 `pnpm db:migrate`를 알리며 켜지지 않는다(운영 DB 스키마는 켜는 일의 부작용이 아니다, 2026-11-22 QA: 0017이 밀려 모든 길이 500). 스키마는 `apps/api/src/db/schema/`, SQL은 `apps/api/src/db/migrations/`(빌드 때 dist로 복사).
 - **연결**: `openDb`가 WAL, `foreign_keys=ON`, busy_timeout 5000ms를 켠다. 테스트는 `:memory:`. `DATABASE_URL`의 상대 경로는 실행 위치 기준이라 pnpm으로 돌리면 `apps/api/data/`에 생긴다. Postgres로 옮기면 금액 칸은 `numeric(78,0)`이 되고 SQLite용 GLOB CHECK는 지운다. 금액 칸에는 DB에서도 CHECK(숫자만, 앞자리 0 없음, 78자리 이하)를 건다.
 - **시드**: 진입점 `apps/api/src/db/seed.ts`(`pnpm db:seed`), 마이그레이션을 먼저 적용하고 한 트랜잭션으로 적재. 규칙은 merchants.md.
 - 수동으로 DB를 고치지 않는다. 되돌릴 수 없는 마이그레이션은 PR에 표시.
