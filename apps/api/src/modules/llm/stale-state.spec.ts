@@ -21,6 +21,11 @@ describe('stripStaleState', () => {
       '주문은 카드 버튼을 누르면 돼용. 마루국밥 돼지국밥이에용.',
       '출발하면 알려 줄게용.',
       '결제 전에 한 번 더 볼까용?',
+      // These match the status patterns, so only the offer rule keeps them.
+      '주문 접수할까용?',
+      '배달 중이면 알려드릴까용?',
+      '결제됐는지 확인해 볼까용?',
+      '승인 기다리는 동안 다른 메뉴 볼까용?',
     ]) {
       expect(stripStaleState(s), s).toBe(s);
     }
