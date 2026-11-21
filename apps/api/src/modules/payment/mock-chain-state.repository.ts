@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { inArray, sql } from 'drizzle-orm';
 import type { Hex } from '@sikyeoyong/shared';
 import type { DbHandle } from '../../db/client.js';
@@ -18,7 +18,22 @@ const PAID = ['paid', 'preparing', 'delivering', 'delivered', 'refunded'] as con
 export class MockChainStateRepository {
   constructor(@Inject(DB) private readonly handle: DbHandle) {}
 
+  private readonly log = new Logger(MockChainStateRepository.name);
+
+  /** Empty when the tables are not there yet (a fresh database before db:migrate). */
   snapshot(): MockChainSnapshot {
+    try {
+      return this.read();
+    } catch (e) {
+      if (e instanceof Error && /no such table/i.test(e.message)) {
+        this.log.warn('mock chain restore skipped: tables are missing. Run pnpm db:migrate.');
+        return { wallets: [], paid: [] };
+      }
+      throw e;
+    }
+  }
+
+  private read(): MockChainSnapshot {
     const db = this.handle.db;
     const rows = db
       .select()

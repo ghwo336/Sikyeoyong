@@ -1,11 +1,13 @@
 import { getPolicy, type Hex, okrwToAokrw } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, merchants, orders, ownerAllowanceEntries, users } from '../../db/schema/index.js';
 import { MockChainStateRepository } from './mock-chain-state.repository.js';
 import { MockPaymentProvider } from './mock-payment.provider.js';
+import { createPaymentProvider } from './payment.service.js';
 
 const won = (n: bigint) => okrwToAokrw(n);
 const T0 = Date.parse('2026-12-01T03:00:00.000Z');
@@ -103,6 +105,12 @@ const probe = (agent: Awaited<ReturnType<typeof hatch>>, amount: bigint, ref = 9
 });
 
 describe('mock chain after a restart (QA 5)', () => {
+  it('boots empty on a database that was never migrated', () => {
+    const h = openDb(':memory:');
+    handles.push(h);
+    expect(new MockChainStateRepository(h).snapshot()).toEqual({ wallets: [], paid: [] });
+  });
+
   it('a fresh provider on the same DB still pays and takes new limits', async () => {
     const h = seed();
     const wallet = await hatch(h);
@@ -165,5 +173,14 @@ describe('mock chain after a restart (QA 5)', () => {
     expect(await boot(h).preflight(probe(wallet, won(1_000n)))).toMatchObject({
       error: { code: 'CHAIN_AGENT_LIMIT_UNSET' },
     });
+  });
+
+  it('never restores from the database when the process is production', () => {
+    const snapshot = vi.fn(() => ({ wallets: [], paid: [] }));
+    const dev = loadConfig({ PAYMENT_PATH: 'mock' });
+    createPaymentProvider({ ...dev, nodeEnv: 'production' }, undefined, snapshot);
+    expect(snapshot).not.toHaveBeenCalled();
+    createPaymentProvider(dev, undefined, snapshot);
+    expect(snapshot).toHaveBeenCalledTimes(1);
   });
 });
