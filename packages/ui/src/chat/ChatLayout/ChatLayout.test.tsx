@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ChatLayout } from './ChatLayout';
 import styles from './ChatLayout.module.css';
@@ -25,6 +25,32 @@ describe('ChatLayout (ChatLayout.md 테스트 기준)', () => {
     ]);
     // The messages are not wrapped: ChatThread takes the free height itself.
     expect(root.children[2]?.tagName).toBe('I');
+  });
+
+  it('lifts the input band above the keyboard by the covered height (mock visualViewport)', () => {
+    const listeners = new Set<() => void>();
+    const vv = {
+      height: window.innerHeight,
+      offsetTop: 0,
+      addEventListener: (_t: string, fn: () => void) => listeners.add(fn),
+      removeEventListener: (_t: string, fn: () => void) => listeners.delete(fn),
+    };
+    Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
+    const { container } = render(
+      <ChatLayout footer={<i>input</i>}>
+        <i>thread</i>
+      </ChatLayout>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.paddingBottom).toBe('');
+    act(() => {
+      vv.height = window.innerHeight - 300;
+      listeners.forEach((fn) => {
+        fn();
+      });
+    });
+    expect(root.style.paddingBottom).toBe('300px');
+    Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true });
   });
 
   it.each([undefined, null])('draws no band for a missing header or top (%s)', (empty) => {

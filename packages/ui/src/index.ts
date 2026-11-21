@@ -22,6 +22,7 @@ export * from './base/StepProgress';
 export * from './base/Switch';
 export * from './base/TextField';
 export * from './base/TopBar';
+export * from './base/useKeyboardInset';
 export * from './base/useSubmitLock';
 export * from './chat/ChatHeader';
 export * from './chat/ChatInput';

@@ -32,6 +32,7 @@ Main, LimitChat
 - 시안 여백: 위 줄 16 20 12, 예산 0 20, 입력칸 10 16 24(`size.inputBandTop`)에 바탕 `--theme-bg`(종별 화면 바탕, D-32. 숲이면 `ground`와 같다). 전체는 남은 높이를 채우는 세로 줄
 
 ## 메모
+- 2026-11-21 D-23: 화면 키보드가 올라오면 `useKeyboardInset`(base)이 준 높이만큼 아래 여백을 줘 입력칸 띠가 키보드 위에 남는다 (iOS는 레이아웃 높이를 줄이지 않는다). 키보드가 닫히면 여백 없음. 테스트는 모의 `visualViewport`.
 - ChatInput.md의 "화면 아래 띠(여백 10 16 24)"를 여기서 그린다 (2026-11-19, web.md "ui에 없는 것" 해결).
 - 대화 띠 여백(Main 20 20 12)은 ChatThread가 가진다. LimitChat 시안은 16 20 12라 다르다 (LimitChat 조립 때 정한다).
 - 확인 시트(`OrderConfirmSheet`)는 띠가 아니라 화면 위에 뜨므로 이 배치 밖에 둔다.
