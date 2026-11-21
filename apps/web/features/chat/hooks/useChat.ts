@@ -176,6 +176,11 @@ export function useChat(
   return {
     openSession,
     thread: thread.data,
+    /** The history could not be read: the screen says so with a retry, never an empty screen. */
+    historyFailed: thread.isError && thread.data === undefined,
+    reloadHistory: () => {
+      void thread.refetch();
+    },
     loading: thread.isPending,
     sending: send.isPending,
     /** Sent and nothing of the answer on screen yet: the dragon is writing (typing dots). */

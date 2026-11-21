@@ -9,6 +9,7 @@ import {
   QuickReplies,
   TypingIndicator,
   RecommendationList,
+  RetryLine,
   UserBubble,
 } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
@@ -155,6 +156,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
             value={draft}
             onChange={setDraft}
             onSend={(text) => {
+              // No thread to put the bubble in yet: keep the draft, the retry line is on screen.
+              if (chat.historyFailed) return;
               chat.send(text);
               setDraft('');
             }}
@@ -179,6 +182,9 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
           // A card that arrives for the owner's pick scrolls into view like a sent message.
           followKey={`${lastSent(entries) ?? ''}|${approvals.map((a) => a.id).join(',')}`}
         >
+          {chat.historyFailed ? (
+            <RetryLine onRetry={chat.reloadHistory}>대화를 못 불러왔어요</RetryLine>
+          ) : null}
           {ready ? <PastConversations sessions={past} /> : null}
           {(ready ? threadRows(entries) : []).map(({ entry: e, cards, last }) => {
             switch (e.kind) {

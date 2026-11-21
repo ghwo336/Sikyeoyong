@@ -12,12 +12,14 @@ vi.mock('next/navigation', () => ({
 }));
 
 const getChatHistory = vi.fn<() => Promise<ChatHistory>>();
+const sendChatMessage = vi.fn<() => Promise<unknown[]>>();
 const listOrders = vi.fn<() => ReturnType<typeof mockApi.listOrders>>();
 vi.mock('../../../lib/api', () => ({
   api: {
     ...mockApi,
     getChatHistory: () => getChatHistory(),
     listOrders: () => listOrders(),
+    sendChatMessage: () => sendChatMessage(),
     getOpenQuote: () => Promise.resolve({}),
   },
 }));
@@ -59,7 +61,9 @@ const yesterday: ChatHistory = {
 };
 
 function setup() {
-  const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   render(
     <QueryClientProvider client={qc}>
       <ChatContainer />
@@ -139,5 +143,45 @@ describe('ChatContainer sessions (D-34)', () => {
     await waitFor(() => {
       expect(log.scrollTop).toBe(log.children.length * 100);
     });
+  });
+});
+
+describe('ChatContainer failures', () => {
+  beforeEach(() => {
+    resetMockSession('hatched');
+    sendChatMessage.mockReset();
+  });
+
+  it('a failed send keeps the bubble, marks it failed and sends again with the button', async () => {
+    getChatHistory.mockResolvedValue({ startedAt: THEN, nextCursor: null, messages: [] });
+    listOrders.mockResolvedValue({ orders: [] });
+    sendChatMessage.mockRejectedValueOnce(new Error('network'));
+    setup();
+    await screen.findByText(/시켜 줄까용\?$/);
+    await userEvent.type(screen.getByRole('textbox', { name: '용이에게 말하기' }), '국밥{Enter}');
+    expect(await screen.findByText('국밥')).toBeInTheDocument();
+    expect(await screen.findByText('못 보냈어요')).toBeInTheDocument();
+    sendChatMessage.mockResolvedValueOnce([{ type: 'done', messageId: 'r' }]);
+    await userEvent.click(screen.getByRole('button', { name: '다시 보내기' }));
+    await waitFor(() => {
+      expect(screen.queryByText('못 보냈어요')).toBeNull();
+    });
+    expect(sendChatMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('a failed history shows a retry line instead of an empty screen, and retry loads it', async () => {
+    getChatHistory.mockRejectedValueOnce(new Error('500'));
+    listOrders.mockResolvedValue({ orders: [] });
+    setup();
+    expect(await screen.findByText('대화를 못 불러왔어요')).toBeInTheDocument();
+    // Sending now has no thread to land in: nothing is lost, the draft stays.
+    const box = screen.getByRole('textbox', { name: '용이에게 말하기' });
+    await userEvent.type(box, '국밥{Enter}');
+    expect(sendChatMessage).not.toHaveBeenCalled();
+    expect(box).toHaveValue('국밥');
+    getChatHistory.mockResolvedValue({ startedAt: THEN, nextCursor: null, messages: [] });
+    await userEvent.click(screen.getByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByText(/시켜 줄까용\?$/)).toBeInTheDocument();
+    expect(screen.queryByText('대화를 못 불러왔어요')).toBeNull();
   });
 });
