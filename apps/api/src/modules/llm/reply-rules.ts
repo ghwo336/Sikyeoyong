@@ -37,14 +37,40 @@ function lastLetters(sentence: string): string {
 
 const HANGUL = /[가-힣]/;
 
+/**
+ * What the tone rule reads: quoted words, parentheses and list numbers are not the dragon's
+ * sentence ends, and a "." between digits is a decimal ("1.2km", "4.5점"), so none of them may
+ * cut or end a sentence.
+ */
+function toneText(text: string): string {
+  return text
+    .replace(/"[^"\n]*"|“[^”\n]*”|‘[^’\n]*’|'[^'\n]*'|「[^」\n]*」/g, ' ')
+    .replace(/\([^)\n]*\)|（[^）\n]*）/g, ' ')
+    .replace(/(\d)\.(?=\d)/g, '$1,')
+    .replace(/(^|\s)\d{1,2}[.)]\s*/g, '$1');
+}
+
+/** Endings of a spoken, non-용 sentence. A short fragment that ends so is not a name or a price. */
+const SPOKEN_END = /[다요어니까래네해죠줘돼봐야]$/;
+const SUBJECT_END = /[은는을를]$/;
+
+/** A price line ("김치찜 9,000원") or a bare dish list ("국밥 칼국수"): no sentence to judge. */
+function isLabelLine(s: string): boolean {
+  if (SPOKEN_END.test(s)) return false;
+  const tokens = s.split(/\s+/);
+  if (/\d/.test(s)) return tokens.length <= 4;
+  return tokens.length <= 2 && !tokens.some((t) => SUBJECT_END.test(t));
+}
+
 /** True when every Korean sentence ends in the 용 tone (or is a bare 주인님 call or a tiny word). */
 function toneOk(text: string): boolean {
   if (!HANGUL.test(text)) return false;
-  for (const raw of text.split(SPLIT)) {
+  for (const raw of toneText(text).split(SPLIT)) {
     const s = lastLetters(raw);
     if (!HANGUL.test(s)) continue;
     if (Array.from(s.replace(/\s/g, '')).length <= 2) continue;
     if (s.endsWith('용') || s.endsWith('주인님')) continue;
+    if (isLabelLine(s)) continue;
     return false;
   }
   return true;
