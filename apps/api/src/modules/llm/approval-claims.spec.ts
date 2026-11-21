@@ -50,6 +50,18 @@ describe('stripApprovalClaims', () => {
     '승인 요청을 드렸어용.',
     '허락을 구했어용.',
     '승인이 왔어용.',
+    // Verify round 3: outcomes after a single 승인 (no second 승인 needed).
+    '승인됐어용',
+    '승인 완료!',
+    '승인 처리됐어용',
+    '주인님이 승인했어용',
+    '승인 확인했어용',
+    '승인 요청 했어용',
+    '승인 요청이 갔어용',
+    '승인 요청이 도착했어용',
+    '승인 요청이 전달됐어용',
+    '승인 요청 전송했어용',
+    '승인 요청 발송했어용',
   ])('drops %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: '', dropped: true });
   });
@@ -63,6 +75,14 @@ describe('stripApprovalClaims', () => {
     '허락이 필요해용.',
     '주인님께 물어볼게용.',
     '승인되면 알려드릴게용.',
+    '승인 받아 올게용.',
+    '승인 요청 보낼게용.',
+    '허락해 주실래용?',
+    '승인이 필요해용.',
+    '승인 완료되면 바로 시킬게용.',
+    '허락받으면 시킬게용.',
+    '승인 요청이 도착하면 알려드릴게용.',
+    '승인 요청 전달할게용.',
   ])('keeps %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: s, dropped: false });
   });

@@ -12,8 +12,12 @@
  * finished (past tense or a result). Intentions and questions ("요청해 볼게용", "보내 드릴까용?",
  * "승인되면 알려드릴게용") are not claims and stay.
  */
-const CLAIM =
-  /(승인|허락)[^.!?\n]*(보냈|요청했|요청드렸|드렸|구했|올렸|받았|받으셨|받아\s?왔|해\s?주셨|해\s?줬|하셨|주셨|승인됐|승인되었|허락됐|허락되었|돼서|완료됐|완료되었|완료했|통과|떨어졌|왔|나왔|났어|끝났)/;
+const CLAIM = new RegExp(
+  '(승인|허락)[^.!?\\n]*' +
+    '(보냈|했|드렸|구했|올렸|받았|받으셨|받아\\s?왔|주셨|해\\s?줬|됐|되었|' +
+    '완료(?!\\s?(되면|하면|되는|될|해\\s?주))|처리됐|떨어졌|왔|갔|나왔|났어|끝났|도착했|' +
+    '전달됐|전달했|전송됐|전송했|발송됐|발송했|통과됐|통과했)',
+);
 
 /** Sentences end at . ! ? or a line break; the terminator stays with its sentence. */
 const SENTENCE = /[^.!?\n]*[.!?\n]+[ \t]*|[^.!?\n]+$/g;
