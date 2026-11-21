@@ -89,6 +89,10 @@ children: []
 | 외부 글은 `<data>`, 닫는 태그 이스케이프 | 통과. `wrapData`가 `<`, `>`를 `<`, `>`로 바꾼다 | `merchant-handlers.spec.ts`, `tools/injection.spec.ts` |
 | 승인 요청 `message` | 틈 발견, 고침. 모델이 쓴 자유 글이 주인 승인 카드에 그대로 실렸다. 링크, 주소 모양, 코드, 태그, 긴 숫자가 있으면 글을 버린다 (`approval-message.ts`) | `approval-message.spec.ts` |
 
+출력 가드 (D-35, 모델이 속아도 화면에 나가지 않게): 용이의 말은 보이기 전에 서버가 두 겹으로 거른다. 규칙 검사(길이 300자, 코드와 목록 금지, 용체 말투, 호칭, D-17 말)와 작은 모델의 주제 판정(`LLM_GUARD_MODEL`, 도구 없음, 답 글만 봄). 실패, 시간 초과, 알 수 없는 답은 모두 막고 고정 한 줄로 바꾼다. 로그에는 이유 낱말만 남는다. 판정 토큰은 사용자별 하루 상한에 센다. 한 턴 출력 상한은 2048 토큰. 자세한 동작은 `agent-runtime.md` "답 가드". 구현: `llm/reply-guard.ts`, `reply-rules.ts`, `reply-judge.ts`.
+
+레드팀 회귀: `llm/harness/red-team.spec.ts`가 위 방어를 공격 사례 목록(`red-team-cases.ts`)으로 매번 확인한다 (CI, 키 없음). 실제 모델 실행은 아직 없다.
+
 남은 위험 (추론): 모델이 사용자에게 보이는 말로 엉뚱한 글을 쓰는 것은 출력 가드(길이, 코드 제거, 범위 밖 문구)가 막는다.
 
 ## 확장 지점
