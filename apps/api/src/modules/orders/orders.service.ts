@@ -8,10 +8,13 @@ import {
 } from './order-approval-request.service.js';
 import { OrderQuoteService, type QuoteOutcome, type QuoteRequest } from './order-quote.service.js';
 import { OrderSpend } from './order-spend.service.js';
+import { OrdersRepository, type OrderStatus } from './orders.repository.js';
 
 export { SPENT_STATUSES } from './order-spend.service.js';
 export type { QuoteOutcome, QuoteRequest } from './order-quote.service.js';
 export type { ApprovalRequest, ApprovalRequestOutcome } from './order-approval-request.service.js';
+
+const FINAL_STATUSES: readonly OrderStatus[] = ['delivered', 'failed', 'cancelled', 'refunded'];
 
 /**
  * What other modules may ask of orders (architecture.md: one exported service).
@@ -24,7 +27,18 @@ export class OrdersService {
     private readonly quotes: OrderQuoteService,
     private readonly approvalEffects: OrderApprovalEffects,
     private readonly approvalRequests: OrderApprovalRequests,
+    private readonly repo: OrdersRepository,
   ) {}
+
+  /**
+   * The user's newest order and whether its story is over (arrived, cancelled, failed or
+   * refunded). The chat module starts a new conversation after one (D-34).
+   */
+  latestOrderOutcome(userId: string): { createdAt: number; finished: boolean } | null {
+    const row = this.repo.latestFor(userId);
+    if (row === undefined) return null;
+    return { createdAt: row.createdAt, finished: FINAL_STATUSES.includes(row.status) };
+  }
 
   /** Personal budget spend in a KST calendar month (budget module, nag). */
   spentInMonthAokrw(userId: string, monthKst: string): bigint {

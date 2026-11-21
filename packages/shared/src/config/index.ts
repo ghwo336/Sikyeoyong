@@ -1,3 +1,4 @@
+export { CHAT_SESSION_IDLE_MS } from './chat-session.js';
 export {
   NETWORKS,
   explorerTxUrl,

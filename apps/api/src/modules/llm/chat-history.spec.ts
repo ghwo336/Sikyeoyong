@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { type ChatHistory, zChatHistory } from '@sikyeoyong/shared';
+import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp } from '../../app.setup.js';
@@ -112,6 +113,18 @@ describe('GET /api/chat/history', () => {
     const page = zChatHistory.parse(res.body);
     expect(page.messages).toEqual([]);
     expect(page.nextCursor).toBeNull();
+  });
+
+  it('names each message session (D-34) and leaves it out on rows from before sessions', async () => {
+    const { h, get } = await setup();
+    seedTurns(h, 'u1', 1);
+    h.db
+      .update(chatMessages)
+      .set({ sessionId: 's-old' })
+      .where(eq(chatMessages.id, 'u1-000'))
+      .run();
+    const page = zChatHistory.parse((await get('u1')).body);
+    expect(page.messages.map((m) => m.sessionId)).toEqual(['s-old', undefined]);
   });
 
   it('pages from newest toward older, oldest first within a page, without gaps or repeats', async () => {

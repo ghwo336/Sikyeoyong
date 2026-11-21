@@ -18,10 +18,13 @@ export const chatMessages = sqliteTable(
     clientMessageId: text('client_message_id'),
     /** Assistant rows: the user row this turn answers. */
     replyToId: text('reply_to_id'),
+    /** One meal's conversation (D-34). Null on rows from before sessions; each is its own past. */
+    sessionId: text('session_id'),
     createdAt: integer('created_at').notNull(),
   },
   (t) => [
     index('chat_messages_user_created_idx').on(t.userId, t.createdAt),
+    index('chat_messages_session_idx').on(t.userId, t.sessionId),
     uniqueIndex('chat_messages_client_id_uq').on(t.userId, t.clientMessageId),
     uniqueIndex('chat_messages_reply_to_uq').on(t.replyToId),
     enumCheck('chat_messages_role_check', t.role, CHAT_ROLES),

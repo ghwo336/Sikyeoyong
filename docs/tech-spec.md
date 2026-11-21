@@ -249,7 +249,7 @@ apps/api/src/
 | GET | `/wallet` | user | | `WalletView` (`api/wallet.ts`, 지갑 화면): `owner`는 주인 용돈 장부 합(음수면 0), `pocket`은 용이 지갑의 체인 잔액(지갑 전이면 0), `savedThisMonth`는 내 30일 한도(D-31, 예전 월 예산)에서 이번 달(KST) 쓴 돈을 뺀 값(0 아래로 안 감, Q-37). 용이 없으면 404 |
 | GET | `/demo/leak-compare` | user | | `LeakCompareView` (`api/demo.ts`, 키 유출 비교, 데모 5번, 9.3). `DEMO_MODE`가 꺼지면 404 `NOT_FOUND`. `perOrderLimit`은 내 건당 한도, `periodicCap`과 `periodicPeriodSec`은 정책의 30일 상한, `floatAtRisk`는 건당 한도 x `AGENT_FLOAT_MULTIPLIER` + `AGENT_GAS_SHARE_OKRW`(D-06, D-25), `pocket`은 용이 지갑의 지금 잔액. 읽기만 한다 (`demo` 모듈) |
 | POST | `/chat/messages` | user | `{ text, clientMessageId }` | SSE `ChatEvent` 스트림 |
-| GET | `/chat/history` | user | `?cursor` | `ChatHistory` (`{ startedAt, messages, nextCursor }`, `api/chat.ts`). 용의 말은 그 말을 만든 `ChatEvent` 목록으로 돌려준다 |
+| GET | `/chat/history` | user | `?cursor` | `ChatHistory` (`{ startedAt, messages, nextCursor }`, `api/chat.ts`). 용의 말은 그 말을 만든 `ChatEvent` 목록으로 돌려준다. 각 메시지에 `sessionId`(D-34 끼니 단위 대화, 세션 도입 전 행은 없음)가 있고 화면은 가장 새 세션과 다른 것을 접는다 |
 | GET | `/merchants` | user | `?category&verified` | `{ merchants: MerchantCard[] }` (`MerchantCard` = `{ id, name, category, tags, verified, openNow, etaMin }`, `api/merchants.ts`). 미인증·비활성 가게는 나오지 않는다. `verified`는 `true`만 받고 그 밖은 400. 2026-11-20 |
 | GET | `/merchants/:id` | user | | `{ merchant, menus }` (`menus`: `{ id, name, price(aokrw), tags, description, available }[]`). 숨긴 가게는 404 `NOT_FOUND` |
 | POST | `/orders/quote` | user | `{ merchantId, items: [{ menuId, qty }] }` | `{ amount, checks: RuleCheck[] }` |
@@ -290,7 +290,7 @@ apps/api/src/
 ### 3.3 에이전트 런타임 (llm 모듈)
 
 **루프**
-1. 사용자 메시지 저장 → 최근 대화 20턴 + 요약 + 시스템 프롬프트로 `LlmProvider.turn()` 호출.
+1. 사용자 메시지 저장 → 지금 세션(D-34)의 최근 대화 20턴 + 시스템 프롬프트로 `LlmProvider.turn()` 호출.
 2. 도구 호출이 오면 서버가 화이트리스트 핸들러 실행 → 결과를 다시 모델에 전달. 한 메시지당 도구 호출 최대 8회, `place_order`, `request_owner_approval`, `propose_limit_change`는 각각 최대 1회 (흐름 3처럼 주문이 승인 필요로 돌아온 뒤 승인 요청 1회는 된다).
 3. 텍스트 토큰은 `token` 이벤트로, 도구 결과 중 UI용은 전용 이벤트(`recommendations`, `order_receipt` 등)로 스트리밍.
 
@@ -549,7 +549,7 @@ score(merchant, menu) =
 | `indexer_cursors` | chain_id, contract (PK 둘), last_block(10진 문자열), updated_at | 인덱서가 마지막으로 반영한 블록. 재시작 때 다음 블록부터 읽고, 없으면 배포 블록 (마이그레이션 0014) |
 | `approvals` | id, user_id, agent_id, order_id(→ orders, 승인 대상 주문), reason, payload_json, status(`pending`/`approved`/`rejected`/`expired`), expires_at, decided_at | 인덱스(user_id, status), 유니크(order_id) where status=pending |
 | `allowed_merchants` | user_id, merchant_id, approved_at | PK(user_id, merchant_id) |
-| `chat_messages` | id, user_id, role, content_json(사용자 `{text}`, 용 `{events: ChatEvent[]}`), client_message_id(사용자 줄), reply_to_id(용 줄), created_at | 인덱스(user_id, created_at), 유니크(user_id, client_message_id), 유니크(reply_to_id). 마이그레이션 0002 |
+| `chat_messages` | id, user_id, role, content_json(사용자 `{text}`, 용 `{events: ChatEvent[]}`), client_message_id(사용자 줄), reply_to_id(용 줄), session_id(끼니 단위 대화, D-34, 도입 전 행은 null), created_at | 인덱스(user_id, created_at), 인덱스(user_id, session_id), 유니크(user_id, client_message_id), 유니크(reply_to_id). 마이그레이션 0002, 0017 |
 | `nag_events` | id, user_id, month_kst, level, spent, budget, created_at | 유니크(user_id, month_kst, level) |
 | `chain_cursor` | name(PK), last_block, updated_at | |
 | `policy_snapshots` | id, contract, policies_json, admin, fetched_at | 영수증 규칙 계산용 |

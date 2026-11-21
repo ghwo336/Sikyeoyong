@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   AppError,
   type AppErrorCode,
+  CHAT_SESSION_IDLE_MS,
   type ChatEvent,
   renderDragonLine,
   type SendChatMessageBody,
@@ -11,6 +12,7 @@ import {
 import { z } from 'zod';
 import { uuidv7 } from '../../common/ids.js';
 import { RateLimiter } from '../../common/rate-limit/rate-limiter.js';
+import { OrdersService } from '../orders/orders.service.js';
 import { approvalWaitEvents } from './approval-wait.js';
 import { ChatRepository } from './chat.repository.js';
 import { LLM_PROVIDER, type LlmProvider } from './llm-provider.js';
@@ -90,6 +92,7 @@ export class ChatService {
     private readonly handlers: LlmToolHandlers,
     private readonly repo: ChatRepository,
     private readonly limiter: RateLimiter,
+    private readonly orders: OrdersService,
   ) {}
 
   /** Checks and records the message before any byte is sent, so errors can still be HTTP errors. */
@@ -118,7 +121,8 @@ export class ChatService {
     if (!this.limiter.allow(`chat:${userId}`, CHAT_RATE, nowMs)) {
       throw new AppError('RATE_LIMITED', { reason: 'chat rate' });
     }
-    const history = this.history(userId);
+    const sessionId = this.sessionFor(userId, nowMs);
+    const history = this.history(userId, sessionId);
     const userRowId = uuidv7(nowMs);
     try {
       this.repo.insert({
@@ -128,6 +132,7 @@ export class ChatService {
         contentJson: JSON.stringify({ text: body.text }),
         clientMessageId: body.clientMessageId,
         replyToId: null,
+        sessionId,
         createdAt: nowMs,
       });
     } catch {
@@ -138,16 +143,34 @@ export class ChatService {
       // Taken in the same tick as begin() (the controller does not await between them).
       this.running.add(userId);
       try {
-        await this.run(userId, body.text, history, userRowId, emit, signal);
+        await this.run(userId, body.text, history, userRowId, sessionId, nowMs, emit, signal);
       } finally {
         this.running.delete(userId);
       }
     };
   }
 
-  /** The last turns as plain words, oldest first; unanswered or silent turns are skipped. */
-  private history(userId: string): Anthropic.MessageParam[] {
-    const rows = this.repo.recent(userId, HISTORY_TURNS * 2).reverse();
+  /**
+   * The session this message belongs to (D-34). A new one starts at the first message, when the
+   * last message is older than CHAT_SESSION_IDLE_MS, when the last message has no session (it
+   * is from before sessions), or when the user's newest order has finished and was placed
+   * during the current session (the meal is over).
+   */
+  private sessionFor(userId: string, nowMs: number): string {
+    const last = this.repo.last(userId);
+    if (last === undefined || last.sessionId === null) return uuidv7(nowMs);
+    if (nowMs - last.createdAt > CHAT_SESSION_IDLE_MS) return uuidv7(nowMs);
+    const order = this.orders.latestOrderOutcome(userId);
+    const start = this.repo.sessionStart(userId, last.sessionId);
+    if (order !== null && order.finished && start !== undefined && order.createdAt >= start) {
+      return uuidv7(nowMs);
+    }
+    return last.sessionId;
+  }
+
+  /** The current session's turns as plain words, oldest first; unanswered or silent turns are skipped. */
+  private history(userId: string, sessionId: string): Anthropic.MessageParam[] {
+    const rows = this.repo.inSession(userId, sessionId, HISTORY_TURNS * 2).reverse();
     const answers = new Map(rows.filter((r) => r.replyToId !== null).map((r) => [r.replyToId, r]));
     const out: Anthropic.MessageParam[] = [];
     for (const row of rows) {
@@ -172,6 +195,8 @@ export class ChatService {
     text: string,
     history: Anthropic.MessageParam[],
     userRowId: string,
+    sessionId: string,
+    nowMs: number,
     emit: (event: ChatEvent) => void,
     signal?: AbortSignal,
   ): Promise<void> {
@@ -260,7 +285,9 @@ export class ChatService {
         contentJson: JSON.stringify({ events: sent }),
         clientMessageId: null,
         replyToId: userRowId,
-        createdAt: Date.now(),
+        sessionId,
+        // Never before the question it answers, even when the caller's clock leads.
+        createdAt: Math.max(Date.now(), nowMs),
       });
     });
   }

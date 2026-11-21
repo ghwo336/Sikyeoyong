@@ -134,6 +134,17 @@ export class OrdersRepository {
       .all();
   }
 
+  /** The user's newest order of any status, or undefined. */
+  latestFor(userId: string): OrderRow | undefined {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(desc(orders.createdAt), desc(orders.id))
+      .limit(1)
+      .get();
+  }
+
   /** The user's orders at a store still open (waiting for the owner or quoted), newest first. */
   openAt(userId: string, merchantId: string): OrderRow[] {
     return this.handle.db

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, lt, or } from 'drizzle-orm';
+import { and, desc, eq, lt, min, or } from 'drizzle-orm';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { chatMessages } from '../../db/schema/index.js';
@@ -10,6 +10,8 @@ export interface ChatRow {
   readonly contentJson: string;
   readonly clientMessageId: string | null;
   readonly replyToId: string | null;
+  /** The meal's conversation (D-34); null on rows from before sessions. */
+  readonly sessionId: string | null;
   readonly createdAt: number;
 }
 
@@ -42,6 +44,33 @@ export class ChatRepository {
       .select(this.columns())
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId))
+      .orderBy(desc(chatMessages.createdAt), desc(chatMessages.id))
+      .limit(limit)
+      .all();
+  }
+
+  /** The user's newest message of any role, or undefined. */
+  last(userId: string): ChatRow | undefined {
+    return this.recent(userId, 1)[0];
+  }
+
+  /** When a session's first message was stored, or undefined for an unknown session. */
+  sessionStart(userId: string, sessionId: string): number | undefined {
+    return (
+      this.handle.db
+        .select({ at: min(chatMessages.createdAt) })
+        .from(chatMessages)
+        .where(and(eq(chatMessages.userId, userId), eq(chatMessages.sessionId, sessionId)))
+        .get()?.at ?? undefined
+    );
+  }
+
+  /** Newest first, only the rows of one session. */
+  inSession(userId: string, sessionId: string, limit: number): ChatRow[] {
+    return this.handle.db
+      .select(this.columns())
+      .from(chatMessages)
+      .where(and(eq(chatMessages.userId, userId), eq(chatMessages.sessionId, sessionId)))
       .orderBy(desc(chatMessages.createdAt), desc(chatMessages.id))
       .limit(limit)
       .all();
@@ -94,6 +123,7 @@ export class ChatRepository {
       contentJson: chatMessages.contentJson,
       clientMessageId: chatMessages.clientMessageId,
       replyToId: chatMessages.replyToId,
+      sessionId: chatMessages.sessionId,
       createdAt: chatMessages.createdAt,
     };
   }

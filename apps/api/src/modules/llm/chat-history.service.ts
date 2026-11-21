@@ -23,6 +23,11 @@ function parse<T>(schema: z.ZodType<T>, json: string): T | null {
   }
 }
 
+/** The session id as the API shows it; left out for rows from before sessions. */
+function sessionOf(row: ChatRow): { sessionId?: string } {
+  return row.sessionId === null ? {} : { sessionId: row.sessionId };
+}
+
 /**
  * GET /chat/history (tech-spec 3.2): the session user's own messages, oldest
  * first within a page, paging toward older ones. A dragon turn comes back as
@@ -68,9 +73,13 @@ export class ChatHistoryService {
   private toMessage(row: ChatRow): ChatHistoryMessage | null {
     if (row.role === 'user') {
       const user = parse(zUser, row.contentJson);
-      return user === null ? null : { id: row.id, role: 'user', text: user.text };
+      return user === null
+        ? null
+        : { id: row.id, role: 'user', text: user.text, ...sessionOf(row) };
     }
     const dragon = parse(zDragon, row.contentJson);
-    return dragon === null ? null : { id: row.id, role: 'dragon', events: dragon.events };
+    return dragon === null
+      ? null
+      : { id: row.id, role: 'dragon', events: dragon.events, ...sessionOf(row) };
   }
 }

@@ -86,11 +86,29 @@ export const zSendChatMessageBody = z
   .strict();
 export type SendChatMessageBody = z.infer<typeof zSendChatMessageBody>;
 
+/**
+ * The meal's conversation the message belongs to (D-34); absent on messages from before
+ * sessions. The screen folds a session that differs from the newest one.
+ */
+const sessionId = z.string().min(1).nullable();
+
 /** GET /chat/history item (tech-spec 3.2). The dragon's turn is kept as the events it was made of. */
 export const zChatHistoryMessage = z.discriminatedUnion('role', [
-  z.object({ id: z.string().min(1), role: z.literal('user'), text: z.string() }).strict(),
   z
-    .object({ id: z.string().min(1), role: z.literal('dragon'), events: z.array(zChatEvent) })
+    .object({
+      id: z.string().min(1),
+      role: z.literal('user'),
+      text: z.string(),
+      sessionId: sessionId.optional(),
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      role: z.literal('dragon'),
+      events: z.array(zChatEvent),
+      sessionId: sessionId.optional(),
+    })
     .strict(),
 ]);
 export type ChatHistoryMessage = z.infer<typeof zChatHistoryMessage>;

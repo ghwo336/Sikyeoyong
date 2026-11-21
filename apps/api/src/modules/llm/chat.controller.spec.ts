@@ -75,6 +75,10 @@ async function setup(
 }
 
 /** A finished turn: the user row and the dragon reply that answers it. */
+/** Seeded history sits in one recent session, as if the meal were going on (D-34). */
+const SESSION = 'session-1';
+const BASE = Date.now() - 10 * 60_000;
+
 function addTurn(
   h: DbHandle,
   userId: string,
@@ -92,7 +96,8 @@ function addTurn(
       role: 'user',
       contentJson: JSON.stringify({ text: asked }),
       clientMessageId: clientId,
-      createdAt: at,
+      sessionId: SESSION,
+      createdAt: BASE + at,
     })
     .run();
   h.db
@@ -108,7 +113,8 @@ function addTurn(
         ],
       }),
       replyToId: id,
-      createdAt: at + 1,
+      sessionId: SESSION,
+      createdAt: BASE + at + 1,
     })
     .run();
 }
@@ -464,7 +470,8 @@ describe('POST /api/chat/messages (SSE)', () => {
           role: 'user',
           contentJson: '{oops',
           clientMessageId: 'bad1',
-          createdAt: 20,
+          sessionId: SESSION,
+          createdAt: BASE + 20,
         })
         .run();
       h.db
@@ -475,7 +482,8 @@ describe('POST /api/chat/messages (SSE)', () => {
           role: 'assistant',
           contentJson: '{"events":[{"type":"token","text":"옛 답","extra":1},{"type":"card_v0"}]}',
           replyToId: 'bu',
-          createdAt: 21,
+          sessionId: SESSION,
+          createdAt: BASE + 21,
         })
         .run();
       const res = await post({ text: '다음', clientMessageId: 'next' });
@@ -498,7 +506,8 @@ describe('POST /api/chat/messages (SSE)', () => {
           role: 'user',
           contentJson: '{"text":"옛 질문"}',
           clientMessageId: 'old',
-          createdAt: 10,
+          sessionId: SESSION,
+          createdAt: BASE + 10,
         })
         .run();
       h.db
@@ -510,7 +519,8 @@ describe('POST /api/chat/messages (SSE)', () => {
           contentJson:
             '{"events":[{"type":"token","text":"옛 답","extra":1},{"type":"card_v0","secret":"카드 속 글"}]}',
           replyToId: 'ou',
-          createdAt: 11,
+          sessionId: SESSION,
+          createdAt: BASE + 11,
         })
         .run();
       await post({ text: '지금', clientMessageId: 'now' });
@@ -532,7 +542,8 @@ describe('POST /api/chat/messages (SSE)', () => {
           role: 'user',
           contentJson: '{"text":"점심"}',
           clientMessageId: 'x',
-          createdAt: 10,
+          sessionId: SESSION,
+          createdAt: BASE + 10,
         })
         .run();
       h.db
@@ -543,7 +554,8 @@ describe('POST /api/chat/messages (SSE)', () => {
           role: 'assistant',
           contentJson: '{oops',
           replyToId: 'xu',
-          createdAt: 11,
+          sessionId: SESSION,
+          createdAt: BASE + 11,
         })
         .run();
       expect((await post({ text: '점심', clientMessageId: 'x' })).status).toBe(409);

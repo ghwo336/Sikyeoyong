@@ -120,6 +120,13 @@
       "when": 1795240014539,
       "tag": "0016_allowance_fund_link",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1795276724658,
+      "tag": "0017_chat_session",
+      "breakpoints": true
     }
   ]
 }
