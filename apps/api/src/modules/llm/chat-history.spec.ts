@@ -127,6 +127,20 @@ describe('GET /api/chat/history', () => {
     expect(page.messages.map((m) => m.sessionId)).toEqual(['s-old', undefined]);
   });
 
+  it('gives each message the time it was stored', async () => {
+    const { h, get } = await setup();
+    seedTurns(h, 'u1', 1);
+    h.db
+      .update(chatMessages)
+      .set({ createdAt: 1_700_000_123_456 })
+      .where(eq(chatMessages.id, 'u1-000'))
+      .run();
+    const page = zChatHistory.parse((await get('u1')).body);
+    const stamps = page.messages.map((m) => m.createdAt);
+    expect(page.messages.find((m) => m.id === 'u1-000')?.createdAt).toBe(1_700_000_123_456);
+    expect(stamps.every((t) => typeof t === 'number')).toBe(true);
+  });
+
   it('pages from newest toward older, oldest first within a page, without gaps or repeats', async () => {
     const { h, get } = await setup();
     seedTurns(h, 'u1', 20); // 40 rows

@@ -75,11 +75,23 @@ export class ChatHistoryService {
       const user = parse(zUser, row.contentJson);
       return user === null
         ? null
-        : { id: row.id, role: 'user', text: user.text, ...sessionOf(row) };
+        : {
+            id: row.id,
+            role: 'user',
+            text: user.text,
+            createdAt: row.createdAt,
+            ...sessionOf(row),
+          };
     }
     const dragon = parse(zDragon, row.contentJson);
     return dragon === null
       ? null
-      : { id: row.id, role: 'dragon', events: dragon.events, ...sessionOf(row) };
+      : {
+          id: row.id,
+          role: 'dragon',
+          events: dragon.events,
+          createdAt: row.createdAt,
+          ...sessionOf(row),
+        };
   }
 }
