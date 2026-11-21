@@ -149,3 +149,4 @@ children: []
 - `conventions/architecture.md`, `conventions/design-and-motion.md`, `components/ui/_index.md`
 - 저장소 `design/README.md`, `design/user-flow.md`
 - `docs/tech-spec.md` 2장 (D-18 대응표로 읽는다)
+- 읽기 실패 (QA 4차, D-23): 세션 확인(GET /me)이 재시도 끝에 5xx나 오프라인이면 첫 진입은 Splash의 실패 한 줄과 "다시 깨워 볼까요"로 끝난다(`onRetry`). 주문 현황, 주문 상세, Main의 30일 배달비 막대는 읽기가 실패하면 `RetryLine`(오류 한 줄과 "다시 불러오기")을 제 자리에 그린다. 빈 화면이나 말없이 사라지는 일은 없다.
