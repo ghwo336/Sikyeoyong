@@ -22,6 +22,7 @@ children: []
 - API는 같은 도메인 `/api`로 부른다 (Caddy가 API 서버로 넘김). 세션은 API가 발급한 httpOnly 쿠키라 웹 코드가 토큰을 만지지 않는다.
 - 추천을 눌렀는데 서버가 거절하면(`POST /orders` 오류, 예: 가게가 사라진 옛 카드의 422 `CHAIN_MERCHANT_INACTIVE`) 용이가 오류의 대사를 대화에 말한다(`features/chat/error-line.ts` `dragonLineOf`: 서버가 보낸 `dragonLine`, 없으면 shared 표의 대사, 값이 필요한 대사는 `message`, API 오류가 아니면 일반 한 줄). 30일 상한(`CHAIN_PERIODIC_LIMIT`)만 Cap 화면으로 간다. 말없이 아무 일도 없는 눌림은 없다 (QA 5차).
 - 허락하기의 답(견적)과 안 시킬래요의 후속은 `useDecideApproval`의 훅 수준 `onSuccess`에서 부모에게 넘긴다. 답이 자기 카드를 목록에서 지우면 컨테이너가 사라져 `mutate()` 호출별 콜백이 버려지기 때문이다 (QA 6차: 시트가 안 열림). 같은 추천을 다시 누르면 새 주문 대신 `features/orders/same-pick.ts`로 기존 주문을 쓴다: 허락 대기 중이면 용이가 카드 쪽을 안내하거나(한도 대기는 막힘 화면), 닫은 확인 카드는 다시 연다. 서버에는 같은 메뉴를 알아보는 키가 없다.
+- 읽기가 실패하면 그 자리에 `RetryLine`(오류 한 줄과 다시 불러오기)을 둔다. 블록을 말없이 빼지 않는다: 용돈 화면의 한도 줄(`/budget` 실패), 주문 내역(`/orders` 실패). 용이 모습과 신분증 줄은 예산 없이도 보이고, 멈추기 줄만 예산을 기다린다 (QA 6차).
 - 서버 상태는 TanStack Query. 로컬 상태는 컴포넌트 안 `useState`로 충분하면 그것만, 여러 화면이 같이 쓰면 zustand.
 - 대화 스트리밍은 API의 SSE(`packages/shared/src/api/chat.ts`의 `zChatEvent`). 이벤트를 프레임 단위로 묶어 그린다.
 

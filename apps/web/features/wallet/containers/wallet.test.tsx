@@ -181,6 +181,24 @@ describe('a sleeping dragon', () => {
   });
 });
 
+describe('a failed budget read (QA 6 M3)', () => {
+  it('the limits block shows a retry line that brings the rows back', async () => {
+    getBudget.mockRejectedValueOnce(new AppError('INTERNAL'));
+    wrap(<LimitRowsContainer />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('한도를 못 불러왔어요');
+    await userEvent.click(screen.getByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByText('한 번에 쓸 돈')).toBeInTheDocument();
+  });
+
+  it('the look and ID rows stay without the budget; only the pause switch waits for it', async () => {
+    getBudget.mockRejectedValue(new AppError('INTERNAL'));
+    wrap(<DragonControlsContainer />);
+    expect(await screen.findByText('용이 모습')).toBeInTheDocument();
+    expect(screen.getByText('용이 신분증')).toBeInTheDocument();
+    expect(screen.queryByText('용이 멈추기')).toBeNull();
+  });
+});
+
 describe('ID card and the sleeping dragon', () => {
   it('draws the ID card from the owner and the dragon', async () => {
     wrap(<IdCardContainer />);

@@ -12,10 +12,12 @@ export function DragonControlsContainer() {
   const router = useTransitionRouter();
   const me = useMe().data;
   const { data: budget, isError } = useBudget();
+  // The pause switch needs the budget (frozen); the look and ID rows do not, so they stay when the
+  // budget fails (the limits block above has the retry, QA 6 M3).
+  const noBudget = isError && !budget;
   const freeze = useSetFrozen();
   const [details, setDetails] = useDetailsMode();
-  if (isError) return null;
-  if (!me || !budget) return <LoadingShape kind="rows" count={3} />;
+  if (!me || (!budget && !noBudget)) return <LoadingShape kind="rows" count={3} />;
   return (
     <>
       <ListRow
@@ -34,23 +36,25 @@ export function DragonControlsContainer() {
           router.push('/dragon/id');
         }}
       />
-      <ListRow
-        label="용이 멈추기"
-        trailing={(labelId) => (
-          <Switch
-            checked={budget.frozen}
-            labelId={labelId}
-            onChange={(on) => {
-              if (!on || freeze.isPending) return; // waking happens on the Frozen screen
-              freeze.mutate(true, {
-                onSuccess: () => {
-                  router.replace('/dragon/frozen');
-                },
-              });
-            }}
-          />
-        )}
-      />
+      {budget ? (
+        <ListRow
+          label="용이 멈추기"
+          trailing={(labelId) => (
+            <Switch
+              checked={budget.frozen}
+              labelId={labelId}
+              onChange={(on) => {
+                if (!on || freeze.isPending) return; // waking happens on the Frozen screen
+                freeze.mutate(true, {
+                  onSuccess: () => {
+                    router.replace('/dragon/frozen');
+                  },
+                });
+              }}
+            />
+          )}
+        />
+      ) : null}
       <ListRow
         label="자세히 보기"
         trailing={(labelId) => <Switch checked={details} labelId={labelId} onChange={setDetails} />}

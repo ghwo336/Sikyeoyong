@@ -1,7 +1,7 @@
 'use client';
 
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
-import { AmountRatio, ListRow, LoadingShape } from '@sikyeoyong/ui';
+import { AmountRatio, ListRow, LoadingShape, RetryLine } from '@sikyeoyong/ui';
 import { useTransitionRouter } from '../../../lib/transition-router';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useWallet } from '../hooks/useWallet';
@@ -12,13 +12,24 @@ import { useWallet } from '../hooks/useWallet';
  */
 export function LimitRowsContainer() {
   const router = useTransitionRouter();
-  const { data: budget, isError } = useBudget();
+  const { data: budget, isError, refetch } = useBudget();
   const wallet = useWallet().data;
   // Both rows open the same screen, which edits the two limits together (D-31).
   const editLimits = () => {
     router.push('/dragon/limits');
   };
-  if (isError) return null;
+  // A failed read keeps its place with an error line and a retry, not a missing block (QA 6 M3).
+  if (isError && !budget) {
+    return (
+      <RetryLine
+        onRetry={() => {
+          void refetch();
+        }}
+      >
+        한도를 못 불러왔어요
+      </RetryLine>
+    );
+  }
   if (!budget) return <LoadingShape kind="rows" count={2} />;
   return (
     <>

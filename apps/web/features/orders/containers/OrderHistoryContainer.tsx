@@ -1,7 +1,7 @@
 'use client';
 
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
-import { DragonLine, ErrorLine, ListRow, Skeleton, TopBar } from '@sikyeoyong/ui';
+import { DragonLine, ListRow, RetryLine, Skeleton, TopBar } from '@sikyeoyong/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTransitionRouter } from '../../../lib/transition-router';
 import { Fragment } from 'react';
@@ -37,7 +37,13 @@ export function OrderHistoryContainer() {
         }}
       />
       {list === undefined && orders.isError ? (
-        <ErrorLine>주문 내역을 못 불러왔어요. 잠시 뒤에 다시 열어 주세요.</ErrorLine>
+        <RetryLine
+          onRetry={() => {
+            void orders.refetch();
+          }}
+        >
+          주문 내역을 못 불러왔어요
+        </RetryLine>
       ) : list === undefined ? (
         // The shape of two rows while it loads (D-23: no blank screen, no spinner).
         <>

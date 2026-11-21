@@ -142,6 +142,14 @@ describe('OrderHistoryContainer (주문 내역, ListRow list)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('주문 내역을 못 불러왔어요');
   });
 
+  it('a failed history has a retry press that asks again (QA 6 M3)', async () => {
+    listOrders.mockRejectedValueOnce(new AppError('INTERNAL'));
+    listOrders.mockResolvedValue({ orders: [] });
+    wrap(<OrderHistoryContainer />);
+    await userEvent.click(await screen.findByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByText('아직 시킨 게 없어용.')).toBeInTheDocument();
+  });
+
   it('an order waiting for the owner carries its approval card; a yes hands the quote to the chat and pays nothing', async () => {
     listOrders.mockResolvedValue({
       orders: [
