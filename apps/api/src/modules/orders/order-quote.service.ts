@@ -120,7 +120,11 @@ export class OrderQuoteService {
     if (open !== undefined) {
       return {
         result: await this.current(userId, open, nowMs),
-        approvalReason: open.status === 'pending_approval' ? reason : null,
+        // The waiting order keeps the reason it was opened with, not a freshly computed one.
+        approvalReason:
+          open.status === 'pending_approval'
+            ? (this.approvals.pendingForOrder(open.id)?.reason ?? reason)
+            : null,
       };
     }
     const orderId = uuidv7(nowMs);

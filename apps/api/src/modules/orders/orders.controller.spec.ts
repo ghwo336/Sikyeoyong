@@ -13,10 +13,18 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { agents, allowedMerchants, approvals, orders, users } from '../../db/schema/index.js';
+import {
+  agents,
+  allowedMerchants,
+  approvals,
+  menus,
+  orders,
+  users,
+} from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER, type PeriodicVolume } from '../chain/chain.service.js';
+import { OrderQuoteService } from './order-quote.service.js';
 import { orderRefOf } from './order-ref.js';
 import { OrdersModule } from './orders.module.js';
 import { OrdersRepository } from './orders.repository.js';
@@ -74,7 +82,15 @@ async function setup(
         .set('X-Requested-With', 'fetch')
         .send(body),
   });
-  return { h, http, as, token: tokens.u1, tokens, repo: moduleRef.get(OrdersRepository) };
+  return {
+    h,
+    http,
+    as,
+    token: tokens.u1,
+    tokens,
+    repo: moduleRef.get(OrdersRepository),
+    quote: moduleRef.get(OrderQuoteService),
+  };
 }
 
 const body = (
@@ -587,6 +603,111 @@ describe('POST /api/orders: the same request again reuses the open order (QA 6)'
     );
     expect(late.order.id).not.toBe(one.order.id);
     expect(h.db.select().from(orders).all()).toHaveLength(3);
+  });
+
+  it('another user with the same request gets an order of their own', async () => {
+    const { h, as } = await setup();
+    const mine = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c1'))).body,
+    );
+    const theirs = zCreateOrderResult.parse(
+      (await as('u2').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c1'))).body,
+    );
+    expect(theirs.order.id).not.toBe(mine.order.id);
+    expect(h.db.select().from(orders).all()).toHaveLength(2);
+    const again = zCreateOrderResult.parse(
+      (await as('u2').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c2'))).body,
+    );
+    expect(again.order.id).toBe(theirs.order.id);
+  });
+
+  it('a different note is a different request: its own order', async () => {
+    const { h, quote } = await setup();
+    const req = (note?: string) => ({
+      merchantId: 'm1',
+      items: [{ menuId: 'x-dwaeji', qty: 1 }],
+      clientOrderId: null,
+      note,
+    });
+    const a = await quote.create('u1', req('덜 맵게'), NOW);
+    const b = await quote.create('u1', req('더 맵게'), NOW);
+    const none = await quote.create('u1', req(), NOW);
+    const ids = [a, b, none].map((o) => o.result.order.id);
+    expect(new Set(ids).size).toBe(3);
+    expect((await quote.create('u1', req('덜 맵게'), NOW)).result.order.id).toBe(ids[0]);
+    expect(h.db.select().from(orders).all()).toHaveLength(3);
+  });
+
+  it('a changed price (the menu moved) is a new order, not the old card', async () => {
+    const { h, as } = await setup();
+    const first = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-sundae', qty: 1 }], 'm1', 'c1'))).body,
+    );
+    h.db
+      .update(menus)
+      .set({ priceAokrw: W('2000') })
+      .where(eq(menus.id, 'x-sundae'))
+      .run();
+    const again = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-sundae', qty: 1 }], 'm1', 'c2'))).body,
+    );
+    expect(again.order.id).not.toBe(first.order.id);
+    expect(again.quote?.amount).toBe(W('2000'));
+  });
+
+  it('a quoted order is reused only within 10 minutes', async () => {
+    const { h, as } = await setup();
+    const items = [{ menuId: 'x-dwaeji', qty: 1 }];
+    const first = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c1'))).body);
+    vi.setSystemTime(NOW + 9 * 60_000);
+    const soon = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c2'))).body);
+    expect(soon.order.id).toBe(first.order.id);
+    vi.setSystemTime(NOW + 10 * 60_000 + 1);
+    const late = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c3'))).body);
+    expect(late.order.id).not.toBe(first.order.id);
+    expect(h.db.select().from(orders).all()).toHaveLength(2);
+  });
+
+  it('a quoted order does not come back once the rules ask the owner (limit lowered)', async () => {
+    const { h, as } = await setup();
+    const items = [{ menuId: 'x-dwaeji', qty: 1 }];
+    const first = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c1'))).body);
+    expect(first.order.status).toBe('quoted');
+    h.db
+      .update(agents)
+      .set({ perOrderLimitAokrw: W('5000') })
+      .where(eq(agents.id, 'a-u1'))
+      .run();
+    const again = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c2'))).body);
+    expect(again.order.id).not.toBe(first.order.id);
+    expect(again.order.status).toBe('pending_approval');
+    expect(again.quote).toBeUndefined();
+  });
+
+  it('a quoted order does not come back once the store is new to the user again', async () => {
+    const { h, as } = await setup();
+    const items = [{ menuId: 'x-dwaeji', qty: 1 }];
+    const first = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c1'))).body);
+    expect(first.order.status).toBe('quoted');
+    h.db.delete(allowedMerchants).run();
+    const again = zCreateOrderResult.parse((await as('u1').post(body(items, 'm1', 'c2'))).body);
+    expect(again.order.id).not.toBe(first.order.id);
+    expect(again.order.status).toBe('pending_approval');
+  });
+
+  it('a reused waiting order reports the reason it was opened with', async () => {
+    const { h, quote } = await setup();
+    const req = {
+      merchantId: 'm2',
+      items: [{ menuId: 'x-guksu', qty: 1 }],
+      clientOrderId: null,
+    };
+    const first = await quote.create('u1', req, NOW);
+    expect(first.approvalReason).toBe('NEW_MERCHANT');
+    h.db.update(approvals).set({ reason: 'OVER_PERSONAL_BUDGET' }).run();
+    const again = await quote.create('u1', req, NOW + 1000);
+    expect(again.result.order.id).toBe(first.result.order.id);
+    expect(again.approvalReason).toBe('OVER_PERSONAL_BUDGET');
   });
 });
 
