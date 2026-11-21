@@ -168,6 +168,7 @@ children: []
   - 동작 줄이기가 `(root)` 화면 전환도 끈다(`!important`, 블록 맨 아래).
   - 충전 보류 대사 `pnpm topups:reconcile`. 1차 FAIL(덮어써지는 주문 표시로 짝지어 돈이 나간 보류를 풀 수 있었음) 뒤 보류 행에 order_id와 fund_call_started_at(0016)을 두고, 호출 시작 전 보류만 푼다.
   - nonce CSP를 `apps/web/proxy.ts`에서 요청마다. 1차 FAIL(루트 .env를 못 읽어 금고 출처가 어긋남) 뒤 기본값은 shared `config/pouchi.ts` 한 곳, next.config가 출처를 풀어 넘긴다.
+  - 이어서: 충전 호출 직전 보류가 풀렸으면 호출 없이 중단(f8b56f0), CSP 문서 보강, 승인 주장 필터 미탐 보강(3차 검증 PASS, 조건 예외는 같은 절 안만), 필터를 선형 시간으로(10만 자 2ms).
 - 실수 기록: 없음. dev 웹 서버가 next.config 바뀜을 shared dist 빌드보다 먼저 읽어 한 번 죽음(재시작으로 해결).
 - 막힌 것: 운영자 잔액(가게 지갑 회수나 faucet 허락), 남은 가게 19곳 등록, 실체인 화면 주문, 내 주문 시안 결정.
-- 후속: `markFundCallStarted` 변경 행 수 확인, CSP 금고 출처는 빌드 때 박힘(문서화), 승인 필터 미탐 몇 개, tech-spec 문구, worklog 정리.
+- 후속: tech-spec 로그인과 월 예산 문구(사람 판단), 내 주문 페이지(시안 결정 뒤), worklog 정리.
