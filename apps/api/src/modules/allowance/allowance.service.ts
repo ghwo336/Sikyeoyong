@@ -45,7 +45,12 @@ export class AllowanceService {
    * the allowance cannot cover it (nothing written). Call settleFund after the money moved or
    * releaseFund when nothing was sent.
    */
-  reserveFund(userId: string, amountAokrw: bigint, nowMs: number = Date.now()): string | null {
+  reserveFund(
+    userId: string,
+    amountAokrw: bigint,
+    orderId: string,
+    nowMs: number = Date.now(),
+  ): string | null {
     if (amountAokrw <= 0n) throw new RangeError('allowance amount must be above zero');
     const id = uuidv7(nowMs);
     const ok = this.repo.insertFundIfCovered({
@@ -55,6 +60,8 @@ export class AllowanceService {
       amountAokrw: aokrwToString(amountAokrw),
       txHash: null,
       createdAt: nowMs,
+      orderId,
+      fundCallStartedAt: null,
     });
     return ok ? id : null;
   }
@@ -62,6 +69,14 @@ export class AllowanceService {
   /** Gives a reserved amount back (the top-up was never sent). */
   releaseFund(entryId: string): void {
     this.repo.deleteFund(entryId);
+  }
+
+  /**
+   * Call right before the fund call, after the order's marker is committed. From then on the
+   * hold may have moved money and the reconciliation only reports it.
+   */
+  markFundCallStarted(entryId: string, nowMs: number = Date.now()): void {
+    this.repo.markFundCallStarted(entryId, nowMs);
   }
 
   /** Writes the top-up's transaction hash on a reserved entry. */

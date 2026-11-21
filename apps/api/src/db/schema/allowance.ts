@@ -23,6 +23,14 @@ export const ownerAllowanceEntries = sqliteTable(
     /** aokrw, always positive; the kind gives the sign. */
     amountAokrw: text('amount_aokrw').notNull(),
     txHash: text('tx_hash'),
+    /**
+     * fund holds only: the order the top-up is for, and when the fund call was about to start
+     * (set after the order's marker, before the call). A hold with an order and no start time
+     * never reached the call, which is the only thing reconciliation may release. Null on rows
+     * from before migration 0016.
+     */
+    orderId: text('order_id'),
+    fundCallStartedAt: integer('fund_call_started_at'),
     createdAt: integer('created_at').notNull(),
   },
   (t) => [

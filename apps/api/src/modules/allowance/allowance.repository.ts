@@ -13,6 +13,8 @@ export interface AllowanceEntry {
   readonly amountAokrw: string;
   readonly txHash: string | null;
   readonly createdAt: number;
+  readonly orderId?: string | null;
+  readonly fundCallStartedAt?: number | null;
 }
 
 /** trial + refund - fund, in aokrw. */
@@ -71,6 +73,15 @@ export class AllowanceRepository {
     this.handle.db
       .delete(ownerAllowanceEntries)
       .where(and(eq(ownerAllowanceEntries.id, id), eq(ownerAllowanceEntries.kind, 'fund')))
+      .run();
+  }
+
+  /** Marks that the fund call is about to start for this hold (before the call, never undone). */
+  markFundCallStarted(id: string, nowMs: number): void {
+    this.handle.db
+      .update(ownerAllowanceEntries)
+      .set({ fundCallStartedAt: nowMs })
+      .where(eq(ownerAllowanceEntries.id, id))
       .run();
   }
 

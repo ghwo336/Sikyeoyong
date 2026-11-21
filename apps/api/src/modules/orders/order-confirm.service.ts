@@ -254,7 +254,7 @@ export class OrderConfirmService {
     if (balance >= need) return;
     const reserved = this.config.demo.enabled
       ? null
-      : this.holdAllowance(userId, need - balance, nowMs);
+      : this.holdAllowance(userId, need - balance, row.id, nowMs);
     const unresolved = row.fundStartedAt !== null && row.fundTxHash === null;
     if (
       unresolved ||
@@ -265,6 +265,8 @@ export class OrderConfirmService {
         reason: 'an earlier top-up of this order has no result yet, not funding again',
       });
     }
+    // From here the call may have moved money: the hold is no longer provably unsent.
+    if (reserved !== null) this.allowance.markFundCallStarted(reserved, nowMs);
     const r = await runOwnerAction(this.owner, {
       kind: 'fund',
       agent: wallet,
@@ -290,8 +292,8 @@ export class OrderConfirmService {
   }
 
   /** Q-38 (production): the allowance must cover the top-up, or the order is refused before any fund. */
-  private holdAllowance(userId: string, amount: bigint, nowMs: number): string {
-    const id = this.allowance.reserveFund(userId, amount, nowMs);
+  private holdAllowance(userId: string, amount: bigint, orderId: string, nowMs: number): string {
+    const id = this.allowance.reserveFund(userId, amount, orderId, nowMs);
     if (id === null) {
       throw new AppError('CHAIN_INSUFFICIENT_FUNDS', { reason: 'owner allowance is short' });
     }

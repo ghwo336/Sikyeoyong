@@ -31,6 +31,7 @@ import {
 } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AgentLockTimeout, AgentsService } from '../agents/agents.service.js';
+import { dbPorts, reconcileTopups } from '../../db/reconcile-topups.js';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
@@ -879,6 +880,27 @@ describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (
       .get();
     expect(fundEntry?.txHash).toBe(row(id)?.fundTxHash);
     expect(fundEntry?.txHash).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  it('the hold keeps its order link and call start when fund throws, so reconcile never releases it', async () => {
+    const { h, payment, quote, confirm } = await setup({ allowanceWon: '20000' });
+    vi.spyOn(payment, 'fund').mockRejectedValueOnce(new Error('answer lost'));
+    const id = await quote();
+    await confirm(id);
+    const entry = h.db
+      .select()
+      .from(ownerAllowanceEntries)
+      .where(eq(ownerAllowanceEntries.kind, 'fund'))
+      .get();
+    expect(entry).toMatchObject({ orderId: id, txHash: null });
+    expect(entry?.fundCallStartedAt).toEqual(expect.any(Number));
+    const r = reconcileTopups(dbPorts(h.db), {
+      dryRun: false,
+      olderThanMs: 0,
+      nowMs: Date.now() + 1,
+    });
+    expect(r.released).toEqual([]);
+    expect(r.ambiguous.map((x) => x.reason)).toEqual(['fund-call-started']);
   });
 
   it('two confirms racing for one allowance: one pays, the other is refused, never both', async () => {

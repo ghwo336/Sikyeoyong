@@ -2,8 +2,8 @@
  * pnpm topups:reconcile -- --dry-run | --run [--older-than <minutes>]
  *
  * Owner-run (payment.md "즉시 충전(fund)의 멱등성"). Lists fund holds of the owner allowance that
- * have no tx hash and are older than the bound (default 30 minutes). A hold whose order has no
- * top-up marker was provably never sent and is released (--run) or only listed (--dry-run). Holds
+ * have no tx hash and are older than the bound (default 30 minutes). A hold with an order link
+ * and no fund-call start was provably never sent and is released (--run) or only listed (--dry-run). Holds
  * whose top-up may have been sent are only reported. Nothing is re-sent. Prints ids, amounts and
  * counts, never keys. Exit 0 when nothing is left to look at, 1 when ambiguous holds remain.
  */
@@ -48,7 +48,7 @@ function main(): number {
     for (const id of report.released) out(`${verb}: ${id}`);
     for (const a of report.ambiguous) {
       out(
-        `ambiguous: hold ${a.holdId} user ${a.userId} amount ${formatOkrw(BigInt(a.amountAokrw))} order ${a.orderId} (${a.reason})`,
+        `ambiguous: hold ${a.holdId} user ${a.userId} amount ${formatOkrw(BigInt(a.amountAokrw))} order ${a.orderId ?? '-'} (${a.reason})`,
       );
     }
     return report.ambiguous.length === 0 ? 0 : 1;
