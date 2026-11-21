@@ -26,10 +26,11 @@ export class OrderSettler {
     code: AppErrorCode,
     marked: boolean,
     nowMs: number,
+    attempt?: number,
   ): boolean {
     const cls = classify(code, !marked);
     if (cls === 'approval') {
-      this.toApproval(userId, row, code, nowMs);
+      this.toApproval(userId, row, code, nowMs, attempt);
       return true;
     }
     if (cls === 'retryable' || cls === 'final') {
@@ -38,6 +39,7 @@ export class OrderSettler {
         'submitting',
         { status: 'failed', errorCode: code },
         nowMs,
+        { attempt },
       );
     }
     if (!marked) {
@@ -47,13 +49,20 @@ export class OrderSettler {
         'submitting',
         { status: 'failed', errorCode: 'INTERNAL' },
         nowMs,
+        { attempt },
       );
     }
     return false;
   }
 
   /** submitting to pending_approval with its approval row, in one transaction (D-19). */
-  toApproval(userId: string, row: OrderRow, code: AppErrorCode, nowMs: number): void {
+  toApproval(
+    userId: string,
+    row: OrderRow,
+    code: AppErrorCode,
+    nowMs: number,
+    attempt?: number,
+  ): void {
     const reason = approvalReasonOf(code);
     if (reason === null) throw new AppError('INTERNAL', { reason: 'not an approval code' });
     this.approvals.openWithOrder(
@@ -70,6 +79,7 @@ export class OrderSettler {
           'submitting',
           { status: 'pending_approval' },
           nowMs,
+          { attempt },
         );
         if (!moved) throw new AppError('INTERNAL', { reason: 'order left submitting' });
       },

@@ -426,6 +426,52 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(pay).toHaveBeenCalledTimes(1);
   });
 
+  it('a stale turn of an older press stops at its next write: one fund, one pay, one paid order', async () => {
+    const { payment, quote, confirm, row, lock, repo } = await setup();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const realBalance = payment.balanceOf.bind(payment);
+    const balance = vi.spyOn(payment, 'balanceOf').mockImplementationOnce(async (address) => {
+      const b = await realBalance(address);
+      await gate;
+      return b;
+    });
+    const fund = vi.spyOn(payment, 'fund');
+    const pay = vi.spyOn(payment, 'pay');
+    const marker = vi.spyOn(repo, 'markFundStart');
+    // Press 1 times out of the lock before the submit marker while its turn is blocked in balanceOf.
+    vi.spyOn(lock, 'exclusive').mockImplementationOnce((_agentId, fn) => {
+      void fn().catch(() => undefined);
+      return vi
+        .waitFor(() => {
+          expect(balance).toHaveBeenCalled();
+        })
+        .then(() => {
+          throw new AgentLockTimeout('hold');
+        });
+    });
+    const id = await quote();
+    expect(zOrderResult.parse((await confirm(id)).body).order).toMatchObject({
+      status: 'failed',
+      errorCode: 'INTERNAL',
+    });
+    // Press 2 retries while the old turn is still blocked, and pays.
+    expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('paid');
+    expect(row(id)?.attempt).toBe(2);
+    expect(fund).toHaveBeenCalledTimes(1);
+    expect(pay).toHaveBeenCalledTimes(1);
+    // The old turn wakes: its next guarded write fails, so it funds and pays nothing.
+    release();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(marker).toHaveBeenCalledTimes(2);
+    expect(marker.mock.results[1]?.value).toBe(false);
+    expect(fund).toHaveBeenCalledTimes(1);
+    expect(pay).toHaveBeenCalledTimes(1);
+    expect(row(id)).toMatchObject({ status: 'paid', attempt: 2, errorCode: null });
+  });
+
   it('saves the signed hash and nonce before the broadcast (path B), and a lost answer keeps them', async () => {
     const { payment, quote, confirm, row } = await setup();
     const signed: { txHash: Hex; nonce: number } = { txHash: `0x${'ab'.repeat(32)}`, nonce: 7 };

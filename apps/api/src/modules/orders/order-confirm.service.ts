@@ -63,7 +63,7 @@ export class OrderConfirmService {
     } as const;
     if (row.status === 'quoted') {
       if (this.repo.transition(row.id, 'quoted', toSubmitting, nowMs, { bumpAttempt: true })) {
-        await this.payOnce(userId, row, nowMs);
+        await this.payOnce(userId, row, this.repo.attemptOf(row.id), nowMs);
       }
     } else if (row.status === 'failed' && this.mayRetry(row)) {
       // A person pressed again: ask the chain first, then the same orderRef (D-19).
@@ -73,7 +73,7 @@ export class OrderConfirmService {
       } else if (
         this.repo.transition(row.id, 'failed', toSubmitting, nowMs, { bumpAttempt: true })
       ) {
-        await this.payOnce(userId, row, nowMs);
+        await this.payOnce(userId, row, this.repo.attemptOf(row.id), nowMs);
       }
     }
     return { order: this.views.viewFor(userId, orderId, nowMs) };
@@ -91,32 +91,50 @@ export class OrderConfirmService {
    * both read the same balance and fund twice, and a freeze or drain waits for its turn instead
    * of slipping in between the frozen check and the fund.
    */
-  private async payOnce(userId: string, row: OrderRow, nowMs: number): Promise<void> {
+  private async payOnce(
+    userId: string,
+    row: OrderRow,
+    attempt: number,
+    nowMs: number,
+  ): Promise<void> {
     const state = { marked: false };
     try {
       const agentId = this.agents.getForUser(userId).id;
-      await this.agents.exclusive(agentId, () => this.payLocked(userId, row, nowMs, state));
+      await this.agents.exclusive(agentId, () =>
+        this.payLocked(userId, row, attempt, nowMs, state),
+      );
     } catch (e) {
       // After the marker a throw is a timeout or a lost answer, whatever its code: the
       // payment may be out, so the order stays submitting (D-19 "결과 모름"). Only a
       // returned PayResult settles it. Before the marker no payment went out.
       if (state.marked) return;
       // A lock timeout (AgentLockTimeout, RATE_LIMITED) before the marker sent nothing: the settler
-      // stores an unrelated code as INTERNAL, which is retryable before the marker. A stale turn
-      // still running cannot mark the order later, the transition needs it to be submitting.
-      this.settler.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', false, nowMs);
+      // stores an unrelated code as INTERNAL, which is retryable before the marker. The turn may
+      // still be running after that, and a retry may have started a newer attempt. Every write of
+      // this attempt (top-up marker, submit marker, hash, settle) is conditional on its attempt
+      // number, so the old turn stops at its next write, before any broadcast. Over the chain:
+      // the orderRef is unique on chain, the top-up marker is per order, and a paused chain refuses.
+      this.settler.settle(
+        userId,
+        row,
+        e instanceof AppError ? e.code : 'INTERNAL',
+        false,
+        nowMs,
+        attempt,
+      );
     }
   }
 
   private async payLocked(
     userId: string,
     row: OrderRow,
+    attempt: number,
     nowMs: number,
     state: { marked: boolean },
   ): Promise<void> {
     const checked = await this.check(userId, row, nowMs);
     if (checked.kind === 'approval') {
-      this.settler.toApproval(userId, row, checked.code, nowMs);
+      this.settler.toApproval(userId, row, checked.code, nowMs, attempt);
       return;
     }
     const req = {
@@ -125,14 +143,16 @@ export class OrderConfirmService {
       amount: parseAokrw(row.amountAokrw),
       orderRef: row.orderRef as Hex,
     };
-    await this.topUp(userId, row, checked.wallet, req.amount, nowMs);
+    await this.topUp(userId, row, attempt, checked.wallet, req.amount, nowMs);
     const pre = await this.payment.preflight(req);
     if (!pre.ok) {
-      this.settler.settle(userId, row, pre.error.code, false, nowMs);
+      this.settler.settle(userId, row, pre.error.code, false, nowMs, attempt);
       return;
     }
     // The submit-start marker is committed before anything goes out (D-19).
-    state.marked = this.repo.transition(row.id, 'submitting', { submitStartedAt: nowMs }, nowMs);
+    state.marked = this.repo.transition(row.id, 'submitting', { submitStartedAt: nowMs }, nowMs, {
+      attempt,
+    });
     if (!state.marked)
       throw new AppError('INTERNAL', { reason: 'order left submitting before pay' });
     // Path B saves the signed hash and nonce before the broadcast, so a lost answer can be
@@ -145,15 +165,16 @@ export class OrderConfirmService {
           'submitting',
           { submitTxHash: txHash, submitNonce: nonce },
           nowMs,
+          { attempt },
         );
         if (!saved) throw new AppError('INTERNAL', { reason: 'order left submitting before send' });
       },
     });
     if (result.ok) {
-      this.receipts.markPaid(row, 'submitting', result.txHash, nowMs);
+      this.receipts.markPaid(row, 'submitting', result.txHash, nowMs, attempt);
       return;
     }
-    this.settler.settle(userId, row, result.error.code, true, nowMs);
+    this.settler.settle(userId, row, result.error.code, true, nowMs, attempt);
   }
 
   /**
@@ -222,6 +243,7 @@ export class OrderConfirmService {
   private async topUp(
     userId: string,
     row: OrderRow,
+    attempt: number,
     wallet: AgentWallet,
     amount: bigint,
     nowMs: number,
@@ -234,7 +256,10 @@ export class OrderConfirmService {
       ? null
       : this.holdAllowance(userId, need - balance, nowMs);
     const unresolved = row.fundStartedAt !== null && row.fundTxHash === null;
-    if (unresolved || !this.repo.markFundStart(row.id, (need - balance).toString(), nowMs)) {
+    if (
+      unresolved ||
+      !this.repo.markFundStart(row.id, (need - balance).toString(), attempt, nowMs)
+    ) {
       if (reserved !== null) this.allowance.releaseFund(reserved);
       throw new AppError('INTERNAL', {
         reason: 'an earlier top-up of this order has no result yet, not funding again',
@@ -247,7 +272,7 @@ export class OrderConfirmService {
     });
     if (!r.done) {
       // Nothing was sent: the marker is taken back so the next try may fund.
-      this.repo.clearFundStart(row.id, nowMs);
+      this.repo.clearFundStart(row.id, attempt, nowMs);
       if (reserved !== null) this.allowance.releaseFund(reserved);
       throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
     }

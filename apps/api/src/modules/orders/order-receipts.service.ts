@@ -20,7 +20,13 @@ export class OrderReceipts {
   ) {}
 
   /** Returns whether this call won the order into paid. */
-  markPaid(row: OrderRow, from: OrderStatus, txHash: string, nowMs: number): boolean {
+  markPaid(
+    row: OrderRow,
+    from: OrderStatus,
+    txHash: string,
+    nowMs: number,
+    attempt?: number,
+  ): boolean {
     let receiptJson: string | null;
     try {
       receiptJson = buildReceiptJson({
@@ -41,6 +47,7 @@ export class OrderReceipts {
       from,
       { status: 'paid', txHash, errorCode: null, ...(receiptJson === null ? {} : { receiptJson }) },
       nowMs,
+      { attempt },
     );
   }
 }

@@ -252,7 +252,7 @@ export class OrdersRepository {
       >
     >,
     nowMs: number,
-    opts: { bumpAttempt?: boolean } = {},
+    opts: { bumpAttempt?: boolean; attempt?: number } = {},
   ): boolean {
     const r = this.handle.db
       .update(orders)
@@ -262,9 +262,27 @@ export class OrdersRepository {
         ...(opts.bumpAttempt === true ? { attempt: sql`${orders.attempt} + 1` } : {}),
         updatedAt: nowMs,
       })
-      .where(and(eq(orders.id, id), eq(orders.status, from)))
+      .where(
+        and(
+          eq(orders.id, id),
+          eq(orders.status, from),
+          // The attempt guard: a turn of an older press cannot write (payment.md "대기열에는 상한이 있다").
+          ...(opts.attempt === undefined ? [] : [eq(orders.attempt, opts.attempt)]),
+        ),
+      )
       .run();
     return r.changes === 1;
+  }
+
+  /**
+   * The press number of an order. Read right after winning the move into submitting, with no await
+   * between (one process, synchronous SQLite), so it is the number this press bumped to.
+   */
+  attemptOf(id: string): number {
+    return (
+      this.handle.db.select({ attempt: orders.attempt }).from(orders).where(eq(orders.id, id)).get()
+        ?.attempt ?? 0
+    );
   }
 
   /**
@@ -272,7 +290,7 @@ export class OrdersRepository {
    * (false) while an earlier top-up of this order has a marker and no hash, in one conditional
    * UPDATE so two requests cannot both fund.
    */
-  markFundStart(id: string, amountAokrw: string, nowMs: number): boolean {
+  markFundStart(id: string, amountAokrw: string, attempt: number, nowMs: number): boolean {
     const r = this.handle.db
       .update(orders)
       .set({
@@ -281,7 +299,14 @@ export class OrdersRepository {
         fundAmountAokrw: amountAokrw,
         updatedAt: nowMs,
       })
-      .where(and(eq(orders.id, id), or(isNull(orders.fundStartedAt), isNotNull(orders.fundTxHash))))
+      .where(
+        and(
+          eq(orders.id, id),
+          eq(orders.status, 'submitting'),
+          eq(orders.attempt, attempt),
+          or(isNull(orders.fundStartedAt), isNotNull(orders.fundTxHash)),
+        ),
+      )
       .run();
     return r.changes === 1;
   }
@@ -305,11 +330,11 @@ export class OrdersRepository {
   }
 
   /** Nothing was sent (the owner has not signed): take the marker back. */
-  clearFundStart(id: string, nowMs: number): void {
+  clearFundStart(id: string, attempt: number, nowMs: number): void {
     this.handle.db
       .update(orders)
       .set({ fundStartedAt: null, fundTxHash: null, fundAmountAokrw: null, updatedAt: nowMs })
-      .where(eq(orders.id, id))
+      .where(and(eq(orders.id, id), eq(orders.attempt, attempt)))
       .run();
   }
 
