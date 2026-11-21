@@ -12,17 +12,17 @@
  * finished (past tense or a result). Intentions and questions ("요청해 볼게용", "보내 드릴까용?",
  * "승인되면 알려드릴게용") are not claims and stay.
  */
-const CLAIM = new RegExp(
+const CLAIM_SOURCE =
   '(승인|허락)[^.!?\\n]*' +
-    '(보냈|했|드렸|구했|올렸|받았|받으셨|받아\\s?왔|주셨|해\\s?줬|됐|되었|' +
-    '완료(?!\\s?(되면|하면|되는|될|해\\s?주))|처리됐|떨어졌|왔|갔|나왔|났어|끝났|도착했|' +
-    '전달됐|전달했|전송됐|전송했|발송됐|발송했|통과됐|통과했|' +
-    '놨|넣었|넣어\\s?(?:뒀|두었)|날렸|쏘았|쐈|보내졌|통과(?:예용|예요|이에요)|' +
-    '(?:보내|올려|날려|넣어|쏴)\\s?(?:뒀|두었)|' +
-    '(?:됨|둠)(?=\\s*[!.?~]*\\s*$))' +
-    // "보냈는지 볼게용" asks or plans a check; it reports nothing.
-    '(?!\\s?[는은]지)',
-);
+  '(보냈|했|드렸|구했|올렸|받았|받으셨|받아\\s?왔|주셨|해\\s?줬|됐|되었|' +
+  '완료(?!\\s?(되면|하면|되는|될|해\\s?주))|처리됐|떨어졌|왔|갔|나왔|났어|끝났|도착했|' +
+  '전달됐|전달했|전송됐|전송했|발송됐|발송했|통과됐|통과했|' +
+  '놨|넣었|넣어\\s?(?:뒀|두었)|날렸|쏘았|쐈|보내졌|통과(?:예용|예요|이에요)|' +
+  '(?:보내|올려|날려|넣어|쏴)\\s?(?:뒀|두었)|' +
+  '(?:됨|둠)(?=\\s*[!.?~]*\\s*$))' +
+  // "보냈는지 볼게용" asks or plans a check; it reports nothing.
+  '(?!\\s?[는은]지)';
+const CLAIM = new RegExp(CLAIM_SOURCE, 'y');
 
 /**
  * Weak result forms: 있/OK/끝 read as a result only when no condition or request sits between
@@ -30,18 +30,47 @@ const CLAIM = new RegExp(
  * after the form has closed its clause does not excuse it. "OK 누르면 끝이에요" and
  * "필요한 주문이에용 OK" are not claims; "보내져 있어용 필요하면 말해요" is.
  */
+const CONDITION = '면|어야|있나|필요한|필요해|주세|주실';
 const WEAK = new RegExp(
-  '(승인|허락)(?:(?!면|어야|있나|필요한|필요해|주세|주실)[^.!?\\n])*' +
+  '(승인|허락)(?:(?!' +
+    CONDITION +
+    ')[^.!?\\n])*' +
     '(?:보내져\\s?있(?!으면|어야|나)|' +
     '(?:OK|ok|오케이|끝)(?:\\s?(?:이에용|이에요|예용|예요|이야|이다|임)[용요야]?(?=[\\s,!.~]|$)|' +
     '[용요야]?(?=\\s*[!.~]*\\s*$)))',
+  'y',
 );
+const ANCHOR = /승인|허락/g;
+const CONDITION_AT = new RegExp(CONDITION, 'g');
 
 /** Sentences end at . ! ? or a line break; the terminator stays with its sentence. */
 const SENTENCE = /[^.!?\n]*[.!?\n]+[ \t]*|[^.!?\n]+$/g;
 
+/**
+ * Linear scan. The patterns are sticky and tried only at starts that can matter, so a long
+ * sentence without punctuation cannot make every 승인 rescan the rest (quadratic, seconds on
+ * 30k repeats). A match from a later 승인 is also a match from the first one for CLAIM (its
+ * prefix allows anything). For WEAK the prefix may not cross a condition, so the only starts
+ * worth trying are the first 승인 and the first one after each condition.
+ */
 export function isApprovalClaim(sentence: string): boolean {
-  return CLAIM.test(sentence) || WEAK.test(sentence);
+  ANCHOR.lastIndex = 0;
+  const first = ANCHOR.exec(sentence);
+  if (!first) return false;
+  CLAIM.lastIndex = first.index;
+  if (CLAIM.test(sentence)) return true;
+  let from = first.index;
+  for (;;) {
+    ANCHOR.lastIndex = from;
+    const start = ANCHOR.exec(sentence);
+    if (!start) return false;
+    WEAK.lastIndex = start.index;
+    if (WEAK.test(sentence)) return true;
+    CONDITION_AT.lastIndex = start.index;
+    const cond = CONDITION_AT.exec(sentence);
+    if (!cond) return false;
+    from = cond.index + cond[0].length;
+  }
 }
 
 /** Splits into sentences and drops the ones that claim an approval outcome. */

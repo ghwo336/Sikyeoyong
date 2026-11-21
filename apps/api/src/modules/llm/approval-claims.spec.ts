@@ -149,6 +149,20 @@ describe('stripApprovalClaims', () => {
   });
 });
 
+describe('stripApprovalClaims cost', () => {
+  // Quadratic before: every 승인 start rescanned the rest of the unpunctuated text.
+  it.each([
+    ['승인', '승인'.repeat(50_000)],
+    ['승인 보내져 ', '승인 보내져 '.repeat(15_000)],
+    ['승인 OK 누르면 ', '승인 OK 누르면 '.repeat(8_000)],
+    ['승인 끝 ', '승인 끝 '.repeat(15_000)],
+  ])('stays fast on %j repeated to 100k chars', (_n, text) => {
+    const t0 = performance.now();
+    stripApprovalClaims(text);
+    expect(performance.now() - t0).toBeLessThan(200);
+  });
+});
+
 describe('ApprovalClaimScreen', () => {
   it('ends a sentence at a line break while streaming', () => {
     const screen = new ApprovalClaimScreen();
