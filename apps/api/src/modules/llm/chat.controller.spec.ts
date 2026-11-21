@@ -289,15 +289,15 @@ describe('POST /api/chat/messages (SSE)', () => {
     // A model that answers only after the client has left, so the test does not depend on timing.
     const slow: LlmProvider = {
       turn: async (_req, onText) => {
-        onText('음');
+        onText('음.');
         await gate;
-        onText('피자 좋아용');
+        onText(' 피자 좋아용');
         return {
           id: 'm',
           type: 'message',
           role: 'assistant',
           model: 'scripted',
-          content: [{ type: 'text', text: '음피자 좋아용', citations: null }],
+          content: [{ type: 'text', text: '음. 피자 좋아용', citations: null }],
           stop_reason: 'end_turn',
           stop_sequence: null,
           usage: { input_tokens: 0, output_tokens: 0 },

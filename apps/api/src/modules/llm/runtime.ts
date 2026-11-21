@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { AppError, hasLimitIntent } from '@sikyeoyong/shared';
 import type { ApprovalReason } from '../approvals/approvals.service.js';
+import { ApprovalClaimScreen, stripApprovalClaims } from './approval-claims.js';
 import { MenuCatalog } from './chosen-menu.js';
 import type { LlmProvider } from './llm-provider.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
@@ -27,6 +28,26 @@ type LimitedKind = Exclude<ToolKind, 'read'>;
  */
 export function screenText(text: string): string {
   return text.replace(/\s*[\u2013\u2014]\s*/g, ', ').replace(/되용/g, '돼용');
+}
+
+/** Said when the model's whole answer was an approval claim and nothing else was shown. */
+export const NOTHING_DECIDED = '주인님이 아직 정하신 건 없어용.';
+
+/** What the model sees of its own earlier turns: no claim it could repeat next message. */
+function withoutApprovalClaims<B extends { readonly type: string }>(content: readonly B[]): B[] {
+  const kept: B[] = [];
+  for (const b of content) {
+    if (b.type !== 'text') {
+      kept.push(b);
+      continue;
+    }
+    const block = b as unknown as { text: string };
+    const text = stripApprovalClaims(block.text).text;
+    if (text.trim() !== '') kept.push({ ...b, text });
+  }
+  // A turn must not end up empty (the API refuses it); the original blocks were not empty.
+  if (kept.length > 0 || content.length === 0) return kept;
+  return [{ type: 'text', text: '(생략)' } as unknown as B];
 }
 
 /** Who is talking: always from the login session, never from model output (D-21). */
@@ -146,7 +167,15 @@ export class AgentRuntime {
     signal?: AbortSignal,
   ): Promise<Anthropic.MessageParam[]> {
     const messages: Anthropic.MessageParam[] = [
-      ...input.history,
+      // Older turns saved before this guard may still hold a claim the model would repeat.
+      ...input.history.map((m) =>
+        m.role === 'assistant' && Array.isArray(m.content)
+          ? {
+              ...m,
+              content: withoutApprovalClaims(m.content),
+            }
+          : m,
+      ),
       { role: 'user', content: input.userText },
     ];
     const intent = hasLimitIntent(input.userText);
@@ -159,9 +188,21 @@ export class AgentRuntime {
      * request may still run; the wait is said by the caller in server words.
      */
     const wait: { reason: ApprovalReason | null } = { reason: null };
+    // The model never reports an approval outcome (approval-claims.ts); the server does.
+    const screen = new ApprovalClaimScreen();
+    const shown = { text: false, card: false };
+    const say = (text: string) => {
+      const out = screenText(text);
+      if (out === '') return;
+      shown.text = true;
+      emit({ type: 'token', text: out });
+    };
     const stop = (reason: Extract<RuntimeEvent, { type: 'stopped' }>['reason']) => {
       if (wait.reason !== null && reason !== 'aborted') {
         emit({ type: 'approval_wait', reason: wait.reason });
+      } else if (screen.dropped && !shown.text && !shown.card && reason !== 'aborted') {
+        // Everything the model said was an approval claim: say what is true instead of nothing.
+        say(NOTHING_DECIDED);
       }
       emit({ type: 'stopped', reason });
     };
@@ -174,10 +215,11 @@ export class AgentRuntime {
       const message = await this.provider.turn(
         { system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages, userId: input.ctx.userId },
         (text) => {
-          if (wait.reason === null) emit({ type: 'token', text: screenText(text) });
+          if (wait.reason === null) say(screen.push(text));
         },
         signal,
       );
+      if (wait.reason === null) say(screen.flush());
       if (signal?.aborted) {
         // Gone while the model answered: run no tools for nobody.
         stop('aborted');
@@ -190,7 +232,7 @@ export class AgentRuntime {
         stop('refusal');
         return messages;
       }
-      messages.push({ role: 'assistant', content: message.content });
+      messages.push({ role: 'assistant', content: withoutApprovalClaims(message.content) });
       if (message.stop_reason === 'pause_turn') continue;
 
       const calls = message.content.filter(
@@ -220,7 +262,12 @@ export class AgentRuntime {
           results.push(swap);
           continue;
         }
-        results.push(await this.runTool(call, input, intent, used, wait, catalog, emit));
+        results.push(
+          await this.runTool(call, input, intent, used, wait, catalog, (e) => {
+            if (e.type === 'tool_output' && e.card !== undefined) shown.card = true;
+            emit(e);
+          }),
+        );
         if (isToolName(call.name)) {
           const kind = TOOL_KIND[call.name];
           if (kind !== 'read') used[kind] += 1;
