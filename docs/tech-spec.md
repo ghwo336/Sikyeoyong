@@ -29,7 +29,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 | 구분 | 1단계 MVP (12/9 점검까지) | 2단계 |
 | --- | --- | --- |
 | 앱 | Expo 앱, **웹 빌드(모바일 화면)로 시연** | 같은 코드로 iOS 빌드, 애플 로그인, 푸시 |
-| 로그인 | 카카오, 구글 | 애플 |
+| 로그인 | 파우치 로그인 하나 ("이메일로 시작하기", D-29) | 애플, 카카오 (파우치 Browser SDK에 들어오면) |
 | 심부름 | 배달 1종 | 버스 예매, k-skill 연동 (전화는 하지 않음, D-14) |
 | 가게 | 목 가게 66곳(65곳 KYB, 1곳 미인증. 처음 8곳은 7.1 표, 2026-11-21에 시간대와 가격대를 넓힘), 시드 스크립트 | 판매자 콘솔, 실제 등록 흐름(국세청 확인, 운영자 검토) |
 | 결제 | `SikyeoyongOrders` + PCL 프록시, 경로 A 또는 B | VP 비공개 주문 |
@@ -40,7 +40,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 ```
 ┌───────────────────────────── 사용자 기기 ─────────────────────────────┐
 │  apps/web (Expo, 웹 빌드 또는 iOS)                                      │
-│  로그인(카카오·구글) · 대화(SSE) · 영수증 · 예산/잔소리 · 한도/동결      │
+│  로그인(이메일로 시작하기) · 대화(SSE) · 영수증 · 예산/잔소리 · 한도/동결      │
 └───────────────────────────────┬────────────────────────────────────────┘
                                 │ HTTPS (같은 도메인 /api)
 ┌───────────────────────────────▼──────────── VM (docker compose) ───────┐
@@ -101,7 +101,7 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 
 | 경로 (Expo Router) | 화면 | 주요 내용 |
 | --- | --- | --- |
-| `app/(auth)/login.tsx` | 로그인 | 카카오·구글 버튼, 드래곤 알 일러스트 |
+| `app/(auth)/login.tsx` | 로그인 | "이메일로 시작하기" 버튼 하나(D-29), 드래곤 알 일러스트 |
 | `app/(auth)/onboarding.tsx` | 첫 설정 | 드래곤 이름, 월 배달 예산(기본 300,000), 기본 주소(텍스트), 테스트넷 KYC 안내 링크 |
 | `app/(tabs)/index.tsx` | 대화 (홈) | 드래곤과 대화, 추천 카드, 주문 확인, 승인 카드, 잔소리 말풍선 |
 | `app/(tabs)/orders/index.tsx` | 주문 내역 | 최근 주문, 상태 배지 |
@@ -114,9 +114,9 @@ AI 비서(아기 드래곤)가 사용자 대신 배달을 시키고, OKRW로 결
 | `app/+not-found.tsx` | 404 | |
 
 ### 2.3 인증 흐름
-1. 앱이 `expo-auth-session`으로 PKCE 인가 코드 요청 (카카오: `https://kauth.kakao.com/oauth/authorize`, 구글: Google OIDC). redirect URI는 웹 `https://<도메인>/auth/callback`, 네이티브 `sikyeoyong://auth/callback`.
-2. 앱이 `code`, `codeVerifier`, `redirectUri`를 `POST /api/auth/oauth/:provider/exchange`로 보낸다. **토큰 교환은 서버가 한다** (client secret을 앱에 두지 않음).
-3. 서버가 공급자 토큰으로 사용자 식별(카카오 `/v2/user/me`, 구글 ID 토큰 검증) → `users`, `oauth_accounts` upsert → 세션 생성.
+1. 앱이 로그인 화면에서 파우치 금고를 연다(Browser SDK `pouchiEmbedded.login`, D-29). 열기 전에 `POST /api/auth/pouchi/bind`로 요청 ID와 PKCE challenge를 서버에 묶는다. 이메일과 패스키 화면은 금고가 그린다.
+2. 금고가 돌려준 `envelope`과 `codeVerifier`를 `POST /api/auth/pouchi/complete`로 보낸다. **결과 확인은 서버가 한다** (앱 키는 서버에만, 아래 API 표 참고). 예전 계획(D-29 전)은 카카오·구글 PKCE 인가 코드를 `POST /api/auth/oauth/:provider/exchange`로 보내는 것이었고 쓰지 않는다.
+3. 서버가 파우치 결과(서명과 기기)를 검증해 사용자를 찾거나 만들고(`users`) 세션을 만든다.
 4. 세션 전달:
    - 웹: `Set-Cookie: sid=...; HttpOnly; Secure; SameSite=Lax; Path=/`. 같은 도메인이라 CORS 불필요.
    - 네이티브: 응답 본문의 `sessionToken`을 `expo-secure-store`에 저장, `Authorization: Bearer` 헤더.
@@ -200,8 +200,8 @@ apps/api/src/
 ├── env.ts                   zod로 환경 변수 검증 (부팅 시 실패하면 종료)
 ├── db/                      Drizzle 스키마, 마이그레이션, 클라이언트
 ├── modules/
-│   ├── auth/                OAuth 교환, 세션 발급·폐기
-│   ├── users/               프로필, 주소, 월 예산
+│   ├── auth/                세션 발급·폐기 (파우치 결과 확인은 `pouchi` 모듈, 사용자 찾기는 `users`, D-29)
+│   ├── users/               프로필, 주소, 내 30일 한도(D-31)
 │   ├── agents/              드래곤 생성, 동결, 충전·회수, 신분증 조회 (한도는 limits)
 │   ├── payment/             PaymentProvider 인터페이스 + pathA/pathB/pathC 구현
 │   ├── orders/              주문 생성·조회·취소, 배달 상태 타이머, 영수증
@@ -225,7 +225,7 @@ apps/api/src/
 
 | 메서드 | 경로 | 권한 | 요청 | 응답 |
 | --- | --- | --- | --- | --- |
-| POST | `/auth/oauth/:provider/exchange` | 공개 | `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple) | `{ user, sessionToken? }` + 웹은 쿠키 |
+| POST | `/auth/oauth/:provider/exchange` | 공개 | (D-29로 쓰지 않음. 예전 계획: `{ code, codeVerifier, redirectUri }`, provider ∈ kakao, google, (apple)) | 아래 `/auth/pouchi/*`로 대체 |
 | POST | `/auth/logout` | user | | `204` |
 | GET | `/auth/pouchi/config` | 공개 | | `PouchiLoginConfig` (`api/auth.ts`, D-29): 금고 주소, 앱 ID, 콜백. 파우치 로그인이 꺼져 있으면 404 |
 | POST | `/auth/pouchi/bind` | 공개(`X-Requested-With`) | `{ requestId, codeChallenge, flow: signup }` (둘 다 base64url 43자) | 204. 금고를 열기 전 요청과 PKCE challenge를 서버에 묶는다 (10분, 한 번, 같은 요청 다시 묶기 409, IP당 1분 10회) |
@@ -758,7 +758,7 @@ await ownerWallet.writeContract({
 ## 6. 판매자 백엔드 (2단계, 지금 설계)
 
 ### 6.1 역할과 인증
-- `users.role = 'merchant'`. 카카오 로그인(사장님 대부분 카카오 사용, (추론)) + 이메일 확인.
+- `users.role = 'merchant'`. 로그인은 사용자와 같은 로그인(D-29) + 이메일 확인. (예전 계획: 카카오 로그인, 사장님 대부분 카카오 사용 (추론). 카카오가 파우치 Browser SDK에 들어오면 다시 본다.).
 - 한 사용자 = 한 가게(1단계 설계 단순화). 직원 계정은 범위 밖.
 - 판매자 API는 `requireMerchant` 미들웨어, 자기 가게 데이터만.
 
@@ -841,7 +841,7 @@ await ownerWallet.writeContract({
 ### 7.2 2단계: 실제 가게 등록 흐름
 
 ```
-사장님 카카오 로그인
+사장님 로그인(D-29)
  → 사업자 정보 입력 (사업자등록번호 10자리, 개업일자, 대표자명)
  → 서버: 국세청 진위확인 + 상태조회
  → 통과: 운영자 검토 대기열 / 실패: 사유 표시, 재입력
