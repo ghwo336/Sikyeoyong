@@ -73,6 +73,19 @@ describe('Splash (Splash.md 테스트 기준)', () => {
     expect(css).toMatch(/\.skip:focus-visible\s*\{[^}]*outline:/);
   });
 
+  it('failed (onRetry): one dragon line and a retry press, no waking dots, no skip', async () => {
+    const onRetry = vi.fn();
+    const onSkip = vi.fn();
+    const { container } = render(<Splash species="forest" onRetry={onRetry} onSkip={onSkip} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('용이가 아직 못 일어났어요');
+    expect(screen.queryByText('용이를 깨우는 중이에요')).toBeNull();
+    expect(screen.queryByRole('button', { name: '시켜용 시작하기' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '다시 깨워 볼까요' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    await userEvent.click(container.firstElementChild as Element);
+    expect(onSkip).not.toHaveBeenCalled();
+  });
+
   it('is no button without onSkip', () => {
     render(<Splash species="forest" />);
     expect(screen.queryByRole('button')).toBeNull();

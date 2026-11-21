@@ -6,6 +6,9 @@ import styles from './Splash.module.css';
 export const SPLASH_TITLE = '시켜용';
 export const SPLASH_TAGLINE = '배달은 용이한테 시켜용';
 export const SPLASH_STATUS = '용이를 깨우는 중이에요';
+/** The failed state: one dragon line and a retry press (browser QA 4). */
+export const SPLASH_FAILED = '용이가 아직 못 일어났어요';
+export const SPLASH_RETRY_LABEL = '다시 깨워 볼까요';
 // Splash.dc.html says "마루 테스트넷 데모"; a chain word on screen (D-17, CLAUDE.md 12), so it
 // is the plain demo mark until the canvas changes (Splash.md "시안과 다른 점").
 export const SPLASH_FOOTER = '체험용 데모';
@@ -21,17 +24,22 @@ export interface SplashProps {
   readonly species: DragonSpecies;
   /** A press anywhere: the parent stops waiting on the splash. */
   readonly onSkip?: () => void;
+  /**
+   * The wait ended in an error: the waking line becomes one dragon line with a retry press.
+   * Given only then; it replaces the skip (there is nowhere to go).
+   */
+  readonly onRetry?: () => void;
 }
 
 /** Draws the full-screen loading splash: the bobbing dragon, the name and "waking" dots (Splash.md). */
-export function Splash({ species, onSkip }: SplashProps) {
+export function Splash({ species, onSkip, onRetry }: SplashProps) {
   return (
     // A press anywhere skips (user-flow 0). For keyboards and screen readers the skip is a real
     // button laid over the screen (last, so it is on top). It is not the root: a button's
     // children are presentational, and the status line must stay announced while it waits.
     // The button's own click (Enter, Space, or a press on it) bubbles to the root's onClick,
     // so onSkip runs once.
-    <div className={styles.splash} onClick={onSkip} data-part="splash">
+    <div className={styles.splash} onClick={onRetry ? undefined : onSkip} data-part="splash">
       <div className={styles.figure}>
         <div className={styles.bob} data-part="bob">
           <svg className={styles.halo} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
@@ -45,16 +53,25 @@ export function Splash({ species, onSkip }: SplashProps) {
         <p className={styles.title}>{SPLASH_TITLE}</p>
         <p className={styles.tagline}>{SPLASH_TAGLINE}</p>
       </div>
-      <div className={styles.status} role="status">
-        <span className={styles.dots} aria-hidden="true">
-          <span className={styles.dot} />
-          <span className={styles.dot} />
-          <span className={styles.dot} />
-        </span>
-        <span>{SPLASH_STATUS}</span>
-      </div>
+      {onRetry ? (
+        <div className={styles.status} role="alert" data-part="failed">
+          <span>{SPLASH_FAILED}</span>
+          <button type="button" data-press className={styles.retry} onClick={onRetry}>
+            {SPLASH_RETRY_LABEL}
+          </button>
+        </div>
+      ) : (
+        <div className={styles.status} role="status">
+          <span className={styles.dots} aria-hidden="true">
+            <span className={styles.dot} />
+            <span className={styles.dot} />
+            <span className={styles.dot} />
+          </span>
+          <span>{SPLASH_STATUS}</span>
+        </div>
+      )}
       <p className={styles.footer}>{SPLASH_FOOTER}</p>
-      {onSkip ? (
+      {onSkip && !onRetry ? (
         <button
           type="button"
           data-press

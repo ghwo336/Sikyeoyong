@@ -105,6 +105,23 @@
   color: color-mix(in srgb, var(--color-surface) 88%, transparent);
 }
 
+.retry {
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border: 1.5px solid var(--color-surface);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-surface);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 3px solid var(--color-surface);
+  outline-offset: 3px;
+}
+
 .dots {
   display: flex;
   gap: var(--space-2);

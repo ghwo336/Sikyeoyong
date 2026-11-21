@@ -39,11 +39,28 @@ export function EntryGate({
         ? { verified: false }
         : {}),
   });
+  // GET /me gave up on a 5xx or offline (retries spent): the first entry ends on the Splash's
+  // error line with a retry, never waking forever (browser QA 4). Other screens keep drawing
+  // their own error.
+  const meFailed = splash && route === null && me.error !== null;
   const timing = useSplashTiming(!splash || route !== undefined);
   const ready = route !== undefined && !timing.holding;
   useEffect(() => {
     if (ready && route) router.replace(route);
   }, [ready, route, router]);
+  if (meFailed) {
+    // While a retry runs it is the plain waking splash again (no flash of the chat).
+    return me.isFetching ? (
+      <Splash species={shownSpecies()} />
+    ) : (
+      <Splash
+        species={shownSpecies()}
+        onRetry={() => {
+          void me.refetch();
+        }}
+      />
+    );
+  }
   if (ready && route === null) return <>{children}</>;
   // Until the next screen is up the splash stays, so there is no blank frame in between.
   // A press can only skip once the next screen is known (the rest of SPLASH_MIN_MS); before

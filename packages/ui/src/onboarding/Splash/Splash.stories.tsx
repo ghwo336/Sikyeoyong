@@ -28,3 +28,5 @@ export const Water: Story = { args: { species: 'water' } };
 export const Flower: Story = { args: { species: 'flower' } };
 /** 별용 */
 export const Star: Story = { args: { species: 'star' } };
+/** 실패 (세션 확인이 끝내 안 됨: 한 줄과 다시 누르기) */
+export const Failed: Story = { args: { onRetry: () => undefined } };

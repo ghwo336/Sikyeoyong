@@ -185,6 +185,30 @@ describe('EntryGate splash (Splash.dc.html, user-flow 0)', () => {
     expect(await screen.findByText('대화 화면')).toBeInTheDocument();
   });
 
+  it('a server error ends on the splash error line with a retry (never waking forever)', async () => {
+    getMe.mockRejectedValue(new AppError('INTERNAL'));
+    draw(true);
+    expect(await screen.findByRole('alert')).toHaveTextContent('용이가 아직 못 일어났어요');
+    expect(getMe).toHaveBeenCalledTimes(4);
+    expect(screen.queryByText('대화 화면')).toBeNull();
+    expect(screen.queryByText('용이를 깨우는 중이에요')).toBeNull();
+    // Retry asks again; when it works the chat shows.
+    getMe.mockResolvedValue(ME);
+    getAgentSetup.mockResolvedValue(setupOf('ACTIVE'));
+    await userEvent.click(screen.getByRole('button', { name: '다시 깨워 볼까요' }));
+    expect(await screen.findByText('대화 화면')).toBeInTheDocument();
+  });
+
+  it('retry that fails again returns to the error line', async () => {
+    getMe.mockRejectedValue(new AppError('INTERNAL'));
+    draw(true);
+    await userEvent.click(await screen.findByRole('button', { name: '다시 깨워 볼까요' }));
+    await waitFor(() => {
+      expect(getMe.mock.calls.length).toBeGreaterThan(4);
+    });
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+
   it('other screens never show it', () => {
     vi.useFakeTimers();
     getMe.mockReturnValue(new Promise(() => undefined));

@@ -15,11 +15,12 @@ children: []
 언제 보이고 언제 사라질지 (웹의 세션 입구가 정한다: 1초 안에 끝나면 보이지 않고, 누르면 기다리지 않는다), 어디로 갈지
 
 ## props
-`species: DragonSpecies` (이 기기가 마지막으로 보인 종, 처음이면 숲), `onSkip?: () => void` (화면 아무 데나 누르면 한 번. 건너뛸 곳이 있을 때만 준다)
+`species: DragonSpecies` (이 기기가 마지막으로 보인 종, 처음이면 숲), `onSkip?: () => void` (화면 아무 데나 누르면 한 번. 건너뛸 곳이 있을 때만 준다), `onRetry?: () => void` (기다림이 오류로 끝났을 때만 준다. 주면 깨우는 중 줄이 "용이가 아직 못 일어났어요" 한 줄과 "다시 깨워 볼까요" 버튼(role alert)으로 바뀌고 건너뛰기는 없다)
 
 ## 하네스 상태
 `Splash.stories.tsx`에 아래를 전부 만든다.
 - 종 네 가지 (`Forest`, `Water`, `Flower`, `Star`, 바탕이 그 종 테마 색)
+- `Failed` (onRetry를 준 실패 상태)
 - 동작 줄이기는 OS 설정을 켜고 같은 스토리로 본다 (용이와 점이 멈추고 나타나기만)
 
 ## 쓰는 화면
@@ -30,6 +31,7 @@ Splash
 - 종마다 그 종의 `Dragon` 168, 그림은 모두 장식(aria-hidden)
 - 누르면 onSkip 한 번. 키보드는 Tab으로 진짜 버튼에 닿고 Enter 한 번에 한 번. 버튼은 role status를 품지 않는다
 - 바탕 `--theme-accent`(D-32 로딩 배경), 흰 글자, 점은 `yolk`, 제목은 고운돋움 44
+- onRetry를 주면 한 줄(role alert)과 다시 깨워 볼까요 버튼만 보이고 깨우는 점과 건너뛰기는 없다. 버튼은 onRetry를 한 번 부르고 화면 누름은 onSkip을 부르지 않는다
 - 움직임은 transform과 opacity만, 나타날 때 `motion.screen` 페이드. 동작 줄이기면 오르내림, 그림자, 점이 멈추고 페이드만 남는다
 
 ## 메모
