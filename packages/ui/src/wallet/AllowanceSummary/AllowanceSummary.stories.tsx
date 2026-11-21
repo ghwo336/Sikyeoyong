@@ -29,3 +29,5 @@ export const Default: Story = {};
 export const Empty: Story = { args: { owner: 0n, pocket: 0n } };
 /** 로딩 */
 export const Loading: Story = { args: { loading: true } };
+/** 못 불러옴 */
+export const Failed: Story = { args: { onRetry: () => undefined } };

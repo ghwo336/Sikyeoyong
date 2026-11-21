@@ -71,19 +71,20 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     expect(screen.queryByText('이번 달 예산')).toBeNull();
   });
 
-  it('shows no made-up balance when the server has no wallet (the row is just absent)', async () => {
-    getWallet.mockRejectedValue(new AppError('INTERNAL'));
+  it('a failed wallet read keeps its place with a retry line, no numbers, and retry works', async () => {
+    getWallet.mockRejectedValueOnce(new AppError('INTERNAL'));
     wrap(
       <>
         <AllowanceContainer />
         <LimitRowsContainer />
       </>,
     );
-    expect(await screen.findByText('30일에 쓸 돈')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.queryByText('주인님 용돈')).toBeNull();
-    });
+    expect(await screen.findByText('용돈을 못 불러왔어요')).toBeInTheDocument();
+    expect(screen.getByText('30일에 쓸 돈')).toBeInTheDocument();
     expect(screen.queryByText('이번 달 아낀 돈')).toBeNull();
+    expect(screen.queryByRole('button', { name: '채우기' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByText('81,000원')).toBeInTheDocument();
   });
 
   it('the pause switch pauses and opens the sleeping screen; it never pays', async () => {

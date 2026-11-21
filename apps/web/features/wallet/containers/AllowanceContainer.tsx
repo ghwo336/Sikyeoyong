@@ -4,11 +4,24 @@ import { parseAokrw } from '@sikyeoyong/shared';
 import { AllowanceSummary } from '@sikyeoyong/ui';
 import { useWallet } from '../hooks/useWallet';
 
-/** Wallet.dc.html top: the owner's allowance and the dragon's pocket. Nothing when unknown. */
+/**
+ * Wallet.dc.html top: the owner's allowance and the dragon's pocket. A failed read keeps its
+ * place with a retry line (like the limit rows), never made-up numbers and never a missing block.
+ */
 export function AllowanceContainer() {
   const wallet = useWallet();
-  // No made-up balance: while the server has no wallet route, the row is simply absent.
-  if (wallet.isError) return null;
+  if (!wallet.data && wallet.isError) {
+    return (
+      <AllowanceSummary
+        owner={0n}
+        pocket={0n}
+        onTopUp={() => undefined}
+        onRetry={() => {
+          void wallet.refetch();
+        }}
+      />
+    );
+  }
   if (!wallet.data) {
     return <AllowanceSummary owner={0n} pocket={0n} loading onTopUp={() => undefined} />;
   }

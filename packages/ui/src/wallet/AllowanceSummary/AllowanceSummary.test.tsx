@@ -56,6 +56,16 @@ describe('AllowanceSummary (AllowanceSummary.md 테스트 기준)', () => {
     expect(css).not.toMatch(/@keyframes|animation/);
   });
 
+  it('on a failed read shows the retry line, no numbers and no top-up, and retry asks once', async () => {
+    const onRetry = vi.fn();
+    const { container } = render(<AllowanceSummary {...base} onRetry={onRetry} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('용돈을 못 불러왔어요');
+    expect(container.textContent).not.toMatch(/\d+원/);
+    expect(screen.queryByRole('button', { name: '채우기' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '다시 불러오기' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
   // Wallet.dc.html 24-31.
   it('matches the design values', () => {
     expect(rule('.summary')).toMatch(/justify-content:\s*space-between/);
