@@ -3,7 +3,7 @@ import { basename, resolve } from 'node:path';
 import { AppError, parseMerchantOnchain, type MerchantOnchainRecord } from '@sikyeoyong/shared';
 import { eq, sql } from 'drizzle-orm';
 import { loadConfig } from '../config/env.js';
-import { type Db, openDb } from './client.js';
+import { type Db, openOwnerDb } from './client.js';
 import { runMigrations } from './migrate.js';
 import { merchants } from './schema/index.js';
 
@@ -90,7 +90,7 @@ if (require.main === module) {
   const envFile = resolve(root, '.env');
   if (existsSync(envFile)) process.loadEnvFile(envFile);
   const config = loadConfig(process.env);
-  const handle = openDb(config.databaseUrl);
+  const handle = openOwnerDb(config.databaseUrl);
   runMigrations(handle.db);
   const r = syncFromRecordFile(handle.db, root, config.chain.chainId, config.policy.profile);
   handle.close();

@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { AppError } from '@sikyeoyong/shared';
 import Database from 'better-sqlite3';
@@ -37,4 +37,26 @@ export function openDb(url: string): DbHandle {
   sqlite.pragma('busy_timeout = 5000');
   const db = drizzle(sqlite, { schema });
   return { db, sqlite, close: () => sqlite.close() };
+}
+
+/** apps/api, found from this file (src/db or dist/db), so it does not depend on the process cwd. */
+const API_DIR = resolve(__dirname, '../..');
+
+/** Like databasePath, but a relative file: URL is resolved against apps/api (where the API runs). */
+export function ownerDatabasePath(url: string, baseDir: string = API_DIR): string {
+  const path = databasePath(url);
+  if (path === ':memory:') return path;
+  return resolve(baseDir, url.slice('file:'.length));
+}
+
+/**
+ * Opens an existing DB for owner CLIs run from any cwd (root package.json scripts). Never creates
+ * a file: a missing DB would be an empty one and the CLI would silently do nothing.
+ */
+export function openOwnerDb(url: string, baseDir: string = API_DIR): DbHandle {
+  const path = ownerDatabasePath(url, baseDir);
+  if (path !== ':memory:' && !existsSync(path)) {
+    throw new Error(`DB file not found: ${path} (run pnpm db:migrate first, or fix DATABASE_URL)`);
+  }
+  return openDb(`file:${path}`);
 }

@@ -10,7 +10,7 @@
 import { parseArgs } from 'node:util';
 import { formatOkrw } from '@sikyeoyong/shared';
 import { loadConfig } from '../config/env.js';
-import { openDb } from './client.js';
+import { openOwnerDb } from './client.js';
 import { runMigrations } from './migrate.js';
 import { dbPorts, reconcileTopups } from './reconcile-topups.js';
 
@@ -33,7 +33,7 @@ function main(): number {
     return 2;
   }
   const config = loadConfig(process.env);
-  const handle = openDb(config.databaseUrl);
+  const handle = openOwnerDb(config.databaseUrl);
   try {
     runMigrations(handle.db);
     const report = reconcileTopups(dbPorts(handle.db), {

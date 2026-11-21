@@ -1,10 +1,10 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { AppError, aokrwToString, okrwToAokrw } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
-import { databasePath, type DbHandle, openDb } from './client.js';
+import { databasePath, type DbHandle, openDb, openOwnerDb, ownerDatabasePath } from './client.js';
 import { runMigrations } from './migrate.js';
 import { menus, merchants } from './schema/index.js';
 
@@ -158,5 +158,35 @@ describe('merchants and menus constraints', () => {
         )
         .run(),
     ).toThrow(/CHECK/);
+  });
+});
+
+describe('openOwnerDb', () => {
+  it('resolves a relative file URL against apps/api, not the cwd, and keeps absolute URLs', () => {
+    const base = '/x/apps/api';
+    expect(ownerDatabasePath('file:./data/a.db', base)).toBe('/x/apps/api/data/a.db');
+    expect(ownerDatabasePath('file:/abs/a.db', base)).toBe('/abs/a.db');
+    expect(ownerDatabasePath(':memory:', base)).toBe(':memory:');
+    expect(ownerDatabasePath('file:./data/a.db')).toBe(resolve(__dirname, '../../data/a.db'));
+  });
+
+  it('refuses a missing file, naming the path, and does not create it', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'owner-db-'));
+    try {
+      expect(() => openOwnerDb('file:./data/none.db', dir)).toThrow(/none\.db/);
+      expect(existsSync(join(dir, 'data'))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('opens an existing file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'owner-db-'));
+    try {
+      openDb(`file:${join(dir, 'a.db')}`).close();
+      openOwnerDb('file:./a.db', dir).close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -8,7 +8,7 @@
  */
 import { parseArgs } from 'node:util';
 import { loadConfig } from '../../config/env.js';
-import { openDb } from '../../db/client.js';
+import { openOwnerDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { rotateAgentKeys } from './agent-key-rotation.js';
 import { AgentKeyVault, parseMasterKeys } from './agent-key-vault.js';
@@ -32,7 +32,7 @@ function main(): number {
     config.secrets.agentKeyEncryptionKey,
     config.secrets.agentKeyEncryptionKeyPrevious,
   );
-  const handle = openDb(config.databaseUrl);
+  const handle = openOwnerDb(config.databaseUrl);
   try {
     runMigrations(handle.db);
     const store = new AgentKeysRepository(handle);
