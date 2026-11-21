@@ -70,6 +70,12 @@ describe('stripApprovalClaims', () => {
     '승인 OK!',
     '승인 끝!',
     '승인 요청 쏘았어용',
+    '승인 요청 쐈어용',
+    '승인 요청 넣어뒀어용',
+    '승인 요청 넣어 뒀어용',
+    '승인됨',
+    '승인 오케이~',
+    '승인 끝~',
   ])('drops %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: '', dropped: true });
   });
@@ -93,6 +99,8 @@ describe('stripApprovalClaims', () => {
     '허락받으면 시킬게용.',
     '승인 요청이 도착하면 알려드릴게용.',
     '승인 요청 전달할게용.',
+    '승인 요청 넣어 볼게용.',
+    '승인되면 오케이 하고 시킬게용.',
   ])('keeps %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: s, dropped: false });
   });
