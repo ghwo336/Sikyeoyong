@@ -87,62 +87,73 @@ export class OrderConfirmService {
     return isRetryableFailure(row.errorCode) && this.payment.path !== 'C';
   }
 
-  /** This request won the order into submitting: check, top up, mark, pay, settle. Once. */
+  /**
+   * This request won the order into submitting: check, top up, mark, pay, settle. Once.
+   * The checks, the balance read, the top-up and the payment of one dragon run one at a time
+   * (AgentsService.exclusive, the AgentLock shared with freeze, unfreeze and drain): two confirms of different orders cannot
+   * both read the same balance and fund twice, and a freeze or drain waits for its turn instead
+   * of slipping in between the frozen check and the fund.
+   */
   private async payOnce(userId: string, row: OrderRow, nowMs: number): Promise<void> {
-    let marked = false;
+    const state = { marked: false };
     try {
-      const checked = await this.check(userId, row, nowMs);
-      if (checked.kind === 'approval') {
-        this.settler.toApproval(userId, row, checked.code, nowMs);
-        return;
-      }
-      const req = {
-        agent: checked.wallet,
-        merchantOnchainId: checked.merchantOnchainId,
-        amount: parseAokrw(row.amountAokrw),
-        orderRef: row.orderRef as Hex,
-      };
-      await this.topUp(userId, row, checked.wallet, req.amount, nowMs);
-      const pre = await this.payment.preflight(req);
-      if (!pre.ok) {
-        this.settler.settle(userId, row, pre.error.code, false, nowMs);
-        return;
-      }
-      // The submit-start marker is committed before anything goes out (D-19).
-      marked = this.repo.transition(row.id, 'submitting', { submitStartedAt: nowMs }, nowMs);
-      if (!marked) throw new AppError('INTERNAL', { reason: 'order left submitting before pay' });
-      // Path B saves the signed hash and nonce before the broadcast, so a lost answer can be
-      // checked on chain later (payment.md "제출 시작 표시와 순서").
-      const result = await this.payment.pay({
-        ...req,
-        beforeBroadcast: ({ txHash, nonce }) => {
-          const saved = this.repo.transition(
-            row.id,
-            'submitting',
-            { submitTxHash: txHash, submitNonce: nonce },
-            nowMs,
-          );
-          if (!saved)
-            throw new AppError('INTERNAL', { reason: 'order left submitting before send' });
-        },
-      });
-      if (result.ok) {
-        this.repo.transition(
-          row.id,
-          'submitting',
-          { status: 'paid', txHash: result.txHash },
-          nowMs,
-        );
-        return;
-      }
-      this.settler.settle(userId, row, result.error.code, true, nowMs);
+      const agentId = this.agents.getForUser(userId).id;
+      await this.agents.exclusive(agentId, () => this.payLocked(userId, row, nowMs, state));
     } catch (e) {
       // After the marker a throw is a timeout or a lost answer, whatever its code: the
       // payment may be out, so the order stays submitting (D-19 "결과 모름"). Only a
       // returned PayResult settles it. Before the marker no payment went out.
-      if (marked) return;
+      if (state.marked) return;
       this.settler.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', false, nowMs);
     }
+  }
+
+  private async payLocked(
+    userId: string,
+    row: OrderRow,
+    nowMs: number,
+    state: { marked: boolean },
+  ): Promise<void> {
+    const checked = await this.check(userId, row, nowMs);
+    if (checked.kind === 'approval') {
+      this.settler.toApproval(userId, row, checked.code, nowMs);
+      return;
+    }
+    const req = {
+      agent: checked.wallet,
+      merchantOnchainId: checked.merchantOnchainId,
+      amount: parseAokrw(row.amountAokrw),
+      orderRef: row.orderRef as Hex,
+    };
+    await this.topUp(userId, row, checked.wallet, req.amount, nowMs);
+    const pre = await this.payment.preflight(req);
+    if (!pre.ok) {
+      this.settler.settle(userId, row, pre.error.code, false, nowMs);
+      return;
+    }
+    // The submit-start marker is committed before anything goes out (D-19).
+    state.marked = this.repo.transition(row.id, 'submitting', { submitStartedAt: nowMs }, nowMs);
+    if (!state.marked)
+      throw new AppError('INTERNAL', { reason: 'order left submitting before pay' });
+    // Path B saves the signed hash and nonce before the broadcast, so a lost answer can be
+    // checked on chain later (payment.md "제출 시작 표시와 순서").
+    const result = await this.payment.pay({
+      ...req,
+      beforeBroadcast: ({ txHash, nonce }) => {
+        const saved = this.repo.transition(
+          row.id,
+          'submitting',
+          { submitTxHash: txHash, submitNonce: nonce },
+          nowMs,
+        );
+        if (!saved) throw new AppError('INTERNAL', { reason: 'order left submitting before send' });
+      },
+    });
+    if (result.ok) {
+      this.repo.transition(row.id, 'submitting', { status: 'paid', txHash: result.txHash }, nowMs);
+      return;
+    }
+    this.settler.settle(userId, row, result.error.code, true, nowMs);
   }
 
   /**

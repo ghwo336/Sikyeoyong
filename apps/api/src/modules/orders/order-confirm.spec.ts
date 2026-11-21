@@ -30,6 +30,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
+import { AgentsService } from '../agents/agents.service.js';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
@@ -150,6 +151,7 @@ async function setup(
     repo: moduleRef.get(OrdersRepository),
     allowance: allowanceSvc,
     credit,
+    lock: moduleRef.get(AgentsService, { strict: false }),
   };
 }
 
@@ -778,6 +780,13 @@ describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (
   it('two confirms racing for one allowance: one pays, the other is refused, never both', async () => {
     const { payment, quote, confirm, row, allowance } = await setup({ allowanceWon: '10000' });
     const fund = vi.spyOn(payment, 'fund');
+    // A slow balance read keeps both requests inside the check-then-fund window together.
+    const realBalance = payment.balanceOf.bind(payment);
+    vi.spyOn(payment, 'balanceOf').mockImplementation(async (address) => {
+      const balance = await realBalance(address);
+      await new Promise((r) => setTimeout(r, 15));
+      return balance;
+    });
     const a = await quote('c1');
     const b = await quote('c2');
     await Promise.all([confirm(a), confirm(b)]);
@@ -809,5 +818,61 @@ describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (
     const { quote, confirm, allowance } = await setup({ demo: true, allowanceWon: '0' });
     expect(zOrderResult.parse((await confirm(await quote())).body).order.status).toBe('paid');
     expect(allowance.balanceAokrw('u1')).toBe(-A('9000'));
+  });
+});
+
+describe('confirm: one dragon pays one order at a time (AgentLock)', () => {
+  it('two confirms of different orders do not both rely on the same balance', async () => {
+    const { payment, wallet, quote, confirm, row } = await setup();
+    // The wallet already holds one order's amount: served together, both would see it and skip
+    // the top-up, and the second payment would find the wallet empty.
+    await payment.fund(wallet, A('9000'));
+    const fund = vi.spyOn(payment, 'fund');
+    // A slow balance read keeps both requests inside the check-then-fund window together.
+    const realBalance = payment.balanceOf.bind(payment);
+    vi.spyOn(payment, 'balanceOf').mockImplementation(async (address) => {
+      const balance = await realBalance(address);
+      await new Promise((r) => setTimeout(r, 15));
+      return balance;
+    });
+    const a = await quote('c1');
+    const b = await quote('c2');
+    await Promise.all([confirm(a), confirm(b)]);
+    expect([row(a)?.status, row(b)?.status]).toEqual(['paid', 'paid']);
+    expect(fund).toHaveBeenCalledTimes(1);
+    expect(await payment.balanceOf(wallet.address)).toBe(0n);
+  });
+
+  it('an owner action on the same dragon (freeze, drain) waits for a payment in flight', async () => {
+    const { payment, quote, confirm, lock } = await setup();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const realFund = payment.fund.bind(payment);
+    const fundSpy = vi.spyOn(payment, 'fund').mockImplementationOnce(async (...args) => {
+      await gate;
+      return realFund(...args);
+    });
+    const events: string[] = [];
+    const realPay = payment.pay.bind(payment);
+    vi.spyOn(payment, 'pay').mockImplementationOnce(async (...args) => {
+      const r = await realPay(...args);
+      events.push('paid');
+      return r;
+    });
+    const paying = confirm(await quote()).then((r) => r);
+    await vi.waitFor(() => {
+      expect(fundSpy).toHaveBeenCalled();
+    });
+    const freeze = lock.exclusive('a-u1', () => {
+      events.push('freeze');
+      return Promise.resolve();
+    });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(events).toEqual([]);
+    release();
+    await Promise.all([paying, freeze]);
+    expect(events).toEqual(['paid', 'freeze']);
   });
 });

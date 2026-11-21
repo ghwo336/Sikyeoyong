@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, users } from '../../db/schema/index.js';
+import { AgentLock } from './agent-lock.service.js';
 import { AgentsRepository } from './agents.repository.js';
 import { AgentsService } from './agents.service.js';
 import type { AgentSetupService } from './agent-setup.service.js';
@@ -45,7 +46,14 @@ function setup() {
   const verified = { isVerified: () => true } as unknown as IdentityService;
   return {
     h,
-    s: new AgentsService(new AgentsRepository(h), noSetup, noPayment, verified, loadConfig({})),
+    s: new AgentsService(
+      new AgentsRepository(h),
+      noSetup,
+      noPayment,
+      verified,
+      loadConfig({}),
+      new AgentLock(),
+    ),
   };
 }
 

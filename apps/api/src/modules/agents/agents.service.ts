@@ -14,6 +14,7 @@ import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
 import { IdentityService } from '../identity/identity.service.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
+import { AgentLock } from './agent-lock.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
 import { AgentsRepository } from './agents.repository.js';
 
@@ -50,7 +51,16 @@ export class AgentsService {
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
     private readonly identity: IdentityService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly lock: AgentLock,
   ) {}
+
+  /**
+   * Runs `fn` as the dragon's only owner-side or payment action (the same queue as freeze,
+   * unfreeze and drain), so a payment and a freeze never interleave.
+   */
+  exclusive<T>(agentId: string, fn: () => Promise<T>): Promise<T> {
+    return this.lock.run(agentId, fn);
+  }
 
   getForUser(userId: string): AgentSummary {
     const row = this.repo.findByUserId(userId);
