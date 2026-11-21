@@ -260,6 +260,9 @@ describe('order schemas (tech-spec 3.2)', () => {
     expect(
       zOrderView.safeParse({ ...paid, receipt: { ...receipt, explorerUrl: 'nope' } }).success,
     ).toBe(false);
+    // A mock-chain receipt has no explorer page (QA 6): the link is optional.
+    const { explorerUrl: _drop, ...noLink } = receipt;
+    expect(zOrderView.parse({ ...paid, receipt: noLink })).toEqual({ ...paid, receipt: noLink });
     expect(zOrderIdParam.safeParse('x'.repeat(65)).success).toBe(false);
     expect(zOrderIdParam.parse('o1')).toBe('o1');
   });

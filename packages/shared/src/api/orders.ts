@@ -94,7 +94,8 @@ export const zOrderReceipt = z
           .strict(),
       )
       .max(10),
-    explorerUrl: z.url(),
+    /** Only a real chain payment has a block explorer page; the mock chain has none (QA 6). */
+    explorerUrl: z.url().optional(),
   })
   .strict();
 export type OrderReceipt = z.infer<typeof zOrderReceipt>;

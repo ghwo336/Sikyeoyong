@@ -28,6 +28,7 @@ describe('buildReceiptJson', () => {
     expect(labels).toHaveLength(2);
     expect(labels.every((l) => l.includes('흉내 체인'))).toBe(true);
     expect(JSON.stringify(r)).not.toContain('KYC');
+    expect(r?.explorerUrl).toBeUndefined();
   });
 
   it('writes nothing when the dragon has no ID number or the hash is malformed', () => {

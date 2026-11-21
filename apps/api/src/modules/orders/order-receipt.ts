@@ -53,7 +53,8 @@ export function buildReceiptJson(input: ReceiptInput): string | null {
       ...SERVER_RULES.map((r) => ({ ...r, layer: 'server' as const, status: 'passed' as const })),
       ...chainRules.map((r) => ({ ...r, layer: 'chain' as const, status: 'passed' as const })),
     ],
-    explorerUrl: explorerTxUrl(input.chain, input.txHash),
+    // The mock chain has no explorer page; a link there would show a hash that is not on any chain.
+    ...(input.path === 'mock' ? {} : { explorerUrl: explorerTxUrl(input.chain, input.txHash) }),
   };
   return JSON.stringify(zOrderReceipt.parse(receipt));
 }

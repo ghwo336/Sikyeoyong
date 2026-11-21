@@ -209,7 +209,8 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
       '건당 한도 (흉내 체인)',
       '30일 한도 (흉내 체인)',
     ]);
-    expect(order.receipt?.explorerUrl.endsWith(`/tx/${paid?.txHash ?? ''}`)).toBe(true);
+    // The mock chain has no explorer page (QA 6): the receipt carries no link.
+    expect(order.receipt?.explorerUrl).toBeUndefined();
     expect(row(id)?.receiptJson).not.toBeNull();
     // The top-up came out of the owner allowance ledger (wallet screen).
     expect(allowance.balanceAokrw('u1')).toBe(credit - A('9000'));
@@ -367,7 +368,8 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(row(id)).toMatchObject({ status: 'paid', txHash: tx, errorCode: null });
     // The failed-to-paid move writes the receipt too (every paid transition does).
     expect(row(id)?.receiptJson).not.toBeNull();
-    expect(res.order.receipt?.explorerUrl.endsWith(`/tx/${tx}`)).toBe(true);
+    // The mock chain has no explorer page (QA 6): no link.
+    expect(res.order.receipt?.explorerUrl).toBeUndefined();
   });
 
   it('a chain refusal at preflight that asks the owner goes to pending_approval with its approval row', async () => {
