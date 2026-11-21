@@ -68,6 +68,19 @@ export type ReceiptOutcome =
     }
   | { readonly status: 'unknown' };
 
+/**
+ * An OrderPlaced found on chain. The log's own agent, merchant and amount are set when the
+ * provider read them (the real chain does); the caller compares them with its order before it
+ * calls the order paid. A search that could not cover its whole range throws instead of null.
+ */
+export interface PaidRecord {
+  readonly txHash: Hex;
+  readonly blockNumber: bigint;
+  readonly agent?: Hex;
+  readonly merchantOnchainId?: bigint;
+  readonly amount?: bigint;
+}
+
 export interface PaymentProvider {
   readonly path: PaymentPath;
   /**
@@ -100,10 +113,7 @@ export interface PaymentProvider {
    * starts at the block of that time (with a margin) instead of the deploy block. Unknown: the
    * whole history up to the provider's chunk cap.
    */
-  findPaid(
-    orderRef: Hex,
-    sinceMs?: number,
-  ): Promise<{ readonly txHash: Hex; readonly blockNumber: bigint } | null>;
+  findPaid(orderRef: Hex, sinceMs?: number): Promise<PaidRecord | null>;
   /**
    * The receipt of a transaction we recorded before broadcasting. Read only: never sends. An
    * unreadable chain throws (the caller keeps the order as it is).

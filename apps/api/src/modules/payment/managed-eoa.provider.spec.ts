@@ -119,8 +119,13 @@ function setup(opts: { balance?: bigint } = {}) {
       (_a: {
         fromBlock: bigint;
         toBlock: bigint;
-      }): Promise<readonly { transactionHash: Hex | null; blockNumber: bigint | null }[]> =>
-        Promise.resolve([]),
+      }): Promise<
+        readonly {
+          transactionHash: Hex | null;
+          blockNumber: bigint | null;
+          args?: { agent?: Hex; merchantId?: bigint; amount?: bigint };
+        }[]
+      > => Promise.resolve([]),
     ),
     // getAgentWallet: the wallet of the last setAgentWallet the operator sent (zero if none).
     readContract: vi.fn((): Promise<unknown> => {
@@ -821,12 +826,47 @@ describe('findPaid', () => {
     expect(seen.at(-1)).toBe(23_000_000n);
   });
 
-  it('reads at most findPaidMaxChunks chunks when nothing is found', async () => {
+  it('a search cut short by the chunk cap is unknown (throws), never null', async () => {
     const t = setup();
     t.pub.getBlockNumber.mockResolvedValue(23_000_000n + 2_000_000n);
     t.pub.getLogs.mockResolvedValue([]);
+    await expect(t.provider.findPaid(REF)).rejects.toBeInstanceOf(AppError);
+    expect(t.pub.getLogs).toHaveBeenCalledTimes(30);
+  });
+
+  it('a hit inside the capped chunks is still found', async () => {
+    const t = setup();
+    t.pub.getBlockNumber.mockResolvedValue(23_000_000n + 2_000_000n);
+    t.pub.getLogs
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ transactionHash: hash(5), blockNumber: 24_000_000n }]);
+    expect((await t.provider.findPaid(REF))?.txHash).toBe(hash(5));
+  });
+
+  it('a search that covers the whole range with nothing found is null', async () => {
+    const t = setup();
+    t.pub.getBlockNumber.mockResolvedValue(23_000_000n + 299_999n);
+    t.pub.getLogs.mockResolvedValue([]);
     expect(await t.provider.findPaid(REF)).toBeNull();
     expect(t.pub.getLogs).toHaveBeenCalledTimes(30);
+  });
+
+  it('returns the log agent, merchant and amount for the caller to compare', async () => {
+    const t = setup();
+    t.pub.getLogs.mockResolvedValue([
+      {
+        transactionHash: hash(5),
+        blockNumber: 23_000_090n,
+        args: { agent: PROXY, merchantId: 7n, amount: W(9_000n) },
+      },
+    ]);
+    expect(await t.provider.findPaid(REF)).toEqual({
+      txHash: hash(5),
+      blockNumber: 23_000_090n,
+      agent: PROXY,
+      merchantOnchainId: 7n,
+      amount: W(9_000n),
+    });
   });
 });
 

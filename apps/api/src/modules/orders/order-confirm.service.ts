@@ -5,8 +5,10 @@ import {
   type AppErrorCode,
   type Hex,
   type OrderResult,
+  type PaidRecord,
   type OwnerAuthority,
   type PaymentProvider,
+  aokrwToString,
   parseAokrw,
 } from '@sikyeoyong/shared';
 import { APP_CONFIG } from '../../config/config.module.js';
@@ -67,9 +69,14 @@ export class OrderConfirmService {
       }
     } else if (row.status === 'failed' && this.mayRetry(row)) {
       // A person pressed again: ask the chain first, then the same orderRef (D-19).
-      const paid = await this.payment.findPaid(row.orderRef as Hex, row.createdAt);
-      if (paid !== null) {
-        this.receipts.markPaid(row, 'failed', paid.txHash, nowMs);
+      const paid = await this.lookupPaid(row);
+      if (paid === 'unknown') {
+        // The search could not cover its range or the chain was unreadable: not paid is a guess.
+        // The order stays as it is and nothing is sent (rule 9).
+      } else if (paid !== null) {
+        if (this.matchesOrder(userId, row, paid)) {
+          this.receipts.markPaid(row, 'failed', paid.txHash, nowMs);
+        }
       } else if (
         this.repo.transition(row.id, 'failed', toSubmitting, nowMs, { bumpAttempt: true })
       ) {
@@ -77,6 +84,46 @@ export class OrderConfirmService {
       }
     }
     return { order: this.views.viewFor(userId, orderId, nowMs) };
+  }
+
+  /** findPaid, with a search that threw (cut short or unreadable chain) answered as 'unknown'. */
+  private async lookupPaid(row: OrderRow): Promise<PaidRecord | null | 'unknown'> {
+    try {
+      return await this.payment.findPaid(row.orderRef as Hex, row.createdAt);
+    } catch (e) {
+      this.logger.warn(`order ${row.id} paid lookup unknown (${(e as Error).name})`);
+      return 'unknown';
+    }
+  }
+
+  /**
+   * The OrderPlaced found for an orderRef must be this order's own: the same agent wallet,
+   * merchant and amount. A log that differs is never marked paid, only logged (a person looks).
+   * A field the provider did not read (the mock) is not compared.
+   */
+  private matchesOrder(userId: string, row: OrderRow, found: PaidRecord): boolean {
+    const wallet = this.agents.getForUser(userId).wallet;
+    const onchainId = this.merchants.orderInfoOf(row.merchantId)?.onchainId ?? null;
+    const bad: string[] = [];
+    if (found.amount !== undefined && found.amount !== parseAokrw(row.amountAokrw)) {
+      bad.push('amount ' + aokrwToString(found.amount) + ' vs ' + row.amountAokrw);
+    }
+    if (found.merchantOnchainId !== undefined && found.merchantOnchainId !== onchainId) {
+      bad.push(
+        `merchant ${found.merchantOnchainId.toString()} vs ${onchainId?.toString() ?? 'none'}`,
+      );
+    }
+    if (
+      found.agent !== undefined &&
+      (wallet === null || found.agent.toLowerCase() !== wallet.toLowerCase())
+    ) {
+      bad.push(`agent ${found.agent} vs ${wallet ?? 'none'}`);
+    }
+    if (bad.length === 0) return true;
+    this.logger.error(
+      `OrderPlaced for order ${row.id} does not match it (tx ${found.txHash}): ${bad.join(', ')}. Not marked paid`,
+    );
+    return false;
   }
 
   /** Path C has no proven same-orderRef guard yet, so a failed order is not paid again there (Q-24). */
@@ -191,8 +238,8 @@ export class OrderConfirmService {
     attempt: number,
   ): Promise<void> {
     if (code === 'CHAIN_ORDER_EXISTS') {
-      const paid = await this.payment.findPaid(row.orderRef as Hex, row.createdAt);
-      if (paid !== null) {
+      const paid = await this.lookupPaid(row);
+      if (paid !== null && paid !== 'unknown' && this.matchesOrder(userId, row, paid)) {
         this.receipts.markPaid(row, 'submitting', paid.txHash, nowMs, attempt);
         return;
       }

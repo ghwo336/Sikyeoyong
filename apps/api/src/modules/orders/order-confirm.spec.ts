@@ -25,6 +25,7 @@ import {
   allowedMerchants,
   approvals,
   menus,
+  merchants,
   orders,
   ownerAllowanceEntries,
   users,
@@ -393,6 +394,100 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(find).toHaveBeenCalledWith(row(id)?.orderRef, row(id)?.createdAt);
     expect(pay).not.toHaveBeenCalled();
     expect(row(id)).toMatchObject({ status: 'paid', txHash: tx, errorCode: null });
+  });
+
+  describe('the OrderPlaced found must be this order (OrderExists path)', () => {
+    const rig = async () => {
+      const t = await setup();
+      t.h.db.update(merchants).set({ onchainId: '7' }).where(eq(merchants.id, 'm1')).run();
+      const id = await t.quote(); // 9,000 won at m1
+      vi.spyOn(t.payment, 'preflight').mockResolvedValueOnce({
+        ok: false,
+        error: { code: 'CHAIN_ORDER_EXISTS' },
+      });
+      const tx: Hex = `0x${'dd'.repeat(32)}`;
+      const found = (over: object) =>
+        vi.spyOn(t.payment, 'findPaid').mockResolvedValueOnce({
+          txHash: tx,
+          blockNumber: 3n,
+          agent: t.wallet.address,
+          merchantOnchainId: 7n,
+          amount: A('9000'),
+          ...over,
+        });
+      return { ...t, id, tx, found };
+    };
+
+    it('a log with the order amount, merchant and agent marks it paid', async () => {
+      const { found, confirm, id, tx, row } = await rig();
+      found({});
+      expect(zOrderResult.parse((await confirm(id)).body).order).toMatchObject({
+        status: 'paid',
+        txHash: tx,
+      });
+      expect(row(id)?.status).toBe('paid');
+    });
+
+    it('the agent address is compared without case', async () => {
+      const { found, confirm, id, wallet } = await rig();
+      found({ agent: wallet.address.toUpperCase().replace('0X', '0x') });
+      expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('paid');
+    });
+
+    it.each([
+      ['amount', { amount: A('1') }],
+      ['merchant', { merchantOnchainId: 8n }],
+      ['agent', { agent: `0x${'12'.repeat(20)}` }],
+    ])('a different %s is not marked paid', async (_name, over) => {
+      const { found, confirm, id, row } = await rig();
+      found(over);
+      const res = zOrderResult.parse((await confirm(id)).body);
+      expect(res.order.status).toBe('failed');
+      expect(row(id)).toMatchObject({ status: 'failed', txHash: null });
+    });
+
+    it('the same mismatch on a retry of a failed order stays failed', async () => {
+      const { found, confirm, id, row, payment } = await rig();
+      const pay = vi.spyOn(payment, 'pay');
+      found({ amount: A('1') });
+      // Press once: preflight refuses with OrderExists, the mismatch leaves it failed.
+      await confirm(id);
+      found({ amount: A('1') });
+      await confirm(id);
+      expect(pay).not.toHaveBeenCalled();
+      expect(row(id)).toMatchObject({ status: 'failed', txHash: null });
+    });
+  });
+
+  it('a retry whose paid lookup is unknown (cut short) keeps the order and sends nothing', async () => {
+    const { h, payment, quote, confirm, row } = await setup();
+    const id = await quote();
+    h.db
+      .update(orders)
+      .set({ status: 'failed', errorCode: 'CHAIN_INSUFFICIENT_FUNDS' })
+      .where(eq(orders.id, id))
+      .run();
+    vi.spyOn(payment, 'findPaid').mockRejectedValueOnce(new AppError('INTERNAL'));
+    const pay = vi.spyOn(payment, 'pay');
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order.status).toBe('failed');
+    expect(pay).not.toHaveBeenCalled();
+    expect(row(id)).toMatchObject({ status: 'failed', attempt: 0 });
+  });
+
+  it('OrderExists whose paid lookup is unknown after the marker stays submitting, no resend', async () => {
+    const { payment, quote, confirm, row } = await setup();
+    const id = await quote();
+    const pay = vi.spyOn(payment, 'pay').mockResolvedValueOnce({
+      ok: false,
+      stage: 'execution',
+      error: { code: 'CHAIN_ORDER_EXISTS' },
+    });
+    vi.spyOn(payment, 'findPaid').mockRejectedValue(new AppError('INTERNAL'));
+    expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('submitting');
+    await confirm(id);
+    expect(pay).toHaveBeenCalledTimes(1);
+    expect(row(id)?.status).toBe('submitting');
   });
 
   it('OrderExists from pay with the orderRef on chain settles as paid', async () => {

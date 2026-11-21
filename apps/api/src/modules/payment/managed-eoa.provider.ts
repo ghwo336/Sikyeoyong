@@ -7,6 +7,7 @@ import {
   type Hex,
   type PayRequest,
   type PayResult,
+  type PaidRecord,
   type PaymentProvider,
   type ReceiptOutcome,
 } from '@sikyeoyong/shared';
@@ -80,7 +81,13 @@ export interface PublicPort {
     args?: unknown;
     fromBlock: bigint;
     toBlock: bigint;
-  }): Promise<readonly { transactionHash: Hex | null; blockNumber: bigint | null }[]>;
+  }): Promise<
+    readonly {
+      transactionHash: Hex | null;
+      blockNumber: bigint | null;
+      args?: { agent?: Hex; merchantId?: bigint; amount?: bigint };
+    }[]
+  >;
   readContract(a: {
     address: Hex;
     abi: Abi;
@@ -459,10 +466,7 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
     );
   }
 
-  async findPaid(
-    orderRef: Hex,
-    sinceMs?: number,
-  ): Promise<{ txHash: Hex; blockNumber: bigint } | null> {
+  async findPaid(orderRef: Hex, sinceMs?: number): Promise<PaidRecord | null> {
     const latest = await this.d.publicClient.getBlockNumber();
     const event = ordersAbi.find((i) => i.type === 'event' && i.name === 'OrderPlaced');
     const from =
@@ -472,7 +476,8 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
     // Newest first, within the RPC's range cap, so a recent order is found in the first call.
     // The chunk cap bounds the calls of a search that finds nothing.
     const ranges = logRanges(from, latest, this.d.config.logBlockSpan, true);
-    for (const range of ranges.slice(0, this.d.config.findPaidMaxChunks)) {
+    const scanned = ranges.slice(0, this.d.config.findPaidMaxChunks);
+    for (const range of scanned) {
       const logs = await this.d.publicClient.getLogs({
         address: this.d.config.proxy,
         event,
@@ -482,7 +487,23 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
       });
       const hit = logs[0];
       if (hit?.transactionHash == null || hit.blockNumber == null) continue;
-      return { txHash: hit.transactionHash, blockNumber: hit.blockNumber };
+      const args = hit.args;
+      return {
+        txHash: hit.transactionHash,
+        blockNumber: hit.blockNumber,
+        ...(args?.agent !== undefined && { agent: args.agent }),
+        ...(args?.merchantId !== undefined && { merchantOnchainId: args.merchantId }),
+        ...(args?.amount !== undefined && { amount: args.amount }),
+      };
+    }
+    // The cap cut the search short: "not found" would be a guess, so the answer is unknown
+    // (the caller keeps the order as it is and never sends again, rule 9).
+    if (scanned.length < ranges.length) {
+      throw unknown('paid lookup did not reach the start of the range', {
+        orderRef,
+        chunks: scanned.length,
+        needed: ranges.length,
+      });
     }
     return null;
   }
