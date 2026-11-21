@@ -1,7 +1,7 @@
 'use client';
 
 import { parseAokrw } from '@sikyeoyong/shared';
-import { IdCard, TopBar } from '@sikyeoyong/ui';
+import { IdCard, LoadingShape, TopBar } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useMe } from '../../me/hooks/useMe';
 import { useIdCard } from '../hooks/useWallet';
@@ -14,7 +14,14 @@ export function IdCardContainer() {
   const back = () => {
     router.push('/dragon');
   };
-  if (!me || !card) return <TopBar title="용이 신분증" onBack={back} />;
+  if (!me || !card) {
+    return (
+      <>
+        <TopBar title="용이 신분증" onBack={back} />
+        <LoadingShape kind="detail" />
+      </>
+    );
+  }
   return (
     <>
       <TopBar title="용이 신분증" onBack={back} />

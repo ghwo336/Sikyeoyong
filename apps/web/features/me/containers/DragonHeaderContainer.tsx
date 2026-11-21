@@ -1,7 +1,7 @@
 'use client';
 
 import { parseAokrw } from '@sikyeoyong/shared';
-import { ChatHeader } from '@sikyeoyong/ui';
+import { ChatHeader, LoadingShape } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useMe } from '../hooks/useMe';
 import { limitLine } from '../limit-line';
@@ -10,7 +10,7 @@ import { limitLine } from '../limit-line';
 export function DragonHeaderContainer() {
   const router = useRouter();
   const me = useMe().data;
-  if (!me) return null;
+  if (!me) return <LoadingShape kind="chatHeader" />;
   return (
     <ChatHeader
       name={me.dragonName}

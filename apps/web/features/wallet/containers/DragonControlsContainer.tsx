@@ -1,6 +1,6 @@
 'use client';
 
-import { ListRow, SPECIES_INFO, Switch } from '@sikyeoyong/ui';
+import { ListRow, LoadingShape, SPECIES_INFO, Switch } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
@@ -11,10 +11,11 @@ import { useSetFrozen } from '../hooks/useWallet';
 export function DragonControlsContainer() {
   const router = useRouter();
   const me = useMe().data;
-  const budget = useBudget().data;
+  const { data: budget, isError } = useBudget();
   const freeze = useSetFrozen();
   const [details, setDetails] = useDetailsMode();
-  if (!me || !budget) return null;
+  if (isError) return null;
+  if (!me || !budget) return <LoadingShape kind="rows" count={3} />;
   return (
     <>
       <ListRow

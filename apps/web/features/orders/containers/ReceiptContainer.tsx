@@ -1,7 +1,7 @@
 'use client';
 
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
-import { OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
+import { LoadingShape, OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
 import { amountRatioText } from '../../../lib/format';
 import { useRouter } from 'next/navigation';
 import { useBudget } from '../../budget/hooks/useBudget';
@@ -23,7 +23,14 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
   const back = () => {
     router.push(`/orders/${encodeURIComponent(orderId)}`);
   };
-  if (!order) return <TopBar title="주문 상세" onBack={back} />;
+  if (!order) {
+    return (
+      <>
+        <TopBar title="주문 상세" onBack={back} />
+        <LoadingShape kind="detail" />
+      </>
+    );
+  }
   // A stopped or unpaid order has no receipt: it must never look paid (status.ts).
   if (orderStep(order.status) === null) return <TopBar title="주문 상세" onBack={back} />;
   const amount = parseAokrw(order.amount);

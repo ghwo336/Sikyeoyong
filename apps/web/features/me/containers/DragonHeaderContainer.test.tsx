@@ -37,6 +37,18 @@ describe('DragonHeaderContainer', () => {
     expect(push).toHaveBeenCalledWith('/dragon');
   });
 
+  it('draws the header shape while /me loads, then swaps it for the real header (D-23)', async () => {
+    const qc = new QueryClient();
+    const { container } = render(
+      <QueryClientProvider client={qc}>
+        <DragonHeaderContainer />
+      </QueryClientProvider>,
+    );
+    expect(container.querySelector('[data-shape="chatHeader"]')).not.toBeNull();
+    await screen.findByRole('heading', { level: 1, name: '봄봄' });
+    expect(container.querySelector('[data-shape="chatHeader"]')).toBeNull();
+  });
+
   it('the receipt button opens the order history (Main.dc.html 주문 내역)', async () => {
     const qc = new QueryClient();
     render(

@@ -1,7 +1,7 @@
 'use client';
 
 import { parseAokrw } from '@sikyeoyong/shared';
-import { DragonLine, LimitBlocked, TopBar } from '@sikyeoyong/ui';
+import { DragonLine, LimitBlocked, LoadingShape, TopBar } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
@@ -27,7 +27,14 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
     budget !== undefined &&
     parseAokrw(order.amount) <= parseAokrw(budget.perOrderLimit);
   useBackToChat(orderQuery.isError || fits);
-  if (!me || !budget || !order) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
+  if (!me || !budget || !order) {
+    return (
+      <>
+        <TopBar onBack={back} backLabel="대화로 돌아가기" />
+        <LoadingShape kind="detail" />
+      </>
+    );
+  }
   const attempted = parseAokrw(order.amount);
   const limit = parseAokrw(budget.perOrderLimit);
   // Only an order over the per-order limit belongs here; other waits (a new store, the budget)

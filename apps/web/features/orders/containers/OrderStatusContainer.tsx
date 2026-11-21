@@ -4,6 +4,7 @@ import { parseAokrw } from '@sikyeoyong/shared';
 import {
   DeliveryMap,
   DragonLine,
+  LoadingShape,
   OrderStatusHeader,
   OrderSummary,
   StepProgress,
@@ -28,7 +29,16 @@ export function OrderStatusContainer({ orderId }: { readonly orderId: string }) 
   const step = order ? orderStep(order.status) : null;
   // Loading, unknown, unpaid or stopped orders show no progress: a failed or refunded order
   // must never look accepted. Their own screens are not built yet (web.md).
-  if (!order || !me || step === null) {
+  if (!order || !me) {
+    // Still loading: the shape of the status screen, so it does not jump when the order arrives.
+    return (
+      <>
+        <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />
+        <LoadingShape kind="orderStatus" />
+      </>
+    );
+  }
+  if (step === null) {
     return <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />;
   }
   if (order.status === 'delivered') return <ArrivedContainer order={order} />;
