@@ -82,6 +82,10 @@
 | `pnpm contracts:deploy:testnet` | PCL 프록시로 테스트넷 배포 |
 | `pnpm policy:apply` | `packages/shared/src/config/policy.ts` 값(프로필별)을 컨트랙트 범위 정책에 반영. `changeContractPolicies`는 전체 교체라 현재 값을 읽고 전체를 다시 쓴다 |
 | `pnpm merchants:balances` / `pnpm merchants:sweep --to <주소> (--merchant <키>\|--all) [--dry-run]` | 가게 지갑 잔액 보기 / 주인이 손으로 돌리는 가게 지갑 회수 (D-33). 키는 `seed/.keys`(보관본 `archive/`), LLM과 서버 API에는 없다 |
+| `pnpm merchants:register --keys seed/.keys/merchants.json --db apps/api/data/sikyeoyong.db [--only a,b] [--dry-run]` | 시드 가게를 주문 프록시에 등록하고 활성화한다 (D-33). 실제 트랜잭션, 중단되면 이어서 가능, 키는 출력하지 않는다 |
+| `pnpm merchants:sync-onchain` | 등록 기록 파일의 온체인 가게 ID를 DB 가게에 반영한다. DB는 API와 같은 파일(apps/api 기준)이고 없으면 거부한다 |
+| `pnpm dev:certs` | 로컬 HTTPS용 CA와 localhost 인증서를 `.certs/`에 만든다 (한 번만, D-29) |
+| `pnpm dev:web:https` | 웹을 인증서를 붙여 https://localhost:3000 으로 실행한다 (Pouchi 콜백용) |
 | `pnpm e2e:path-b --run` (또는 `--drain <에이전트 주소>`) | 경로 B 실제 테스트넷 결제 전 과정을 주인이 손으로 돌린다 (실제 트랜잭션, 일회용 에이전트, 끝에 회수). `OPERATOR_KEY`, `AGENT_KEY_ENCRYPTION_KEY` 필요, 키는 출력하지 않는다 |
 | `pnpm agent-keys:rotate -- --dry-run\|--run` | 에이전트 키를 현재 마스터 키(v2, HKDF)로 다시 봉인. 교체 절차는 security.md, 키는 출력하지 않는다 |
 | `pnpm topups:reconcile -- --dry-run\|--run [--older-than <분>]` | 해시 없이 남은 충전 보류(용돈 장부 `fund`)를 대사. 주문에 충전 표시가 없는 보류만 풀고 나머지는 보고만 한다. 재전송 없음, payment.md |
