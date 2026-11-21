@@ -5,12 +5,14 @@ import type { PaymentProvider } from '@sikyeoyong/shared';
 import { PaymentModule } from '../payment/payment.module.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { CHAIN_READER, ORDER_EVENTS } from './chain.service.js';
+import { ChainIdGuard } from './chain-id-guard.js';
 import { createChainReader } from './chain-reader.factory.js';
 import { createOrderEvents } from './order-events.js';
 
 @Module({
   imports: [PaymentModule],
   providers: [
+    ChainIdGuard,
     {
       provide: CHAIN_READER,
       inject: [APP_CONFIG, PAYMENT_PROVIDER],

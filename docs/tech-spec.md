@@ -513,7 +513,7 @@ score(merchant, menu) =
 - 코드(`apps/api/src/modules/recommend/score.ts`, 2026-11-20)는 위 식을 정수로 계산한다(요소 0~100점, 가중치 35·20·20·15·10, 금액 bigint). 위 식과 다른 곳: 한도를 넘는 메뉴는 craving이 그 메뉴의 이름이나 태그에 맞을 때만 "승인 필요"로 넣고 한도 안 메뉴 뒤에 둔다 (가게 이름이나 카테고리만 맞으면 넣지 않는다), craving이 맞으면 맞은 메뉴만 순위를 매긴다, craving이 없으면 가게마다 메뉴 하나, 개인 예산을 넘게 되는 메뉴는 "승인 필요", 30일 체인 상한을 넘게 되는 메뉴와 품절 메뉴는 제외, `warn70` 이상이면 예산 가중치 55. 요소별 정의와 이유는 `docs/wiki/components/recommend-and-nag.md` "추천 점수 규칙".
 
 ### 3.9 체인 읽기와 인덱서 (chain 모듈)
-- viem `publicClient` (HTTP `MAROO_RPC_URL`, WebSocket은 2단계). 체인 ID는 부팅 시 `eth_chainId`로 읽어 `CHAIN_ID` 환경 변수와 다르면 경고 후 RPC 값 사용 (D-05 하드코딩 금지).
+- viem `publicClient` (HTTP `MAROO_RPC_URL`, WebSocket은 2단계). 체인 ID는 부팅 시 `eth_chainId`로 읽어 설정(`CHAIN_ID` 또는 shared config)과 다르면 **부팅을 멈춘다** (D-05 하드코딩 금지, 2026-11-21 코드: `modules/chain/chain-id-guard.ts`). 경로 B에서 배포된 프록시가 있을 때만 검사하고(목 경로와 프록시 없는 개발 설정은 건너뜀), RPC를 못 읽으면 production은 멈추고 개발은 경고만 한다.
 - 인덱서: 3초 간격 `getLogs(address=ORDERS_CONTRACT, fromBlock=cursor+1, toBlock=latest)`, 한 번에 최대 2,000블록. 이벤트별 핸들러가 DB upsert(멱등: `(txHash, logIndex)` 유니크). 처리 후 `chain_cursor` 갱신(같은 DB 트랜잭션).
 - 재시작: `chain_cursor.last_block`부터 재개. 최초 실행은 `ORDERS_DEPLOY_BLOCK`.
 - 코드 (2026-11-21, 경로 B만): `OrderIndexer`(`modules/orders/order-indexer.service.ts`)가 `ORDER_EVENTS`(`modules/chain/order-events.ts`, `OrderPlaced`만)로 3초 간격 읽는다. 배포 기록의 `deployBlock`(또는 `ORDERS_DEPLOY_BLOCK`)에서 시작해 2,000블록씩. 지금은 커서를 메모리에만 두고(재시작하면 배포 블록부터 다시 읽음, 멱등이라 안전), `chain_cursor` 테이블과 `OrderPlaced` 외 이벤트는 아직이다. 목 경로는 인덱서 없음.

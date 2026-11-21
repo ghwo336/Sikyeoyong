@@ -88,7 +88,7 @@ children: []
 정확한 revert 이름은 테스트넷에서 확인 후 이 표와 tech-spec 3.6을 함께 고친다. 코드: `apps/api/src/common/onchain/revert-decoder.ts`(`decodeChainFailure`). viem 오류의 `cause` 사슬에서 revert 바이트를 찾아 우리 컨트랙트 에러와 SDK의 `Abis.errors`로 풀고, 바이트가 없으면 노드의 "insufficient funds" 문구를 `CHAIN_INSUFFICIENT_FUNDS`로 본다 (확인: `ExceededAgentTransferLimit(5,000 OKRW 한도)`와 `AgentIsPaused`는 테스트넷에서 이 경로로 풀렸다. 나머지 이름은 ABI 단위 테스트로만).
 
 ## 반드시 지킬 규칙 (MUST)
-- 체인 ID와 주소는 설정 파일에서만 읽는다. 테스트넷 체인 ID(450815)는 바뀔 예정이다 (확인). 부팅 시 `eth_chainId`와 대조한다.
+- 체인 ID와 주소는 설정 파일에서만 읽는다. 테스트넷 체인 ID(450815)는 바뀔 예정이다 (확인). 부팅 시 `eth_chainId`와 대조하고 다르면 부팅을 멈춘다 (`modules/chain/chain-id-guard.ts`의 `ChainIdGuard`, 경로 B에 배포된 프록시가 있을 때. RPC를 못 읽으면 production은 멈추고 개발은 경고).
 - 정책값은 `policy.ts` 한곳, 프로필(`POLICY_PROFILE=default|demo`)로 고른다. 체인에 적용된 값과 다르면 `pnpm policy:apply --check`가 실패해야 한다.
 - **`changeContractPolicies`는 전체 교체다** (확인). 항상 `contractPolicies`로 현재 값을 읽고 전체 배열을 다시 만든다. 빠뜨린 항목은 조용히 지워진다.
 - **정책 admin은 한 번만 정해진다** (확인). 문서는 첫 `changeContractPolicies` 호출자라고 하지만, 실제로는 `deployPclProxy` 호출자가 배포와 동시에 admin이 된다 (확인, 2026-11-20, F-20). 같은 운영자 키로 배포하고 정책을 건다. admin 키를 잃으면 정책을 영구히 못 바꾼다.
