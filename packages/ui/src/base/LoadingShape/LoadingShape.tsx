@@ -12,6 +12,20 @@ export interface LoadingShapeProps {
   readonly [data: `data-${string}`]: string | boolean | undefined;
 }
 
+const line = (size: string, lineHeight: string) => `${size} * ${lineHeight}`;
+
+/**
+ * Heights taken from the same tokens as the real parts' CSS, so a changed token moves the shape
+ * with the part (LoadingShape.test.tsx reads those CSS files and checks each token is there).
+ * OrderStatusHeader: a display line over a body line, one space-1 apart.
+ */
+export const ORDER_HEADER_HEIGHT = `calc(${line('var(--type-display-size)', 'var(--type-display-line-height)')} + var(--space-1) + ${line('var(--type-body-size)', 'var(--type-body-line-height)')})`;
+/**
+ * OrderSummary with one line: padding and border, then head, one body line, divider (1px and
+ * its 2px margins) and total, three summary gaps between the four.
+ */
+export const SUMMARY_CARD_HEIGHT = `calc(var(--space-4) * 2 + 2px + ${line('var(--type-caption-size)', 'var(--type-body-line-height)')} + ${line('var(--type-body-size)', 'var(--type-body-line-height)')} + 5px + ${line('var(--type-total-size)', 'var(--type-body-line-height)')} + var(--size-summary-gap) * 3)`;
+
 /**
  * Draws the still grey shape of a region while its data loads, as tall as the real thing so
  * nothing jumps when the data arrives (LoadingShape.md, D-23).
@@ -25,7 +39,7 @@ export function LoadingShape({ kind, count = 3, ...data }: LoadingShapeProps) {
         <div className={styles.chatHeader} {...common}>
           <Skeleton height="circle" width="var(--size-dragon-sheet)" />
           <div className={styles.chatText}>
-            <Skeleton height="block" blockHeight="18px" width="6em" />
+            <Skeleton height="block" blockHeight="var(--type-heading-size)" width="6em" />
             <Skeleton height="caption" width="10em" />
           </div>
         </div>
@@ -43,9 +57,9 @@ export function LoadingShape({ kind, count = 3, ...data }: LoadingShapeProps) {
     case 'orderStatus':
       return (
         <div className={styles.stack} {...common}>
-          <Skeleton height="block" blockHeight="64px" width="60%" />
+          <Skeleton height="block" blockHeight={ORDER_HEADER_HEIGHT} width="60%" />
           <Skeleton height="block" blockHeight="var(--size-step-md)" width="100%" />
-          <Skeleton height="block" blockHeight="160px" width="100%" />
+          <Skeleton height="block" blockHeight={SUMMARY_CARD_HEIGHT} width="100%" />
         </div>
       );
     case 'rows':
@@ -63,7 +77,7 @@ export function LoadingShape({ kind, count = 3, ...data }: LoadingShapeProps) {
       return (
         <div className={styles.stack} {...common}>
           <Skeleton height="walletAmount" width="10em" />
-          <Skeleton height="block" blockHeight="120px" width="100%" />
+          <Skeleton height="block" blockHeight={SUMMARY_CARD_HEIGHT} width="100%" />
         </div>
       );
   }
