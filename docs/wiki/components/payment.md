@@ -162,7 +162,7 @@ interface PaymentProvider {
 - 같은 nonce가 다른 트랜잭션으로 소비된 경우는 인덱서 DB가 아니라 그 nonce를 쓴 트랜잭션의 영수증 로그를 체인에서 직접 조회해서 판단한다. `OrderPlaced(orderRef)`가 없을 때만 재시도 가능 `failed`.
 - `submitting`이 `SUBMITTING_ALERT_MS`(설정값, 기본 10분) 넘게 결론이 없으면 운영자에게 알린다. 상태는 사람이 확인할 때까지 그대로 둔다 (자동으로 `failed`로 바꾸지 않는다).
 - 서버가 시작할 때 `submitting`인 주문을 모두 다시 확인한다 (프로세스가 `pay` 전후에 죽은 경우).
-  - 코드 (2026-11-21): `modules/orders/order-boot-recheck.service.ts`(`OrderBootRecheck`, 부팅 훅). 시작 때 `submitting` 목록을 동기로 한 번 읽고(그 뒤에 시작된 주문은 보지 않음), 체인 조회는 백그라운드로 돈다. 표시 없음은 재시도 가능 `failed`(`INTERNAL`), 표시 있음은 `findPaid(orderRef)`가 있으면 `paid`(체인의 tx hash), 없거나 체인을 못 읽으면 `submitting` 유지(경고 로그). 읽기만 하고 `pay`는 부르지 않는다. 제출 해시의 영수증이 revert로 확정됐으면(`PaymentProvider.receiptOf(txHash)`: success, reverted(해석한 사유), unknown) 그 사유가 재시도 가능, 재시도 불가, 승인 분류일 때 `failed`(그 코드)로 옮긴다. 사유를 못 읽었거나(INTERNAL) 영수증이 없거나 체인을 못 읽으면 `submitting` 유지. 다시 보내지 않는다. 아직: `SUBMITTING_ALERT_MS` 알림.
+  - 코드 (2026-11-21): `modules/orders/order-boot-recheck.service.ts`(`OrderBootRecheck`, 부팅 훅). 시작 때 `submitting` 목록을 동기로 한 번 읽고(그 뒤에 시작된 주문은 보지 않음), 체인 조회는 백그라운드로 돈다. 표시 없음은 재시도 가능 `failed`(`INTERNAL`), 표시 있음은 `findPaid(orderRef)`가 있으면 `paid`(체인의 tx hash), 없거나 체인을 못 읽으면 `submitting` 유지(경고 로그). 읽기만 하고 `pay`는 부르지 않는다. 제출 해시의 영수증이 revert로 확정됐으면(`PaymentProvider.receiptOf(txHash)`: success, reverted(해석한 사유), unknown) 그 사유의 분류를 live 경로와 같은 `OrderSettler`(`order-settler.service.ts`, confirm과 공유)로 처리한다: 재시도 가능, 재시도 불가는 `failed`(그 코드), 승인 분류(SERVER_*, CHAIN_AGENT_LIMIT)는 `pending_approval`과 승인 행을 한 트랜잭션으로 만든다. 사유를 못 읽었거나(INTERNAL) 영수증이 없거나 체인을 못 읽으면 `submitting` 유지. 다시 보내지 않는다. 아직: `SUBMITTING_ALERT_MS` 알림.
 - 사전 검사 실패는 `submitting`으로 바꾼 뒤에 나도 위 분류대로 상태를 바꾼다 (제출 전이므로 결과 모름이 아니다).
 
 ### 즉시 충전(fund)의 멱등성

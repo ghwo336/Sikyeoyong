@@ -3,9 +3,11 @@ import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
-import { orders } from '../../db/schema/index.js';
+import { approvals, orders } from '../../db/schema/index.js';
 import { insertMerchant, insertUser } from '../../test/fixtures.js';
+import type { ApprovalsService, OpenApprovalInput } from '../approvals/approvals.service.js';
 import { OrderBootRecheck } from './order-boot-recheck.service.js';
+import { OrderSettler } from './order-settler.service.js';
 import { type OrderStatus, OrdersRepository } from './orders.repository.js';
 
 const handles: DbHandle[] = [];
@@ -63,7 +65,38 @@ function setup(
       .from(orders)
       .where(eq(orders.id, `o${String(n)}`))
       .get();
-  return { svc: new OrderBootRecheck(payment, repo), add, find, pay, receipt, read };
+  // The real ApprovalsService is another module's (architecture.md): this stand-in keeps its
+  // contract, the order write and the approval row in one transaction.
+  const fakeApprovals = {
+    openWithOrder: (input: OpenApprovalInput, writeOrder: () => unknown, nowMs: number) => {
+      h.db.transaction((tx) => {
+        writeOrder();
+        tx.insert(approvals)
+          .values({
+            id: `ap-${input.orderId}`,
+            userId: input.userId,
+            agentId: input.agentId,
+            orderId: input.orderId,
+            reason: input.reason,
+            payloadJson: JSON.stringify(input.payload ?? {}),
+            expiresAt: nowMs + 1,
+          })
+          .run();
+      });
+      return { approvalId: `ap-${input.orderId}`, expiresAt: nowMs + 1 };
+    },
+  } as unknown as ApprovalsService;
+  const settler = new OrderSettler(repo, fakeApprovals);
+  const approvalRows = () => h.db.select().from(approvals).all();
+  return {
+    svc: new OrderBootRecheck(payment, repo, settler),
+    add,
+    find,
+    pay,
+    receipt,
+    read,
+    approvalRows,
+  };
 }
 
 describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () => {
@@ -108,14 +141,32 @@ describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () =>
       error: { code },
     });
 
-  it.each(['CHAIN_PERIODIC_LIMIT', 'CHAIN_MERCHANT_INACTIVE', 'CHAIN_AGENT_LIMIT'] as const)(
-    'a reverted receipt (%s) ends the order failed with that reason, never re-sent',
-    async (code) => {
+  it.each([
+    ['retryable', 'CHAIN_PERIODIC_LIMIT'],
+    ['non-retryable', 'CHAIN_MERCHANT_INACTIVE'],
+  ] as const)(
+    'a reverted receipt of a %s class (%s) ends the order failed with that reason, never re-sent',
+    async (_cls, code) => {
       const t = setup(() => Promise.resolve(null), reverted(code));
       t.add(1, 'submitting', { startedAt: 5, txHash: H });
       expect(await t.svc.run(99)).toEqual({ paid: 0, failed: 1, waiting: 0 });
       expect(t.receipt).toHaveBeenCalledWith(H);
       expect(t.read(1)).toMatchObject({ status: 'failed', errorCode: code });
+      expect(t.approvalRows()).toHaveLength(0);
+      expect(t.pay).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['CHAIN_AGENT_LIMIT', 'SERVER_BUDGET_OVER'] as const)(
+    'a reverted receipt of the approval class (%s) opens the approval like the live path, never re-sent',
+    async (code) => {
+      const t = setup(() => Promise.resolve(null), reverted(code));
+      t.add(1, 'submitting', { startedAt: 5, txHash: H });
+      expect(await t.svc.run(99)).toEqual({ paid: 0, failed: 1, waiting: 0 });
+      expect(t.read(1)).toMatchObject({ status: 'pending_approval' });
+      const rows = t.approvalRows();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ orderId: 'o1', userId: 'u1', status: 'pending' });
       expect(t.pay).not.toHaveBeenCalled();
     },
   );
@@ -125,6 +176,7 @@ describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () =>
     t.add(1, 'submitting', { startedAt: 5, txHash: H });
     expect(await t.svc.run()).toEqual({ paid: 0, failed: 0, waiting: 1 });
     expect(t.read(1)?.status).toBe('submitting');
+    expect(t.approvalRows()).toHaveLength(0);
   });
 
   it('an unknown or unreadable receipt stays submitting; no hash means no receipt lookup', async () => {

@@ -11,11 +11,12 @@ import {
 } from '@sikyeoyong/shared';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AgentsService } from '../agents/agents.service.js';
-import { ApprovalsService, approvalReasonOf } from '../approvals/approvals.service.js';
+import { ApprovalsService } from '../approvals/approvals.service.js';
 import { MerchantsService } from '../merchants/merchants.service.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
-import { classify, isRetryableFailure } from './failure-class.js';
+import { isRetryableFailure } from './failure-class.js';
 import { parseStoredLines, priceLines } from './order-lines.js';
+import { OrderSettler } from './order-settler.service.js';
 import { OrderRules } from './order-rules.service.js';
 import { OrderViews } from './order-views.service.js';
 import { type OrderRow, OrdersRepository } from './orders.repository.js';
@@ -45,6 +46,7 @@ export class OrderConfirmService {
     private readonly merchants: MerchantsService,
     private readonly approvals: ApprovalsService,
     private readonly allowance: AllowanceService,
+    private readonly settler: OrderSettler,
   ) {}
 
   async confirm(userId: string, orderId: string, nowMs: number = Date.now()): Promise<OrderResult> {
@@ -88,7 +90,7 @@ export class OrderConfirmService {
     try {
       const checked = await this.check(userId, row, nowMs);
       if (checked.kind === 'approval') {
-        this.toApproval(userId, row, checked.code, nowMs);
+        this.settler.toApproval(userId, row, checked.code, nowMs);
         return;
       }
       const req = {
@@ -100,7 +102,7 @@ export class OrderConfirmService {
       await this.topUp(userId, row, checked.wallet, req.amount, nowMs);
       const pre = await this.payment.preflight(req);
       if (!pre.ok) {
-        this.settle(userId, row, pre.error.code, false, nowMs);
+        this.settler.settle(userId, row, pre.error.code, false, nowMs);
         return;
       }
       // The submit-start marker is committed before anything goes out (D-19).
@@ -130,13 +132,13 @@ export class OrderConfirmService {
         );
         return;
       }
-      this.settle(userId, row, result.error.code, true, nowMs);
+      this.settler.settle(userId, row, result.error.code, true, nowMs);
     } catch (e) {
       // After the marker a throw is a timeout or a lost answer, whatever its code: the
       // payment may be out, so the order stays submitting (D-19 "결과 모름"). Only a
       // returned PayResult settles it. Before the marker no payment went out.
       if (marked) return;
-      this.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', false, nowMs);
+      this.settler.settle(userId, row, e instanceof AppError ? e.code : 'INTERNAL', false, nowMs);
     }
   }
 
@@ -237,55 +239,5 @@ export class OrderConfirmService {
         `owner allowance fund not recorded: user ${userId} tx ${txHash ?? '-'} (${(e as Error).name})`,
       );
     }
-  }
-
-  /** Moves the order out of submitting by the class of the refusal (payment.md "실패 분류"). */
-  private settle(
-    userId: string,
-    row: OrderRow,
-    code: AppErrorCode,
-    marked: boolean,
-    nowMs: number,
-  ): void {
-    const cls = classify(code, !marked);
-    if (cls === 'approval') {
-      this.toApproval(userId, row, code, nowMs);
-    } else if (cls === 'retryable' || cls === 'final') {
-      this.repo.transition(row.id, 'submitting', { status: 'failed', errorCode: code }, nowMs);
-    } else if (!marked) {
-      // Nothing went out before the marker, so nothing can have been paid.
-      this.repo.transition(
-        row.id,
-        'submitting',
-        { status: 'failed', errorCode: 'INTERNAL' },
-        nowMs,
-      );
-    }
-    // After the marker anything else is an unknown result: stay submitting (D-19).
-  }
-
-  /** submitting to pending_approval with its approval row, in one transaction (D-19). */
-  private toApproval(userId: string, row: OrderRow, code: AppErrorCode, nowMs: number): void {
-    const reason = approvalReasonOf(code);
-    if (reason === null) throw new AppError('INTERNAL', { reason: 'not an approval code' });
-    this.approvals.openWithOrder(
-      {
-        userId,
-        agentId: row.agentId,
-        orderId: row.id,
-        reason,
-        payload: { merchantId: row.merchantId, amount: row.amountAokrw },
-      },
-      () => {
-        const moved = this.repo.transition(
-          row.id,
-          'submitting',
-          { status: 'pending_approval' },
-          nowMs,
-        );
-        if (!moved) throw new AppError('INTERNAL', { reason: 'order left submitting' });
-      },
-      nowMs,
-    );
   }
 }

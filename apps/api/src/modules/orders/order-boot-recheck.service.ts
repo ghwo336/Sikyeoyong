@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs
 import type { AppErrorCode, Hex, PaymentProvider } from '@sikyeoyong/shared';
 import { classify } from './failure-class.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
+import { OrderSettler } from './order-settler.service.js';
 import { type OrderRow, OrdersRepository } from './orders.repository.js';
 
 /** What one boot pass did, for the log and the tests. */
@@ -18,9 +19,10 @@ export interface RecheckResult {
  *  - no submit-start marker: nothing was ever broadcast, so a retryable failed order.
  *  - marker, and the chain has OrderPlaced(orderRef): paid.
  *  - marker, no OrderPlaced, and the recorded hash has a reverted receipt: the call was refused
- *    and nothing was paid, so failed with the decoded reason when its class is retryable, final or
- *    approval (a new quote or a retry with the same orderRef, by the class). A reason that cannot
- *    be read (INTERNAL) or is unclassified stays submitting. Never re-sent.
+ *    and nothing was paid, so it is settled by the decoded reason's class exactly as the live path
+ *    does (OrderSettler): retryable or final becomes failed with that code, approval becomes
+ *    pending_approval with its approval row. A reason that cannot be read (INTERNAL) or is
+ *    unclassified stays submitting. Never re-sent.
  *  - marker, nothing on chain (or the chain cannot be asked): stays submitting. A missing hash is
  *    not "not sent" and an unseen receipt is not "reverted"; a person checks it.
  * The orders are read once, synchronously, before the server listens: an order a request starts
@@ -36,6 +38,7 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
   constructor(
     @Inject(PAYMENT_PROVIDER) private readonly payment: PaymentProvider,
     private readonly repo: OrdersRepository,
+    private readonly settler: OrderSettler,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -87,12 +90,8 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
       if (row.submitTxHash !== null) {
         const code = await this.revertedCode(row.id, row.submitTxHash as Hex);
         if (code !== null) {
-          const moved = this.repo.transition(
-            row.id,
-            'submitting',
-            { status: 'failed', errorCode: code },
-            nowMs,
-          );
+          // The same path as the live confirm: an approval class opens its approval row.
+          const moved = this.settler.settle(row.userId, row, code, true, nowMs);
           if (moved) failed += 1;
           continue;
         }
