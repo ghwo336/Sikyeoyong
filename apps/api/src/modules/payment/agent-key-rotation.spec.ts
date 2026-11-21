@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { rotateAgentKeys } from './agent-key-rotation.js';
-import { AgentKeyVault, parseMasterKeys } from './agent-key-vault.js';
+import { AgentKeyVault, parseMasterKeys, type SealedKeyRow } from './agent-key-vault.js';
 import { AgentKeysRepository } from './agent-keys.repository.js';
 
 // Fixed test keys (never a real .env value).
@@ -176,4 +176,53 @@ describe('rotateAgentKeys', () => {
       handle.close();
     }
   });
+});
+
+type Sealed = Pick<SealedKeyRow, 'ciphertext' | 'iv' | 'tag' | 'salt' | 'keyVersion'>;
+
+/** A vault whose seal is wrong in a chosen way, to prove the re-open check stops it. */
+class FaultyVault extends AgentKeyVault {
+  constructor(
+    master: Buffer,
+    private readonly repo: AgentKeysRepository,
+    previous: Buffer,
+    private readonly fault: 'none' | 'tag' | 'other-plaintext' | 'previous-key',
+  ) {
+    super(master, repo, Date.now, previous);
+  }
+  sealPublic(priv: Buffer, address: string): Sealed {
+    return this.seal(priv, address);
+  }
+  protected override seal(priv: Buffer, address: string): Sealed {
+    if (this.fault === 'other-plaintext') return super.seal(randomBytes(32), address);
+    if (this.fault === 'previous-key') {
+      return new FaultyVault(OLD, this.repo, OLD, 'none').sealPublic(priv, address);
+    }
+    const sealed = super.seal(priv, address);
+    if (this.fault === 'none') return sealed;
+    return { ...sealed, tag: '00'.repeat(16) };
+  }
+}
+
+describe('re-seal verification', () => {
+  it.each(['tag', 'other-plaintext', 'previous-key'] as const)(
+    'a bad new seal (%s) is never written: the row is reported failed and unchanged',
+    (fault) => {
+      const { handle, repo } = setup();
+      try {
+        const a = new AgentKeyVault(OLD, repo).create();
+        const before = repo.find(a);
+        const vault = new FaultyVault(NEW, repo, OLD, fault);
+        expect(() => vault.resealed(before as SealedKeyRow)).toThrow(AppError);
+        expect(rotateAgentKeys(vault, repo, { dryRun: false })).toEqual({
+          unchanged: 0,
+          rotated: 0,
+          failed: [a],
+        });
+        expect(repo.find(a)).toEqual(before);
+      } finally {
+        handle.close();
+      }
+    },
+  );
 });
