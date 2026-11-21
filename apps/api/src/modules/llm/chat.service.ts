@@ -110,7 +110,8 @@ export class ChatService {
       };
     }
     // One turn at a time per user: close-and-resend loops must not multiply model cost.
-    // Refused as CONFLICT (409), which the web already shows as the dragon's wait line.
+    // Refused as CONFLICT (409): the web marks the user's bubble failed with a resend button; the
+    // message is not stored, so resending after the running turn ends works normally.
     if (this.running.has(userId)) {
       throw new AppError('CONFLICT', { reason: 'a turn is still running' });
     }

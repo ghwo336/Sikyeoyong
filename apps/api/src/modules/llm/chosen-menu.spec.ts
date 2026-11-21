@@ -42,6 +42,10 @@ describe('MenuCatalog.named', () => {
       expect(catalog().named(text)).toEqual([]);
     },
   );
+  it('reads "A 아니면 B" as a choice, not a refusal of A', () => {
+    expect(catalog().named('튀김세트 아니면 국물떡볶이').sort()).toEqual(['fry', 'tteok'].sort());
+  });
+
   it('refuses only the name before 아니고', () => {
     expect(catalog().named('튀김세트 아니고 국물떡볶이')).toEqual(['tteok']);
   });

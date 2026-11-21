@@ -71,7 +71,8 @@ function saidWithoutRefusal(said: string, word: string): boolean {
 /** Words after a menu name that mean the user does NOT want it ("X 말고", "X 별로", "X 안 땡겨"). */
 const REFUSAL = /말고|말구|빼고|대신|제외|싫|별로|질렸|됐어|안먹|안시|안땡/;
 // "A 아니고 B" refuses A only, and only right after the name.
-const NOT_IT = /^.{0,2}아니/;
+// "A 아니고 B" refuses A; "A 아니면 B" is a choice, not a refusal.
+const NOT_IT = /^.{0,2}아니(?!면)/;
 
 function refused(said: string, from: number, to: number): boolean {
   // Before the name only a plain "don't want" counts; "A 말고 B" and an interjection
