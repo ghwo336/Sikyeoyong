@@ -21,6 +21,7 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { agents, allowedMerchants, approvals, orders } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
+import { AllowanceService } from '../allowance/allowance.service.js';
 import { ApprovalsService } from '../approvals/approvals.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
@@ -77,6 +78,10 @@ async function setup() {
     .set({ walletAddress: wallet.address, ownerAddress: wallet.ownerAddress })
     .where(eq(agents.id, 'a-u1'))
     .run();
+  // Top-ups come out of the owner's allowance (Q-38): u1 has plenty.
+  moduleRef
+    .get(AllowanceService, { strict: false })
+    .record('u1', 'trial', BigInt(W('1000000')), null, NOW);
   const auth = moduleRef.get(AuthService);
   const tokens = { u1: auth.issue('u1', 'web'), u2: auth.issue('u2', 'web') };
   const http = () => request(app.getHttpServer() as Server);

@@ -26,6 +26,7 @@ import {
   approvals,
   menus,
   orders,
+  ownerAllowanceEntries,
   users,
 } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
@@ -53,7 +54,15 @@ afterEach(async () => {
 });
 
 async function setup(
-  opts: { owner?: OwnerAuthority; limitWon?: string; path?: 'mock' | 'C' } = {},
+  opts: {
+    owner?: OwnerAuthority;
+    limitWon?: string;
+    path?: 'mock' | 'C';
+    /** DEMO_MODE keeps the pre-Q-38 behavior (a short allowance does not stop a top-up). */
+    demo?: boolean;
+    /** The owner's trial allowance in won (default 1,000,000, so top-ups are covered); '0' gives none. */
+    allowanceWon?: string;
+  } = {},
 ) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
@@ -70,7 +79,10 @@ async function setup(
       t === DB
         ? h
         : t === APP_CONFIG
-          ? loadConfig({ PAYMENT_PATH: opts.path ?? 'mock' })
+          ? loadConfig({
+              PAYMENT_PATH: opts.path ?? 'mock',
+              DEMO_MODE: opts.demo === true ? 'true' : 'false',
+            })
           : undefined,
     )
     .overrideProvider(CHAIN_READER)
@@ -99,6 +111,9 @@ async function setup(
     .set({ walletAddress: wallet.address, ownerAddress: wallet.ownerAddress })
     .where(eq(agents.id, 'a-u1'))
     .run();
+  const allowanceSvc = moduleRef.get(AllowanceService);
+  const credit = A(opts.allowanceWon ?? '1000000');
+  if (credit > 0n) allowanceSvc.record('u1', 'trial', credit, null, NOW);
   const auth = moduleRef.get(AuthService);
   const tokens = { u1: auth.issue('u1', 'web'), u2: auth.issue('u2', 'web') };
   const http = () => request(app.getHttpServer() as Server);
@@ -133,13 +148,14 @@ async function setup(
     row,
     chainUsed,
     repo: moduleRef.get(OrdersRepository),
-    allowance: moduleRef.get(AllowanceService),
+    allowance: allowanceSvc,
+    credit,
   };
 }
 
 describe('POST /api/orders/:id/confirm: pays once, only here', () => {
   it('pays a quoted order: tops up exactly the amount, pays it, answers the paid order', async () => {
-    const { payment, wallet, quote, confirm, row, allowance } = await setup();
+    const { payment, wallet, quote, confirm, row, allowance, credit } = await setup();
     const fund = vi.spyOn(payment, 'fund');
     const pay = vi.spyOn(payment, 'pay');
     const id = await quote();
@@ -174,21 +190,21 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
     });
     expect(order.txHash).toBe(paid?.txHash);
     // The top-up came out of the owner allowance ledger (wallet screen).
-    expect(allowance.balanceAokrw('u1')).toBe(-A('9000'));
+    expect(allowance.balanceAokrw('u1')).toBe(credit - A('9000'));
   });
 
   it('tops up only the shortfall when the wallet already holds some', async () => {
-    const { payment, wallet, quote, confirm, allowance } = await setup();
+    const { payment, wallet, quote, confirm, allowance, credit } = await setup();
     await payment.fund(wallet, A('5000'));
     const fund = vi.spyOn(payment, 'fund');
     await confirm(await quote());
     expect(fund.mock.calls.map((c) => c[1])).toEqual([A('4000')]);
-    expect(allowance.balanceAokrw('u1')).toBe(-A('4000'));
+    expect(allowance.balanceAokrw('u1')).toBe(credit - A('4000'));
     expect(await payment.balanceOf(wallet.address)).toBe(0n);
   });
 
   it('a provider with a gas reserve (path B) is topped up to amount plus the reserve', async () => {
-    const { payment, wallet, quote, confirm, allowance } = await setup();
+    const { payment, wallet, quote, confirm, allowance, credit } = await setup();
     Object.defineProperty(payment, 'gasReserveAokrw', { value: A('100') });
     const fund = vi.spyOn(payment, 'fund');
     await confirm(await quote());
@@ -199,11 +215,14 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
     fund.mockClear();
     await confirm(await quote('c2'));
     expect(fund.mock.calls.map((c) => c[1])).toEqual([A('9000')]);
-    expect(allowance.balanceAokrw('u1')).toBe(-A('18100'));
+    expect(allowance.balanceAokrw('u1')).toBe(credit - A('18100'));
   });
 
-  it('a failed or unneeded top-up takes nothing from the owner allowance ledger', async () => {
-    const { payment, wallet, quote, confirm, allowance } = await setup();
+  it('a failed or unneeded top-up takes nothing from the owner allowance ledger (DEMO_MODE)', async () => {
+    const { payment, wallet, quote, confirm, allowance } = await setup({
+      demo: true,
+      allowanceWon: '0',
+    });
     vi.spyOn(payment, 'fund').mockRejectedValueOnce(new Error('rpc down'));
     await confirm(await quote());
     expect(allowance.balanceAokrw('u1')).toBe(0n);
@@ -215,8 +234,8 @@ describe('POST /api/orders/:id/confirm: pays once, only here', () => {
     expect(allowance.balanceAokrw('u1')).toBe(0n);
   });
 
-  it('a ledger failure after the top-up does not fail the payment', async () => {
-    const { allowance, quote, confirm, row } = await setup();
+  it('a ledger failure after the top-up does not fail the payment (DEMO_MODE)', async () => {
+    const { allowance, quote, confirm, row } = await setup({ demo: true });
     vi.spyOn(allowance, 'record').mockImplementationOnce(() => {
       throw new Error('disk full');
     });
@@ -725,5 +744,70 @@ describe('the limits at quote time ride on the order (the receipt "그때" value
     lowerLimitTo(h, '15000');
     await post('u1', `/api/orders/${first.order.id}/requote`);
     expect(row(first.order.id)?.perOrderLimitAtQuote).toBe(W('15000'));
+  });
+});
+
+describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (Q-38)', () => {
+  it('refuses with CHAIN_INSUFFICIENT_FUNDS before any fund when the allowance is short', async () => {
+    const { payment, quote, confirm, row, allowance } = await setup({ allowanceWon: '5000' });
+    const fund = vi.spyOn(payment, 'fund');
+    const pay = vi.spyOn(payment, 'pay');
+    const id = await quote();
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order).toMatchObject({ status: 'failed', errorCode: 'CHAIN_INSUFFICIENT_FUNDS' });
+    expect(fund).not.toHaveBeenCalled();
+    expect(pay).not.toHaveBeenCalled();
+    expect(row(id)).toMatchObject({ fundStartedAt: null, submitStartedAt: null });
+    expect(allowance.balanceAokrw('u1')).toBe(A('5000'));
+  });
+
+  it('pays when the allowance covers it, and the ledger shows the fund with its tx hash', async () => {
+    const { h, quote, confirm, row, allowance } = await setup({ allowanceWon: '20000' });
+    const id = await quote();
+    expect(zOrderResult.parse((await confirm(id)).body).order.status).toBe('paid');
+    expect(allowance.balanceAokrw('u1')).toBe(A('11000'));
+    const fundEntry = h.db
+      .select()
+      .from(ownerAllowanceEntries)
+      .where(eq(ownerAllowanceEntries.kind, 'fund'))
+      .get();
+    expect(fundEntry?.txHash).toBe(row(id)?.fundTxHash);
+    expect(fundEntry?.txHash).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  it('two confirms racing for one allowance: one pays, the other is refused, never both', async () => {
+    const { payment, quote, confirm, row, allowance } = await setup({ allowanceWon: '10000' });
+    const fund = vi.spyOn(payment, 'fund');
+    const a = await quote('c1');
+    const b = await quote('c2');
+    await Promise.all([confirm(a), confirm(b)]);
+    const statuses = [row(a)?.status, row(b)?.status].sort();
+    expect(statuses).toEqual(['failed', 'paid']);
+    expect(fund).toHaveBeenCalledTimes(1);
+    expect(allowance.balanceAokrw('u1')).toBe(A('1000'));
+  });
+
+  it('gives the hold back when the top-up waits for a signature, so nothing was taken', async () => {
+    const owner: OwnerAuthority = {
+      mode: 'pouch',
+      prepare: (action) => Promise.resolve({ id: 'p1', action, signer: 'user' }),
+      confirm: () => Promise.reject(new Error('must not confirm')),
+    };
+    const { quote, confirm, allowance } = await setup({ owner, allowanceWon: '20000' });
+    await confirm(await quote());
+    expect(allowance.balanceAokrw('u1')).toBe(A('20000'));
+  });
+
+  it('keeps the hold when the fund call threw, because the money may be out', async () => {
+    const { payment, quote, confirm, allowance } = await setup({ allowanceWon: '20000' });
+    vi.spyOn(payment, 'fund').mockRejectedValueOnce(new Error('socket hang up'));
+    await confirm(await quote());
+    expect(allowance.balanceAokrw('u1')).toBe(A('11000'));
+  });
+
+  it('DEMO_MODE still tops up with an empty allowance (the ledger goes negative)', async () => {
+    const { quote, confirm, allowance } = await setup({ demo: true, allowanceWon: '0' });
+    expect(zOrderResult.parse((await confirm(await quote())).body).order.status).toBe('paid');
+    expect(allowance.balanceAokrw('u1')).toBe(-A('9000'));
   });
 });

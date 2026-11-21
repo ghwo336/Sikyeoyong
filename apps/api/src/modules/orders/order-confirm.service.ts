@@ -9,6 +9,8 @@ import {
   type PaymentProvider,
   parseAokrw,
 } from '@sikyeoyong/shared';
+import { APP_CONFIG } from '../../config/config.module.js';
+import type { AppConfig } from '../../config/env.js';
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { AgentsService } from '../agents/agents.service.js';
 import { ApprovalsService } from '../approvals/approvals.service.js';
@@ -47,6 +49,7 @@ export class OrderConfirmService {
     private readonly approvals: ApprovalsService,
     private readonly allowance: AllowanceService,
     private readonly settler: OrderSettler,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   async confirm(userId: string, orderId: string, nowMs: number = Date.now()): Promise<OrderResult> {
@@ -193,10 +196,13 @@ export class OrderConfirmService {
    * shortfall, just before paying (tech-spec 3.4), so the wallet never holds more
    * than this order. Server code only, never an LLM tool (payment.md).
    * The moved shortfall comes out of the owner allowance ledger (D-24 custodial, wallet screen
-   * "주인님 용돈"): recorded only after the fund succeeded, so a failed or skipped top-up records
-   * nothing. Refusing an order when the ledger is short is open (open-questions Q-38).
-   * The money already moved when the ledger is written, so a ledger failure never turns the
-   * payment into a failure: it is logged (user, tx) for reconciliation instead.
+   * "주인님 용돈"). Q-38: outside DEMO_MODE the top-up is held on the ledger first (balance check and
+   * fund entry in one transaction) and the order is refused with CHAIN_INSUFFICIENT_FUNDS when the
+   * allowance cannot cover it; the hold is given back when nothing was sent, and kept (with no tx
+   * hash yet) when the fund call threw, because the money may be out. In DEMO_MODE nothing is
+   * refused: the fund is recorded after it succeeded, so a failed or skipped top-up records
+   * nothing, and a ledger failure never turns the payment into a failure (logged for
+   * reconciliation instead).
    * Idempotent by order (payment.md "즉시 충전(fund)의 멱등성"): a marker on the order is committed
    * before the fund call and the tx hash after it. A marker with no hash is a top-up with no
    * result (the answer was lost); it is never repeated while the balance does not show it, so a
@@ -213,8 +219,12 @@ export class OrderConfirmService {
     // Path B has no paymaster: the wallet also keeps its gas share (D-25). Others reserve 0.
     const need = amount + (this.payment.gasReserveAokrw ?? 0n);
     if (balance >= need) return;
+    const reserved = this.config.demo.enabled
+      ? null
+      : this.holdAllowance(userId, need - balance, nowMs);
     const unresolved = row.fundStartedAt !== null && row.fundTxHash === null;
     if (unresolved || !this.repo.markFundStart(row.id, (need - balance).toString(), nowMs)) {
+      if (reserved !== null) this.allowance.releaseFund(reserved);
       throw new AppError('INTERNAL', {
         reason: 'an earlier top-up of this order has no result yet, not funding again',
       });
@@ -227,17 +237,28 @@ export class OrderConfirmService {
     if (!r.done) {
       // Nothing was sent: the marker is taken back so the next try may fund.
       this.repo.clearFundStart(row.id, nowMs);
+      if (reserved !== null) this.allowance.releaseFund(reserved);
       throw new AppError('INTERNAL', { reason: 'top-up waits for the owner signature' });
     }
     // fund sends one transaction; its hash is the record's.
     const txHash = r.txHashes[0] ?? null;
     if (txHash !== null) this.repo.recordFundTx(row.id, txHash, nowMs);
     try {
-      this.allowance.record(userId, 'fund', need - balance, txHash, nowMs);
+      if (reserved === null) this.allowance.record(userId, 'fund', need - balance, txHash, nowMs);
+      else if (txHash !== null) this.allowance.settleFund(reserved, txHash);
     } catch (e) {
       this.logger.error(
         `owner allowance fund not recorded: user ${userId} tx ${txHash ?? '-'} (${(e as Error).name})`,
       );
     }
+  }
+
+  /** Q-38 (production): the allowance must cover the top-up, or the order is refused before any fund. */
+  private holdAllowance(userId: string, amount: bigint, nowMs: number): string {
+    const id = this.allowance.reserveFund(userId, amount, nowMs);
+    if (id === null) {
+      throw new AppError('CHAIN_INSUFFICIENT_FUNDS', { reason: 'owner allowance is short' });
+    }
+    return id;
   }
 }
