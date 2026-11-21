@@ -52,6 +52,27 @@ describe('Splash (Splash.md 테스트 기준)', () => {
     expect(onSkip).toHaveBeenCalledTimes(2);
   });
 
+  it('the skip is a real button next to the status line, which stays announced (not inside it)', async () => {
+    const onSkip = vi.fn();
+    const { container } = render(<Splash species="forest" onSkip={onSkip} />);
+    const skip = screen.getByRole('button', { name: '시켜용 시작하기' });
+    expect(skip.tagName).toBe('BUTTON');
+    expect(skip).not.toContainElement(screen.getByRole('status'));
+    expect(container.firstElementChild).not.toHaveAttribute('role');
+    expect(container.firstElementChild).not.toHaveAttribute('tabindex');
+    // Tab reaches it, and one Enter skips once (the click bubbles to the root, no double call).
+    await userEvent.tab();
+    expect(skip).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+
+  it('its focus ring shows on keyboard focus only, over the whole screen', () => {
+    expect(rule('.skip')).toMatch(/position:\s*absolute/);
+    expect(rule('.skip')).toMatch(/inset:\s*0/);
+    expect(css).toMatch(/\.skip:focus-visible\s*\{[^}]*outline:/);
+  });
+
   it('is no button without onSkip', () => {
     render(<Splash species="forest" />);
     expect(screen.queryByRole('button')).toBeNull();

@@ -163,6 +163,28 @@ describe('EntryGate splash (Splash.dc.html, user-flow 0)', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('a keyboard user can skip once the answer is known: Tab to the button, Enter', async () => {
+    let answer: (v: unknown) => void = () => undefined;
+    getMe.mockReturnValue(
+      new Promise((r) => {
+        answer = r;
+      }),
+    );
+    getAgentSetup.mockResolvedValue(setupOf('ACTIVE'));
+    draw(true);
+    expect(await screen.findByRole('status', {}, { timeout: 2_000 })).toBeInTheDocument();
+    // Before the answer there is nothing to focus and the status line is all it says.
+    await userEvent.tab();
+    expect(document.body).toHaveFocus();
+    answer(ME);
+    const skip = await screen.findByRole('button', { name: '시켜용 시작하기' });
+    expect(screen.getByRole('status')).toHaveTextContent('용이를 깨우는 중이에요');
+    await userEvent.tab();
+    expect(skip).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByText('대화 화면')).toBeInTheDocument();
+  });
+
   it('other screens never show it', () => {
     vi.useFakeTimers();
     getMe.mockReturnValue(new Promise(() => undefined));

@@ -19,6 +19,23 @@
   animation: splash-in var(--motion-screen) var(--motion-screen-easing);
 }
 
+/* The keyboard's skip: a transparent button over the whole screen. Only its focus ring shows. */
+.skip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.skip:focus-visible {
+  outline: 3px solid var(--color-surface);
+  outline-offset: -10px;
+}
+
 .figure {
   display: flex;
   flex-direction: column;

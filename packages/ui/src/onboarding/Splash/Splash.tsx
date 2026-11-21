@@ -1,5 +1,4 @@
 import type { DragonSpecies } from '@sikyeoyong/shared';
-import type { KeyboardEvent } from 'react';
 import { Dragon } from '../../dragon/Dragon';
 import styles from './Splash.module.css';
 
@@ -27,25 +26,12 @@ export interface SplashProps {
 /** Draws the full-screen loading splash: the bobbing dragon, the name and "waking" dots (Splash.md). */
 export function Splash({ species, onSkip }: SplashProps) {
   return (
-    // A press anywhere skips (user-flow 0); with onSkip it is also a button for keyboards
-    // (Enter or Space). The status line is what screen readers hear while it waits.
-    <div
-      className={styles.splash}
-      onClick={onSkip}
-      data-part="splash"
-      {...(onSkip
-        ? {
-            role: 'button',
-            tabIndex: 0,
-            'aria-label': SPLASH_SKIP_LABEL,
-            onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return;
-              e.preventDefault();
-              onSkip();
-            },
-          }
-        : {})}
-    >
+    // A press anywhere skips (user-flow 0). For keyboards and screen readers the skip is a real
+    // button laid over the screen (last, so it is on top). It is not the root: a button's
+    // children are presentational, and the status line must stay announced while it waits.
+    // The button's own click (Enter, Space, or a press on it) bubbles to the root's onClick,
+    // so onSkip runs once.
+    <div className={styles.splash} onClick={onSkip} data-part="splash">
       <div className={styles.figure}>
         <div className={styles.bob} data-part="bob">
           <svg className={styles.halo} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
@@ -68,6 +54,14 @@ export function Splash({ species, onSkip }: SplashProps) {
         <span>{SPLASH_STATUS}</span>
       </div>
       <p className={styles.footer}>{SPLASH_FOOTER}</p>
+      {onSkip ? (
+        <button
+          type="button"
+          className={styles.skip}
+          aria-label={SPLASH_SKIP_LABEL}
+          data-part="skip"
+        />
+      ) : null}
     </div>
   );
 }
