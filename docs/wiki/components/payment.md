@@ -117,7 +117,7 @@ interface PaymentProvider {
 - 응답은 `{ order: OrderView }`(`zOrderResult`, `GET /orders/:id`도 같은 `OrderViews.viewFor`). 최근 주문 목록 `GET /orders`(`zOrderList`, 최대 20개, `quoted` 제외)도 `OrderViews.listFor`가 항목마다 같은 변환을 써서 목록과 상태 화면의 상태가 어긋나지 않는다. 실패면 `errorCode`, 결제되면 `txHash`가 붙는다. 도착 시각은 결제를 시작한 때(`submit_started_at`)부터 센다. 상태별 용이 대사와 표정은 `modules/orders/order-view.ts`(Done, Tracking, Arrived 시안 문구). 실패한 주문의 대사는 그 코드의 대사이고, 값(`{max}`, `{resetAt}`)이 필요한 대사는 값을 저장하지 않으므로 사람 문장(`message`)으로 대신한다.
 - 경로 C는 실패 주문을 다시 결제하지 않는다 (Q-24). 가게의 `onchain_id`가 없으면(Q-34) 흉내 체인 밖에서는 `CHAIN_MERCHANT_INACTIVE`.
 - 견적 때 한도 (2026-11-21): 주문이 견적을 만들 때 그 시점의 한 번에 쓸 돈(`per_order_limit_at_quote`)과 체인 공통 30일 상한(`period_cap_at_quote`)을 저장한다(마이그레이션 0013, aokrw 문자열, 그 전 주문은 null). 한도를 올린 뒤 `requote`가 주문을 견적으로 되돌릴 때는 한 번에 쓸 돈을 올린 값으로 다시 쓴다. `GET /orders/:id`, confirm 답의 `OrderView.limitsAtOrder`(shared `zOrderView`, 선택 칸)로 나가며 영수증이 "그때" 값을 보일 수 있다. 칸이 없으면(옛 주문) 화면은 "지금" 값을 그대로 쓴다. 웹의 영수증 화면은 이 칸이 있으면 그때 값을, 없으면 지금 값을 "지금" 표시로 보인다. 승인(새 가게, 예산)으로 다시 열리는 주문은 처음 견적 값을 그대로 둔다.
-- 충전 멱등성은 주문 단위로 있다 (아래 "즉시 충전(fund)의 멱등성" 코드 줄). 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 같은 주문을 다시 눌러도 결과 모를 충전은 반복하지 않는다. 아직: `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서는 위 코드대로 있음, 커서 저장만 아직) `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
+- 충전 멱등성은 주문 단위로 있다 (아래 "즉시 충전(fund)의 멱등성" 코드 줄). 충전이 던지면 결제 전이라 재시도 가능 `failed`가 되고, 같은 주문을 다시 눌러도 결과 모를 충전은 반복하지 않는다. 아직: `CHAIN_AGENT_LIMIT_UNSET` 뒤 TransferLimit 재기록 1회 예외, float 상한(한 번에 쓸 돈 × `AGENT_FLOAT_MULTIPLIER`, `floatCapAokrw`) 유지, (서버 시작 때 `submitting` 재확인과 인덱서, 인덱서 커서 저장은 위 코드대로 있음) `DEMO_BYPASS_SERVER_LIMIT`, 영수증(`receipt_json`).
 
 ### 견적 (`POST /orders`, `place_order`, 2026-11-20 코드)
 - `modules/orders/order-quote.service.ts`의 `OrderQuoteService.create`. 결제하지 않는다. 아래 순서로 본다.
@@ -148,7 +148,7 @@ interface PaymentProvider {
 
 ### `submitting`을 끝내는 규칙
 - 인덱서가 `OrderPlaced(orderRef)`를 보면 `paid`.
-  - 코드 (2026-11-21): `OrderIndexer`(`modules/orders/order-indexer.service.ts`, tech-spec 3.9). 로그의 orderRef로 주문을 찾아 `submitting`과 `failed`만 `paid`(체인의 tx hash)로 맞춘다 (멱등: 이미 `paid`면 그대로, 체인 이벤트는 `(tx_hash, log_index)`로 한 번만 `order_events`에). 모르는 orderRef는 경고 로그만 남기고 무시, 로그의 amount와 merchantId가 주문의 금액과 가게의 온체인 ID와 다르면(가게에 온체인 ID가 없어도) paid로 바꾸지 않고 오류 로그만 남기며, 결제를 시작한 적 없는 주문(`quoted`, `pending_approval`)의 로그는 믿지 않고 오류 로그. 읽기만 하며 결제하지 않는다. 경로 B만 켜지고 목 경로는 아무것도 하지 않는다.
+  - 코드 (2026-11-21): `OrderIndexer`(`modules/orders/order-indexer.service.ts`, tech-spec 3.9). 로그의 orderRef로 주문을 찾아 `submitting`과 `failed`만 `paid`(체인의 tx hash)로 맞춘다 (멱등: 이미 `paid`면 그대로, 체인 이벤트는 `(tx_hash, log_index)`로 한 번만 `order_events`에). 모르는 orderRef는 경고 로그만 남기고 무시, 로그의 amount와 merchantId가 주문의 금액과 가게의 온체인 ID와 다르면(가게에 온체인 ID가 없어도) paid로 바꾸지 않고 오류 로그만 남기며, 결제를 시작한 적 없는 주문(`quoted`, `pending_approval`)의 로그는 믿지 않고 오류 로그. 읽기만 하며 결제하지 않는다. 커서(체인과 컨트랙트별로 마지막에 반영한 블록)는 청크마다 `indexer_cursors`에 저장하고(마이그레이션 0014, 뒤로 가지 않음), 재시작하면 그 다음 블록부터, 행이 없거나 배포 블록보다 앞이면 배포 블록부터 읽는다. 경로 B만 켜지고 목 경로는 아무것도 하지 않는다.
 - 제출 트랜잭션의 영수증이 revert면 그 사유로 위 분류를 따른다.
 - **제출 시작 표시와 순서**: 표시는 체인이나 MAWS에 무엇이든 내보내기 **전에** DB에 커밋한다.
   - 경로 B: nonce 예약 → 서명 → (`submit_tx_hash`, `submit_nonce`, `submit_started_at`)를 DB에 커밋 → 그다음 브로드캐스트.

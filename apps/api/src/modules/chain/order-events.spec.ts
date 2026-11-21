@@ -34,8 +34,10 @@ describe('createOrderEvents and the log reader', () => {
           { transactionHash: hash(3), logIndex: 0, blockNumber: 8n, args: {} },
         ]),
     };
-    const reader = createOrderEventsReader(`0x${'11'.repeat(20)}`, 4n, port);
+    const reader = createOrderEventsReader(1234, `0x${'11'.repeat(20)}`, 4n, port);
     expect(reader.startBlock).toBe(4n);
+    expect(reader.chainId).toBe(1234);
+    expect(reader.contract).toBe(`0x${'11'.repeat(20)}`);
     expect(await reader.latestBlock()).toBe(42n);
     expect(await reader.orderPlaced(0n, 10n)).toEqual([
       {

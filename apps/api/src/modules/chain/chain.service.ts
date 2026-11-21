@@ -38,6 +38,9 @@ export interface PlacedLog {
  * this by token and decides what a log means.
  */
 export interface OrderEventsReader {
+  /** The chain and the orders proxy this reader follows (the key of the stored cursor). */
+  readonly chainId: number;
+  readonly contract: Hex;
   /** The first block to read: the deployment block of the orders proxy. */
   readonly startBlock: bigint;
   latestBlock(): Promise<bigint>;

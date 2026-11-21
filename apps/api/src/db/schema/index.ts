@@ -1,6 +1,7 @@
 export { SETUP_STEPS, agentKeys, agentLimitHistory, agents } from './agents.js';
 export { ALLOWANCE_KINDS, ownerAllowanceEntries } from './allowance.js';
 export { chatMessages, nagEvents } from './chat.js';
+export { indexerCursors } from './indexer.js';
 export { menus, merchants } from './merchants.js';
 export {
   APPROVAL_REASONS,

@@ -21,11 +21,14 @@ export interface LogsPort {
 const ORDER_PLACED = ordersAbi.find((i) => i.type === 'event' && i.name === 'OrderPlaced');
 
 export function createOrderEventsReader(
+  chainId: number,
   proxy: Hex,
   startBlock: bigint,
   port: LogsPort,
 ): OrderEventsReader {
   return {
+    chainId,
+    contract: proxy,
     startBlock,
     latestBlock: () => port.getBlockNumber(),
     async orderPlaced(from, to) {
@@ -76,6 +79,7 @@ export function createOrderEvents(
   try {
     const target = resolveOrdersTarget(config);
     return createOrderEventsReader(
+      config.chain.chainId,
       target.proxy,
       target.deployBlock,
       port ?? (createMarooPublicClient(config.chain) as unknown as LogsPort),

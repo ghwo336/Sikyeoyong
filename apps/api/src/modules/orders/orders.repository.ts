@@ -16,7 +16,13 @@ import {
 import type { TasteRating } from '@sikyeoyong/shared';
 import type { DbHandle } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
-import { ORDER_STATUSES, orderEvents, orderRatings, orders } from '../../db/schema/index.js';
+import {
+  ORDER_STATUSES,
+  indexerCursors,
+  orderEvents,
+  orderRatings,
+  orders,
+} from '../../db/schema/index.js';
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type OrderRow = typeof orders.$inferSelect;
@@ -181,6 +187,40 @@ export class OrdersRepository {
       .onConflictDoNothing()
       .run();
     return r.changes === 1;
+  }
+
+  /** The last block the indexer applied for this chain and contract, or null (no row yet). */
+  indexerCursor(chainId: number, contract: string): bigint | null {
+    const row = this.handle.db
+      .select({ lastBlock: indexerCursors.lastBlock })
+      .from(indexerCursors)
+      .where(
+        and(
+          eq(indexerCursors.chainId, chainId),
+          eq(indexerCursors.contract, contract.toLowerCase()),
+        ),
+      )
+      .get();
+    return row === undefined ? null : BigInt(row.lastBlock);
+  }
+
+  /** Stores the last applied block. It never moves backwards (a stale writer cannot undo it). */
+  saveIndexerCursor(chainId: number, contract: string, lastBlock: bigint, nowMs: number): void {
+    const current = this.indexerCursor(chainId, contract);
+    if (current !== null && current >= lastBlock) return;
+    this.handle.db
+      .insert(indexerCursors)
+      .values({
+        chainId,
+        contract: contract.toLowerCase(),
+        lastBlock: lastBlock.toString(),
+        updatedAt: nowMs,
+      })
+      .onConflictDoUpdate({
+        target: [indexerCursors.chainId, indexerCursors.contract],
+        set: { lastBlock: lastBlock.toString(), updatedAt: nowMs },
+      })
+      .run();
   }
 
   findForUser(id: string, userId: string): OrderRow | undefined {

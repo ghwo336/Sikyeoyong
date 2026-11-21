@@ -73,6 +73,7 @@ describe('migrations (data.md: apply to an empty DB from scratch)', () => {
       'approvals',
       'chat_messages',
       'identity_checks',
+      'indexer_cursors',
       'menus',
       'merchants',
       'nag_events',

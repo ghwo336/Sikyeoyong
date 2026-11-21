@@ -99,6 +99,13 @@
       "when": 1795224263920,
       "tag": "0013_order_limits_at_quote",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1795225520684,
+      "tag": "0014_indexer_cursors",
+      "breakpoints": true
     }
   ]
 }

@@ -28,7 +28,8 @@ export const INDEXER_CHUNK_BLOCKS = 2_000n;
  *    transaction landed late is paid after all). A log for an order that never began paying is
  *    logged, not trusted.
  * The mock path and a setup without a deployed proxy have no reader: nothing starts.
- * The cursor lives in memory (a restart reads from the deployment block again, which is safe).
+ * The cursor (the last applied block per chain and contract) is stored after every chunk
+ * (`indexer_cursors`, migration 0014). A restart resumes after it, else at the deployment block.
  */
 @Injectable()
 export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
@@ -64,14 +65,22 @@ export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
     let confirmed = 0;
     try {
       const latest = await reader.latestBlock();
-      let from = this.cursor ?? reader.startBlock;
+      // The first poll resumes after the stored block; with none, or one behind the deployment
+      // block (a different deployment), it starts at the deployment block.
+      if (this.cursor === null) {
+        const saved = this.repo.indexerCursor(reader.chainId, reader.contract);
+        this.cursor =
+          saved !== null && saved + 1n > reader.startBlock ? saved + 1n : reader.startBlock;
+      }
+      let from = this.cursor;
       while (from <= latest) {
         const to =
           from + INDEXER_CHUNK_BLOCKS - 1n < latest ? from + INDEXER_CHUNK_BLOCKS - 1n : latest;
         for (const log of await reader.orderPlaced(from, to)) {
           if (this.apply(log, nowMs)) confirmed += 1;
         }
-        // The cursor moves only after the whole chunk was applied.
+        // The cursor moves only after the whole chunk was applied, and is stored with it.
+        this.repo.saveIndexerCursor(reader.chainId, reader.contract, to, nowMs);
         from = to + 1n;
         this.cursor = from;
       }

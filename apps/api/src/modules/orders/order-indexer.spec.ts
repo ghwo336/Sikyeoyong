@@ -50,6 +50,8 @@ function setup(logs: PlacedLog[], opts: { latest?: bigint; start?: bigint } = {}
       .run();
   const ranges: [bigint, bigint][] = [];
   const reader: OrderEventsReader = {
+    chainId: 1234,
+    contract: `0x${'11'.repeat(20)}`,
     startBlock: opts.start ?? 5n,
     latestBlock: () => Promise.resolve(opts.latest ?? 20n),
     orderPlaced: (from, to) => {
@@ -163,6 +165,43 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     t.ranges.length = 0;
     await t.indexer.tick();
     expect(t.ranges).toEqual([]); // nothing new: the cursor is past latest
+  });
+
+  it('stores the last applied block, and a restarted indexer resumes after it', async () => {
+    const t = setup([log(1, 6n), log(2, 18n)], { latest: 10n, start: 5n });
+    t.add(1, 'submitting');
+    t.add(2, 'submitting');
+    expect(await t.indexer.tick()).toBe(1);
+    expect(new OrdersRepository(t.h).indexerCursor(1234, `0x${'11'.repeat(20)}`)).toBe(10n);
+    // New process, the chain moved on: the first read starts at block 11, not at the deployment.
+    const later = setup([log(2, 18n)], { latest: 20n, start: 5n });
+    later.add(2, 'submitting');
+    new OrdersRepository(later.h).saveIndexerCursor(1234, `0x${'11'.repeat(20)}`, 10n, 1);
+    expect(await later.indexer.tick()).toBe(1);
+    expect(later.ranges[0]).toEqual([11n, 20n]);
+    expect(later.read(2)?.status).toBe('paid');
+  });
+
+  it('falls back to the deployment block with no stored cursor or one behind it', async () => {
+    const t = setup([], { latest: 12n, start: 8n });
+    await t.indexer.tick();
+    expect(t.ranges[0]?.[0]).toBe(8n);
+    const stale = setup([], { latest: 12n, start: 8n });
+    new OrdersRepository(stale.h).saveIndexerCursor(1234, `0x${'11'.repeat(20)}`, 3n, 1);
+    await stale.indexer.tick();
+    expect(stale.ranges[0]?.[0]).toBe(8n);
+  });
+
+  it('does not store the block of a chunk that failed, and never moves a cursor back', async () => {
+    const t = setup([log(1)], { latest: 10n });
+    t.add(1, 'submitting');
+    vi.spyOn(t.reader, 'orderPlaced').mockRejectedValueOnce(new Error('rpc down'));
+    await t.indexer.tick();
+    const repo = new OrdersRepository(t.h);
+    expect(repo.indexerCursor(1234, `0x${'11'.repeat(20)}`)).toBeNull();
+    repo.saveIndexerCursor(1234, `0x${'11'.repeat(20)}`, 9n, 1);
+    repo.saveIndexerCursor(1234, `0x${'11'.repeat(20)}`, 4n, 2);
+    expect(repo.indexerCursor(1234, `0x${'11'.repeat(20)}`)).toBe(9n);
   });
 
   it('keeps the cursor when a read fails, so the chunk is read again', async () => {
