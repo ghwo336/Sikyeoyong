@@ -84,4 +84,8 @@ describe('checkReplyRules (D-35 layer 1)', () => {
   it('break-test: the tone check is not fooled by a trailing 용 on only one sentence', () => {
     expect(checkReplyRules('영화 줄거리는 이래. 먹고 싶어용.')).toBe('TONE');
   });
+
+  it('keep: a decimal inside a long sentence is not a sentence end (only the decimal rule saves it)', () => {
+    expect(checkReplyRules('제일 가까운 국밥집이 여기서 딱 120.5m 떨어져 있어용!')).toBeNull();
+  });
 });
