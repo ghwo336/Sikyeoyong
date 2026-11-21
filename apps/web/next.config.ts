@@ -23,9 +23,18 @@ const API_DEV_ORIGIN =
 const API_MODE =
   set(process.env.NEXT_PUBLIC_API_MODE) ?? set(rootEnv.NEXT_PUBLIC_API_MODE) ?? 'mock';
 
+// Demo scenes (the key leak comparison) exist only in a demo build: NEXT_PUBLIC_DEMO_MODE, or the
+// root .env DEMO_MODE the API reads. Anything but "true" leaves /demo/* as a 404.
+const DEMO_MODE =
+  set(process.env.NEXT_PUBLIC_DEMO_MODE) ??
+  set(rootEnv.NEXT_PUBLIC_DEMO_MODE) ??
+  set(rootEnv.DEMO_MODE) ??
+  'false';
+
 const config: NextConfig = {
   reactStrictMode: true,
   env: {
+    NEXT_PUBLIC_DEMO_MODE: DEMO_MODE,
     NEXT_PUBLIC_API_MODE: API_MODE,
     NEXT_PUBLIC_DEV_LOGIN_KEY:
       set(process.env.NEXT_PUBLIC_DEV_LOGIN_KEY) ?? set(rootEnv.NEXT_PUBLIC_DEV_LOGIN_KEY) ?? '',

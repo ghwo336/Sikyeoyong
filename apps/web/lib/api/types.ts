@@ -25,6 +25,7 @@ import type {
   SetLimitsResult,
   SignupConfig,
   WalletView,
+  LeakCompareView,
 } from '@sikyeoyong/shared';
 import type { DragonMood } from '@sikyeoyong/ui';
 
@@ -36,6 +37,7 @@ export type {
   LimitChangeCardView,
   IdCardView,
   WalletView,
+  LeakCompareView,
   ChatEvent,
   ChatHistory,
   ChatHistoryMessage,
@@ -138,6 +140,8 @@ export interface ApiClient {
 
   /** Wallet.dc.html money: the owner's allowance, the dragon's pocket, saved this month. */
   getWallet(): Promise<WalletView>;
+  /** LeakCompare.dc.html (demo scene 5): the numbers for the key leak comparison. 404 when DEMO_MODE is off. */
+  getLeakCompare(): Promise<LeakCompareView>;
   /** IdCard.dc.html: who owns the dragon, the identity check, when it hatched. */
   getIdCard(): Promise<IdCardView>;
   /** 용이 멈추기 / 깨우기 (user-flow 17). The owner's switch; never an LLM tool. */

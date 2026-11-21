@@ -11,6 +11,7 @@ import {
 import type {
   ChatHistory,
   IdCardView,
+  LeakCompareView,
   MeView,
   RecommendationCard,
   SignupConfig,
@@ -154,6 +155,15 @@ export const WALLET: WalletView = {
   owner: won(81_000n),
   pocket: won(20_000n),
   savedThisMonth: won(32_000n),
+};
+
+/** LeakCompare.dc.html (demo profile): 10,000 per order, 60,000 in 1 hour, float 20,100, pocket 20,000. */
+export const LEAK_COMPARE: LeakCompareView = {
+  perOrderLimit: won(10_000n),
+  periodicCap: won(60_000n),
+  periodicPeriodSec: 3_600,
+  floatAtRisk: won(20_100n),
+  pocket: won(20_000n),
 };
 
 /** IdCard.dc.html: 이호재님의 배달 비서, 실명 확인됨, 2026. 12. 1. */

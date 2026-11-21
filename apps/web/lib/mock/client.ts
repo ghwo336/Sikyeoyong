@@ -38,6 +38,7 @@ import {
   RECOMMENDATIONS,
   SIGNUP,
   WALLET,
+  LEAK_COMPARE,
 } from './fixtures';
 
 const LATENCY_MS = 250;
@@ -640,6 +641,7 @@ export const mockApi: ApiClient = {
   },
   claimTrialAllowance: () => later(undefined),
   getWallet: () => later(wallet),
+  getLeakCompare: () => later(LEAK_COMPARE),
   getIdCard: () => later(ID_CARD),
   setFrozen: (frozen) => {
     budget = { ...budget, frozen };

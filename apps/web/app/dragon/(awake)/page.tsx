@@ -1,4 +1,5 @@
 // Wallet (design/screens/Wallet.dc.html). Assembly only (architecture.md).
+import { LeakEntryContainer } from '../../../features/demo/containers/LeakEntryContainer';
 import { EntryGate } from '../../../features/me/containers/EntryGate';
 import { FrozenRedirect } from '../../../features/wallet/containers/FrozenRedirect';
 import { WalletTopBar } from '../../../features/wallet/containers/WalletTopBar';
@@ -16,6 +17,7 @@ export default function WalletPage() {
       <LimitRowsContainer />
       <DragonControlsContainer />
       <CustodyNoteContainer />
+      <LeakEntryContainer />
     </EntryGate>
   );
 }

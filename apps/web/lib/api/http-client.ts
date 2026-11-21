@@ -19,6 +19,7 @@ import {
   zRefundResult,
   zTrialResult,
   zWalletView,
+  zLeakCompareView,
   zMeView,
   zIdentityStatus,
   zOrderList,
@@ -230,6 +231,7 @@ export function createHttpApi(
       zTrialResult.parse(await call('POST', '/signup/trial'));
     },
     getWallet: async () => zWalletView.parse(await call('GET', '/wallet')),
+    getLeakCompare: async () => zLeakCompareView.parse(await call('GET', '/demo/leak-compare')),
     getIdCard: async () => zIdCardView.parse(await call('GET', '/me/id-card')),
     // The kill switch: the owner's button only, never an LLM tool (user-flow 17).
     setFrozen: async (frozen) => {
