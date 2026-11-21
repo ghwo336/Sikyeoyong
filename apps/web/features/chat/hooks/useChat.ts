@@ -91,6 +91,8 @@ export function useChat(
       setWriting({ id, shown: false });
       return api.sendChatMessage({ text, clientMessageId: id }, (e) => {
         sofar.push(e);
+        // Any event means the server took the message; do not wait for the stream to end.
+        if (sofar.length === 1) setStatus(id, 'sent');
         const turn = showTurn(id, sofar);
         if (turn.entries.length > 0) setWriting({ id, shown: true });
       });

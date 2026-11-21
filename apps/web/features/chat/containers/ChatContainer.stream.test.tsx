@@ -91,6 +91,21 @@ describe('ChatContainer while the dragon writes (D-23)', () => {
     });
   });
 
+  it('the sending note goes away at the first event, before the stream ends (QA 7)', async () => {
+    setup();
+    await say('저녁 추천해 줘');
+    expect(await screen.findByText('보내는 중')).toBeInTheDocument();
+    act(() => {
+      emit({ type: 'token', text: '국물 어때용?' });
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('보내는 중')).toBeNull();
+    });
+    act(() => {
+      finish([{ type: 'done', messageId: 'm9' }]);
+    });
+  });
+
   it('shows the typing dots until the first words, then the words as they arrive', async () => {
     setup();
     await say('저녁 추천해 줘');
