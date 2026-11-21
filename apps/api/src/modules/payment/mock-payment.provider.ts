@@ -116,6 +116,10 @@ export class MockPaymentProvider implements PaymentProvider {
 
   setTransferLimit(agent: AgentWallet, amount: bigint): Promise<Hex> {
     if (amount <= 0n) return Promise.reject(badAmount('TransferLimit must be positive'));
+    // Same as the real provider: the 8004 metadata write needs the agent's 8004 id.
+    if (agent.onchainAgentId === undefined) {
+      return Promise.reject(badAmount('agent has no 8004 id yet'));
+    }
     this.wallet(agent.address).limit = amount;
     return Promise.resolve(this.tx());
   }

@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { type OwnerAuthority, parseAokrw, type PaymentProvider } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
+import { agentWalletOf } from './agent-wallet.js';
 import { AgentsRepository } from './agents.repository.js';
 
 /**
@@ -36,9 +37,7 @@ export class AgentSetupService {
     const agent = this.repo.findById(agentId);
     if (agent === undefined || agent.status !== 'PENDING') return;
     try {
-      let wallet = agent.walletAddress;
-      let owner = agent.ownerAddress;
-      if (wallet === null || owner === null) {
+      if (agent.walletAddress === null || agent.ownerAddress === null) {
         this.repo.setStep(agentId, 'wallet');
         const created = await this.payment.createAgent({
           userId: agent.userId,
@@ -51,17 +50,12 @@ export class AgentSetupService {
             created.onchainAgentId === undefined ? null : created.onchainAgentId.toString(),
           ownerAddress: created.ownerAddress,
         });
-        wallet = created.address;
-        owner = created.ownerAddress;
       }
       this.repo.setStep(agentId, 'limit');
       // The amount stored at creation: policy.perOrderLimit.initial (D-31). The owner changes it later.
       const amount = parseAokrw(agent.perOrderLimitAokrw);
-      const wallet_ = {
-        agentRowId: agentId,
-        address: wallet as `0x${string}`,
-        ownerAddress: owner as `0x${string}`,
-      };
+      // Read back after saveWallet so the 8004 id the wallet step stored is included.
+      const wallet_ = agentWalletOf(this.repo.findById(agentId) ?? agent);
       const bound = await runOwnerAction(this.owner, { kind: 'bind', agent: wallet_ });
       const limited = await runOwnerAction(this.owner, {
         kind: 'setTransferLimit',

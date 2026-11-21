@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   AppError,
   aokrwToString,
+  type AgentWallet,
   type OwnerAuthority,
   type PaymentProvider,
   type RefundResult,
@@ -9,6 +10,7 @@ import {
 import { AllowanceService } from '../allowance/allowance.service.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
 import { AgentLock } from './agent-lock.service.js';
+import { agentWalletOf } from './agent-wallet.js';
 import { AgentsRepository } from './agents.repository.js';
 
 /**
@@ -45,18 +47,11 @@ export class AgentRefundService {
       if (agent.walletAddress === null || agent.ownerAddress === null) {
         throw new AppError('CHAIN_AGENT_LIMIT_UNSET', { reason: 'agent wallet not ready' });
       }
-      return this.drain(userId, {
-        agentRowId: agent.id,
-        address: agent.walletAddress as `0x${string}`,
-        ownerAddress: agent.ownerAddress as `0x${string}`,
-      });
+      return this.drain(userId, agentWalletOf(agent));
     });
   }
 
-  private async drain(
-    userId: string,
-    wallet: { agentRowId: string; address: `0x${string}`; ownerAddress: `0x${string}` },
-  ): Promise<RefundResult> {
+  private async drain(userId: string, wallet: AgentWallet): Promise<RefundResult> {
     const before = await this.payment.balanceOf(wallet.address);
     if (before === 0n) return { refunded: '0', txHashes: [] };
     const written = await runOwnerAction(this.owner, { kind: 'drain', agent: wallet });

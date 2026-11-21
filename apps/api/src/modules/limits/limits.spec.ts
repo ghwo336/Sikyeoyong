@@ -47,7 +47,11 @@ async function setup(env: Record<string, string> = {}) {
   const wallet = await payment.createAgent({ userId: 'u1', name: '용이' });
   h.db
     .update(agents)
-    .set({ walletAddress: wallet.address, ownerAddress: wallet.ownerAddress })
+    .set({
+      walletAddress: wallet.address,
+      ownerAddress: wallet.ownerAddress,
+      onchainAgentId: String(wallet.onchainAgentId),
+    })
     .where(eq(agents.id, 'a-u1'))
     .run();
   const token = moduleRef.get(AuthService).issue('u1', 'web');

@@ -1,7 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppError, type FreezeResult, type OwnerAuthority } from '@sikyeoyong/shared';
+import {
+  AppError,
+  type AgentWallet,
+  type FreezeResult,
+  type OwnerAuthority,
+} from '@sikyeoyong/shared';
 import { OWNER_AUTHORITY, runOwnerAction } from '../payment/payment.service.js';
 import { AgentLock } from './agent-lock.service.js';
+import { agentWalletOf } from './agent-wallet.js';
 import { AgentsRepository } from './agents.repository.js';
 
 /**
@@ -56,29 +62,14 @@ export class AgentFreezeService {
     if (agent.status !== 'ACTIVE' && agent.status !== 'FROZEN') {
       throw new AppError('CHAIN_AGENT_LIMIT_UNSET', { reason: 'not hatched yet' });
     }
-    if (agent.walletAddress === null || agent.ownerAddress === null) {
-      throw new AppError('CHAIN_AGENT_LIMIT_UNSET', { reason: 'agent wallet not ready' });
-    }
-    return {
-      id: agent.id,
-      status: agent.status,
-      walletAddress: agent.walletAddress as `0x${string}`,
-      ownerAddress: agent.ownerAddress as `0x${string}`,
-    };
+    return { id: agent.id, status: agent.status, wallet: agentWalletOf(agent) };
   }
 
   private async chain(
-    agent: { id: string; walletAddress: `0x${string}`; ownerAddress: `0x${string}` },
+    agent: { wallet: AgentWallet },
     kind: 'pause' | 'unpause',
   ): Promise<`0x${string}`[]> {
-    const written = await runOwnerAction(this.owner, {
-      kind,
-      agent: {
-        agentRowId: agent.id,
-        address: agent.walletAddress,
-        ownerAddress: agent.ownerAddress,
-      },
-    });
+    const written = await runOwnerAction(this.owner, { kind, agent: agent.wallet });
     if (!written.done) {
       throw new AppError('INTERNAL', { reason: `owner signature needed for ${kind}` });
     }

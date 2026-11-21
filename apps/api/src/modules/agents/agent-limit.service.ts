@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AppError, aokrwToString, type OwnerAuthority, parseAokrw } from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
 import { OWNER_AUTHORITY, runOwnerAction } from '../payment/payment.service.js';
+import { agentWalletOf } from './agent-wallet.js';
 import { AgentsRepository } from './agents.repository.js';
 
 /** The dragon as a limit change sees it. */
@@ -53,11 +54,7 @@ export class AgentLimitService {
     }
     const written = await runOwnerAction(this.owner, {
       kind: 'setTransferLimit',
-      agent: {
-        agentRowId: agent.id,
-        address: agent.walletAddress as `0x${string}`,
-        ownerAddress: agent.ownerAddress as `0x${string}`,
-      },
+      agent: agentWalletOf(agent),
       amount,
     });
     if (!written.done) {

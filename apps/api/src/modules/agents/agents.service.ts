@@ -16,6 +16,7 @@ import { IdentityService } from '../identity/identity.service.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { AgentLock } from './agent-lock.service.js';
 import { AgentSetupService } from './agent-setup.service.js';
+import { agentWalletOf, asAddress } from './agent-wallet.js';
 import { AgentsRepository } from './agents.repository.js';
 
 /** Other modules see the lock's timeout error only through this file (architecture.md). */
@@ -35,14 +36,6 @@ export interface AgentSummary {
   readonly dragonSpecies: DragonSpecies;
   /** When the owner asked for this dragon (unix ms): the ID card's birth date. */
   readonly bornAt: number;
-}
-
-function asWallet(value: string | null): `0x${string}` | null {
-  if (value === null) return null;
-  if (!/^0x[0-9a-fA-F]{40}$/.test(value)) {
-    throw new AppError('INTERNAL', { reason: 'stored agent wallet is not an address' });
-  }
-  return value as `0x${string}`;
 }
 
 /** The user's dragon (one per user). Other modules read agents only through this service. */
@@ -73,7 +66,7 @@ export class AgentsService {
       perOrderLimitAokrw: parseAokrw(row.perOrderLimitAokrw),
       frozen: row.status === 'FROZEN',
       ready: row.status === 'ACTIVE' || row.status === 'FROZEN',
-      wallet: asWallet(row.walletAddress),
+      wallet: asAddress(row.walletAddress),
       dragonName: row.dragonName,
       dragonSpecies: row.dragonSpecies,
       bornAt: row.createdAt,
@@ -92,17 +85,7 @@ export class AgentsService {
   walletForPayment(userId: string): AgentWallet {
     const row = this.repo.findByUserId(userId);
     if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'agent not found' });
-    const address = asWallet(row.walletAddress);
-    const owner = asWallet(row.ownerAddress);
-    if (address === null || owner === null) {
-      throw new AppError('CHAIN_AGENT_LIMIT_UNSET', { reason: 'agent wallet not ready' });
-    }
-    return {
-      agentRowId: row.id,
-      address,
-      ownerAddress: owner,
-      ...(row.onchainAgentId === null ? {} : { onchainAgentId: BigInt(row.onchainAgentId) }),
-    };
+    return agentWalletOf(row);
   }
 
   /** POST /agents: one dragon per user, created PENDING; hatching runs in the background. */
