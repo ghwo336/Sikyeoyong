@@ -32,6 +32,25 @@ function hex(seed: string, bytes: number): Hex {
     .slice(0, bytes * 2)}`;
 }
 
+/** What the mock chain forgot at a restart, rebuilt from the database (mock-chain-state.repository.ts). */
+export interface MockChainSnapshot {
+  readonly wallets: readonly {
+    readonly address: Hex;
+    readonly limit: bigint | null;
+    readonly paused: boolean;
+    /** Float in the pocket: allowance funded minus refunded minus paid, never below 0. */
+    readonly balance: bigint;
+  }[];
+  /** Orders already paid, oldest first, with the wallet that paid and the quote time (ms). */
+  readonly paid: readonly {
+    readonly address: Hex;
+    readonly orderRef: Hex;
+    readonly txHash: Hex;
+    readonly amount: bigint;
+    readonly atMs: number;
+  }[];
+}
+
 /** The owner of every mock agent, like the operator account in phase 1 (tech-spec 2.3). Made up, not a chain address. */
 export const MOCK_OPERATOR: Hex = hex('mock-operator', 20);
 
@@ -58,6 +77,27 @@ export class MockPaymentProvider implements PaymentProvider {
     gasReserveAokrw: bigint = 0n,
   ) {
     this.gasReserveAokrw = gasReserveAokrw;
+  }
+
+  /**
+   * Development only: puts back what a process restart wiped (wallets, limits, paused flags,
+   * float, paid orders and the 30-day window that holds now). The database is the memory.
+   */
+  restore(snapshot: MockChainSnapshot): void {
+    for (const s of snapshot.wallets) {
+      const w = this.wallet(s.address);
+      w.limit = s.limit;
+      w.paused = s.paused;
+      w.balance = s.balance;
+    }
+    const start = this.windowStartMs();
+    for (const o of snapshot.paid) {
+      this.block += 1n;
+      this.paid.set(o.orderRef, { txHash: o.txHash, blockNumber: this.block });
+      if (o.atMs < start) continue;
+      const w = this.wallet(o.address);
+      w.window = { start, used: (w.window?.used ?? 0n) + o.amount };
+    }
   }
 
   createAgent(input: { readonly userId: string; readonly name: string }): Promise<AgentWallet> {

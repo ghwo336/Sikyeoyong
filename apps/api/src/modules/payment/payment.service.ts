@@ -2,7 +2,7 @@ import { AppError, type PaymentProvider } from '@sikyeoyong/shared';
 import type { AppConfig } from '../../config/env.js';
 import type { AgentKeyStore } from './agent-key-vault.js';
 import { createManagedEoaProvider } from './managed-eoa.factory.js';
-import { MockPaymentProvider } from './mock-payment.provider.js';
+import { type MockChainSnapshot, MockPaymentProvider } from './mock-payment.provider.js';
 
 /**
  * Other modules inject the provider by this token (architecture.md: payment is
@@ -43,16 +43,21 @@ function unavailable(path: PaymentProvider['path'], reason: string): PaymentProv
 export function createPaymentProvider(
   config: AppConfig,
   keyStore?: AgentKeyStore,
+  mockChain?: () => MockChainSnapshot,
 ): PaymentProvider {
   const path = config.payment.path;
   if (path === 'mock') {
     // The demo's mock keeps the gas share in the pocket like path B does (D-25), so the pocket
     // is not empty after an order and 돌려받기 can be shown. It spends none: the mock has no gas.
-    return new MockPaymentProvider(
+    const mock = new MockPaymentProvider(
       config.policy,
       Date.now,
       config.demo.enabled ? config.payment.gasShareAokrw : 0n,
     );
+    // The chain is in memory but the database says who is ACTIVE with which limit: a restart
+    // (nest watch rebuild) must not leave an ACTIVE agent with an unset limit (QA 5).
+    if (mockChain !== undefined && config.nodeEnv !== 'production') mock.restore(mockChain());
+    return mock;
   }
   if (path === 'B') {
     try {

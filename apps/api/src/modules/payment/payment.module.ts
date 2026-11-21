@@ -3,6 +3,7 @@ import { APP_CONFIG } from '../../config/config.module.js';
 import type { AppConfig } from '../../config/env.js';
 import type { PaymentProvider } from '@sikyeoyong/shared';
 import { AgentKeysRepository } from './agent-keys.repository.js';
+import { MockChainStateRepository } from './mock-chain-state.repository.js';
 import {
   createOwnerAuthority,
   createPaymentProvider,
@@ -18,11 +19,15 @@ import {
 @Module({
   providers: [
     AgentKeysRepository,
+    MockChainStateRepository,
     {
       provide: PAYMENT_PROVIDER,
-      inject: [APP_CONFIG, AgentKeysRepository],
-      useFactory: (config: AppConfig, keys: AgentKeysRepository) =>
-        createPaymentProvider(config, keys),
+      inject: [APP_CONFIG, AgentKeysRepository, MockChainStateRepository],
+      useFactory: (
+        config: AppConfig,
+        keys: AgentKeysRepository,
+        mockChain: MockChainStateRepository,
+      ) => createPaymentProvider(config, keys, () => mockChain.snapshot()),
     },
     {
       provide: OWNER_AUTHORITY,
