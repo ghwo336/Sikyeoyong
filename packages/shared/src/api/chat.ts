@@ -92,6 +92,9 @@ export type SendChatMessageBody = z.infer<typeof zSendChatMessageBody>;
  */
 const sessionId = z.string().min(1).nullable();
 
+/** Unix ms the message was stored; the date line over an older session reads it (D-34). Optional. */
+const createdAt = z.number().int().nonnegative();
+
 /** GET /chat/history item (tech-spec 3.2). The dragon's turn is kept as the events it was made of. */
 export const zChatHistoryMessage = z.discriminatedUnion('role', [
   z
@@ -100,6 +103,7 @@ export const zChatHistoryMessage = z.discriminatedUnion('role', [
       role: z.literal('user'),
       text: z.string(),
       sessionId: sessionId.optional(),
+      createdAt: createdAt.optional(),
     })
     .strict(),
   z
@@ -108,6 +112,7 @@ export const zChatHistoryMessage = z.discriminatedUnion('role', [
       role: z.literal('dragon'),
       events: z.array(zChatEvent),
       sessionId: sessionId.optional(),
+      createdAt: createdAt.optional(),
     })
     .strict(),
 ]);

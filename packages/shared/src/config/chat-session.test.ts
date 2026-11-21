@@ -15,4 +15,12 @@ describe('chat session (D-34)', () => {
     expect(zChatHistoryMessage.parse(base)).toEqual(base);
     expect(zChatHistoryMessage.safeParse({ ...base, sessionId: '' }).success).toBe(false);
   });
+
+  it('a history message may carry the time it was stored', () => {
+    const base = { id: 'm1', role: 'user', text: '안녕' };
+    expect(zChatHistoryMessage.parse({ ...base, createdAt: 1_700_000_000_000 })).toMatchObject({
+      createdAt: 1_700_000_000_000,
+    });
+    expect(zChatHistoryMessage.safeParse({ ...base, createdAt: -1 }).success).toBe(false);
+  });
 });
