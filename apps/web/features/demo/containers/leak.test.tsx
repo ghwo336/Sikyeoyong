@@ -36,7 +36,7 @@ describe('LeakCompareContainer (LeakCompare.dc.html)', () => {
   it('draws the real numbers from the API as won (bigint through formatOkrw)', async () => {
     wrap(<LeakCompareContainer />);
     expect(await screen.findByText('10,000원까지만')).toBeTruthy();
-    expect(screen.getByText('1시간 동안 합쳐서 60,000원까지')).toBeTruthy();
+    expect(screen.getByText('1시간 동안 다 합쳐서 최대 60,000원까지')).toBeTruthy();
     expect(screen.getByText('20,100원만')).toBeTruthy();
     expect(screen.getByText('지금 주머니에 20,000원')).toBeTruthy();
   });
@@ -59,9 +59,11 @@ describe('LeakCompareContainer (LeakCompare.dc.html)', () => {
   it('shows the exact rule 11 line with 자세히 보기 on', async () => {
     localStorage.setItem('sikyeoyong.details', 'on');
     wrap(<LeakCompareContainer />);
-    expect(
-      await screen.findByText(/주문 경로의 큰돈은 체인이 막고, 우회 경로로는 float만 잃는다/),
-    ).toBeTruthy();
+    const line = await screen.findByText(
+      /주문 경로의 큰돈은 체인이 막고, 우회 경로로는 float만 잃는다/,
+    );
+    // Inside a closed 자세히 보기, not open on the page (QA 6 M5).
+    expect(line.closest('details')?.hasAttribute('open')).toBe(false);
   });
 
   it('says one plain line when the numbers cannot be loaded (demo off on the API)', async () => {

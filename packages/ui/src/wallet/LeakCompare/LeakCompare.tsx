@@ -20,7 +20,7 @@ export interface LeakCompareProps {
   readonly floatAtRisk: bigint;
   /** aokrw, what the pocket holds now. */
   readonly pocket: bigint;
-  /** 자세히 보기 on: add the exact one-line wording. */
+  /** 자세히 보기 on: add a closed 자세히 보기 that holds the exact one-line wording. */
   readonly detailed?: boolean;
 }
 
@@ -61,7 +61,7 @@ export function LeakCompare({
           <span className={styles.sub}>주문으로는 한 번에</span>
           <span className={styles.big}>{formatOkrw(perOrderLimit)}까지만</span>
           <span className={styles.sub}>
-            {periodLabel(periodSec)} 동안 합쳐서 {formatOkrw(periodicCap)}까지
+            {periodLabel(periodSec)} 동안 다 합쳐서 최대 {formatOkrw(periodicCap)}까지
           </span>
         </div>
         <div className={styles.rule} />
@@ -71,7 +71,13 @@ export function LeakCompare({
           <span className={styles.sub}>지금 주머니에 {formatOkrw(pocket)}</span>
         </div>
       </section>
-      {detailed && <p className={styles.detail}>{LEAK_DETAIL_LINE}</p>}
+      {detailed && (
+        // Closed until pressed: the exact words (chain terms) are for someone who asks (D-17).
+        <details className={styles.more} data-part="details">
+          <summary className={styles.summary}>자세히 보기</summary>
+          <p className={styles.detail}>{LEAK_DETAIL_LINE}</p>
+        </details>
+      )}
     </div>
   );
 }

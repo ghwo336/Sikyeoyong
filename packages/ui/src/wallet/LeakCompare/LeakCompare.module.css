@@ -72,3 +72,15 @@
   line-height: 1.5;
   color: var(--color-ink-code);
 }
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.summary {
+  cursor: pointer;
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-secondary);
+}

@@ -21,7 +21,7 @@ describe('LeakCompare (LeakCompare.md 테스트 기준)', () => {
     expect(container.textContent).toBe(
       '주문으로는 큰돈이 막히고, 다른 길로 새도 주머니만 잃어용.' +
         '카드번호를 맡겼다면전부 가져가요앱 안의 한도는 열쇠가 있으면 건너뛰어요' +
-        '시켜용 용이주문으로는 한 번에10,000원까지만1시간 동안 합쳐서 60,000원까지' +
+        '시켜용 용이주문으로는 한 번에10,000원까지만1시간 동안 다 합쳐서 최대 60,000원까지' +
         '다른 길로 보내도 용이 주머니에는20,100원만지금 주머니에 20,000원',
     );
   });
@@ -56,6 +56,13 @@ describe('LeakCompare (LeakCompare.md 테스트 기준)', () => {
       '주문 경로의 큰돈은 체인이 막고, 우회 경로로는 float만 잃는다.',
     );
     expect(container.textContent).toContain('실행 중에 revert되어 블록에 남고 가스가 든다');
+    // Closed until pressed: chain words are never open on the screen (QA 6 M5).
+    const details = container.querySelector('details');
+    expect(details?.hasAttribute('open')).toBe(false);
+    expect(details?.textContent).toContain('float만 잃는다');
+    expect(container.textContent.replace(details?.textContent ?? '', '')).not.toMatch(
+      /float|revert|블록|가스/,
+    );
     expect(container.textContent).not.toContain('멤풀');
   });
 
