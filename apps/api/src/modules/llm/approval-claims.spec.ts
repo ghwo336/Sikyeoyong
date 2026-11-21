@@ -91,6 +91,7 @@ describe('stripApprovalClaims', () => {
     '승인 끝이에용',
     '승인 끝이에요!',
     '허락 OK 받았어용',
+    '승인 요청 쏴 뒀어용',
   ])('drops %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: '', dropped: true });
   });
@@ -128,6 +129,12 @@ describe('stripApprovalClaims', () => {
     '승인 끝나는 대로 알려드릴게용.',
     '승인이 필요하면 OK 눌러 주세용.',
     '허락 OK 해 주세용.',
+    '승인이 보내져 있으면 알려 줄게요.',
+    '승인 보내져 있어야 해요.',
+    '승인 보내져 있나 볼게용.',
+    '승인 OK 누르면 끝이에요.',
+    '승인 눌러주시면 끝이에용.',
+    '승인 필요한 주문이에용 OK.',
   ])('keeps %j', (s) => {
     expect(stripApprovalClaims(s)).toEqual({ text: s, dropped: false });
   });
