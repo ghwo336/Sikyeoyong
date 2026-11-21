@@ -31,9 +31,8 @@ const DEMO_MODE =
   set(rootEnv.DEMO_MODE) ??
   'false';
 
-// Headers on every response (security.md "웹 응답 헤더"). No CSP yet: Next inlines its own
-// bootstrap scripts, so a CSP needs per-request nonces (a middleware) or a hash for each, and a
-// hash for THEME_BOOT_SCRIPT alone would block them. Follow-up in security.md.
+// Headers on every response (security.md "웹 응답 헤더"). The Content-Security-Policy is not here:
+// it needs a per-request nonce, so proxy.ts sets it (lib/csp.ts).
 export const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

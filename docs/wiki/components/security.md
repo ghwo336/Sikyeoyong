@@ -43,7 +43,7 @@ children: []
 
 ## 웹 응답 헤더
 - `apps/web/next.config.ts`의 `securityHeaders`가 모든 경로에 붙인다 (2026-11-21): `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy`(카메라, 마이크, 위치, 결제, USB 끔). 모양은 `lib/next-config.test.ts`가 지킨다.
-- CSP는 아직 없다. Next가 하이드레이션용 인라인 스크립트를 직접 넣어서, 요청마다 nonce를 넣는 미들웨어 없이는 `THEME_BOOT_SCRIPT` 해시 하나만으로 막으면 앱이 깨진다. 후속 과제: nonce 미들웨어로 `script-src 'nonce-...' 'strict-dynamic'`, 개발 서버(`next dev`)는 `unsafe-eval` 예외를 따로 두고 도입한다. 그 전까지 세션은 httpOnly 쿠키로 지킨다.
+- CSP (2026-11-21): `apps/web/proxy.ts`(Next 16의 미들웨어)가 페이지 요청마다 nonce를 만들고 `lib/csp.ts`의 `buildCsp`로 헤더를 붙인다. next.config.ts에는 두지 않는다(한 헤더는 한 곳). `script-src 'self' 'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'`(로그인 SDK의 WebAssembly), 개발 서버만 `'unsafe-eval'`. `style-src 'self' 'unsafe-inline'`(React style 속성). `connect-src 'self'`(API는 같은 출처, D-03)와 파우치 금고 출처(`POUCHI_VAULT_URL`, 비면 `https://auth.pouchi.io`), `frame-src`는 금고만(SDK가 iframe으로 연다), `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, 운영은 `upgrade-insecure-requests`. 루트 레이아웃의 테마 부트 스크립트는 `x-nonce`를 읽어 nonce를 단다. nonce 때문에 모든 페이지는 요청 때 렌더링된다(정적 생성 없음). `lib/csp.test.ts`가 운영/개발 차이, nonce, 거부 입력을 지킨다. (확인: `next start`로 헤더와 인라인 스크립트 nonce)
 - API도 같은 네 헤더를 모든 응답(오류와 없는 경로 포함)에 붙인다 (2026-11-21, QA 4차): `apps/api/src/app.setup.ts`의 `API_SECURITY_HEADERS` 미들웨어. JSON만 내므로 CSP는 두지 않는다. `app.setup.spec.ts`가 supertest로 지킨다.
 
 ## 하지 말 것 (MUST NOT)

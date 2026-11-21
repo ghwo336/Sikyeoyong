@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 // Tokens first, then the two design fonts by their token family names, then page base.
 import '@sikyeoyong/ui/tokens.css';
@@ -29,13 +30,15 @@ export const viewport: Viewport = {
   themeColor: tokens.color.ground,
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // The nonce proxy.ts made for this request: the inline boot script needs it under the CSP.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     // data-species: the dragon's theme (D-32). The boot script sets the remembered one before the
     // first paint, so the attribute may differ from the server's; ThemeSync follows GET /me.
     <html lang="ko" data-species={DEFAULT_SPECIES} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         <QueryProvider>
