@@ -477,6 +477,14 @@ describe('drain', () => {
     expect(t.pub.sendRawTransaction).not.toHaveBeenCalled();
   });
 
+  it('has nothing to send at zero balance and never prices a transfer (estimate would fail)', async () => {
+    const t = setup({ balance: 0n });
+    t.agentWallet.prepareTransactionRequest.mockRejectedValue(new Error('insufficient funds'));
+    expect(await t.provider.drain(t.agent)).toEqual([]);
+    expect(t.agentWallet.prepareTransactionRequest).not.toHaveBeenCalled();
+    expect(t.pub.sendRawTransaction).not.toHaveBeenCalled();
+  });
+
   it('balanceOf reads the chain', async () => {
     const t = setup({ balance: 42n });
     expect(await t.provider.balanceOf(t.agent.address)).toBe(42n);

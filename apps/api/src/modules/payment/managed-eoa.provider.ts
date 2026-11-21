@@ -323,6 +323,8 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
     return this.agentLanes.run(agent.address, () =>
       this.d.vault.withAccount(agent.address, async (account) => {
         const balance = await this.d.publicClient.getBalance({ address: agent.address });
+        // An empty wallet cannot even be priced (the estimate fails with insufficient funds).
+        if (balance <= 0n) return [];
         const wallet = this.d.walletFor(account);
         const nonce = await this.d.publicClient.getTransactionCount({
           address: agent.address,
