@@ -119,13 +119,28 @@ describe('mock chain after a restart (QA 5)', () => {
   it('keeps the 30-day window, float and paid orders', async () => {
     const h = seed();
     const wallet = await hatch(h);
-    fund(h, 20_000n);
+    fund(h, 30_000n);
+    h.db
+      .insert(ownerAllowanceEntries)
+      .values({
+        id: 'e2',
+        userId: 'u1',
+        kind: 'refund',
+        amountAokrw: won(2_000n).toString(),
+        createdAt: 2,
+      })
+      .run();
     order(h, 1, 9_000n, T0 - 1000);
+    order(h, 3, 4_000n, T0 - 2000); // second in-window order: the window is a sum
     order(h, 2, 5_000n, 1); // an old window: not counted
     const p = boot(h);
-    expect(p.periodicVolume(wallet.address).usedAokrw).toBe(won(9_000n));
-    expect(await p.balanceOf(wallet.address)).toBe(won(6_000n));
+    // 9_000 + 4_000, the 5_000 outside the window is left out
+    expect(p.periodicVolume(wallet.address).usedAokrw).toBe(won(13_000n));
+    // 30_000 funded - 2_000 refund row - (9_000 + 4_000 + 5_000) spent on all paid orders
+    expect(await p.balanceOf(wallet.address)).toBe(won(10_000n));
     expect(await p.findPaid(REF(1))).not.toBeNull();
+    expect(await p.findPaid(REF(2))).not.toBeNull();
+    expect(await p.findPaid(REF(3))).not.toBeNull();
   });
 
   it('keeps a frozen agent paused', async () => {
