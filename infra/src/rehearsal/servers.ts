@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { cpSync, createWriteStream, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -14,7 +14,7 @@ export const REPO_ROOT = resolve(import.meta.dirname, '../../..');
 export const DEV_LOGIN_KEY = 'rehearsal';
 
 /** Variables a developer's .env may carry that the rehearsal must not pick up (blank = unset). */
-const BLANKED = [
+export const BLANKED = [
   'POUCHI_API_URL',
   'POUCHI_TENANT_ID',
   'POUCHI_APP_KEY',
@@ -37,6 +37,24 @@ const BLANKED = [
   'LLM_DAILY_TOKEN_CAP',
   'LLM_USER_DAILY_TOKEN_CAP',
   'DEMO_BYPASS_SERVER_LIMIT',
+  'REAUTH_MODE',
+  'POUCHI_VAULT_URL',
+  'POUCHI_BRIDGE_ISSUER',
+  'POUCHI_ENVIRONMENT',
+  'GOOGLE_CLIENT_ID_IOS',
+  'APPLE_SERVICE_ID',
+  'LLM_PROVIDER',
+  'LLM_EFFORT',
+  'WEATHER_LAT',
+  'WEATHER_LON',
+  'KYB_SCHEMA_UID',
+  'CONFIRMATIONS',
+  'OWNER_MODE',
+  'AGENT_FLOAT_MULTIPLIER',
+  'AGENT_GAS_SHARE_OKRW',
+  'SUBMITTING_ALERT_MS',
+  'NTS_SERVICE_KEY',
+  'BIZNO_HMAC_KEY',
 ];
 
 export interface Ports {
@@ -115,6 +133,25 @@ async function waitFor(url: string, what: string, ms: number): Promise<void> {
   );
 }
 
+/**
+ * The rehearsal builds into its own folder, so the owner's `nest start --watch` (which owns
+ * apps/api/dist) is never rewritten or emptied under them.
+ */
+export const API_OUT = 'dist-rehearsal';
+
+function buildApi(): { status: number | null; stdout: string; stderr: string } {
+  const cwd = join(REPO_ROOT, 'apps/api');
+  const tsc = spawnSync(
+    'pnpm',
+    ['exec', 'tsc', '-p', 'tsconfig.build.json', '--outDir', API_OUT, '--incremental', 'false'],
+    { cwd, env: baseEnv(), encoding: 'utf8' },
+  );
+  if (tsc.status !== 0) return tsc;
+  rmSync(join(cwd, API_OUT, 'db/migrations'), { recursive: true, force: true });
+  cpSync(join(cwd, 'src/db/migrations'), join(cwd, API_OUT, 'db/migrations'), { recursive: true });
+  return tsc;
+}
+
 export interface Rehearsal {
   readonly webUrl: string;
   readonly apiUrl: string;
@@ -154,17 +191,11 @@ export async function startServers(log: (line: string) => void): Promise<Rehears
     const env = { ...baseEnv(), ...apiEnv(ports, dbPath) };
     log('api build');
     const build =
-      process.env.REHEARSE_SKIP_BUILD === '1'
-        ? { status: 0, stdout: '', stderr: '' }
-        : spawnSync('pnpm', ['--filter', '@sikyeoyong/api', 'build'], {
-            cwd: REPO_ROOT,
-            env: baseEnv(),
-            encoding: 'utf8',
-          });
+      process.env.REHEARSE_SKIP_BUILD === '1' ? { status: 0, stdout: '', stderr: '' } : buildApi();
     if (build.status !== 0) throw new Error(`api build failed\n${build.stdout}${build.stderr}`);
     for (const script of ['migrate', 'seed']) {
       log(`db ${script}`);
-      const r = spawnSync('node', [`apps/api/dist/db/${script}.js`], {
+      const r = spawnSync('node', [`apps/api/${API_OUT}/db/${script}.js`], {
         cwd: REPO_ROOT,
         env,
         encoding: 'utf8',
@@ -179,7 +210,7 @@ export async function startServers(log: (line: string) => void): Promise<Rehears
       child.stderr.pipe(out);
       children.push(child);
     };
-    start('api', 'node', ['dist/main.js'], join(REPO_ROOT, 'apps/api'), env);
+    start('api', 'node', [`${API_OUT}/main.js`], join(REPO_ROOT, 'apps/api'), env);
     start(
       'web',
       'node',
