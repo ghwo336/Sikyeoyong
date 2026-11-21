@@ -50,5 +50,10 @@ export function createLlmProvider(
     ? new OpenAiProvider(makeChatClient(apiKey), { model, effort: config.llm.effort })
     : new AnthropicProvider(makeClient(apiKey), { model, effort: config.llm.effort });
   // D-26: past the day's token cap the dragon says it is tired instead of calling the API.
-  return new DailyCapProvider(live, new TiredProvider(), config.llm.dailyTokenCap);
+  return new DailyCapProvider(
+    live,
+    new TiredProvider(),
+    config.llm.dailyTokenCap,
+    config.llm.userDailyTokenCap,
+  );
 }

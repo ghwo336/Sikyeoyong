@@ -70,6 +70,8 @@ const schema = z.object({
   LLM_MODE: z.enum(['live', 'replay']).default('live'),
   /** D-26: live tokens (input, output and cache) per KST day; at it the dragon says it is tired for the rest of the day. 0 = no cap. */
   LLM_DAILY_TOKEN_CAP: int(0).default(1_000_000),
+  /** Live tokens one user may spend per KST day; blank = a fifth of LLM_DAILY_TOKEN_CAP. 0 = no per-user cap. */
+  LLM_USER_DAILY_TOKEN_CAP: int(0).optional(),
   WEATHER_PROVIDER: z.enum(['static', 'openmeteo']).default('static'),
   /** static provider's one word (a demo scene sets 비 on purpose); blank = 맑음. */
   WEATHER_STATIC: optionalText,
@@ -153,6 +155,8 @@ export interface AppConfig {
     readonly mode: 'live' | 'replay';
     /** D-26: live tokens per KST day before the tired line; 0 = no cap. */
     readonly dailyTokenCap: number;
+    /** Per user, per KST day; 0 = no per-user cap. */
+    readonly userDailyTokenCap: number;
     readonly weatherProvider: 'static' | 'openmeteo';
     readonly weatherStatic: string;
     readonly weatherLat: number;
@@ -286,6 +290,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
       provider: env.LLM_PROVIDER,
       mode: env.LLM_MODE,
       dailyTokenCap: env.LLM_DAILY_TOKEN_CAP,
+      userDailyTokenCap: env.LLM_USER_DAILY_TOKEN_CAP ?? Math.floor(env.LLM_DAILY_TOKEN_CAP / 5),
       weatherProvider: env.WEATHER_PROVIDER,
       weatherStatic: env.WEATHER_STATIC ?? '맑음',
       weatherLat: env.WEATHER_LAT,

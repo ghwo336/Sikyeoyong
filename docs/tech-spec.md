@@ -445,6 +445,7 @@ export interface LlmProvider {
 //        읽기 도구만, API 호출 없음). live면 DailyCapProvider가 AnthropicProvider를 감싸
 //        KST 하루 토큰(입력, 출력, 캐시 합)을 세고 LLM_DAILY_TOKEN_CAP에 닿으면
 //        TiredProvider(고정 한 줄 "오늘은 많이 말해서 피곤해용...", 도구 없음)로 답한다.
+//        한 사람 몫도 같은 방식으로 센다(LLM_USER_DAILY_TOKEN_CAP, 기본은 전체의 1/5, LlmTurnRequest.userId).
 // D-30: LLM_PROVIDER=openai면 live 자리에 OpenAiProvider(llm/openai-provider.ts, OPENAI_API_KEY).
 ```
 
@@ -938,6 +939,7 @@ LLM_MODEL=claude-opus-5-5             # 설정값, 코드에 하드코딩 금지
 LLM_EFFORT=low                        # low | medium | high | xhigh | max (D-22, 데모 기본 low D-26)
 LLM_MODE=live                         # live: Claude API / replay: 정해 둔 용이 턴 재생, API 호출 없음 (D-26)
 LLM_DAILY_TOKEN_CAP=                  # 비우면 1000000. live 토큰(캐시 포함) 하루(KST) 상한, 닿으면 그날은 용이가 피곤하다는 한 줄만. 0이면 상한 없음 (D-26)
+LLM_USER_DAILY_TOKEN_CAP=             # 비우면 LLM_DAILY_TOKEN_CAP의 5분의 1. 한 사람이 하루(KST)에 쓸 수 있는 live 토큰, 닿으면 같은 피곤한 한 줄. 0이면 사람별 상한 없음 (D-26)
 WEATHER_PROVIDER=static               # static | openmeteo
 VERIFY_MODE=kakao                     # kakao | mock (D-16, 가입 본인 인증 방식)
 

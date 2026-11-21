@@ -30,12 +30,15 @@ function kstDay(nowMs: number): number {
 export class DailyCapProvider implements LlmProvider {
   private day = Number.NaN;
   private used = 0;
+  private readonly usedByUser = new Map<string, number>();
 
   constructor(
     /** The live Claude provider behind the cap (tests read its options). */
     readonly live: LlmProvider,
     private readonly fallback: LlmProvider,
     private readonly cap: number,
+    /** Per user, same counting and KST day; 0 means none. A turn with no userId is outside it. */
+    private readonly userCap: number = 0,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -51,10 +54,27 @@ export class DailyCapProvider implements LlmProvider {
     signal?: AbortSignal,
   ): Promise<Anthropic.Message> {
     this.roll();
+    const { userId } = request;
+    const mine = userId === undefined ? 0 : (this.usedByUser.get(userId) ?? 0);
     if (this.cap > 0 && this.used >= this.cap) return this.fallback.turn(request, onText, signal);
+    // One user's own ceiling: the same tired line, so a loop of resends cannot drain the day.
+    if (this.userCap > 0 && mine >= this.userCap) {
+      return this.fallback.turn(request, onText, signal);
+    }
     const message = await this.live.turn(request, onText, signal);
-    this.used += tokensOf(message.usage);
+    const tokens = tokensOf(message.usage);
+    this.roll(); // the turn awaited, and the day may have rolled meanwhile
+    this.used += tokens;
+    if (userId !== undefined) {
+      this.usedByUser.set(userId, (this.usedByUser.get(userId) ?? 0) + tokens);
+    }
     return message;
+  }
+
+  /** Tokens one user spent today (for tests and logs). */
+  usedTodayBy(userId: string): number {
+    this.roll();
+    return this.usedByUser.get(userId) ?? 0;
   }
 
   private roll(): void {
@@ -62,6 +82,7 @@ export class DailyCapProvider implements LlmProvider {
     if (today !== this.day) {
       this.day = today;
       this.used = 0;
+      this.usedByUser.clear();
     }
   }
 }

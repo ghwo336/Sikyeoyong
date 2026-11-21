@@ -28,7 +28,7 @@ const NEXT_DAY = Date.parse('2026-12-10T15:00:00.000Z');
 describe('DailyCapProvider (D-26)', () => {
   it('counts live tokens and replays for the rest of the day once the cap is reached', async () => {
     let now = LATE;
-    const p = new DailyCapProvider(live, fallback, 1_000, () => now);
+    const p = new DailyCapProvider(live, fallback, 1_000, 0, () => now);
     expect((await p.turn(request, () => undefined)).model).toBe('live'); // 400
     expect((await p.turn(request, () => undefined)).model).toBe('live'); // 800
     expect((await p.turn(request, () => undefined)).model).toBe('live'); // 1,200 (was under)
@@ -40,18 +40,49 @@ describe('DailyCapProvider (D-26)', () => {
   });
 
   it('cap 0 means no cap', async () => {
-    const p = new DailyCapProvider(live, fallback, 0, () => LATE);
+    const p = new DailyCapProvider(live, fallback, 0, 0, () => LATE);
     for (let i = 0; i < 5; i += 1) {
       expect((await p.turn(request, () => undefined)).model).toBe('live');
     }
   });
 
   it('counts input, output and both cache kinds; landing exactly on the cap stops the next turn', async () => {
-    const p = new DailyCapProvider(live, fallback, 800, () => LATE);
+    const p = new DailyCapProvider(live, fallback, 800, 0, () => LATE);
     await p.turn(request, () => undefined);
     expect(p.usedToday).toBe(400); // 100 + 50 + 200 + 50
     await p.turn(request, () => undefined);
     expect(p.usedToday).toBe(800); // exactly the cap
     expect((await p.turn(request, () => undefined)).model).toBe('replay');
+  });
+
+  describe('per-user cap', () => {
+    const as = (userId: string) => ({ ...request, userId });
+    it('stops one user at their own cap while another still gets live turns', async () => {
+      const p = new DailyCapProvider(live, fallback, 100_000, 800, () => LATE);
+      await p.turn(as('a'), () => undefined);
+      await p.turn(as('a'), () => undefined);
+      expect(p.usedTodayBy('a')).toBe(800);
+      expect((await p.turn(as('a'), () => undefined)).model).toBe('replay');
+      expect((await p.turn(as('b'), () => undefined)).model).toBe('live');
+      expect(p.usedTodayBy('b')).toBe(400);
+      expect(p.usedToday).toBe(1_200);
+    });
+    it('starts over on a new KST day', async () => {
+      let now = LATE;
+      const p = new DailyCapProvider(live, fallback, 0, 400, () => now);
+      await p.turn(as('a'), () => undefined);
+      expect((await p.turn(as('a'), () => undefined)).model).toBe('replay');
+      now = NEXT_DAY;
+      expect((await p.turn(as('a'), () => undefined)).model).toBe('live');
+      expect(p.usedTodayBy('a')).toBe(400);
+    });
+    it('user cap 0 means none, and the global cap still wins', async () => {
+      const none = new DailyCapProvider(live, fallback, 0, 0, () => LATE);
+      for (let i = 0; i < 4; i += 1) await none.turn(as('a'), () => undefined);
+      expect((await none.turn(as('a'), () => undefined)).model).toBe('live');
+      const global = new DailyCapProvider(live, fallback, 400, 10_000, () => LATE);
+      await global.turn(as('a'), () => undefined);
+      expect((await global.turn(as('b'), () => undefined)).model).toBe('replay');
+    });
   });
 });

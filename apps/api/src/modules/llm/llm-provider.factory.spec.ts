@@ -34,6 +34,35 @@ describe('createLlmProvider (D-22)', () => {
     expect(p.live).toBeInstanceOf(AnthropicProvider);
   });
 
+  it('live: one user at their own cap hears the tired line while another still gets the model', async () => {
+    const stream = vi.fn((_params: unknown) => ({
+      on: () => undefined,
+      finalMessage: () =>
+        Promise.resolve({
+          content: [],
+          stop_reason: 'end_turn',
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }),
+    }));
+    const p = createLlmProvider(
+      loadConfig({
+        LLM_MODEL: 'm',
+        ANTHROPIC_API_KEY: 'k',
+        LLM_DAILY_TOKEN_CAP: '1000',
+        LLM_USER_DAILY_TOKEN_CAP: '2',
+      }),
+      () => ({ messages: { stream } }) as unknown as MessagesClient,
+    );
+    await p.turn({ ...request, userId: 'a' }, () => undefined);
+    let said = '';
+    await p.turn({ ...request, userId: 'a' }, (t) => {
+      said += t;
+    });
+    expect(said).toBe(TIRED_LINE);
+    await p.turn({ ...request, userId: 'b' }, () => undefined);
+    expect(stream).toHaveBeenCalledTimes(2);
+  });
+
   it('live at the day cap: the next turn says the tired line and does not call the API (D-26)', async () => {
     const stream = vi.fn((_params: unknown) => ({
       on: () => undefined,

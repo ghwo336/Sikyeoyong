@@ -172,7 +172,7 @@ export class AgentRuntime {
         return messages;
       }
       const message = await this.provider.turn(
-        { system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages },
+        { system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages, userId: input.ctx.userId },
         (text) => {
           if (wait.reason === null) emit({ type: 'token', text: screenText(text) });
         },

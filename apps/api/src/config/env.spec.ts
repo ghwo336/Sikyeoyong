@@ -52,6 +52,7 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
     expect(c.llm.effort).toBe('low'); // D-26
     expect(c.llm.mode).toBe('live');
     expect(c.llm.dailyTokenCap).toBe(1_000_000);
+    expect(c.llm.userDailyTokenCap).toBe(200_000); // a fifth of the global cap
     expect(c.verifyMode).toBe('kakao');
     expect(c.policy.trialAllowanceAokrw).toBe(100_000n * OKRW);
   });
@@ -65,6 +66,15 @@ describe('loadConfig defaults (tech-spec 8.3)', () => {
 });
 
 describe('loadConfig overrides', () => {
+  it('derives the per-user token cap from the global one unless set', () => {
+    expect(loadConfig({ LLM_DAILY_TOKEN_CAP: '500' }).llm.userDailyTokenCap).toBe(100);
+    expect(loadConfig({ LLM_DAILY_TOKEN_CAP: '0' }).llm.userDailyTokenCap).toBe(0);
+    expect(
+      loadConfig({ LLM_DAILY_TOKEN_CAP: '500', LLM_USER_DAILY_TOKEN_CAP: '7' }).llm
+        .userDailyTokenCap,
+    ).toBe(7);
+  });
+
   it('reads every overridable value', () => {
     const c = loadConfig({
       PORT: '9000',

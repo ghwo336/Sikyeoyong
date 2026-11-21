@@ -586,6 +586,11 @@ describe('a named menu is never swapped silently (browser QA 3)', () => {
     expect(JSON.stringify(blocked?.content)).toContain('국물떡볶이');
   });
 
+  it('tells the provider whose turn it is (per-user token cap)', async () => {
+    const { provider } = await run([{ blocks: [{ text: '안녕' }] }], '안녕');
+    expect(provider.requests[0]?.userId).toBe(ME.userId);
+  });
+
   it('lets a different menu through when the user named none', async () => {
     const h = handlers({ get_menu: vi.fn(() => Promise.resolve(MENUS)) });
     const { h: used } = await run(
