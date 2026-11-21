@@ -91,3 +91,17 @@ describe('failed reads reach their error line in bounded time (QA 5)', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('주문 현황을 못 불러왔어요');
   });
 });
+
+describe('makeQueryClient mutations (CLAUDE.md rule 9)', () => {
+  it('never retries a mutation on its own: a failing confirm runs exactly once', async () => {
+    expect(makeQueryClient().getDefaultOptions().mutations?.retry).toBe(false);
+    const client = makeQueryClient();
+    const pay = vi.fn(() => Promise.reject(new Error('chain said no')));
+    await client
+      .getMutationCache()
+      .build(client, { mutationFn: pay })
+      .execute(undefined)
+      .catch(() => undefined);
+    expect(pay).toHaveBeenCalledTimes(1);
+  });
+});

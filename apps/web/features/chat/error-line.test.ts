@@ -13,7 +13,7 @@ describe('dragonLineOf (QA 5)', () => {
 
   it('falls back to the shared table line for the code', () => {
     expect(dragonLineOf(new AppError('CHAIN_MERCHANT_INACTIVE', { status: 422 }))).toBe(
-      '이 가게는 등록이 안 돼 있어용',
+      '지금은 이 가게에서 못 시켜용. 다른 가게를 골라 주세용',
     );
     expect(dragonLineOf(new AppError('SERVER_FROZEN'))).toContain('쉬고 있을게용');
   });
