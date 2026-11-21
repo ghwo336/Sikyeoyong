@@ -200,6 +200,7 @@ function requireInProduction(env: z.infer<typeof schema>): string[] {
   if (env.DEMO_BYPASS_SERVER_LIMIT) missing.push('DEMO_BYPASS_SERVER_LIMIT (production에서 금지)');
   if (env.DEV_LOGIN) missing.push('DEV_LOGIN (production에서 금지)');
   if (env.REAUTH_MODE === 'none') missing.push('REAUTH_MODE=none (production에서 금지)');
+  if (env.VERIFY_MODE === 'mock') missing.push('VERIFY_MODE=mock (production에서 금지)');
   need('POUCHI_API_URL', env.POUCHI_API_URL !== undefined);
   return missing;
 }

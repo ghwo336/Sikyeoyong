@@ -218,6 +218,12 @@ describe('loadConfig in production', () => {
     expect(r.variables).toEqual(['REAUTH_MODE=none (production에서 금지)']);
     expect(loadConfig(PROD).reauthMode).toBe('pouch');
   });
+
+  it('refuses VERIFY_MODE=mock, which passes anyone without a real check (D-16)', () => {
+    const r = codeAndVars(() => loadConfig({ ...PROD, VERIFY_MODE: 'mock' }));
+    expect(r.variables).toEqual(['VERIFY_MODE=mock (production에서 금지)']);
+    expect(loadConfig({ ...PROD, VERIFY_MODE: 'kakao' }).verifyMode).toBe('kakao');
+  });
 });
 
 describe('Pouchi login config (D-29)', () => {
