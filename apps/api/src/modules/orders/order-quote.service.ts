@@ -204,6 +204,7 @@ export class OrderQuoteService {
   ): OrderQuote {
     const policy = this.config.policy;
     const first = lines[0]?.name ?? '';
+    const mine = this.users.getMyPeriodicLimitAokrw(userId);
     return {
       orderId,
       store: merchant.name,
@@ -215,7 +216,9 @@ export class OrderQuoteService {
       dragonLine: `${first} 시킬게용.\n이대로 괜찮아용?`,
       perOrderLimit: aokrwToString(agent.perOrderLimitAokrw),
       periodUsedAfter: aokrwToString(periodUsed + total),
-      periodCap: aokrwToString(policy.periodicCapAokrw),
+      // D-31: the card shows the owner's own 30-day limit (the meter on the budget screen) when it
+      // is below the chain's shared cap; at the cap both are the same number.
+      periodCap: aokrwToString(mine < policy.periodicCapAokrw ? mine : policy.periodicCapAokrw),
     };
   }
 

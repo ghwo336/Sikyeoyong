@@ -122,7 +122,7 @@ describe('place_order in the chat stream: a confirm card, never a payment', () =
         dragonLine: '돼지국밥 시킬게용.\n이대로 괜찮아용?',
         perOrderLimit: '10000000000000000000000',
         periodUsedAfter: W9000,
-        periodCap: '500000000000000000000000',
+        periodCap: '300000000000000000000000',
       },
     });
     expect(order).toMatchObject({

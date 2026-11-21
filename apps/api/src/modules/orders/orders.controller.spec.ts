@@ -139,7 +139,8 @@ describe('POST /api/orders: a quote, never a payment', () => {
       dragonLine: '돼지국밥 시킬게용.\n이대로 괜찮아용?',
       perOrderLimit: W('10000'),
       periodUsedAfter: W('210000'),
-      periodCap: W('500000'),
+      // The owner's own 30-day limit (the budget meter), not the chain's shared 500,000 (QA 5).
+      periodCap: W('300000'),
     });
     const row = h.db.select().from(orders).get();
     expect(row).toMatchObject({
@@ -360,6 +361,32 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
     );
     expect(res.order.status).toBe('quoted');
     expect(h.db.select().from(approvals).all()).toHaveLength(0);
+  });
+
+  it('the card shows the chain cap when the owner limit is at the cap (QA 5)', async () => {
+    const { h, as } = await setup();
+    h.db
+      .update(users)
+      .set({ myPeriodicLimitAokrw: W('500000') })
+      .where(eq(users.id, 'u1'))
+      .run();
+    const res = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }]))).body,
+    );
+    expect(res.quote?.periodCap).toBe(W('500000'));
+  });
+
+  it('the card shows an owner limit lower than the chain cap (QA 5)', async () => {
+    const { h, as } = await setup({ usedAokrw: BigInt(W('1000')), resetAtSec: null });
+    h.db
+      .update(users)
+      .set({ myPeriodicLimitAokrw: W('50000') })
+      .where(eq(users.id, 'u1'))
+      .run();
+    const res = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }]))).body,
+    );
+    expect(res.quote).toMatchObject({ periodUsedAfter: W('10000'), periodCap: W('50000') });
   });
 
   it('the per-order rule wins when several apply', async () => {
