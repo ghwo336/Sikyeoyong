@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시켜용 키 유출 비교</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Pretendard";src:url(/_blob/595108c608f096ad66f6d78ef534a70e) format("woff2");font-weight:45 920;font-display:swap}
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #2E7D4F;outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: {{sy_bg}}; color: #1E2320; font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; word-break: keep-all; display: flex; flex-direction: column; gap: 16px; padding: 8px 20px 28px; overflow: hidden">
+
+<div style="display: flex; align-items: center; height: 48px">
+<button aria-label="뒤로" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+<div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">열쇠를 도둑맞았다면</div>
+</div>
+
+<p style="margin: 0; text-align: center; font-family: 'Gowun Dodum', Pretendard, sans-serif; font-size: 19px; line-height: 1.55; letter-spacing: 0">주문으로는 큰돈이 막히고,<br>다른 길로 새도 주머니만 잃어용.</p>
+
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; border-radius: 20px; background: #FFFFFF; border: 1px solid #E3E8E2">
+<span style="font-size: 14px; color: #5D6660">카드번호를 맡겼다면</span>
+<span class="num" style="font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: #9A5B00">전부 가져가요</span>
+<span style="font-size: 13px; color: #5D6660">앱 안의 한도는 열쇠가 있으면 건너뛰어요</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px 20px; border-radius: 20px; background: {{sy_tint}}">
+<span style="font-size: 14px; color: #5D6660">시켜용 용이</span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; color: #5D6660">주문으로는 한 번에</span>
+<span class="num" style="font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: {{sy_dark}}">10,000원까지만</span>
+<span class="num" style="font-size: 13px; color: #5D6660">30일 동안 합쳐서 60,000원까지</span>
+</div>
+<div style="height: 1px; background: #FFFFFF"></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; color: #5D6660">다른 길로 보내도 용이 주머니에는</span>
+<span class="num" style="font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: {{sy_dark}}">20,100원만</span>
+<span class="num" style="font-size: 13px; color: #5D6660">지금 주머니에 20,000원</span>
+</div>
+</div>
+
+<div style="flex-grow: 1"></div>
+<div style="display: flex; align-items: center; gap: 8px; min-height: 48px">
+<span id="dev" style="flex-grow: 1; font-size: 15px">자세히 보기</span>
+<button role="switch" aria-checked="false" aria-labelledby="dev" style="width: 52px; height: 32px; border: 0; border-radius: 16px; padding: 3px; display: flex; background: #D5DDD3"><span style="width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF"></span></button>
+</div>
+<p style="margin: 0; font-size: 12px; line-height: 1.5; color: #5D6660; font-family: ui-monospace, monospace; display: none">주문 경로의 큰돈은 체인이 막고, 우회 경로로는 float만 잃는다. 한도를 넘는 주문은 실행 중에 revert되어 블록에 남고 가스가 든다.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"species": {"editor": "enum", "default": "숲용", "options": ["숲용", "물용", "꽃용", "별용"]}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+syT() {
+const KO = { '숲용': 'forest', '물용': 'water', '꽃용': 'flower', '별용': 'star' };
+const T = {
+forest: { name: '숲용', accent: '#2E7D4F', bg: '#F6F8F4', tint: '#E4F4E6', dark: '#1F5C3A', body: '#8FD694' },
+water: { name: '물용', accent: '#1F6A93', bg: '#F3F7FA', tint: '#E3F1F9', dark: '#154A68', body: '#9AD3F0' },
+flower: { name: '꽃용', accent: '#B03A64', bg: '#FAF4F6', tint: '#FBE6EE', dark: '#7D2846', body: '#F7B7C8' },
+star: { name: '별용', accent: '#5F47A8', bg: '#F6F4FA', tint: '#ECE6FA', dark: '#43317A', body: '#C9B8F2' }
+};
+const raw = (this.state && this.state.picked) || this.props.species || '숲용';
+return T[KO[raw] || raw] || T.forest;
+}
+renderVals() {
+const t = this.syT();
+const k = Object.keys({ forest: 1, water: 1, flower: 1, star: 1 }).find((x) => t.accent === ({ forest: '#2E7D4F', water: '#1F6A93', flower: '#B03A64', star: '#5F47A8' })[x]);
+const show = (x) => (x === k ? 'inline' : 'none');
+return Object.assign({}, this.syBase(), { sy_accent: t.accent, sy_bg: t.bg, sy_tint: t.tint, sy_dark: t.dark, sy_name: t.name, dragon: t.body, sy_c_forest: show('forest'), sy_c_water: show('water'), sy_c_flower: show('flower'), sy_c_star: show('star') });
+}
+syBase() {
+return { dragon: this.props.dragon ?? '#8FD694' };
+}
+}
+</script>
+</body>
+</html>
