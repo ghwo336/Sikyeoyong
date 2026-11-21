@@ -148,7 +148,7 @@ interface PaymentProvider {
 
 ### `submitting`을 끝내는 규칙
 - 인덱서가 `OrderPlaced(orderRef)`를 보면 `paid`.
-  - 코드 (2026-11-21): `OrderIndexer`(`modules/orders/order-indexer.service.ts`, tech-spec 3.9). 로그의 orderRef로 주문을 찾아 `submitting`과 `failed`만 `paid`(체인의 tx hash)로 맞춘다 (멱등: 이미 `paid`면 그대로, 체인 이벤트는 `(tx_hash, log_index)`로 한 번만 `order_events`에). 모르는 orderRef는 경고 로그만 남기고 무시, 결제를 시작한 적 없는 주문(`quoted`, `pending_approval`)의 로그는 믿지 않고 오류 로그. 읽기만 하며 결제하지 않는다. 경로 B만 켜지고 목 경로는 아무것도 하지 않는다.
+  - 코드 (2026-11-21): `OrderIndexer`(`modules/orders/order-indexer.service.ts`, tech-spec 3.9). 로그의 orderRef로 주문을 찾아 `submitting`과 `failed`만 `paid`(체인의 tx hash)로 맞춘다 (멱등: 이미 `paid`면 그대로, 체인 이벤트는 `(tx_hash, log_index)`로 한 번만 `order_events`에). 모르는 orderRef는 경고 로그만 남기고 무시, 로그의 amount와 merchantId가 주문의 금액과 가게의 온체인 ID와 다르면(가게에 온체인 ID가 없어도) paid로 바꾸지 않고 오류 로그만 남기며, 결제를 시작한 적 없는 주문(`quoted`, `pending_approval`)의 로그는 믿지 않고 오류 로그. 읽기만 하며 결제하지 않는다. 경로 B만 켜지고 목 경로는 아무것도 하지 않는다.
 - 제출 트랜잭션의 영수증이 revert면 그 사유로 위 분류를 따른다.
 - **제출 시작 표시와 순서**: 표시는 체인이나 MAWS에 무엇이든 내보내기 **전에** DB에 커밋한다.
   - 경로 B: nonce 예약 → 서명 → (`submit_tx_hash`, `submit_nonce`, `submit_started_at`)를 DB에 커밋 → 그다음 브로드캐스트.

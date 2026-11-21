@@ -6,6 +6,7 @@ import { runMigrations } from '../../db/migrate.js';
 import { orderEvents, orders } from '../../db/schema/index.js';
 import { insertMerchant, insertUser } from '../../test/fixtures.js';
 import type { OrderEventsReader, PlacedLog } from '../chain/chain.service.js';
+import type { MerchantsService } from '../merchants/merchants.service.js';
 import { INDEXER_CHUNK_BLOCKS, OrderIndexer } from './order-indexer.service.js';
 import { type OrderStatus, OrdersRepository } from './orders.repository.js';
 
@@ -21,6 +22,8 @@ const log = (n: number, block = 10n, logIndex = 0): PlacedLog => ({
   txHash: hash(n),
   logIndex,
   blockNumber: block,
+  merchantId: 77n,
+  amount: 1n,
 });
 
 function setup(logs: PlacedLog[], opts: { latest?: bigint; start?: bigint } = {}) {
@@ -54,14 +57,17 @@ function setup(logs: PlacedLog[], opts: { latest?: bigint; start?: bigint } = {}
       return Promise.resolve(logs.filter((l) => l.blockNumber >= from && l.blockNumber <= to));
     },
   };
-  const indexer = new OrderIndexer(reader, new OrdersRepository(h));
+  const merchants = {
+    orderInfoOf: () => ({ name: 'm', etaMin: 1, onchainId: 77n }),
+  } as unknown as MerchantsService;
+  const indexer = new OrderIndexer(reader, new OrdersRepository(h), merchants);
   const read = (n: number) =>
     h.db
       .select()
       .from(orders)
       .where(eq(orders.id, `o${String(n)}`))
       .get();
-  return { h, add, indexer, read, ranges, reader };
+  return { h, add, indexer, read, ranges, reader, merchants };
 }
 
 describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
@@ -83,7 +89,7 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     const t = setup([log(1), log(1)]);
     t.add(1, 'submitting');
     expect(await t.indexer.tick()).toBe(1);
-    const again = new OrderIndexer(t.reader, new OrdersRepository(t.h));
+    const again = new OrderIndexer(t.reader, new OrdersRepository(t.h), t.merchants);
     expect(await again.tick()).toBe(0);
     expect(t.read(1)?.status).toBe('paid');
     expect(t.h.db.select().from(orderEvents).all()).toHaveLength(1);
@@ -102,6 +108,26 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     await t.indexer.tick();
     expect(t.ranges).toEqual([]); // the cursor moved past the chunk
     expect(t.h.db.select().from(orderEvents).all()).toHaveLength(2);
+  });
+
+  it('does not mark paid a log whose amount or merchant differs from the order', async () => {
+    const t = setup([{ ...log(1), amount: 2n }, { ...log(2), merchantId: 78n }, log(3)]);
+    t.add(1, 'submitting');
+    t.add(2, 'submitting');
+    t.add(3, 'submitting');
+    expect(await t.indexer.tick()).toBe(1);
+    expect([1, 2, 3].map((n) => t.read(n)?.status)).toEqual(['submitting', 'submitting', 'paid']);
+  });
+
+  it('does not mark paid when the merchant has no on-chain id to compare', async () => {
+    const t = setup([log(1)]);
+    t.add(1, 'submitting');
+    const none = {
+      orderInfoOf: () => ({ name: 'm', etaMin: 1, onchainId: null }),
+    } as unknown as MerchantsService;
+    const indexer = new OrderIndexer(t.reader, new OrdersRepository(t.h), none);
+    expect(await indexer.tick()).toBe(0);
+    expect(t.read(1)?.status).toBe('submitting');
   });
 
   it('logs and ignores an orderRef it does not know, and keeps going', async () => {
@@ -152,7 +178,7 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
 
   it('does nothing without a reader (the mock path)', async () => {
     const t = setup([]);
-    const none = new OrderIndexer(null, new OrdersRepository(t.h));
+    const none = new OrderIndexer(null, new OrdersRepository(t.h), t.merchants);
     none.onApplicationBootstrap();
     expect(await none.tick()).toBe(0);
     none.onModuleDestroy();

@@ -1,3 +1,4 @@
+import { aokrwToString } from '@sikyeoyong/shared';
 import {
   Inject,
   Injectable,
@@ -5,7 +6,8 @@ import {
   type OnApplicationBootstrap,
   type OnModuleDestroy,
 } from '@nestjs/common';
-import { ORDER_EVENTS, type OrderEventsReader } from '../chain/chain.service.js';
+import { ORDER_EVENTS, type OrderEventsReader, type PlacedLog } from '../chain/chain.service.js';
+import { MerchantsService } from '../merchants/merchants.service.js';
 import { OrdersRepository } from './orders.repository.js';
 
 /** How often the chain is asked for new blocks. */
@@ -20,7 +22,8 @@ export const INDEXER_CHUNK_BLOCKS = 2_000n;
  * (CLAUDE.md rule 9).
  *  - idempotent: a log for an order that is already paid changes nothing, and a chain event is
  *    written once per (tx_hash, log_index). Reading the same blocks again is harmless.
- *  - an orderRef we do not know is logged and ignored.
+ *  - an orderRef we do not know is logged and ignored. A log whose amount or merchant differs from
+ *    the order's is logged as an error and never marks it paid.
  *  - only `submitting` and `failed` orders are confirmed (a retryable failed order whose first
  *    transaction landed late is paid after all). A log for an order that never began paying is
  *    logged, not trusted.
@@ -37,6 +40,7 @@ export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
   constructor(
     @Inject(ORDER_EVENTS) private readonly reader: OrderEventsReader | null,
     private readonly repo: OrdersRepository,
+    private readonly merchants: MerchantsService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -79,10 +83,23 @@ export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
     return confirmed;
   }
 
-  private apply(
-    log: { orderRef: string; txHash: string; logIndex: number; blockNumber: bigint },
-    nowMs: number,
+  private matches(
+    row: { id: string; merchantId: string; amountAokrw: string },
+    log: PlacedLog,
   ): boolean {
+    const onchainId = this.merchants.orderInfoOf(row.merchantId)?.onchainId ?? null;
+    const amountOk = aokrwToString(log.amount) === row.amountAokrw;
+    const merchantOk = onchainId !== null && onchainId === log.merchantId;
+    if (amountOk && merchantOk) return true;
+    this.logger.error(
+      `OrderPlaced for order ${row.id} does not match it (tx ${log.txHash}): ` +
+        `amount ${aokrwToString(log.amount)} vs ${row.amountAokrw}, ` +
+        `merchant ${log.merchantId.toString()} vs ${onchainId?.toString() ?? 'none'}. Not marked paid`,
+    );
+    return false;
+  }
+
+  private apply(log: PlacedLog, nowMs: number): boolean {
     const row = this.repo.findByOrderRef(log.orderRef);
     if (row === undefined) {
       this.logger.warn(
@@ -98,6 +115,9 @@ export class OrderIndexer implements OnApplicationBootstrap, OnModuleDestroy {
       { blockNumber: log.blockNumber.toString() },
       nowMs,
     );
+    // The chain's merchant and amount must be the order's own. If not, the log is not this order
+    // being paid: no paid, only an error log (a person looks).
+    if (!this.matches(row, log)) return false;
     if (row.status !== 'submitting' && row.status !== 'failed') {
       if (row.status === 'quoted' || row.status === 'pending_approval') {
         this.logger.error(

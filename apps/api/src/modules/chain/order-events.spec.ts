@@ -17,8 +17,20 @@ describe('createOrderEvents and the log reader', () => {
       getBlockNumber: () => Promise.resolve(42n),
       getLogs: () =>
         Promise.resolve([
-          { transactionHash: hash(1), logIndex: 3, blockNumber: 7n, args: { orderRef: ref(1) } },
-          { transactionHash: null, logIndex: null, blockNumber: null, args: { orderRef: ref(2) } },
+          {
+            transactionHash: hash(1),
+            logIndex: 3,
+            blockNumber: 7n,
+            args: { orderRef: ref(1), merchantId: 5n, amount: 9n },
+          },
+          {
+            transactionHash: null,
+            logIndex: null,
+            blockNumber: null,
+            args: { orderRef: ref(2), merchantId: 5n, amount: 9n },
+          },
+          // no merchant or amount: not an OrderPlaced we can judge
+          { transactionHash: hash(4), logIndex: 1, blockNumber: 8n, args: { orderRef: ref(4) } },
           { transactionHash: hash(3), logIndex: 0, blockNumber: 8n, args: {} },
         ]),
     };
@@ -26,7 +38,14 @@ describe('createOrderEvents and the log reader', () => {
     expect(reader.startBlock).toBe(4n);
     expect(await reader.latestBlock()).toBe(42n);
     expect(await reader.orderPlaced(0n, 10n)).toEqual([
-      { orderRef: ref(1), txHash: hash(1), logIndex: 3, blockNumber: 7n },
+      {
+        orderRef: ref(1),
+        txHash: hash(1),
+        logIndex: 3,
+        blockNumber: 7n,
+        merchantId: 5n,
+        amount: 9n,
+      },
     ]);
   });
 });

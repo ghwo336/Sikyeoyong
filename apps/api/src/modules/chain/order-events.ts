@@ -37,9 +37,12 @@ export function createOrderEventsReader(
       });
       const out: PlacedLog[] = [];
       for (const l of logs) {
-        const orderRef = (l.args as { orderRef?: Hex } | undefined)?.orderRef;
+        const args = l.args as { orderRef?: Hex; merchantId?: bigint; amount?: bigint } | undefined;
+        const orderRef = args?.orderRef;
         if (
           orderRef === undefined ||
+          args?.merchantId === undefined ||
+          args.amount === undefined ||
           l.transactionHash === null ||
           l.logIndex === null ||
           l.blockNumber === null
@@ -51,6 +54,8 @@ export function createOrderEventsReader(
           txHash: l.transactionHash,
           logIndex: l.logIndex,
           blockNumber: l.blockNumber,
+          merchantId: args.merchantId,
+          amount: args.amount,
         });
       }
       return out;

@@ -28,6 +28,9 @@ export interface PlacedLog {
   readonly txHash: Hex;
   readonly logIndex: number;
   readonly blockNumber: bigint;
+  /** The merchant (on-chain id) and amount (aokrw) the contract recorded for this order. */
+  readonly merchantId: bigint;
+  readonly amount: bigint;
 }
 
 /**
