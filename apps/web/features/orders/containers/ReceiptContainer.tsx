@@ -77,7 +77,8 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
         <ReceiptDetails
           txHash={order.txHash}
           agentId={order.receipt.agentId}
-          rules={order.receipt.rules.map((r) => r.label)}
+          // The list is headed "통과한 마루 규칙": only the chain's own checks belong under it.
+          rules={order.receipt.rules.filter((r) => r.layer === 'chain').map((r) => r.label)}
           explorerUrl={order.receipt.explorerUrl}
           defaultOpen={details}
         />
