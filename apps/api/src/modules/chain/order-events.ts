@@ -1,4 +1,4 @@
-import { AppError, type Hex, type PaymentProvider } from '@sikyeoyong/shared';
+import { AppError, logRanges, type Hex, type PaymentProvider } from '@sikyeoyong/shared';
 import { createMarooPublicClient } from '../../common/onchain/clients.js';
 import { ordersAbi } from '../../common/onchain/orders-abi.js';
 import { resolveOrdersTarget } from '../../common/onchain/orders-target.js';
@@ -25,6 +25,8 @@ export function createOrderEventsReader(
   proxy: Hex,
   startBlock: bigint,
   port: LogsPort,
+  /** The most blocks one getLogs call may cover (chain config maxLogBlockSpan). */
+  logBlockSpan: bigint,
 ): OrderEventsReader {
   return {
     chainId,
@@ -32,12 +34,17 @@ export function createOrderEventsReader(
     startBlock,
     latestBlock: () => port.getBlockNumber(),
     async orderPlaced(from, to) {
-      const logs = await port.getLogs({
-        address: proxy,
-        event: ORDER_PLACED,
-        fromBlock: from,
-        toBlock: to,
-      });
+      const logs: Awaited<ReturnType<LogsPort['getLogs']>>[number][] = [];
+      for (const range of logRanges(from, to, logBlockSpan)) {
+        logs.push(
+          ...(await port.getLogs({
+            address: proxy,
+            event: ORDER_PLACED,
+            fromBlock: range.from,
+            toBlock: range.to,
+          })),
+        );
+      }
       const out: PlacedLog[] = [];
       for (const l of logs) {
         const args = l.args as { orderRef?: Hex; merchantId?: bigint; amount?: bigint } | undefined;
@@ -83,6 +90,7 @@ export function createOrderEvents(
       target.proxy,
       target.deployBlock,
       port ?? (createMarooPublicClient(config.chain) as unknown as LogsPort),
+      BigInt(config.chain.maxLogBlockSpan),
     );
   } catch (e) {
     if (config.nodeEnv === 'production' || !(e instanceof AppError)) throw e;

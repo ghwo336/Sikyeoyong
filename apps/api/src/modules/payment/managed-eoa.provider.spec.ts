@@ -92,6 +92,7 @@ function setup(opts: { balance?: bigint } = {}) {
     getTransactionCount: vi.fn(() => Promise.resolve(3)),
     getBlock: vi.fn(() => Promise.resolve({ timestamp: 1_000n })),
     estimateGas: vi.fn(() => Promise.resolve(150_000n)),
+    getBlockNumber: vi.fn(() => Promise.resolve(23_000_100n)),
     call: vi.fn((): Promise<unknown> => Promise.resolve({ data: '0x' })),
     waitForTransactionReceipt: vi.fn(({ hash: h }: { hash: Hex }) => {
       const r = receipts.get(h);
@@ -115,7 +116,10 @@ function setup(opts: { balance?: bigint } = {}) {
       return Promise.resolve(hash(0));
     }),
     getLogs: vi.fn(
-      (): Promise<readonly { transactionHash: Hex | null; blockNumber: bigint | null }[]> =>
+      (_a: {
+        fromBlock: bigint;
+        toBlock: bigint;
+      }): Promise<readonly { transactionHash: Hex | null; blockNumber: bigint | null }[]> =>
         Promise.resolve([]),
     ),
     // getAgentWallet: the wallet of the last setAgentWallet the operator sent (zero if none).
@@ -178,6 +182,7 @@ function setup(opts: { balance?: bigint } = {}) {
       registry: REGISTRY,
       proxy: PROXY,
       deployBlock: 23_000_000n,
+      logBlockSpan: 10_000n,
       gasShareAokrw: W(100n),
       confirmations: 1,
       receiptTimeoutMs: 1_000,
@@ -725,18 +730,42 @@ describe('pay', () => {
 });
 
 describe('findPaid', () => {
-  it('asks for OrderPlaced(orderRef) from the deploy block', async () => {
+  it('asks for OrderPlaced(orderRef) newest first within the range cap and stops at the hit', async () => {
     const t = setup();
-    t.pub.getLogs.mockResolvedValue([{ transactionHash: hash(5), blockNumber: 12n }]);
-    expect(await t.provider.findPaid(REF)).toEqual({ txHash: hash(5), blockNumber: 12n });
+    t.pub.getLogs.mockResolvedValue([{ transactionHash: hash(5), blockNumber: 23_000_090n }]);
+    expect(await t.provider.findPaid(REF)).toEqual({
+      txHash: hash(5),
+      blockNumber: 23_000_090n,
+    });
+    expect(t.pub.getLogs).toHaveBeenCalledTimes(1);
     expect(t.pub.getLogs).toHaveBeenCalledWith(
       expect.objectContaining({
         address: PROXY,
         args: { orderRef: REF },
         fromBlock: 23_000_000n,
-        toBlock: 'latest',
+        toBlock: 23_000_100n,
       }),
     );
+  });
+
+  it('never asks for more than the RPC cap, even over a long history, and covers every block', async () => {
+    const t = setup();
+    const MAX = 10_000n;
+    t.pub.getBlockNumber.mockResolvedValue(23_000_000n + 81_234n);
+    const seen: { from: bigint; to: bigint }[] = [];
+    t.pub.getLogs.mockImplementation((a: { fromBlock: bigint; toBlock: bigint }) => {
+      if (a.toBlock - a.fromBlock > MAX) {
+        return Promise.reject(new Error('maximum [from, to] blocks distance: 10000'));
+      }
+      seen.push({ from: a.fromBlock, to: a.toBlock });
+      return Promise.resolve([]);
+    });
+    expect(await t.provider.findPaid(REF)).toBeNull();
+    expect(seen[0]?.to).toBe(23_000_000n + 81_234n);
+    expect(seen.at(-1)?.from).toBe(23_000_000n);
+    for (let i = 1; i < seen.length; i += 1) {
+      expect((seen[i] as { to: bigint }).to + 1n).toBe((seen[i - 1] as { from: bigint }).from);
+    }
   });
 
   it('is null when no such event exists', async () => {

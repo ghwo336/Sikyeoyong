@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors/index.js';
-import { NETWORKS, explorerTxUrl, isNetworkKey, resolveChainConfig } from './chain.js';
+import { NETWORKS, explorerTxUrl, isNetworkKey, logRanges, resolveChainConfig } from './chain.js';
 
 describe('NETWORKS', () => {
   it('holds the testnet facts from maroo-facts.md', () => {
@@ -11,6 +11,7 @@ describe('NETWORKS', () => {
     expect(t.explorerUrl).toBe('https://explorer-testnet.maroo.io');
     expect(t.okrwDenom).toBe('atokrw');
     expect(t.okrwDecimals).toBe(18);
+    expect(t.maxLogBlockSpan).toBe(10_000);
     expect(t.precompiles).toEqual({
       pcl: '0x1000000000000000000000000000000000000005',
       agent: '0x100000000000000000000000000000000000000A',
@@ -109,4 +110,30 @@ describe('explorerTxUrl', () => {
       expect(() => explorerTxUrl(NETWORKS['maroo-testnet'], bad)).toThrow(AppError);
     },
   );
+});
+
+describe('logRanges', () => {
+  it('covers [from, to] exactly once, each range within the span, oldest first', () => {
+    const r = logRanges(5n, 27n, 10n);
+    expect(r).toEqual([
+      { from: 5n, to: 14n },
+      { from: 15n, to: 24n },
+      { from: 25n, to: 27n },
+    ]);
+  });
+
+  it('newest first walks down from the top and ends at from', () => {
+    expect(logRanges(5n, 27n, 10n, true)).toEqual([
+      { from: 18n, to: 27n },
+      { from: 8n, to: 17n },
+      { from: 5n, to: 7n },
+    ]);
+  });
+
+  it('is one range when it fits, none when from is past to, and rejects a bad span', () => {
+    expect(logRanges(3n, 3n, 10n)).toEqual([{ from: 3n, to: 3n }]);
+    expect(logRanges(9n, 3n, 10n)).toEqual([]);
+    expect(logRanges(9n, 3n, 10n, true)).toEqual([]);
+    expect(() => logRanges(1n, 2n, 0n)).toThrow();
+  });
 });

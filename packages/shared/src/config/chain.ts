@@ -20,6 +20,11 @@ export interface ChainConfig {
   /** Native OKRW denom used in PCL policy encodings (tech-spec 5.4). */
   readonly okrwDenom: string;
   readonly okrwDecimals: 18;
+  /**
+   * The most blocks one eth_getLogs call may cover. The testnet RPC rejects a wider range with
+   * "maximum [from, to] blocks distance: 10000" (maroo-facts.md). Read logs in chunks of this size.
+   */
+  readonly maxLogBlockSpan: number;
   readonly precompiles: {
     readonly pcl: `0x${string}`;
     readonly agent: `0x${string}`;
@@ -48,6 +53,7 @@ export const NETWORKS: { readonly [K in NetworkKey]: ChainConfig } = deepFreeze(
     kycUrl: 'https://kyc-testnet.maroo.io',
     okrwDenom: 'atokrw',
     okrwDecimals: 18,
+    maxLogBlockSpan: 10_000,
     precompiles: {
       pcl: '0x1000000000000000000000000000000000000005',
       agent: '0x100000000000000000000000000000000000000A',
@@ -109,4 +115,28 @@ export function explorerTxUrl(chain: ChainConfig, txHash: string): string {
     throw new AppError('VALIDATION_FAILED', { reason: 'invalid tx hash' });
   }
   return `${chain.explorerUrl}/tx/${txHash}`;
+}
+
+/**
+ * Splits the inclusive block range [from, to] into ranges of at most `span` blocks, oldest first,
+ * or newest first when asked (so a search for one event can stop at the first hit).
+ */
+export function logRanges(
+  from: bigint,
+  to: bigint,
+  span: bigint,
+  newestFirst = false,
+): { from: bigint; to: bigint }[] {
+  if (span <= 0n) throw new AppError('INTERNAL', { reason: 'invalid log span' });
+  const out: { from: bigint; to: bigint }[] = [];
+  if (newestFirst) {
+    for (let end = to; end >= from; end -= span) {
+      out.push({ from: end - span + 1n > from ? end - span + 1n : from, to: end });
+    }
+  } else {
+    for (let start = from; start <= to; start += span) {
+      out.push({ from: start, to: start + span - 1n < to ? start + span - 1n : to });
+    }
+  }
+  return out;
 }

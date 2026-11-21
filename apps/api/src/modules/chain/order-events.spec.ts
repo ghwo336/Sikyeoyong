@@ -34,7 +34,7 @@ describe('createOrderEvents and the log reader', () => {
           { transactionHash: hash(3), logIndex: 0, blockNumber: 8n, args: {} },
         ]),
     };
-    const reader = createOrderEventsReader(1234, `0x${'11'.repeat(20)}`, 4n, port);
+    const reader = createOrderEventsReader(1234, `0x${'11'.repeat(20)}`, 4n, port, 10_000n);
     expect(reader.startBlock).toBe(4n);
     expect(reader.chainId).toBe(1234);
     expect(reader.contract).toBe(`0x${'11'.repeat(20)}`);
@@ -49,5 +49,32 @@ describe('createOrderEvents and the log reader', () => {
         amount: 9n,
       },
     ]);
+  });
+
+  it('splits a wide range so no getLogs call exceeds the span', async () => {
+    const calls: { from: bigint; to: bigint }[] = [];
+    const port: LogsPort = {
+      getBlockNumber: () => Promise.resolve(0n),
+      getLogs: ({ fromBlock, toBlock }) => {
+        if (toBlock - fromBlock >= 10n) return Promise.reject(new Error('range too wide'));
+        calls.push({ from: fromBlock, to: toBlock });
+        return Promise.resolve([
+          {
+            transactionHash: hash(1),
+            logIndex: 0,
+            blockNumber: fromBlock,
+            args: { orderRef: ref(1), merchantId: 1n, amount: 1n },
+          },
+        ]);
+      },
+    };
+    const reader = createOrderEventsReader(1, `0x${'11'.repeat(20)}`, 0n, port, 10n);
+    const logs = await reader.orderPlaced(0n, 24n);
+    expect(calls).toEqual([
+      { from: 0n, to: 9n },
+      { from: 10n, to: 19n },
+      { from: 20n, to: 24n },
+    ]);
+    expect(logs.map((l) => l.blockNumber)).toEqual([0n, 10n, 20n]);
   });
 });

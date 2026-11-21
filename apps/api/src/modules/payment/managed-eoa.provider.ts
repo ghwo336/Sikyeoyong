@@ -1,6 +1,7 @@
 import { identityRegistryAbi } from '@maroo-chain/viem';
 import {
   AppError,
+  logRanges,
   type AgentWallet,
   type DecodedChainError,
   type Hex,
@@ -72,12 +73,13 @@ export interface PublicPort {
     hash: Hex;
   }): Promise<{ from: Hex; to: Hex | null; input: Hex; value: bigint }>;
   sendRawTransaction(a: { serializedTransaction: Hex }): Promise<Hex>;
+  getBlockNumber(): Promise<bigint>;
   getLogs(a: {
     address: Hex;
     event: unknown;
     args?: unknown;
     fromBlock: bigint;
-    toBlock: 'latest';
+    toBlock: bigint;
   }): Promise<readonly { transactionHash: Hex | null; blockNumber: bigint | null }[]>;
   readContract(a: {
     address: Hex;
@@ -126,6 +128,8 @@ export interface ManagedEoaConfig {
   readonly registry: Hex;
   readonly proxy: Hex;
   readonly deployBlock: bigint;
+  /** The most blocks one getLogs call may cover (chain config maxLogBlockSpan). */
+  readonly logBlockSpan: bigint;
   readonly gasShareAokrw: bigint;
   readonly confirmations: number;
   /** How long to wait for a receipt before the result is "unknown" (ms). */
@@ -452,16 +456,27 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
   }
 
   async findPaid(orderRef: Hex): Promise<{ txHash: Hex; blockNumber: bigint } | null> {
-    const logs = await this.d.publicClient.getLogs({
-      address: this.d.config.proxy,
-      event: ordersAbi.find((i) => i.type === 'event' && i.name === 'OrderPlaced'),
-      args: { orderRef },
-      fromBlock: this.d.config.deployBlock,
-      toBlock: 'latest',
-    });
-    const hit = logs[0];
-    if (hit?.transactionHash == null || hit.blockNumber == null) return null;
-    return { txHash: hit.transactionHash, blockNumber: hit.blockNumber };
+    const latest = await this.d.publicClient.getBlockNumber();
+    const event = ordersAbi.find((i) => i.type === 'event' && i.name === 'OrderPlaced');
+    // Newest first, within the RPC's range cap, so a recent order is found in the first call.
+    for (const range of logRanges(
+      this.d.config.deployBlock,
+      latest,
+      this.d.config.logBlockSpan,
+      true,
+    )) {
+      const logs = await this.d.publicClient.getLogs({
+        address: this.d.config.proxy,
+        event,
+        args: { orderRef },
+        fromBlock: range.from,
+        toBlock: range.to,
+      });
+      const hit = logs[0];
+      if (hit?.transactionHash == null || hit.blockNumber == null) continue;
+      return { txHash: hit.transactionHash, blockNumber: hit.blockNumber };
+    }
+    return null;
   }
 
   async receiptOf(txHash: Hex): Promise<ReceiptOutcome> {

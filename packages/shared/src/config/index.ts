@@ -2,6 +2,7 @@ export {
   NETWORKS,
   explorerTxUrl,
   isNetworkKey,
+  logRanges,
   resolveChainConfig,
   type ChainConfig,
   type ChainOverrides,

@@ -70,6 +70,7 @@ export function createManagedEoaProvider(
       registry: config.chain.precompiles.identityRegistry,
       proxy: target.proxy,
       deployBlock: target.deployBlock,
+      logBlockSpan: BigInt(config.chain.maxLogBlockSpan),
       gasShareAokrw: config.payment.gasShareAokrw,
       confirmations: config.payment.confirmations,
     },
