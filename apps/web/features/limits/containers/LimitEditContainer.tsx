@@ -20,7 +20,8 @@ import { LimitSteppers } from './LimitSteppers';
 /**
  * The wallet's "한 번에 쓸 돈" and "30일에 쓸 돈" rows open this (no design of its own, web.md
  * "시안에 없는 것"): Budget's two steppers without the sign-up words. Lowering is saved at once;
- * raising first shows the change card with the re-auth button (D-28, like Blocked's raise).
+ * raising first shows the change card with the re-auth button (D-28, like Blocked's raise)
+ * under the steppers, which stay (QA: the top used to empty out, and the title said twice).
  * One order stays at or under 30 days (D-31). Paying is never involved (CLAUDE.md rule 3).
  */
 export function LimitEditContainer() {
@@ -29,7 +30,7 @@ export function LimitEditContainer() {
   const budget = budgetQuery.data;
   const { draft, setPerOrder, setMyPeriodic } = useLimitDraft(budget);
   const save = useSetLimits();
-  // After pressing "바꾸기" on a raise: the card with the re-auth step replaces the steppers.
+  // After pressing "바꾸기" on a raise: the card with the re-auth step shows under the steppers.
   const [confirming, setConfirming] = useState(false);
   const toWallet = () => {
     router.replace('/dragon');
@@ -81,7 +82,11 @@ export function LimitEditContainer() {
             setConfirming(false);
           }}
         />
+        {/* The steppers stay where they were, so the chosen values stay in view and the screen
+            does not empty out; the card is the last block, at the bottom like any sign-up button. */}
+        <LimitSteppers draft={draft} onPerOrder={setPerOrder} onMyPeriodic={setMyPeriodic} />
         <LimitChangeCard
+          hideTitle
           field={perOrderFirst ? 'perOrder' : 'myPeriodic'}
           from={perOrderFirst ? perOrderFrom : mineFrom}
           to={perOrderFirst ? draft.perOrder : draft.myPeriodic}

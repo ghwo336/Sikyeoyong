@@ -90,6 +90,22 @@ describe('LimitEditContainer (D-28, D-31)', () => {
     });
   });
 
+  it('pressing 바꾸기 on a raise keeps the steppers in view and says 한도 바꾸기 once', async () => {
+    wrap(<LimitEditContainer />);
+    await userEvent.click(
+      await screen.findByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: '바꾸기' }));
+    expect(
+      screen.getByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '한 번에 쓸 돈' })).toHaveTextContent('15,000');
+    expect(screen.getByRole('button', { name: /Face ID로 확인하고 바꾸기/ })).toBeInTheDocument();
+    // One visible "한도 바꾸기": the header's (the card's own title is left out).
+    expect(screen.getAllByText('한도 바꾸기')).toHaveLength(1);
+    expect(setLimits).not.toHaveBeenCalled();
+  });
+
   it('the card can be left without changing anything', async () => {
     wrap(<LimitEditContainer />);
     await userEvent.click(

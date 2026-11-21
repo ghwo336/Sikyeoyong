@@ -33,6 +33,8 @@ export interface LimitChangeCardProps {
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
   readonly status?: LimitChangeStatus;
+  /** The screen around the card already says "한도 바꾸기" (a header): leave the card's title out. */
+  readonly hideTitle?: boolean;
 }
 
 const FIELD_LABEL: Record<LimitField, string> = {
@@ -50,6 +52,7 @@ export function LimitChangeCard({
   onConfirm,
   onCancel,
   status = 'idle',
+  hideTitle = false,
 }: LimitChangeCardProps) {
   const confirming = status === 'confirming';
   // One press changes once; after a failure it can be pressed again.
@@ -58,7 +61,7 @@ export function LimitChangeCard({
   const detailRows = rows ?? [];
   return (
     <section className={styles.card} aria-label="한도 바꾸기" data-theme="fixed">
-      <p className={styles.title}>한도 바꾸기</p>
+      {hideTitle ? null : <p className={styles.title}>한도 바꾸기</p>}
       <div className={styles.change}>
         <span className={styles.field}>{FIELD_LABEL[field]}</span>
         <AmountChange from={from} to={to} />

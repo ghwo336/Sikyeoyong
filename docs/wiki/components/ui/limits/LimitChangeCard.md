@@ -15,7 +15,7 @@ children: []
 변경 실행과 재인증 (onConfirm 뒤 부모가 처리)
 
 ## props
-`field: LimitField` (`packages/shared`, `'perOrder' | 'myPeriodic'`), `from: bigint`, `to: bigint` (aokrw), `needsReauth: boolean`, `rows?: readonly { label: string; value: string }[]` (부모가 만든 아래 줄, "30일에 쓸 돈 300,000원 그대로"), `onConfirm: () => void`, `onCancel: () => void`, `status?: 'idle' | 'confirming' | 'failed'`
+`field: LimitField` (`packages/shared`, `'perOrder' | 'myPeriodic'`), `from: bigint`, `to: bigint` (aokrw), `needsReauth: boolean`, `rows?: readonly { label: string; value: string }[]` (부모가 만든 아래 줄, "30일에 쓸 돈 300,000원 그대로"), `onConfirm: () => void`, `onCancel: () => void`, `status?: 'idle' | 'confirming' | 'failed'`, `hideTitle?: boolean` (머리글이 이미 "한도 바꾸기"라 카드 제목을 뺀다)
 
 ## 하네스 상태
 `LimitChangeCard.stories.tsx`에 아래를 전부 만든다.
@@ -24,6 +24,7 @@ children: []
 - 30일에 쓸 돈 바꾸기 (`MyPeriodic`)
 - 확인 중 (`Confirming`)
 - 실패 (`Failed`)
+- 제목 없음 (`WithoutTitle`)
 
 ## 쓰는 화면
 LimitChat
@@ -34,6 +35,7 @@ LimitChat
 - 부모가 다시 그리지 않아도 두 번 누르면 onConfirm 한 번 (ref 잠금), 처음부터 확인 중으로 그려지면 누르지 못함(aria-busy), 실패하면 다시 누를 수 있고 알림 문구
 - 전과 후는 formatOkrw, "A에서 B으로"로 읽힌다 (전 금액은 취소선). Number를 넘는 금액으로 확인
 - 바꾸는 칸 이름은 perOrder "한 번에 쓸 돈", myPeriodic "30일에 쓸 돈" (D-31)
+- `hideTitle`이면 제목 줄만 없다 (구역 이름 "한도 바꾸기"와 나머지는 그대로)
 - 레벨 줄이 없다. 아래 줄은 부모가 준 `rows`뿐 (없으면 줄 묶음도 없다)
 - 뿌리에 `data-theme="fixed"`: 금액과 Face ID 확인이라 종이 바뀌어도 기본(숲) 색 (D-32)
 - LimitChat 시안 값 (2px 잎색 테두리 반경 20, 여백 16, 간격 14, 바뀐 뒤 22/700, 확인 버튼 52 반경 16, 그만두기 44, 버튼 사이 6)

@@ -42,6 +42,9 @@ export const MyPeriodic: Story = {
   args: { field: 'myPeriodic', from: won(300_000n), to: won(400_000n), rows: [] },
 };
 
+/** 머리글이 이미 제목을 말하는 화면 (한도 바꾸기 화면) */
+export const WithoutTitle: Story = { args: { hideTitle: true } };
+
 /** 확인 중 */
 export const Confirming: Story = { args: { status: 'confirming' } };
 

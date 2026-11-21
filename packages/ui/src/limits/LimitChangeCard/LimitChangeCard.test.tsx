@@ -234,4 +234,13 @@ describe('LimitChangeCard (LimitChangeCard.md 테스트 기준)', () => {
     expect(errRule('.line')).toMatch(/color:\s*var\(--color-over-ink\)/);
     expect(rule('.faceId')).toMatch(/width:\s*var\(--size-face-id-icon\)/);
   });
+
+  it('hideTitle leaves out the card title but keeps the section name, the change and the buttons', () => {
+    const { rerender } = render(<LimitChangeCard {...base} />);
+    expect(screen.getByText('한도 바꾸기', { selector: 'p' })).toBeInTheDocument();
+    rerender(<LimitChangeCard {...base} hideTitle />);
+    expect(screen.queryByText('한도 바꾸기', { selector: 'p' })).toBeNull();
+    expect(screen.getByRole('region', { name: '한도 바꾸기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /확인하고 바꾸기/ })).toBeInTheDocument();
+  });
 });
