@@ -233,6 +233,39 @@ describe('POST /api/chat/messages (SSE)', () => {
     expect((await post({ text: '0번', clientMessageId: 'r0' })).status).toBe(200);
   });
 
+  it("refuses a second message while the user's turn is running, then allows the next", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const slow: LlmProvider = {
+      turn: async () => {
+        await gate;
+        return {
+          id: 'm',
+          type: 'message',
+          role: 'assistant',
+          model: 'scripted',
+          content: [{ type: 'text', text: '네', citations: null }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 0, output_tokens: 0 },
+        } as never;
+      },
+    };
+    const { app } = await setup(slow);
+    const chat = app.get(ChatService);
+    const first = chat.begin('u1', { text: '점심', clientMessageId: 'p1' })(() => undefined);
+    expect(() => chat.begin('u1', { text: '점심', clientMessageId: 'p2' })).toThrow(
+      expect.objectContaining({ code: 'CONFLICT' }),
+    );
+    // Another user is not held up.
+    expect(() => chat.begin('u2', { text: '점심', clientMessageId: 'p3' })).not.toThrow();
+    release();
+    await first;
+    expect(() => chat.begin('u1', { text: '저녁', clientMessageId: 'p4' })).not.toThrow();
+  });
+
   it('keeps nothing and stops the model when the client leaves mid-turn', async () => {
     const provider = scripted([
       { blocks: [{ text: '찾아볼게용' }, { tool: 'get_budget', input: {} }] },

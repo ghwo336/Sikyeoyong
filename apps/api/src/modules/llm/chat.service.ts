@@ -82,6 +82,8 @@ export type ChatStream = (emit: (event: ChatEvent) => void, signal?: AbortSignal
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
+  /** Users with a turn running now: a second message waits for the first (no parallel cost). */
+  private readonly running = new Set<string>();
 
   constructor(
     @Inject(LLM_PROVIDER) private readonly provider: LlmProvider,
@@ -107,6 +109,11 @@ export class ChatService {
         return Promise.resolve();
       };
     }
+    // One turn at a time per user: close-and-resend loops must not multiply model cost.
+    // Refused as CONFLICT (409), which the web already shows as the dragon's wait line.
+    if (this.running.has(userId)) {
+      throw new AppError('CONFLICT', { reason: 'a turn is still running' });
+    }
     if (!this.limiter.allow(`chat:${userId}`, CHAT_RATE, nowMs)) {
       throw new AppError('RATE_LIMITED', { reason: 'chat rate' });
     }
@@ -126,7 +133,15 @@ export class ChatService {
       // Lost a race with the same clientMessageId.
       throw new AppError('CONFLICT', { reason: 'clientMessageId already used' });
     }
-    return (emit, signal) => this.run(userId, body.text, history, userRowId, emit, signal);
+    return async (emit, signal) => {
+      // Taken in the same tick as begin() (the controller does not await between them).
+      this.running.add(userId);
+      try {
+        await this.run(userId, body.text, history, userRowId, emit, signal);
+      } finally {
+        this.running.delete(userId);
+      }
+    };
   }
 
   /** The last turns as plain words, oldest first; unanswered or silent turns are skipped. */
