@@ -13,6 +13,27 @@ describe('stripStaleState', () => {
     expect(stripStaleState('견적 만들었어용.')).toBe('');
   });
 
+  it('keeps proposals, offers and quotes the user may answer with 응', () => {
+    for (const s of [
+      '돼지국밥으로 주문할까용?',
+      '돼지국밥 9,000원이에용. 이걸로 주문해 볼까용?',
+      '견적 확인해 주세용.',
+      '주문은 카드 버튼을 누르면 돼용. 마루국밥 돼지국밥이에용.',
+      '출발하면 알려 줄게용.',
+      '결제 전에 한 번 더 볼까용?',
+    ]) {
+      expect(stripStaleState(s), s).toBe(s);
+    }
+  });
+
+  it('removes only the status claim from a mixed turn', () => {
+    expect(
+      stripStaleState('돼지국밥 어때용? 승인 대기 중이에용. 주문 넣었어용. 배달 중이에용.'),
+    ).toBe('돼지국밥 어때용? ');
+    expect(stripStaleState('도착했어용.')).toBe('');
+    expect(stripStaleState('결제됐어용.')).toBe('');
+  });
+
   it('keeps plain food talk', () => {
     expect(stripStaleState('따끈한 국물 어때용?')).toBe('따끈한 국물 어때용?');
     expect(stripStaleState('')).toBe('');
