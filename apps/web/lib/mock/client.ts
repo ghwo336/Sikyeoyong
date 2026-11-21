@@ -221,6 +221,27 @@ function orderAt(rec: RecommendationCard, paidAt: number, now: number): OrderVie
   };
 }
 
+/**
+ * An older order that stopped (status failed, D-19): the history's 멈춤 row. Nothing was spent and
+ * there is no screen to open, so the row is not pressable. It is the oldest in the list, and only once the owner has an order of their own.
+ */
+function stoppedExample(now: number): OrderView {
+  const rec = RECOMMENDATIONS[1];
+  if (!rec) throw new Error('mock: no menu for the stopped example');
+  return {
+    ...orderAt(rec, now, now),
+    id: 'order-stopped-example',
+    status: 'failed',
+    errorCode: 'CHAIN_PERIODIC_LIMIT',
+    etaAt: now - 86_400_000,
+    remainingMin: 0,
+    dragonLine: '결제가 안 돼서 멈췄어용. 돈은 하나도 안 썼어용.',
+    dragonMood: 'worried',
+    txHash: undefined,
+    receipt: undefined,
+  };
+}
+
 /** Steps finish one after another, HATCH_STEP_MS apart (Hatch.dc.html). */
 function agentSetup(now: number): AgentSetupView {
   const keys = ['wallet', 'identity', 'limit'] as const;
@@ -429,7 +450,10 @@ export const mockApi: ApiClient = {
           txHash: undefined,
           receipt: undefined,
         }));
-      return { orders: [...waits, ...done].slice(0, ORDER_LIST_MAX) };
+      const fresh = [...waits, ...done];
+      // A first owner has no history yet; from the first order on, the older stopped one shows.
+      const all = fresh.length === 0 ? fresh : [...fresh, stoppedExample(now)];
+      return { orders: all.slice(0, ORDER_LIST_MAX) };
     }),
   // PATCH /agents/:id (D-32): only the look changes; the name, money and limits stay.
   patchAgent: (agentId, { dragonSpecies }) =>

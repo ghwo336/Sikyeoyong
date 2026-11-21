@@ -82,7 +82,12 @@ describe('mock look and order list (D-32)', () => {
     const second = await order('eomuk-gimbap', 'daecheong-bunsik');
     await mockApi.confirmOrder(second.order.id);
     const { orders } = await mockApi.listOrders();
-    expect(orders.map((o) => o.id)).toEqual([second.order.id, first.order.id]);
+    // The older stopped example (history.test.ts) always comes last.
+    expect(orders.map((o) => o.id)).toEqual([
+      second.order.id,
+      first.order.id,
+      'order-stopped-example',
+    ]);
     expect(orders[0]?.status).toBe('preparing');
   });
 });
