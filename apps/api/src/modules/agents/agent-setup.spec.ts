@@ -1,4 +1,5 @@
 import { okrwToAokrw } from '@sikyeoyong/shared';
+import { Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -74,6 +75,24 @@ describe('AgentSetupService hands the 8004 id to the TransferLimit write', () =>
     await s.run('a1');
     expect(row()?.status).toBe('PENDING');
     expect(row()?.setupStep).toBe('failed');
+  });
+});
+
+describe('AgentSetupService failure log', () => {
+  it('logs the error code and reason, never a key-like field', async () => {
+    const { setup: s, payment, repo } = setup();
+    const created = await payment.createAgent({ userId: 'u1', name: '용이' });
+    repo.saveWallet('a1', {
+      address: created.address,
+      onchainAgentId: null,
+      ownerAddress: created.ownerAddress,
+    });
+    const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    await s.run('a1');
+    const line = String(error.mock.calls[0]?.[0]);
+    expect(line).toContain('INTERNAL');
+    expect(line).toContain('8004 id');
+    expect(line).toContain('at limit');
   });
 });
 

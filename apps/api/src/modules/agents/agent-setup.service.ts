@@ -1,9 +1,25 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { type OwnerAuthority, parseAokrw, type PaymentProvider } from '@sikyeoyong/shared';
+import {
+  AppError,
+  type OwnerAuthority,
+  parseAokrw,
+  type PaymentProvider,
+} from '@sikyeoyong/shared';
 import { uuidv7 } from '../../common/ids.js';
 import { OWNER_AUTHORITY, PAYMENT_PROVIDER, runOwnerAction } from '../payment/payment.service.js';
 import { agentWalletOf } from './agent-wallet.js';
 import { AgentsRepository } from './agents.repository.js';
+
+const SECRET_KEY = /key|secret|token|seed|mnemonic|password/i;
+
+/** The AppError code and its detail (reason, tx hash...), with anything key-like left out. */
+function describeFailure(err: unknown): string {
+  if (!(err instanceof AppError)) return err instanceof Error ? err.message : 'unknown error';
+  const detail = JSON.stringify(err.detail ?? null, (k, v: unknown) =>
+    SECRET_KEY.test(k) ? '[hidden]' : typeof v === 'bigint' ? v.toString() : v,
+  );
+  return `${err.code} ${detail}`;
+}
 
 /**
  * Hatching (user-flow 4, payment.md): create the wallet and wait for the 8004
@@ -76,7 +92,7 @@ export class AgentSetupService {
       });
     } catch (err) {
       this.logger.error(
-        `agent setup failed for ${agentId}`,
+        `agent setup failed for ${agentId} at ${this.repo.findById(agentId)?.setupStep ?? '?'}: ${describeFailure(err)}`,
         err instanceof Error ? err.stack : undefined,
       );
       this.repo.setStep(agentId, 'failed');
