@@ -136,3 +136,15 @@ children: []
   - dev 서버는 아직 `PAYMENT_PATH=mock`. 경로 B로 바꾸려면 서버를 멈추고 `pnpm merchants:sync-onchain`, `pnpm db:migrate` 뒤 `.env`의 `PAYMENT_PATH=B`.
 - 메모: 온체인 가게 metadataURI는 `http://localhost:3000/...`로 남았다(컨트랙트에 수정 함수 없음). 데모의 비 장면은 `WEATHER_STATIC=비`(또는 openmeteo 실제 날씨). Storybook(6006)은 지워진 BudgetPicker 색인 때문에 다시 띄워야 한다.
 - 후속: 메뉴 이름 일부("국밥") 인식, 부정 말 사전 보강("별로", "질렸"), 사용자별 하루 LLM 예산, 서버 시작 때 `submitting` 재확인, 인덱서, 충전 멱등성, 웹 목 30일 창 테스트, 허락 카드 조립.
+
+### 2026-11-21 위키 정리 (wiki-gardener, wiki-gc)
+- 한 일: 낡은 용어 고침 문서 11개(제품 4: mascot-and-voice, glossary, scenarios, product/_index. 그 밖 7: README, pitch, wiki ROOT, components/_index, roadmap, Meter.md, plan.md 안내 한 줄). 레벨은 드래곤 단계(D-31), 월 예산은 내 30일 한도, 카카오·구글 로그인은 파우치 로그인(D-29)으로. 닫힌 질문 10개(Q-09, 11, 13, 14, 18, 29, 35, 36, 38, 39) 보관, 작업 기록 19개 보관(최근 10개만 남김).
+- 보관한 것: `archive/questions.md`, `archive/worklog.md` (원문 그대로, 한 줄 요약 목록 포함). archive 색인을 internal로 바꿨다.
+- 후보에서 뺀 것: 멤풀 표현 3건(chain-and-pcl, devrel-feedback F-07, scenarios)은 전역 정책과 컨트랙트 정책을 구분하는 바른 문장이라 그대로 둔다.
+- 정리 보류 (사람 판단 필요):
+  - `docs/tech-spec.md`: 2장 앞부분(로그인 카카오·구글, expo-auth-session, 117 ~ 119행)과 `users` 폴더 설명의 "월 예산"(204행), `SERVER_BUDGET_OVER` 문구 "이번 달 예산"(472행)은 코드와 에러 문구에 걸려 있다. 상단 대응표로 읽는 구간과 겹쳐 손대지 않았다.
+  - `docs/plan.md` 본문(레벨표, 월 예산, 카카오·구글, Lv 표)은 처음 계획이라 안내 한 줄만 붙이고 본문은 두었다.
+  - `components/merchants.md` 50행, tech-spec 761행의 사장님 "카카오 로그인"은 2단계 판매자 콘솔 계획이라 D-29 범위 밖인지 정해야 한다.
+  - `ui/onboarding/KakaoVerify.md` 32행 "구글로 가입했어도 카카오톡으로 인증해요"는 코드 문구와 시안(Verify.dc.html)을 같이 고쳐야 한다. SocialLogin 문서와 `Start.dc.html`, `design/tokens.json`의 카카오 버튼 메모도 시안 갱신 때 함께.
+  - `design/` 시안과 코드는 건드리지 않았다.
+- 다음 할 일: 위 보류 항목 결정. 열린 질문은 `open-questions.md`.
