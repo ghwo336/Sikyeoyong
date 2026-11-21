@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Fragment } from 'react';
 import { OwnerApprovalContainer } from '../../approvals/containers/OwnerApprovalContainer';
 import { useOwnerApprovals } from '../../approvals/hooks/useApprovals';
+import { cardsToShow } from '../../approvals/owner';
 import { handQuoteToChat } from '../../chat/hooks/useChat';
 import { useMe } from '../../me/hooks/useMe';
 import { historyLabel, orderHref } from '../active';
@@ -25,7 +26,7 @@ export function OrderHistoryContainer() {
   const me = useMe().data;
   const orders = useOrders();
   const list = orders.data?.orders;
-  const approvals = useOwnerApprovals().data ?? [];
+  const approvals = cardsToShow(useOwnerApprovals().data ?? [], list);
   return (
     <>
       <TopBar
@@ -72,7 +73,7 @@ export function OrderHistoryContainer() {
                 {row}
                 {/* An order waiting for the owner carries its yes-or-no card. After a yes the
                     order is quoted again and the chat opens with its confirm sheet. */}
-                {o.status === 'pending_approval' && approval ? (
+                {approval ? (
                   <OwnerApprovalContainer
                     approval={approval}
                     onQuote={(quote) => {

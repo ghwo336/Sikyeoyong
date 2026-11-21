@@ -16,6 +16,7 @@ import { type ReactNode, useState } from 'react';
 import { minutes } from '../../../lib/format';
 import { OwnerApprovalContainer } from '../../approvals/containers/OwnerApprovalContainer';
 import { useOwnerApprovals } from '../../approvals/hooks/useApprovals';
+import { cardsToShow } from '../../approvals/owner';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { LimitChangeContainer } from '../../limits/containers/LimitChangeContainer';
 import { needsApprovalNow } from '../../limits/fit';
@@ -45,10 +46,11 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
   const me = useMe().data;
   const budget = useBudget().data;
   // Main.dc.html's "오늘 저녁도 부탁해" assumes earlier orders; a first owner gets a plain ask.
-  const ordered = (useOrders().data?.orders.length ?? 0) > 0;
+  const orderList = useOrders().data?.orders;
+  const ordered = (orderList?.length ?? 0) > 0;
   const createOrder = useCreateOrder();
   // Orders waiting for the owner's yes (new store, 30-day limit) get their card at the bottom.
-  const approvals = useOwnerApprovals().data ?? [];
+  const approvals = cardsToShow(useOwnerApprovals().data ?? [], orderList);
   const [draft, setDraft] = useState('');
   const entries = chat.thread?.entries ?? [];
 

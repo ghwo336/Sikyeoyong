@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ApprovalView } from '../../lib/api';
-import { ownerApprovals } from './owner';
+import { cardsToShow, type OwnerApproval, ownerApprovals } from './owner';
 
 const view = (id: string, reason: ApprovalView['reason']): ApprovalView => ({
   id,
@@ -23,5 +23,22 @@ describe('ownerApprovals', () => {
 
   it('is empty for no approvals', () => {
     expect(ownerApprovals([])).toEqual([]);
+  });
+});
+
+describe('cardsToShow', () => {
+  const a = (id: string) => view(id, 'NEW_MERCHANT') as OwnerApproval;
+
+  it('draws a card only for an approval whose order is still pending_approval', () => {
+    const orders = [
+      { id: 'o-a', status: 'pending_approval' },
+      { id: 'o-b', status: 'quoted' },
+      { id: 'o-c', status: 'failed' },
+    ];
+    expect(cardsToShow([a('a'), a('b'), a('c'), a('d')], orders).map((x) => x.id)).toEqual(['a']);
+  });
+
+  it('draws nothing before the orders are known', () => {
+    expect(cardsToShow([a('a')], undefined)).toEqual([]);
   });
 });
