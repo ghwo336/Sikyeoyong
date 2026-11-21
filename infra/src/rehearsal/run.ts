@@ -6,7 +6,9 @@ import puppeteer, { type Browser, type ElementHandle, type Page } from 'puppetee
 import { type ConsoleNote, type Outcome, findChainWords, isBenignConsole } from './checks.ts';
 import type { Scene, Step } from './scenes.ts';
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+/** CHROME_PATH overrides the macOS default. */
+const CHROME =
+  process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const DEFAULT_WAIT_MS = 20_000;
 
 /** Page text with every run of whitespace as one space, so scene texts match across lines. */
