@@ -15,13 +15,14 @@ children: []
 불러오는 중 알리기 (부모가 `aria-busy`나 `role="status"`를 단다), 몇 개를 어떻게 놓을지 (부모)
 
 ## props
-`height: 'walletAmount' | 'caption' | 'meta'` (그 자리 글자 크기 토큰), `width: string` (CSS 길이, 그 글자쯤 되는 길이), `data-*` (부모 테스트와 CSS 표시, 예: `data-part="skeleton"`)
+`height: 'walletAmount' | 'caption' | 'meta' | 'block' | 'circle'` (글자 크기 토큰, 또는 카드 모양 `block`과 둥근 `circle`), `blockHeight?: string` (`block`의 높이), `width: string` (CSS 길이, 그 글자쯤 되는 길이), `data-*` (부모 테스트와 CSS 표시, 예: `data-part="skeleton"`)
 
 ## 하네스 상태
 `Skeleton.stories.tsx`에 아래를 전부 만든다.
 - 지갑 금액 자리 (`WalletAmount`)
 - 작은 글 자리 (`Caption`)
 - 추천 줄 자리 (`MetaRows`)
+- 카드 자리와 둥근 자리 (`Block`, `Circle`)
 
 ## 쓰는 화면
 Wallet(`AllowanceSummary`), Main(`RecommendationList`)

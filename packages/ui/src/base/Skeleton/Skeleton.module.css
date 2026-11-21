@@ -17,3 +17,14 @@
 .meta {
   height: var(--type-meta-size);
 }
+
+/* Shapes that are not text: a card or picture, and a round portrait. Still too. */
+.block {
+  border-radius: var(--radius-card);
+}
+
+.circle {
+  flex-shrink: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}

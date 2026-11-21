@@ -21,6 +21,7 @@ children:
   - ActionPair.md
   - ChoiceGroup.md
   - Skeleton.md
+  - LoadingShape.md
   - ScreenTitle.md
   - Hero.md
   - IconButton.md
@@ -51,6 +52,7 @@ children:
 | [ActionPair](ActionPair.md) | 주 버튼과 물러나는 버튼을 시안 간격으로 세로로 쌓는다. |
 | [ChoiceGroup](ChoiceGroup.md) | 하나만 고르는 선택지 묶음을 질문과 함께 그리고 라디오 키보드 규칙을 맡는다. |
 | [Skeleton](Skeleton.md) | 불러오는 중인 글자 자리에 멈춘 회색 막대를 그린다. |
+| [LoadingShape](LoadingShape.md) | 불러오는 동안 한 영역의 실제 모양대로 회색 뼈대를 그린다 (밀림 없음). |
 | [Icon](Icon.md) | 한 가지 색 아이콘 하나를 이름으로 그린다 (뒤로, 화살표, Face ID, 카카오, 설정). |
 | [IconButton](IconButton.md) | 글자 없이 아이콘 하나만 보이는 44px 버튼을 그린다 (뒤로, 설정). |
 | [ScreenTitle](ScreenTitle.md) | 화면 제목(h1)과 그 아래 짧은 설명을 묶어 그린다 (Start, Verify, Name, Hatch). |

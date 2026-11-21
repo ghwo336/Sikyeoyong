@@ -16,6 +16,7 @@ export * from './base/ListRow';
 export * from './base/Meter';
 export * from './base/ScreenTitle';
 export * from './base/Sheet';
+export * from './base/LoadingShape';
 export * from './base/Skeleton';
 export * from './base/StepProgress';
 export * from './base/Switch';

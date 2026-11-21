@@ -26,6 +26,19 @@ describe('Skeleton (Skeleton.md 테스트 기준)', () => {
     expect(container.querySelectorAll('[data-part="skeleton"]')).toHaveLength(1);
   });
 
+  it('a block takes its own height and a circle stays round', () => {
+    const { container } = render(
+      <>
+        <Skeleton height="block" blockHeight="120px" width="100%" />
+        <Skeleton height="circle" width="44px" />
+      </>,
+    );
+    const [block, circle] = Array.from(container.children) as HTMLElement[];
+    expect(block?.style.height).toBe('120px');
+    expect(circle?.classList).toContain('circle');
+    expect(rule('.circle')).toMatch(/border-radius:\s*50%/);
+  });
+
   it('never moves: no animation or transition', () => {
     expect(css).not.toMatch(/animation|transition|@keyframes/);
   });
