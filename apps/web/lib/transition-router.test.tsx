@@ -87,4 +87,39 @@ describe('navigateWithTransition (D-23 View Transitions)', () => {
     await vi.advanceTimersByTimeAsync(1100);
     expect(settled).toBe(true);
   });
+
+  it('does not start a transition for the pathname it is already on', () => {
+    setReducedMotion(false);
+    const start = vi.fn();
+    (document as { startViewTransition?: unknown }).startViewTransition = start;
+    const go = vi.fn();
+    navigateWithTransition(go, window.location.pathname + '?tab=1#x');
+    expect(start).not.toHaveBeenCalled();
+    expect(go).toHaveBeenCalledOnce();
+    navigateWithTransition(go, '/somewhere-else');
+    expect(start).toHaveBeenCalledOnce();
+  });
+
+  it('keeps one release per transition: a newer one does not strand the older', async () => {
+    setReducedMotion(false);
+    vi.useFakeTimers();
+    const settled: number[] = [];
+    let n = 0;
+    (document as { startViewTransition?: unknown }).startViewTransition = (
+      update: () => Promise<void>,
+    ) => {
+      const id = ++n;
+      void update().then(() => settled.push(id));
+    };
+    navigateWithTransition(() => undefined, '/a');
+    navigateWithTransition(() => undefined, '/b');
+    await vi.advanceTimersByTimeAsync(0);
+    // The first is let go when the second starts, long before its own 1 s limit.
+    expect(settled).toEqual([1]);
+    const view = render(<TransitionBridge />);
+    pathname = '/changed';
+    view.rerender(<TransitionBridge />);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(settled).toEqual([1, 2]);
+  });
 });

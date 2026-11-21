@@ -6,8 +6,12 @@ import { useEffect, useMemo } from 'react';
 /** Longest we wait for the next screen before the old frame is let go (a slow route). */
 const MAX_WAIT_MS = 1000;
 
-/** Resolves the view transition callback once the new route has rendered. */
-let release: (() => void) | undefined;
+/** Each running transition's own release: resolves its callback once the new route rendered. */
+const releases = new Set<() => void>();
+
+function releaseAll(): void {
+  for (const done of [...releases]) done();
+}
 
 interface ViewTransitionDocument {
   startViewTransition?: (update: () => Promise<void>) => unknown;
@@ -18,25 +22,30 @@ interface ViewTransitionDocument {
  * (D-23, design-and-motion.md). Elsewhere it just navigates: same result, no cross-fade.
  * The transition ends when TransitionBridge sees the new pathname, or after MAX_WAIT_MS.
  */
-export function navigateWithTransition(navigate: () => void): void {
+export function navigateWithTransition(navigate: () => void, to?: string): void {
   const doc = document as ViewTransitionDocument;
   // jsdom (tests) has no matchMedia, so the type's "always there" is not always true.
   const match = (window as { matchMedia?: typeof window.matchMedia }).matchMedia;
   const reduced = match ? match.call(window, '(prefers-reduced-motion: reduce)').matches : false;
-  if (!doc.startViewTransition || reduced) {
+  // The same path never changes the pathname, so nothing would end the transition early.
+  const samePath =
+    to !== undefined && new URL(to, window.location.href).pathname === window.location.pathname;
+  if (!doc.startViewTransition || reduced || samePath) {
     navigate();
     return;
   }
+  // A new transition replaces the one before it: let that one go first, each with its own release.
+  releaseAll();
   doc.startViewTransition(
     () =>
       new Promise<void>((resolve) => {
         const timer = setTimeout(done, MAX_WAIT_MS);
         function done() {
           clearTimeout(timer);
-          release = undefined;
+          releases.delete(done);
           resolve();
         }
-        release = done;
+        releases.add(done);
         navigate();
       }),
   );
@@ -48,7 +57,7 @@ export function TransitionBridge() {
   useEffect(() => {
     // After paint, so the new frame is what the transition captures.
     const id = requestAnimationFrame(() => {
-      release?.();
+      releaseAll();
     });
     return () => {
       cancelAnimationFrame(id);
@@ -65,12 +74,12 @@ export function useTransitionRouter() {
       push: (href: string) => {
         navigateWithTransition(() => {
           router.push(href);
-        });
+        }, href);
       },
       replace: (href: string) => {
         navigateWithTransition(() => {
           router.replace(href);
-        });
+        }, href);
       },
     }),
     [router],
