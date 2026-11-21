@@ -134,7 +134,7 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('switch', { name: '자세히 보기' }));
     expect(
-      await screen.findByText(/테스트넷 데모\. 에이전트 키와 소유자 권한/),
+      await screen.findByText(/테스트용 체험판이에요\. 용이의 열쇠와 주인 권한/),
     ).toBeInTheDocument();
     expect(localStorage.getItem('sikyeoyong.details')).toBe('on');
   });

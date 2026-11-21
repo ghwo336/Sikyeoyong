@@ -4,10 +4,13 @@ import styles from './CustodyNote.module.css';
 /** D-24 "밝히는 문구": the words on the wallet screen (no chain words, D-17). */
 export const CUSTODY_NOTE_PLAIN = '체험판이에요. 용이 용돈은 지금 시켜용이 대신 맡아 두고 있어요.';
 
-/** D-24 "밝히는 문구": the exact words inside 자세히 보기 (demo) and the README. */
+/**
+ * D-24 "밝히는 문구": the words inside 자세히 보기. Plain words a person understands: it may
+ * name the wallet briefly, but never a decision id or an internal product name (QA 5).
+ */
 export const CUSTODY_NOTE_DETAILED =
-  // verify-allow: D17 자세히 보기 안에서만 보이는 정확한 문구 (D-24, D-31)
-  '테스트넷 데모. 에이전트 키와 소유자 권한은 운영자 서버가 보관한다(수탁, D-24). 파우치 임베디드 SDK가 나오면 사용자 지갑이 소유자가 된다.';
+  // verify-allow: D17 자세히 보기 안에서만 보이는 문구 (D-24)
+  '테스트용 체험판이에요. 용이의 열쇠와 주인 권한을 지금은 시켜용 서버가 대신 보관하고 있어요. 나중에는 주인님의 지갑이 이 권한을 직접 갖게 돼요.';
 
 export interface CustodyNoteProps {
   /** 자세히 보기가 켜져 있으면 정확한 설명 문구를 쓴다. */
