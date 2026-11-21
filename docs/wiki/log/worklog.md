@@ -121,3 +121,13 @@ children: []
   - infra.md의 `infra/deploy.sh`는 아직 없다 (배포 전 규칙이라 그대로 둠).
   - 1, 2차 보류 항목 그대로.
 - 다음 할 일: Q-34 결정, 위 CLAUDE.md 명령표 보강.
+
+### 2026-11-21 밤 (입금, 남은 가게 등록, 경로 B 실제 전 과정)
+- 한 일:
+  - 호재 님 입금 8,000과 faucet(`npx @maroo-chain/m-aws drip`) 5,000으로 운영자 충전. 남은 가게 19곳 등록(약 108 tOKRW, 가스 가격 10,600 gwei)으로 데모 프로필 65곳 모두 Active, 개발 DB에 `merchants:sync-onchain`.
+  - 경로 B 실제 전 과정(`pnpm e2e:path-b --run --merchant 65 --limit 5000`) 통과: 4,500 결제, findPaid 일치, 한도 250에서 CHAIN_AGENT_LIMIT, 30일 누적 4,500, 얼림 CHAIN_AGENT_PAUSED, 회수.
+  - 실제 실행에서 찾아 고친 것: 잔액 0 회수가 던지던 문제, eth_getLogs 1만 블록 제한(조각 읽기, F-27), e2e가 원래 오류를 가리던 문제와 `--limit`, 주인 CLI가 루트 cwd에서 빈 DB를 만들던 문제(`openOwnerDb`, 없는 파일 거부).
+  - Opus 위키 점검: 절대 규칙 위반 없음, 위키 6곳 고침, CLAUDE.md 명령표 4행 추가.
+- 실수 기록: 작업 폴더 에이전트가 메인의 node_modules를 링크한 채 설치를 돌려 메인의 hoist 링크가 지워진 폴더를 가리킴. `node_modules/.pnpm/node_modules` 지우고 `pnpm install --force`로 복구. 이후 에이전트에게 링크와 메인 설치 금지를 지시. 긴 커밋 제목 2개는 cherry-pick 때 줄여 새로 커밋.
+- 막힌 것: 없음.
+- 후속: OrderExists 오류 코드와 confirm 멱등 처리, findPaid 하한, 화면에서 경로 B 실주문(dev `.env`의 PAYMENT_PATH 전환 필요), 가게 65번 지갑 13,500 회수.
