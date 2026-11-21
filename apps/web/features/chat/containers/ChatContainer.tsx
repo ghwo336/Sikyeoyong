@@ -12,7 +12,7 @@ import {
   UserBubble,
 } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { minutes } from '../../../lib/format';
 import { OwnerApprovalContainer } from '../../approvals/containers/OwnerApprovalContainer';
 import { useOwnerApprovals } from '../../approvals/hooks/useApprovals';
@@ -28,6 +28,8 @@ import { useOrders } from '../../orders/hooks/useOrders';
 import { openQuoteFor, waitingFor } from '../../orders/same-pick';
 import { type ChatEntry, lastSent, threadRows } from '../hooks/entries';
 import { useChat } from '../hooks/useChat';
+import { pastSessions } from '../hooks/sessions';
+import { PastConversations } from './PastConversations';
 
 type RecommendationsEntry = Extract<ChatEntry, { kind: 'recommendations' }>;
 
@@ -54,13 +56,26 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
   const me = useMe().data;
   const budget = useBudget().data;
   // Main.dc.html's "오늘 저녁도 부탁해" assumes earlier orders; a first owner gets a plain ask.
-  const orderList = useOrders().data?.orders;
+  const ordersQuery = useOrders();
+  const orderList = ordersQuery.data?.orders;
   const ordered = (orderList?.length ?? 0) > 0;
   const createOrder = useCreateOrder();
   // Orders waiting for the owner's yes (new store, 30-day limit) get their card at the bottom.
   const approvals = cardsToShow(useOwnerApprovals().data ?? [], orderList);
   const [draft, setDraft] = useState('');
   const entries = chat.thread?.entries ?? [];
+  const earlier = chat.thread?.earlier;
+  const ready = chat.thread?.opened === true;
+  const past = useMemo(() => pastSessions(earlier ?? [], orderList ?? []), [earlier, orderList]);
+
+  // Once the history and the orders are in: a new meal opens with the dragon's greeting (D-34).
+  const { openSession } = chat;
+  const loaded = chat.thread !== undefined && !ordersQuery.isPending;
+  useEffect(() => {
+    if (loaded && !ready) openSession(orderList ?? [], Date.now());
+    // Once per screen: `ready` flips it off, and the orders may change after without redoing it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once when loaded
+  }, [loaded, ready]);
 
   function pick(entry: RecommendationsEntry, id: string) {
     const rec = entry.items.find((r) => r.id === id);
@@ -158,12 +173,14 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
         }
       >
         <ChatThread
-          stamp={chat.thread?.stamp}
+          // Earlier meals carry their own date lines; the first time stamp would mislead.
+          stamp={past.length > 0 ? undefined : chat.thread?.stamp}
           streaming={chat.sending}
           // A card that arrives for the owner's pick scrolls into view like a sent message.
           followKey={`${lastSent(entries) ?? ''}|${approvals.map((a) => a.id).join(',')}`}
         >
-          {threadRows(entries).map(({ entry: e, cards, last }) => {
+          {ready ? <PastConversations sessions={past} /> : null}
+          {(ready ? threadRows(entries) : []).map(({ entry: e, cards, last }) => {
             switch (e.kind) {
               case 'user':
                 return (

@@ -3,16 +3,27 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatEvent } from '@sikyeoyong/shared';
-import { api, type OrderQuote } from '../../../lib/api';
+import { api, type OrderQuote, type OrderView } from '../../../lib/api';
 import { chatStamp } from '../../../lib/format';
 import { APPROVALS_KEY } from '../../approvals/hooks/useApprovals';
 import { ORDERS_KEY } from '../../orders/hooks/useOrders';
 import { type ChatEntry, dragonTurn, historyEntries, LOCAL_LINE_PREFIX } from './entries';
+import { greetingFor, type MessageGroup, sessionEnded, splitSessions } from './sessions';
+
+/** Id prefix of the dragon's first line of a new meal, drawn on this screen only (D-34). */
+export const GREETING_PREFIX = 'greeting-';
 
 export interface ChatThreadData {
   /** "오늘 오후 12:28", made when the history arrives. */
   readonly stamp: string;
+  /** The current conversation (this meal), drawn in full. */
   readonly entries: readonly ChatEntry[];
+  /** Earlier conversations, oldest first. Folded into one-line summaries (D-34). */
+  readonly earlier: readonly MessageGroup[];
+  /** The conversation from the server that `entries` came from, until a new meal replaces it. */
+  readonly latest: MessageGroup | undefined;
+  /** Whether it was decided yet if this opens as a new meal (openSession). */
+  readonly opened: boolean;
 }
 
 const THREAD_KEY = ['chat', 'thread'] as const;
@@ -43,9 +54,14 @@ export function useChat(
     queryKey: THREAD_KEY,
     queryFn: async (): Promise<ChatThreadData> => {
       const h = await api.getChatHistory();
+      const groups = splitSessions(h.messages);
+      const latest = groups[groups.length - 1];
       return {
         stamp: chatStamp(h.startedAt, Date.now()),
-        entries: historyEntries(h.messages),
+        entries: latest ? historyEntries(latest.messages) : [],
+        earlier: groups.slice(0, -1),
+        latest,
+        opened: false,
       };
     },
     staleTime: Infinity,
@@ -133,7 +149,32 @@ export function useChat(
     },
   });
 
+  /**
+   * Decides once whether this opens as a new meal (D-34): no history yet, or the last
+   * conversation is over (its order ended, or it went idle). The dragon then greets first and
+   * the old conversation folds above. Shown on this screen only, never sent to the model.
+   */
+  const openSession = (orders: readonly OrderView[], now: number) => {
+    qc.setQueryData<ChatThreadData>(THREAD_KEY, (old) => {
+      if (!old || old.opened) return old;
+      if (old.latest && !sessionEnded(old.latest, orders, now)) return { ...old, opened: true };
+      const greeting: ChatEntry = {
+        kind: 'dragon',
+        id: `${GREETING_PREFIX}${String(now)}`,
+        text: greetingFor(now),
+      };
+      return {
+        ...old,
+        opened: true,
+        earlier: old.latest ? [...old.earlier, old.latest] : old.earlier,
+        latest: undefined,
+        entries: [greeting],
+      };
+    });
+  };
+
   return {
+    openSession,
     thread: thread.data,
     loading: thread.isPending,
     sending: send.isPending,
