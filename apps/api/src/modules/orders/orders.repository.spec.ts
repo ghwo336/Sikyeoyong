@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
-import { orders } from '../../db/schema/index.js';
+import { orderEvents, orders } from '../../db/schema/index.js';
 import { insertMerchant, insertUser } from '../../test/fixtures.js';
 import { type NewOrder, OrdersRepository } from './orders.repository.js';
 
@@ -55,5 +55,17 @@ describe('OrdersRepository.insert (unique user_id + client_order_id, migration 0
     repo.insert(order('u1', null));
     repo.insert(order('u1', null));
     expect(h.db.select().from(orders).all()).toHaveLength(4);
+  });
+});
+
+describe('OrdersRepository.recordChainEvent (idempotent on tx_hash + log_index)', () => {
+  it('the same txHash and logIndex twice: the second is false and throws nothing', () => {
+    const { h, repo } = setup();
+    const o = order('u1', null);
+    repo.insert(o);
+    expect(repo.recordChainEvent(o.id, 'OrderPlaced', '0xaa', 0, {}, 1)).toBe(true);
+    expect(repo.recordChainEvent(o.id, 'OrderPlaced', '0xaa', 0, {}, 2)).toBe(false);
+    expect(repo.recordChainEvent(o.id, 'OrderPlaced', '0xaa', 1, {}, 3)).toBe(true);
+    expect(h.db.select().from(orderEvents).all()).toHaveLength(2);
   });
 });

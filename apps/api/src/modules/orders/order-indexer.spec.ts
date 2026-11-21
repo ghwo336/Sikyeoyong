@@ -89,6 +89,21 @@ describe('OrderIndexer (payment.md "submitting을 끝내는 규칙")', () => {
     expect(t.h.db.select().from(orderEvents).all()).toHaveLength(1);
   });
 
+  it('re-reading a recorded event neither throws nor stalls the chunk: later logs still confirm', async () => {
+    const t = setup([log(1), log(2)], { start: 5n, latest: 20n });
+    t.add(1, 'submitting');
+    t.add(2, 'submitting');
+    // After a restart the same log is read again: its event row already exists.
+    new OrdersRepository(t.h).recordChainEvent('o1', 'OrderPlaced', hash(1), 0, {}, 1);
+    expect(await t.indexer.tick()).toBe(2);
+    expect(t.read(1)?.status).toBe('paid');
+    expect(t.read(2)?.status).toBe('paid');
+    t.ranges.length = 0;
+    await t.indexer.tick();
+    expect(t.ranges).toEqual([]); // the cursor moved past the chunk
+    expect(t.h.db.select().from(orderEvents).all()).toHaveLength(2);
+  });
+
   it('logs and ignores an orderRef it does not know, and keeps going', async () => {
     const t = setup([log(9), log(1)]);
     t.add(1, 'submitting');
