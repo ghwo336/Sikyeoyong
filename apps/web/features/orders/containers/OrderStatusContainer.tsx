@@ -7,6 +7,7 @@ import {
   LoadingShape,
   OrderStatusHeader,
   OrderSummary,
+  RetryLine,
   StepProgress,
   TopBar,
 } from '@sikyeoyong/ui';
@@ -23,16 +24,30 @@ export function OrderStatusContainer({ orderId }: { readonly orderId: string }) 
   const router = useTransitionRouter();
   const meQuery = useMe();
   const me = meQuery.data;
-  const { data: order, isError } = useOrder(orderId);
+  const orderQuery = useOrder(orderId);
+  const { data: order, isError } = orderQuery;
   const back = () => {
     router.push('/');
   };
   const step = order ? orderStep(order.status) : null;
   // Loading, unknown, unpaid or stopped orders show no progress: a failed or refunded order
   // must never look accepted. Their own screens are not built yet (web.md).
-  // A failed query ends in the bare screen, never a shape that waits forever.
+  // A failed query ends in an error line with a retry, never a blank screen or a shape that
+  // waits forever (QA 4).
   if ((!order && isError) || (!me && meQuery.isError)) {
-    return <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />;
+    return (
+      <>
+        <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={back} />
+        <RetryLine
+          onRetry={() => {
+            if (!order && isError) void orderQuery.refetch();
+            if (!me && meQuery.isError) void meQuery.refetch();
+          }}
+        >
+          주문 현황을 못 불러왔어요
+        </RetryLine>
+      </>
+    );
   }
   if (!order || !me) {
     // Still loading: the shape of the status screen, so it does not jump when the order arrives.

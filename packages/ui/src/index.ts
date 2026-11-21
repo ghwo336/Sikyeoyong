@@ -9,6 +9,7 @@ export * from './base/Chip';
 export * from './base/ChoiceGroup';
 export * from './base/DetailRows';
 export * from './base/ErrorLine';
+export * from './base/RetryLine';
 export * from './base/Hero';
 export * from './base/Icon';
 export * from './base/IconButton';

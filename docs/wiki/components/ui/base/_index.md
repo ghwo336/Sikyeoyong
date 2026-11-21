@@ -18,6 +18,7 @@ children:
   - Icon.md
   - DetailRows.md
   - ErrorLine.md
+  - RetryLine.md
   - ActionPair.md
   - ChoiceGroup.md
   - Skeleton.md
@@ -50,6 +51,7 @@ children:
 | [TopBar](TopBar.md) | 화면 위 뒤로 가기와 제목을 그린다. |
 | [DetailRows](DetailRows.md) | 카드 안 읽기 전용 이름과 값 쌍을 설명 목록으로 그린다 (영수증, 신분증, 한도 바꾸기). |
 | [ErrorLine](ErrorLine.md) | 실패나 다시 확인할 일을 호박색 한 줄로 그리고 화면 읽기에 알린다. |
+| [RetryLine](RetryLine.md) | 실패한 읽기를 오류 한 줄과 다시 불러오기 누름으로 그린다. |
 | [ActionPair](ActionPair.md) | 주 버튼과 물러나는 버튼을 시안 간격으로 세로로 쌓는다. |
 | [ChoiceGroup](ChoiceGroup.md) | 하나만 고르는 선택지 묶음을 질문과 함께 그리고 라디오 키보드 규칙을 맡는다. |
 | [Skeleton](Skeleton.md) | 불러오는 중인 글자 자리에 멈춘 회색 막대를 그린다. |

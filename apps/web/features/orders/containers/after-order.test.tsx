@@ -173,11 +173,25 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
       expect(a.container.querySelector('[data-shape]')).toBeNull();
     });
     expect(screen.getByRole('button', { name: '대화로 돌아가기' })).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('주문 현황을 못 불러왔어요');
     a.unmount();
     const b = wrap(<ReceiptContainer orderId="o1" />);
     await waitFor(() => {
       expect(b.container.querySelector('[data-shape]')).toBeNull();
     });
     expect(screen.getByText('주문 상세')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('주문 내역을 못 불러왔어요');
+  });
+
+  it.each([
+    ['status', <OrderStatusContainer key="s" orderId="o1" />, '국밥 끓이는 중이에용.'],
+    ['receipt', <ReceiptContainer key="r" orderId="o1" />, '결제 수단'],
+  ])('the %s retry press asks again and the screen comes back', async (_n, ui, text) => {
+    getOrder.mockRejectedValueOnce(new Error('500'));
+    getOrder.mockResolvedValue({ order: base });
+    wrap(ui);
+    await userEvent.click(await screen.findByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

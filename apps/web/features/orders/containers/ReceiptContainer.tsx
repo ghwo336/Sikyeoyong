@@ -1,7 +1,7 @@
 'use client';
 
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
-import { LoadingShape, OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
+import { LoadingShape, OrderSummary, ReceiptDetails, RetryLine, TopBar } from '@sikyeoyong/ui';
 import { amountRatioText } from '../../../lib/format';
 import { useTransitionRouter } from '../../../lib/transition-router';
 import { useBudget } from '../../budget/hooks/useBudget';
@@ -17,14 +17,29 @@ import { orderStep } from '../status';
  */
 export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
   const router = useTransitionRouter();
-  const { data: order, isError } = useOrder(orderId);
+  const orderQuery = useOrder(orderId);
+  const { data: order, isError } = orderQuery;
   const budget = useBudget().data;
   const [details] = useDetailsMode();
   const back = () => {
     router.push(`/orders/${encodeURIComponent(orderId)}`);
   };
-  // A failed query ends in the bare screen, never a shape that waits forever.
-  if (!order && isError) return <TopBar title="주문 상세" onBack={back} />;
+  // A failed query ends in an error line with a retry, never a blank screen or a shape that
+  // waits forever (QA 4).
+  if (!order && isError) {
+    return (
+      <>
+        <TopBar title="주문 상세" onBack={back} />
+        <RetryLine
+          onRetry={() => {
+            void orderQuery.refetch();
+          }}
+        >
+          주문 내역을 못 불러왔어요
+        </RetryLine>
+      </>
+    );
+  }
   if (!order) {
     return (
       <>

@@ -1,0 +1,7 @@
+/* An ErrorLine with its retry press right under it, both at the left. */
+.retry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
