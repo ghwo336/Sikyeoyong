@@ -18,25 +18,20 @@ import {SikyeoyongOrders} from "../src/SikyeoyongOrders.sol";
 ///   --private-key는 쓰지 않는다 (키가 프로세스 목록과 셸 기록에 보인다).
 ///   가스 한도는 고정하지 않는다 (forge 추정값. 마루는 가스 한도의 절반을 무조건 과금, maroo-facts 4)
 ///
-/// 실제 테스트넷 배포는 호재 님 승인 뒤에만 한다. `pnpm contracts:deploy:testnet`은 준비 확인만 한다.
+/// 실제 테스트넷 배포는 호재 님 승인 뒤에만 한다.
 ///
-/// 전체 배포 순서 (contracts.md "배포 순서", chain-and-pcl.md). 이 스크립트는 1과 6의 앞부분만 한다.
-///   1. 구현 컨트랙트 배포 (이 스크립트)
-///   2. PCL 프리컴파일 `deployPclProxy(kind = UUPS)`로 프록시 배포 (확인: 프록시 종류 Transparent, UUPS,
-///      Beacon, Diamond). kind 열거값, 구현 주소를 넘기는 방법, 초기화 데이터를 넘기는 방법은 (미확인, Q-13).
-///      PCL 프록시가 OZ UUPSUpgradeable의 proxiableUUID 검사와 맞는지도 (미확인, Q-13).
-///   3. 프록시를 거쳐 initialize(operator, owner, vaultMode = false). 2와 3 사이에 남이 먼저 initialize하지
-///      못하게 2에서 초기화 데이터를 같이 넘기는 방법이 있으면 그것을 쓴다 (미확인, Q-13)
-///   4. IPcl.pclProxy(proxy)로 {kind, admin, proxy} 확인 (확인)
-///   5. 같은 운영자 키로 즉시 changeContractPolicies 첫 호출. 처음 부른 주소가 정책 admin이 되고 한 번만
-///      정해진다 (확인). 전체 교체 방식이라 정책 전체를 한 번에 넣는다 (확인):
-///      placeOrder(uint64,bytes32) LOGICAL_POLICY(And: AGENT_OKRW_TRANSFER_LIMIT_POLICY, PERIODIC_VOLUME_POLICY),
-///      registerMerchant(bytes32,string) EAS_POLICY. 빈 셀렉터 정책은 걸지 않는다.
-///      PolicySet, LogicalPolicy의 Solidity 타입과 enum 값은 (미확인, Q-13). 값은 packages/shared policy.ts.
-///   6. contractPolicies 재조회로 검증하고, 프록시 주소와 배포 블록, 정책 해시를 배포 기록에 채운다
-/// 2부터 6은 infra/scripts/deploy-orders.ts(viem, 아직 없음) 몫이다 (tech-spec 5.9). 이 스크립트가 남긴
-/// 기록의 proxy, deployBlock, policyHash는 0이고, 0은 "아직 안 함"이다.
-/// 목 가게 등록(registerMerchant)은 가게 payout 키가 직접 해야 해서(D-08 E-2) 여기서 하지 않는다.
+/// 지금의 실제 배포 경로는 `pnpm contracts:deploy:testnet`(infra/scripts/deploy-orders.ts)이다. 그 스크립트가
+/// 구현 배포(viem), PCL 프록시(`deployPclProxy`, UUPS, initialize를 같은 트랜잭션에서), 프록시 확인, 정책
+/// (`changeContractPolicies`, 전체 교체), 정책 재조회 검증, 배포 기록 채우기까지 모두 한다 (확인, 2026-11-20
+/// 테스트넷 실제 실행. chain-and-pcl.md "배포"). 정책 admin은 `deployPclProxy` 호출자가 배포와 동시에 된다
+/// (확인, F-20). 정책 값은 packages/shared policy.ts, 적용과 대조는 `pnpm policy:apply`.
+///
+/// 이 forge 스크립트는 그중 1단계(구현 컨트랙트 배포)와 배포 기록 틀(proxy, deployBlock, policyHash는 0,
+/// 0은 "아직 안 함")만 한다. 프록시, 정책, 기록 채우기는 하지 않는다. 쓸 일은 forge 방식으로 구현만 따로 올릴
+/// 때와 이 스크립트의 테스트(체인 ID 대조, 기록 덮어쓰기 거절)다. 이 스크립트가 남긴 기록을 TS 스크립트가
+/// 이어 쓰지 않으므로, 둘을 섞어 쓰지 않는다 (같은 체인 ID와 프로필의 기록 파일이 이미 있으면 멈춘다).
+/// 목 가게 등록(registerMerchant)은 가게 payout 키가 직접 해야 해서(D-08 E-2) 여기서 하지 않는다
+/// (infra/scripts/register-merchants.ts).
 contract Deploy is Script {
     error ChainIdMismatch(uint256 expected, uint256 actual);
     error UnknownProfile(string profile);
