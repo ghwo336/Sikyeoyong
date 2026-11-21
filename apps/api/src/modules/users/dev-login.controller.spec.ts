@@ -4,7 +4,8 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { sessionCookieOptions } from '../../common/guards/session.guard.js';
 import { configureApp } from '../../app.setup.js';
 import { APP_CONFIG } from '../../config/config.module.js';
 import { type AppConfig, loadConfig } from '../../config/env.js';
@@ -13,6 +14,12 @@ import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
 import { users } from '../../db/schema/index.js';
 import { UsersModule } from './users.module.js';
+
+// Pass-through spy: the real options are used, the test only sees that the controller asks for them.
+vi.mock('../../common/guards/session.guard.js', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../common/guards/session.guard.js')>();
+  return { ...real, sessionCookieOptions: vi.fn(real.sessionCookieOptions) };
+});
 
 const open: { app: INestApplication; h: DbHandle }[] = [];
 afterEach(async () => {
@@ -111,5 +118,20 @@ describe('POST /api/auth/dev-login (local development only)', () => {
     expect((await login('')).status).toBe(400); // no bare "dev-" id
     expect((await login('x'.repeat(25))).status).toBe(400);
     expect((await login('x'.repeat(24))).status).toBe(204);
+  });
+});
+
+describe('POST /api/auth/dev-login cookie', () => {
+  it('is set with the shared sessionCookieOptions, like the other login routes', async () => {
+    const { login } = await setup({ DEV_LOGIN: 'true' });
+    vi.mocked(sessionCookieOptions).mockClear();
+    const res = await login('hojae');
+    expect(res.status).toBe(204);
+    expect(sessionCookieOptions).toHaveBeenCalledTimes(1);
+    const sid = sidOf(res);
+    expect(sid).toContain('HttpOnly');
+    expect(sid).toContain('SameSite=Lax');
+    expect(sid).toContain('Path=/');
+    expect(sid).toContain('Max-Age=2592000');
   });
 });

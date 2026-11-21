@@ -1,9 +1,15 @@
-import { Body, Controller, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Inject, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { SESSION_COOKIE, sessionCookieFrom } from '../../common/guards/session.guard.js';
+import {
+  SESSION_COOKIE,
+  sessionCookieFrom,
+  sessionCookieOptions,
+} from '../../common/guards/session.guard.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import { AuthService, SESSION_TTL_MS } from '../auth/auth.service.js';
+import { APP_CONFIG } from '../../config/config.module.js';
+import type { AppConfig } from '../../config/env.js';
+import { AuthService } from '../auth/auth.service.js';
 import { DevLoginGuard } from './dev-login.guard.js';
 import { UsersService } from './users.service.js';
 
@@ -18,6 +24,7 @@ export class DevLoginController {
   constructor(
     private readonly users: UsersService,
     private readonly auth: AuthService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Post('dev-login')
@@ -33,12 +40,7 @@ export class DevLoginController {
       this.users.ensureDevUser(body.key),
       'web',
     );
-    // One sid cookie on Path=/ only (auth.md); not Secure because dev runs on http://localhost.
-    res.cookie(SESSION_COOKIE, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: SESSION_TTL_MS,
-    });
+    // The same cookie every login route sets (auth.md): Path=/, HttpOnly, Lax, Secure by env.
+    res.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.config.nodeEnv));
   }
 }
