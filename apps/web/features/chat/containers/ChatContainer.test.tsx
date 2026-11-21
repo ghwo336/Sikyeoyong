@@ -207,6 +207,26 @@ describe('ChatContainer', () => {
     expect(within(sheet).getAllByText(/돼지국밥/).length).toBeGreaterThan(0);
     expect(confirmOrder).not.toHaveBeenCalled();
   });
+  it('the brought-back card opens once: a remount of the chat does not open it again', async () => {
+    const made = await mockApi.createOrder({
+      merchantId: 'maru-gukbap',
+      items: [{ menuId: 'pork-gukbap', qty: 1 }],
+      clientOrderId: 'c-remount',
+    });
+    getOpenQuote.mockResolvedValue({ quote: made.quote });
+    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const tree = (
+      <QueryClientProvider client={qc}>
+        <ChatContainer />
+      </QueryClientProvider>
+    );
+    const first = render(tree);
+    await screen.findByRole('dialog', { name: '주문 확인' });
+    first.unmount();
+    render(tree);
+    await screen.findByRole('button', { name: /돼지국밥 9,000원/ });
+    expect(screen.queryByRole('dialog', { name: '주문 확인' })).not.toBeInTheDocument();
+  });
   it('with no open quote on the server no sheet opens after a reload', async () => {
     setup();
     await screen.findByRole('button', { name: /돼지국밥 9,000원/ });
