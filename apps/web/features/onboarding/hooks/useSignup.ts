@@ -3,6 +3,7 @@
 import { startSession } from '../../../lib/session/entry';
 import type { DragonSpecies } from '@sikyeoyong/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import { api } from '../../../lib/api';
 import { hatchPollInterval } from '../hatch';
 
@@ -52,12 +53,23 @@ export function useCreateAgent() {
 
 /** Hatch: the three setup steps, asked again every second while setup is running. */
 export function useAgentSetup(enabled = true) {
+  // Reads that failed in a row (every attempt counts, retries too); a read that works clears it.
+  const failures = useRef(0);
   return useQuery({
     queryKey: ['agent-setup'],
     enabled,
-    queryFn: () => api.getAgentSetup(),
+    queryFn: async () => {
+      try {
+        const setup = await api.getAgentSetup();
+        failures.current = 0;
+        return setup;
+      } catch (err) {
+        failures.current += 1;
+        throw err;
+      }
+    },
     // The rule (including what a failed GET does) lives in hatchPollInterval.
-    refetchInterval: (q) => hatchPollInterval(q.state.data?.status),
+    refetchInterval: (q) => hatchPollInterval(q.state.data?.status, failures.current),
     staleTime: 0,
   });
 }

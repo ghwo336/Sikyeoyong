@@ -1,7 +1,7 @@
 'use client';
 
 import { AppError } from '@sikyeoyong/shared';
-import { Splash } from '@sikyeoyong/ui';
+import { RetryLine, Splash } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect } from 'react';
 import { shownSpecies } from '../../../lib/theme';
@@ -42,7 +42,14 @@ export function EntryGate({
   // GET /me gave up on a 5xx or offline (retries spent): the first entry ends on the Splash's
   // error line with a retry, never waking forever (browser QA 4). Other screens keep drawing
   // their own error.
-  const meFailed = splash && route === null && me.error !== null;
+  // GET /agents/me failing for a signed-in owner is the same: no blank page and no tight loop
+  // (QA 6 H2). The step is unknown, so the gate says so and asks again on a press.
+  const setupFailed = me.data !== undefined && setup.isError && setup.data === undefined;
+  const refetchGate = () => {
+    if (setupFailed) void setup.refetch();
+    else void me.refetch();
+  };
+  const meFailed = splash && (setupFailed || (route === null && me.error !== null));
   const timing = useSplashTiming(!splash || route !== undefined);
   const ready = route !== undefined && !timing.holding;
   useEffect(() => {
@@ -50,16 +57,14 @@ export function EntryGate({
   }, [ready, route, router]);
   if (meFailed) {
     // While a retry runs it is the plain waking splash again (no flash of the chat).
-    return me.isFetching ? (
+    return me.isFetching || setup.isFetching ? (
       <Splash species={shownSpecies()} />
     ) : (
-      <Splash
-        species={shownSpecies()}
-        onRetry={() => {
-          void me.refetch();
-        }}
-      />
+      <Splash species={shownSpecies()} onRetry={refetchGate} />
     );
+  }
+  if (setupFailed) {
+    return <RetryLine onRetry={refetchGate}>용이 소식을 못 불러왔어요</RetryLine>;
   }
   if (ready && route === null) return <>{children}</>;
   // Until the next screen is up the splash stays, so there is no blank frame in between.

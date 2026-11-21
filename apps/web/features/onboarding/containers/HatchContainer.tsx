@@ -1,6 +1,6 @@
 'use client';
 
-import { Egg, HatchProgress, Hero, ScreenTitle } from '@sikyeoyong/ui';
+import { Egg, HatchProgress, Hero, RetryLine, ScreenTitle } from '@sikyeoyong/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { useMe } from '../../me/hooks/useMe';
@@ -12,7 +12,8 @@ import { useAgentSetup, useRetryAgentSetup } from '../hooks/useSignup';
 export function HatchContainer() {
   const router = useRouter();
   const me = useMe().data;
-  const setup = useAgentSetup().data;
+  const setupQuery = useAgentSetup();
+  const setup = setupQuery.data;
   const retry = useRetryAgentSetup();
   // Only an owner who watched it hatch (PENDING, then ACTIVE) gets the sign-up budget step;
   // one who opens /hatch already set up goes on without it.
@@ -24,6 +25,17 @@ export function HatchContainer() {
     if (watched.current) markBudgetStepPending();
     router.replace(watched.current ? '/budget' : '/');
   }, [status, router]);
+  if (me && !setup && setupQuery.isError) {
+    return (
+      <RetryLine
+        onRetry={() => {
+          void setupQuery.refetch();
+        }}
+      >
+        부화 소식을 못 불러왔어요
+      </RetryLine>
+    );
+  }
   if (!me || !setup) return null;
   return (
     <>

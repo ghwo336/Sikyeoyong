@@ -70,4 +70,21 @@ describe('useAgentSetup', () => {
     await tick(3_000);
     expect(getAgentSetup).toHaveBeenCalledTimes(1);
   });
+
+  it('a failed first read is not asked again every second (QA 6 H2)', async () => {
+    getAgentSetup.mockRejectedValue(new Error('500'));
+    renderHook(() => useAgentSetup(), { wrapper: makeWrapper() });
+    await tick(0);
+    await tick(5_000);
+    expect(getAgentSetup).toHaveBeenCalledTimes(1);
+  });
+
+  it('a PENDING dragon whose reads keep failing stops being asked every second', async () => {
+    getAgentSetup.mockResolvedValueOnce(PENDING).mockRejectedValue(new Error('500'));
+    renderHook(() => useAgentSetup(), { wrapper: makeWrapper() });
+    await tick(0);
+    await tick(10_000);
+    // The first answer plus the failed polls up to the limit, then quiet.
+    expect(getAgentSetup.mock.calls.length).toBeLessThanOrEqual(1 + 4);
+  });
 });

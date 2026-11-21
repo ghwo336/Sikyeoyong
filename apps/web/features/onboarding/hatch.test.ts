@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HATCH_POLL_MS, hatchPollInterval } from './hatch';
+import { HATCH_MAX_FAILURES, HATCH_POLL_MS, hatchPollInterval } from './hatch';
 
 describe('hatchPollInterval', () => {
   it('asks every second while the dragon is hatching', () => {
@@ -7,8 +7,14 @@ describe('hatchPollInterval', () => {
     expect(HATCH_POLL_MS).toBe(1_000);
   });
 
-  it('keeps asking before the first answer, and after a failed GET with nothing known yet', () => {
-    expect(hatchPollInterval(undefined)).toBe(HATCH_POLL_MS);
+  it('does not poll before the first answer or after a failed first GET (QA 6 H2)', () => {
+    expect(hatchPollInterval(undefined)).toBe(false);
+    expect(hatchPollInterval(undefined, HATCH_MAX_FAILURES)).toBe(false);
+  });
+
+  it('stops polling a PENDING dragon once its reads gave up', () => {
+    expect(hatchPollInterval('PENDING', 1)).toBe(HATCH_POLL_MS);
+    expect(hatchPollInterval('PENDING', HATCH_MAX_FAILURES)).toBe(false);
   });
 
   it('stops once the dragon is up (the screen moves on to /budget)', () => {

@@ -218,4 +218,19 @@ describe('EntryGate splash (Splash.dc.html, user-flow 0)', () => {
     });
     expect(screen.queryByRole('status')).toBeNull();
   });
+
+  it('GET /agents/me failing shows a retry line, asks a bounded number of times, then retries on press (QA 6 H2)', async () => {
+    getMe.mockResolvedValue(ME);
+    getAgentSetup.mockRejectedValue(new Error('500'));
+    draw();
+    await userEvent.click(await screen.findByRole('button', { name: '다시 불러오기' }));
+    expect(screen.queryByText('대화 화면')).toBeNull();
+    const calls = getAgentSetup.mock.calls.length;
+    await new Promise((r) => setTimeout(r, 1_500));
+    // No second-by-second loop: nothing more than the press's own request(s) arrived.
+    expect(getAgentSetup.mock.calls.length).toBeLessThan(calls + 4);
+    getAgentSetup.mockResolvedValue(setupOf('ACTIVE'));
+    await userEvent.click(await screen.findByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByText('대화 화면')).toBeInTheDocument();
+  });
 });
