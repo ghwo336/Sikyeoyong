@@ -4,7 +4,7 @@ import { Egg, HatchProgress, Hero, RetryLine, ScreenTitle } from '@sikyeoyong/ui
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { useMe } from '../../me/hooks/useMe';
-import { markBudgetStepPending } from '../pending-budget';
+import { isBudgetStepPending, markBudgetStepPending } from '../pending-budget';
 import { HATCH_LABEL } from '../steps';
 import { useAgentSetup, useRetryAgentSetup } from '../hooks/useSignup';
 
@@ -15,15 +15,17 @@ export function HatchContainer() {
   const setupQuery = useAgentSetup();
   const setup = setupQuery.data;
   const retry = useRetryAgentSetup();
-  // Only an owner who watched it hatch (PENDING, then ACTIVE) gets the sign-up budget step;
+  // Only an owner signing up gets the budget step (watched PENDING then ACTIVE, or Name's mark);
   // one who opens /hatch already set up goes on without it.
   const watched = useRef(false);
   const status = setup?.status;
   useEffect(() => {
     if (status === 'PENDING') watched.current = true;
     if (status !== 'ACTIVE') return;
-    if (watched.current) markBudgetStepPending();
-    router.replace(watched.current ? '/budget' : '/');
+    // Watched hatching, or created in this sign-up (Name left the mark): the limits step is next.
+    const signup = watched.current || isBudgetStepPending();
+    if (signup) markBudgetStepPending();
+    router.replace(signup ? '/budget' : '/');
   }, [status, router]);
   if (me && !setup && setupQuery.isError) {
     return (

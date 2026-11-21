@@ -5,6 +5,7 @@ import { Button, EggPicker, ScreenTitle, StepProgress, TextField, TopBar } from 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { applySpecies } from '../../../lib/theme';
+import { markBudgetStepPending } from '../pending-budget';
 import { BORN_LINE, SIGNUP_STEPS } from '../steps';
 import { useCreateAgent } from '../hooks/useSignup';
 
@@ -50,6 +51,9 @@ export function NameContainer() {
             { dragonName: name.trim(), dragonSpecies: species },
             {
               onSuccess: () => {
+                // This owner is signing up now: the limits step follows the hatch even when the
+                // dragon is up before Hatch ever sees PENDING (QA 6 L1).
+                markBudgetStepPending();
                 applySpecies(species);
                 router.push('/hatch');
               },

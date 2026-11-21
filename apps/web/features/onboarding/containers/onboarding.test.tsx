@@ -98,6 +98,7 @@ describe('NameContainer', () => {
   });
 
   it('hatches once with the trimmed name and the picked egg', async () => {
+    localStorage.clear();
     createAgent.mockResolvedValue({ agent: { id: 'a1', status: 'PENDING' } });
     wrap(<NameContainer />);
     const field = screen.getByRole('textbox', { name: '이름' });
@@ -109,6 +110,8 @@ describe('NameContainer', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/hatch');
     });
+    // The sign-up is under way: the limits step follows the hatch (QA 6 L1).
+    expect(isBudgetStepPending()).toBe(true);
   });
 
   it('paints the app in the picked egg at once, and remembers it only once saved (D-32)', async () => {
@@ -346,6 +349,16 @@ describe('HatchContainer', () => {
       { timeout: 4000 },
     );
     expect(isBudgetStepPending()).toBe(true);
+  });
+
+  it('a dragon already up on the first read still gets the limits step when Name made it (QA 6 L1)', async () => {
+    localStorage.clear();
+    getAgentSetup.mockResolvedValue({ status: 'ACTIVE', steps: steps(['done', 'done', 'done']) });
+    markBudgetStepPending(); // what Name leaves after the create
+    wrap(<HatchContainer />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/budget');
+    });
   });
 
   it('does not bring back the sign-up budget for an owner already set up', async () => {
