@@ -55,7 +55,7 @@ children: []
 - 화면 문자열 도우미(`lib/format.ts`): "25분", "가게에서 어디로, 25분쯤", "오늘 오후 12:28"(기기 시간대와 상관없이 KST).
 
 ## 화면 틀
-- 화면 틀(390 기준, 가운데 정렬, 최대 480 `size.screenMax`, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다.
+- 화면 틀(390 기준, 가운데 정렬, 최대 480 `size.screenMax`, 높이 100dvh 세로 줄)은 `app/globals.css`의 `.screen`이고 라우트 layout이 붙인다. page와 컨테이너는 class를 쓰지 않는다. 화면 틀은 `<main>`(페이지의 유일한 landmark)이고 `lib/layouts-landmark.test.ts`가 모든 라우트 layout을 지킨다 (a11y).
 - 여백이 있는 화면(Done, Tracking: 8 20 24, 사이 16)은 `.screen.padded`. 주문 현황 layout(`app/orders/[id]/layout.tsx`)이 쓴다.
 - 가입 화면은 `.screen.onboarding`(여백 8 20 32, 사이 22 `size.signupGap`, Name과 Budget 시안 값)이고 마지막 블록(큰 버튼, 로그인 버튼, 부화 단계 카드)은 맨 아래로 붙는다. 화면마다 여백이 달라 그룹 layout 대신 가입 라우트마다 layout이 있다 (`app/(onboarding)/<화면>/layout.tsx`):
   - Verify `.screen.onboarding.verify`: 사이 24

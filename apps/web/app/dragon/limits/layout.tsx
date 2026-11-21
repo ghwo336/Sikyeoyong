@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 // the bottom. Money screen, so the app colors stay fixed whatever the species (D-32).
 export default function LimitEditLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="screen onboarding" data-theme="fixed">
+    <main className="screen onboarding" data-theme="fixed">
       {children}
-    </div>
+    </main>
   );
 }

@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 export default function LimitLayout({ children }: { children: ReactNode }) {
   // D-32: money and warning screens keep the app colors whatever the dragon species.
   return (
-    <div className="screen padded" data-theme="fixed">
+    <main className="screen padded" data-theme="fixed">
       {children}
-    </div>
+    </main>
   );
 }
