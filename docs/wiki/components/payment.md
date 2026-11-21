@@ -189,7 +189,7 @@ interface PaymentProvider {
 - float 상한을 넘게 충전하지 않는다.
 - 실패한 주문을 작은 금액으로 쪼개 다시 보내지 않는다.
 - 경로 B의 에이전트 키를 로그, DB 평문, 에러 메시지에 남기지 않는다.
-- 경로 B 키 보관 (2026-11-21 코드): `modules/payment/agent-key-vault.ts`의 `AgentKeyVault`. 새 EOA 키를 만들어 AES-256-GCM(`AGENT_KEY_ENCRYPTION_KEY`, 32바이트 base64, 주소를 AAD로 묶음)으로 봉인해 `agent_keys`(마이그레이션 0010)에 먼저 저장하고 주소만 돌려준다. 키는 `withAccount(address, fn)` 안에서만 풀리고 끝나면 버퍼를 0으로 채운다(viem에 넘긴 hex 문자열은 비울 수 없어 최선 노력). 열기 실패는 원인을 말하지 않고 `INTERNAL`. 저장소는 `agent-keys.repository.ts`.
+- 경로 B 키 보관 (2026-11-21 코드): `modules/payment/agent-key-vault.ts`의 `AgentKeyVault`. 새 EOA 키를 만들어 AES-256-GCM으로 봉인해(키는 `AGENT_KEY_ENCRYPTION_KEY`(32바이트 base64)에서 행마다 HKDF-SHA256으로 파생, salt는 행에 저장, 주소를 AAD로 묶음, `key_version` 2. 파생 전 v1 행은 마스터 키로 바로 열림. 교체 중에는 `AGENT_KEY_ENCRYPTION_KEY_PREVIOUS`로 열고 `pnpm agent-keys:rotate`가 v2로 다시 봉인, 절차는 security.md) `agent_keys`(마이그레이션 0010, salt는 0015)에 먼저 저장하고 주소만 돌려준다. 키는 `withAccount(address, fn)` 안에서만 풀리고 끝나면 버퍼를 0으로 채운다(viem에 넘긴 hex 문자열은 비울 수 없어 최선 노력). 열기 실패는 원인을 말하지 않고 `INTERNAL`. 저장소는 `agent-keys.repository.ts`.
 - MAWS preflight 통과를 "결제 보장"으로 다루지 않는다 (오프체인, 확인).
 
 ## 확장 지점
