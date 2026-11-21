@@ -53,7 +53,7 @@ export type SimulateOutcome =
 export interface PublicPort {
   getBalance(a: { address: Hex }): Promise<bigint>;
   getTransactionCount(a: { address: Hex; blockTag: 'pending' }): Promise<number>;
-  getBlock(): Promise<{ timestamp: bigint }>;
+  getBlock(a?: { blockNumber: bigint }): Promise<{ timestamp: bigint }>;
   estimateGas(a: { account: Hex; to: Hex; data?: Hex; value?: bigint }): Promise<bigint>;
   call(a: {
     account: Hex;
@@ -130,6 +130,8 @@ export interface ManagedEoaConfig {
   readonly deployBlock: bigint;
   /** The most blocks one getLogs call may cover (chain config maxLogBlockSpan). */
   readonly logBlockSpan: bigint;
+  /** The most getLogs chunks one findPaid call reads (chain config findPaidMaxChunks). */
+  readonly findPaidMaxChunks: number;
   readonly gasShareAokrw: bigint;
   readonly confirmations: number;
   /** How long to wait for a receipt before the result is "unknown" (ms). */
@@ -154,6 +156,8 @@ export interface ManagedEoaDeps {
   readonly config: ManagedEoaConfig;
 }
 
+/** Clock slack under findPaid's lower bound: block time and server time are not the same clock. */
+const FIND_PAID_MARGIN_MS = 10 * 60_000;
 const RECEIPT_TIMEOUT_MS = 90_000;
 const DEADLINE_SECONDS = 240n;
 const TRANSFER_LIMIT_KEY = 'TransferLimit';
@@ -455,16 +459,20 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
     );
   }
 
-  async findPaid(orderRef: Hex): Promise<{ txHash: Hex; blockNumber: bigint } | null> {
+  async findPaid(
+    orderRef: Hex,
+    sinceMs?: number,
+  ): Promise<{ txHash: Hex; blockNumber: bigint } | null> {
     const latest = await this.d.publicClient.getBlockNumber();
     const event = ordersAbi.find((i) => i.type === 'event' && i.name === 'OrderPlaced');
+    const from =
+      sinceMs === undefined
+        ? this.d.config.deployBlock
+        : await this.blockBefore(sinceMs - FIND_PAID_MARGIN_MS, latest);
     // Newest first, within the RPC's range cap, so a recent order is found in the first call.
-    for (const range of logRanges(
-      this.d.config.deployBlock,
-      latest,
-      this.d.config.logBlockSpan,
-      true,
-    )) {
+    // The chunk cap bounds the calls of a search that finds nothing.
+    const ranges = logRanges(from, latest, this.d.config.logBlockSpan, true);
+    for (const range of ranges.slice(0, this.d.config.findPaidMaxChunks)) {
       const logs = await this.d.publicClient.getLogs({
         address: this.d.config.proxy,
         event,
@@ -477,6 +485,27 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
       return { txHash: hit.transactionHash, blockNumber: hit.blockNumber };
     }
     return null;
+  }
+
+  /**
+   * The newest block mined at or before `ms` (binary search on block timestamps), never below the
+   * deploy block. Any read failure gives the deploy block: a wider search, never a missed order.
+   */
+  private async blockBefore(ms: number, latest: bigint): Promise<bigint> {
+    const target = BigInt(Math.floor(ms / 1000));
+    let lo = this.d.config.deployBlock;
+    let hi = latest;
+    try {
+      while (lo < hi) {
+        const mid = (lo + hi + 1n) / 2n;
+        const block = await this.d.publicClient.getBlock({ blockNumber: mid });
+        if (block.timestamp <= target) lo = mid;
+        else hi = mid - 1n;
+      }
+    } catch {
+      return this.d.config.deployBlock;
+    }
+    return lo;
   }
 
   async receiptOf(txHash: Hex): Promise<ReceiptOutcome> {

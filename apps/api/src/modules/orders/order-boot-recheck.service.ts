@@ -73,7 +73,7 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
       }
       let found: { txHash: Hex } | null = null;
       try {
-        found = await this.payment.findPaid(row.orderRef as Hex);
+        found = await this.payment.findPaid(row.orderRef as Hex, row.createdAt);
       } catch (e) {
         this.logger.warn(
           `order ${row.id} still submitting, chain not readable (${(e as Error).name})`,

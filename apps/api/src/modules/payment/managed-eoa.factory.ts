@@ -71,6 +71,7 @@ export function createManagedEoaProvider(
       proxy: target.proxy,
       deployBlock: target.deployBlock,
       logBlockSpan: BigInt(config.chain.maxLogBlockSpan),
+      findPaidMaxChunks: config.chain.findPaidMaxChunks,
       gasShareAokrw: config.payment.gasShareAokrw,
       confirmations: config.payment.confirmations,
     },

@@ -361,10 +361,13 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
       .where(eq(orders.id, id))
       .run();
     const tx: Hex = `0x${'cd'.repeat(32)}`;
-    vi.spyOn(payment, 'findPaid').mockResolvedValueOnce({ txHash: tx, blockNumber: 7n });
+    const find = vi
+      .spyOn(payment, 'findPaid')
+      .mockResolvedValueOnce({ txHash: tx, blockNumber: 7n });
     const pay = vi.spyOn(payment, 'pay');
     const res = zOrderResult.parse((await confirm(id)).body);
     expect(res.order).toMatchObject({ status: 'paid', txHash: tx });
+    expect(find).toHaveBeenCalledWith(row(id)?.orderRef, row(id)?.createdAt);
     expect(pay).not.toHaveBeenCalled();
     expect(row(id)).toMatchObject({ status: 'paid', txHash: tx, errorCode: null });
     // The failed-to-paid move writes the receipt too (every paid transition does).
@@ -387,7 +390,7 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     const pay = vi.spyOn(payment, 'pay');
     const res = zOrderResult.parse((await confirm(id)).body);
     expect(res.order).toMatchObject({ status: 'paid', txHash: tx });
-    expect(find).toHaveBeenCalledWith(row(id)?.orderRef);
+    expect(find).toHaveBeenCalledWith(row(id)?.orderRef, row(id)?.createdAt);
     expect(pay).not.toHaveBeenCalled();
     expect(row(id)).toMatchObject({ status: 'paid', txHash: tx, errorCode: null });
   });

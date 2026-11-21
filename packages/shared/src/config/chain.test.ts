@@ -12,6 +12,7 @@ describe('NETWORKS', () => {
     expect(t.okrwDenom).toBe('atokrw');
     expect(t.okrwDecimals).toBe(18);
     expect(t.maxLogBlockSpan).toBe(10_000);
+    expect(t.findPaidMaxChunks).toBe(30);
     expect(t.precompiles).toEqual({
       pcl: '0x1000000000000000000000000000000000000005',
       agent: '0x100000000000000000000000000000000000000A',

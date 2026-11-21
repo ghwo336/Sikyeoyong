@@ -104,7 +104,7 @@ describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () =>
     const t = setup(() => Promise.resolve({ txHash: `0x${'ab'.repeat(32)}`, blockNumber: 7n }));
     t.add(1, 'submitting', { startedAt: 5, txHash: `0x${'cd'.repeat(32)}` });
     expect(await t.svc.run(99)).toEqual({ paid: 1, failed: 0, waiting: 0 });
-    expect(t.find).toHaveBeenCalledWith(ref(1));
+    expect(t.find).toHaveBeenCalledWith(ref(1), 1); // the order's createdAt bounds the search
     expect(t.read(1)?.receiptJson).toContain(`0x${'ab'.repeat(32)}`);
     expect(t.read(1)).toMatchObject({ status: 'paid', txHash: `0x${'ab'.repeat(32)}` });
     expect(t.pay).not.toHaveBeenCalled();

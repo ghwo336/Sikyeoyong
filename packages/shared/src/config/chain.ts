@@ -25,6 +25,11 @@ export interface ChainConfig {
    * "maximum [from, to] blocks distance: 10000" (maroo-facts.md). Read logs in chunks of this size.
    */
   readonly maxLogBlockSpan: number;
+  /**
+   * The most getLogs chunks (of maxLogBlockSpan blocks each) one findPaid call reads, newest first.
+   * It bounds the RPC calls when no OrderPlaced exists. A search that ends without a hit is null.
+   */
+  readonly findPaidMaxChunks: number;
   readonly precompiles: {
     readonly pcl: `0x${string}`;
     readonly agent: `0x${string}`;
@@ -54,6 +59,7 @@ export const NETWORKS: { readonly [K in NetworkKey]: ChainConfig } = deepFreeze(
     okrwDenom: 'atokrw',
     okrwDecimals: 18,
     maxLogBlockSpan: 10_000,
+    findPaidMaxChunks: 30,
     precompiles: {
       pcl: '0x1000000000000000000000000000000000000005',
       agent: '0x100000000000000000000000000000000000000A',

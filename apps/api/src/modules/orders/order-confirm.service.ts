@@ -67,7 +67,7 @@ export class OrderConfirmService {
       }
     } else if (row.status === 'failed' && this.mayRetry(row)) {
       // A person pressed again: ask the chain first, then the same orderRef (D-19).
-      const paid = await this.payment.findPaid(row.orderRef as Hex);
+      const paid = await this.payment.findPaid(row.orderRef as Hex, row.createdAt);
       if (paid !== null) {
         this.receipts.markPaid(row, 'failed', paid.txHash, nowMs);
       } else if (
@@ -191,7 +191,7 @@ export class OrderConfirmService {
     attempt: number,
   ): Promise<void> {
     if (code === 'CHAIN_ORDER_EXISTS') {
-      const paid = await this.payment.findPaid(row.orderRef as Hex);
+      const paid = await this.payment.findPaid(row.orderRef as Hex, row.createdAt);
       if (paid !== null) {
         this.receipts.markPaid(row, 'submitting', paid.txHash, nowMs, attempt);
         return;

@@ -94,8 +94,16 @@ export interface PaymentProvider {
     req: PayRequest,
   ): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: DecodedChainError }>;
   pay(req: PayRequest): Promise<PayResult>;
-  /** Has OrderPlaced(orderRef) happened on chain? Confirm asks before a retry (D-19). */
-  findPaid(orderRef: Hex): Promise<{ readonly txHash: Hex; readonly blockNumber: bigint } | null>;
+  /**
+   * Has OrderPlaced(orderRef) happened on chain? Confirm asks before a retry (D-19).
+   * `sinceMs` is the earliest time the order could have been paid (its quote time): the search
+   * starts at the block of that time (with a margin) instead of the deploy block. Unknown: the
+   * whole history up to the provider's chunk cap.
+   */
+  findPaid(
+    orderRef: Hex,
+    sinceMs?: number,
+  ): Promise<{ readonly txHash: Hex; readonly blockNumber: bigint } | null>;
   /**
    * The receipt of a transaction we recorded before broadcasting. Read only: never sends. An
    * unreadable chain throws (the caller keeps the order as it is).

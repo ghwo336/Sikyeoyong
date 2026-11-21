@@ -183,6 +183,7 @@ function setup(opts: { balance?: bigint } = {}) {
       proxy: PROXY,
       deployBlock: 23_000_000n,
       logBlockSpan: 10_000n,
+      findPaidMaxChunks: 30,
       gasShareAokrw: W(100n),
       confirmations: 1,
       receiptTimeoutMs: 1_000,
@@ -771,6 +772,61 @@ describe('findPaid', () => {
   it('is null when no such event exists', async () => {
     const t = setup();
     expect(await t.provider.findPaid(REF)).toBeNull();
+  });
+
+  // Block n (from deploy) was mined at second n * 10.
+  const chainClock = (t: ReturnType<typeof setup>, latest: bigint) => {
+    t.pub.getBlockNumber.mockResolvedValue(latest);
+    t.pub.getBlock.mockImplementation((a?: { blockNumber: bigint }) =>
+      Promise.resolve({ timestamp: ((a?.blockNumber ?? latest) - 23_000_000n) * 10n }),
+    );
+  };
+
+  it('with a since time, starts at that block (minus the margin), not the deploy block', async () => {
+    const t = setup();
+    chainClock(t, 23_000_000n + 80_000n);
+    const seen: bigint[] = [];
+    t.pub.getLogs.mockImplementation((a: { fromBlock: bigint }) => {
+      seen.push(a.fromBlock);
+      return Promise.resolve([]);
+    });
+    // 700_000 s = block +70_000; the 10 minute margin (600 s) is 60 blocks earlier.
+    expect(await t.provider.findPaid(REF, 700_000 * 1000)).toBeNull();
+    expect(Math.min(...seen.map(Number))).toBe(23_000_000 + 69_940);
+    expect(seen.length).toBeLessThanOrEqual(2);
+  });
+
+  it('a since time before the deploy block searches from the deploy block', async () => {
+    const t = setup();
+    chainClock(t, 23_000_000n + 5_000n);
+    const seen: bigint[] = [];
+    t.pub.getLogs.mockImplementation((a: { fromBlock: bigint }) => {
+      seen.push(a.fromBlock);
+      return Promise.resolve([]);
+    });
+    await t.provider.findPaid(REF, 0);
+    expect(seen.at(-1)).toBe(23_000_000n);
+  });
+
+  it('a since time that cannot be resolved falls back to the deploy block', async () => {
+    const t = setup();
+    t.pub.getBlockNumber.mockResolvedValue(23_000_000n + 5_000n);
+    t.pub.getBlock.mockRejectedValue(new Error('rpc down'));
+    const seen: bigint[] = [];
+    t.pub.getLogs.mockImplementation((a: { fromBlock: bigint }) => {
+      seen.push(a.fromBlock);
+      return Promise.resolve([]);
+    });
+    await t.provider.findPaid(REF, 1_000_000);
+    expect(seen.at(-1)).toBe(23_000_000n);
+  });
+
+  it('reads at most findPaidMaxChunks chunks when nothing is found', async () => {
+    const t = setup();
+    t.pub.getBlockNumber.mockResolvedValue(23_000_000n + 2_000_000n);
+    t.pub.getLogs.mockResolvedValue([]);
+    expect(await t.provider.findPaid(REF)).toBeNull();
+    expect(t.pub.getLogs).toHaveBeenCalledTimes(30);
   });
 });
 
