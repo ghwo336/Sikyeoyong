@@ -37,7 +37,7 @@ children:
 | --- | --- |
 | [web.md](web.md) | Next.js 웹. 페이지는 조립만, 금액·체인·키 코드 없음 |
 | [ui/_index.md](ui/_index.md) | UI 컴포넌트 35개(packages/ui). 컴포넌트마다 책임, props, 하네스 상태, 테스트 기준 |
-| [auth.md](auth.md) | 카카오·구글(1단계), 애플(iOS). 서버 세션 발급, 웹 쿠키·네이티브 secure-store |
+| [auth.md](auth.md) | 파우치 로그인 하나(D-29, 이메일과 패스키), 애플(iOS, 나중). 서버 세션 발급, 웹 쿠키·네이티브 secure-store |
 | [server-api.md](server-api.md) | NestJS API 규약: 모듈 구조, 라우트 규약(`/api`, `/api/admin`), zod, 에러 형식(`AppErrorCode`), 결제는 확인 엔드포인트에서만, 권한(user, merchant, operator) |
 | [agent-runtime.md](agent-runtime.md) | LLM 도구 화이트리스트, 프롬프트 인젝션 방어, 승인 흐름, 대화 메모리 |
 | [payment.md](payment.md) | PaymentProvider, 경로 A/B/C, 모드 P(float, 즉시 충전), orderRef 멱등성, 자동 재시도 금지, 에러 정규화 |
