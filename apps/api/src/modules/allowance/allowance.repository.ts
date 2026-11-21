@@ -77,12 +77,13 @@ export class AllowanceRepository {
   }
 
   /** Marks that the fund call is about to start for this hold (before the call, never undone). */
-  markFundCallStarted(id: string, nowMs: number): void {
-    this.handle.db
+  markFundCallStarted(id: string, nowMs: number): boolean {
+    const r = this.handle.db
       .update(ownerAllowanceEntries)
       .set({ fundCallStartedAt: nowMs })
       .where(eq(ownerAllowanceEntries.id, id))
       .run();
+    return r.changes === 1;
   }
 
   setTxHash(id: string, txHash: string): void {

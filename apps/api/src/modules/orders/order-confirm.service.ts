@@ -266,7 +266,11 @@ export class OrderConfirmService {
       });
     }
     // From here the call may have moved money: the hold is no longer provably unsent.
-    if (reserved !== null) this.allowance.markFundCallStarted(reserved, nowMs);
+    if (reserved !== null && !this.allowance.markFundCallStarted(reserved, nowMs)) {
+      // The hold vanished before the call: no fund without a hold, nothing was sent, no retry.
+      this.repo.clearFundStart(row.id, attempt, nowMs);
+      throw new AppError('INTERNAL', { reason: 'top-up hold is gone, not funding without it' });
+    }
     const r = await runOwnerAction(this.owner, {
       kind: 'fund',
       agent: wallet,

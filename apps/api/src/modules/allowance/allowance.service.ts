@@ -73,10 +73,11 @@ export class AllowanceService {
 
   /**
    * Call right before the fund call, after the order's marker is committed. From then on the
-   * hold may have moved money and the reconciliation only reports it.
+   * hold may have moved money and the reconciliation only reports it. Returns false when the
+   * hold is gone (released in between): the caller must not call fund without a hold.
    */
-  markFundCallStarted(entryId: string, nowMs: number = Date.now()): void {
-    this.repo.markFundCallStarted(entryId, nowMs);
+  markFundCallStarted(entryId: string, nowMs: number = Date.now()): boolean {
+    return this.repo.markFundCallStarted(entryId, nowMs);
   }
 
   /** Writes the top-up's transaction hash on a reserved entry. */

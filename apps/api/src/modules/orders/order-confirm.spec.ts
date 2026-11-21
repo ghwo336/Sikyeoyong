@@ -903,6 +903,21 @@ describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (
     expect(r.ambiguous.map((x) => x.reason)).toEqual(['fund-call-started']);
   });
 
+  it('never calls fund when the hold was released before the call started', async () => {
+    const { payment, allowance, quote, confirm, row } = await setup({ allowanceWon: '20000' });
+    const fund = vi.spyOn(payment, 'fund');
+    const real = allowance.markFundCallStarted.bind(allowance);
+    vi.spyOn(allowance, 'markFundCallStarted').mockImplementationOnce((entryId, nowMs) => {
+      allowance.releaseFund(entryId);
+      return real(entryId, nowMs);
+    });
+    const id = await quote();
+    await confirm(id);
+    expect(fund).not.toHaveBeenCalled();
+    expect(row(id)?.status).not.toBe('paid');
+    expect(row(id)?.fundStartedAt).toBeNull();
+  });
+
   it('two confirms racing for one allowance: one pays, the other is refused, never both', async () => {
     const { payment, quote, confirm, row, allowance } = await setup({ allowanceWon: '10000' });
     const fund = vi.spyOn(payment, 'fund');
