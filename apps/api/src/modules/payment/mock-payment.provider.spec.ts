@@ -70,11 +70,11 @@ describe('MockPaymentProvider (refusals follow chain-and-pcl.md)', () => {
     expect(await p.findPaid(REF(1))).toEqual(
       r.ok ? { txHash: r.txHash, blockNumber: r.blockNumber } : null,
     );
-    // Same orderRef again: OrderExists (not in the revert table, so INTERNAL), nothing taken.
+    // Same orderRef again: OrderExists, nothing taken.
     expect(await p.pay(req(agent, won(9_000n)))).toEqual({
       ok: false,
       stage: 'execution',
-      error: { code: 'INTERNAL' },
+      error: { code: 'CHAIN_ORDER_EXISTS' },
     });
     expect(await p.balanceOf(agent.address)).toBe(won(11_000n));
     expect(await p.findPaid(REF(2))).toBeNull();
@@ -275,7 +275,7 @@ describe('MockPaymentProvider refusal order when reasons overlap ((추론), paym
     }); // BadAmount
     expect(await p.preflight(req(agent, won(1_000n), 1))).toEqual({
       ok: false,
-      error: { code: 'INTERNAL' },
+      error: { code: 'CHAIN_ORDER_EXISTS' },
     }); // OrderExists
     expect((await p.preflight(req(agent, won(1_000n), 2))).ok).toBe(true);
   });

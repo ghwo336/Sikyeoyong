@@ -373,6 +373,69 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(res.order.receipt?.explorerUrl).toBeUndefined();
   });
 
+  it('OrderExists at preflight with the orderRef on chain settles as paid, no second payment', async () => {
+    const { payment, quote, confirm, row } = await setup();
+    const id = await quote();
+    const tx: Hex = `0x${'ef'.repeat(32)}`;
+    vi.spyOn(payment, 'preflight').mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'CHAIN_ORDER_EXISTS' },
+    });
+    const find = vi
+      .spyOn(payment, 'findPaid')
+      .mockResolvedValueOnce({ txHash: tx, blockNumber: 3n });
+    const pay = vi.spyOn(payment, 'pay');
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order).toMatchObject({ status: 'paid', txHash: tx });
+    expect(find).toHaveBeenCalledWith(row(id)?.orderRef);
+    expect(pay).not.toHaveBeenCalled();
+    expect(row(id)).toMatchObject({ status: 'paid', txHash: tx, errorCode: null });
+  });
+
+  it('OrderExists from pay with the orderRef on chain settles as paid', async () => {
+    const { payment, quote, confirm, row } = await setup();
+    const id = await quote();
+    const tx: Hex = `0x${'ee'.repeat(32)}`;
+    vi.spyOn(payment, 'pay').mockResolvedValueOnce({
+      ok: false,
+      stage: 'execution',
+      error: { code: 'CHAIN_ORDER_EXISTS' },
+    });
+    vi.spyOn(payment, 'findPaid').mockResolvedValueOnce({ txHash: tx, blockNumber: 3n });
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order).toMatchObject({ status: 'paid', txHash: tx });
+    expect(row(id)?.status).toBe('paid');
+  });
+
+  it('OrderExists at preflight with no OrderPlaced is an error, never paid', async () => {
+    const { payment, quote, confirm, row } = await setup();
+    const id = await quote();
+    vi.spyOn(payment, 'preflight').mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'CHAIN_ORDER_EXISTS' },
+    });
+    vi.spyOn(payment, 'findPaid').mockResolvedValueOnce(null);
+    const pay = vi.spyOn(payment, 'pay');
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order.status).toBe('failed');
+    expect(pay).not.toHaveBeenCalled();
+    expect(row(id)).toMatchObject({ status: 'failed', errorCode: 'INTERNAL', txHash: null });
+  });
+
+  it('OrderExists from pay with no OrderPlaced stays submitting (a person looks)', async () => {
+    const { payment, quote, confirm, row } = await setup();
+    const id = await quote();
+    vi.spyOn(payment, 'pay').mockResolvedValueOnce({
+      ok: false,
+      stage: 'execution',
+      error: { code: 'CHAIN_ORDER_EXISTS' },
+    });
+    vi.spyOn(payment, 'findPaid').mockResolvedValueOnce(null);
+    const res = zOrderResult.parse((await confirm(id)).body);
+    expect(res.order.status).toBe('submitting');
+    expect(row(id)?.status).toBe('submitting');
+  });
+
   it('a chain refusal at preflight that asks the owner goes to pending_approval with its approval row', async () => {
     const { h, payment, quote, confirm, row } = await setup({ limitWon: '5000' });
     const pay = vi.spyOn(payment, 'pay');

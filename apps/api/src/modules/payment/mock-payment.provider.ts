@@ -194,8 +194,8 @@ export class MockPaymentProvider implements PaymentProvider {
    *    TransferLimit unset, per-order limit, 30-day volume;
    * 3. contract body, in tech-spec 5.2 placeOrder order: AgentIsPaused, BadAmount
    *    (0 or less), OrderExists. AgentNotBound and MerchantNotActive are not simulated.
-   * Codes follow the chain-and-pcl.md revert table; BadAmount and OrderExists are not in it,
-   * so they are INTERNAL (confirm asks findPaid before a retry, D-19).
+   * Codes follow the chain-and-pcl.md revert table; BadAmount is not in it, so it is INTERNAL.
+   * OrderExists is CHAIN_ORDER_EXISTS (confirm asks findPaid and settles it as paid).
    */
   private refusal(
     req: PayRequest,
@@ -226,7 +226,9 @@ export class MockPaymentProvider implements PaymentProvider {
     }
     if (w.paused) return { stage: 'execution', error: { code: 'CHAIN_AGENT_PAUSED' } };
     if (req.amount <= 0n) return { stage: 'execution', error: { code: 'INTERNAL' } };
-    if (this.paid.has(req.orderRef)) return { stage: 'execution', error: { code: 'INTERNAL' } };
+    if (this.paid.has(req.orderRef)) {
+      return { stage: 'execution', error: { code: 'CHAIN_ORDER_EXISTS' } };
+    }
     return null;
   }
 

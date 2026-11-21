@@ -14,6 +14,7 @@ export const APP_ERROR_CODES = [
   'CHAIN_AGENT_PAUSED',
   'CHAIN_MERCHANT_INACTIVE',
   'CHAIN_INSUFFICIENT_FUNDS',
+  'CHAIN_ORDER_EXISTS',
   'MAWS_POLICY_REJECTED',
   'SERVER_OVER_LEVEL',
   'SERVER_NEW_MERCHANT',
@@ -90,6 +91,11 @@ export const APP_ERRORS: { readonly [C in AppErrorCode]: AppErrorSpec } = {
     httpStatus: 422,
     message: '용돈이 부족해요',
     dragonLine: '용돈이 모자라용',
+  },
+  CHAIN_ORDER_EXISTS: {
+    httpStatus: 409,
+    message: '이미 결제된 주문이에요',
+    dragonLine: '이 주문은 벌써 시켰어용. 주문 내역을 확인해 주세용',
   },
   MAWS_POLICY_REJECTED: {
     httpStatus: 422,

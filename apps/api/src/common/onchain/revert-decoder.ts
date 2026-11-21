@@ -64,10 +64,19 @@ export function chainErrorOf(revert: DecodedRevert): DecodedChainError {
     case 'EasAttestationExpired':
     case 'EasAttestationRequired':
       return { code: 'CHAIN_EAS_REQUIRED' };
+    // Unauthorized and our contract's operator and owner checks: a server-side setup problem.
     case 'Unauthorized':
+    case 'NotOperator':
+    case 'NotAgentOwner':
       return { code: 'CHAIN_UNAUTHORIZED' };
     case 'AgentIsPaused':
       return { code: 'CHAIN_AGENT_PAUSED' };
+    // The same orderRef was already paid: confirm settles it as paid via findPaid (rule 9).
+    case 'OrderExists':
+      return { code: 'CHAIN_ORDER_EXISTS' };
+    // The dragon is not bound on chain yet: setup is not finished, a later press may work.
+    case 'AgentNotBound':
+      return { code: 'CHAIN_AGENT_LIMIT_UNSET' };
     case 'MerchantNotActive':
       return { code: 'CHAIN_MERCHANT_INACTIVE' };
     // The global KYC limit's error name is not confirmed (Q-15). VolumeAboveMaxLimit is the
@@ -75,8 +84,8 @@ export function chainErrorOf(revert: DecodedRevert): DecodedChainError {
     case 'VolumeAboveMaxLimit':
       return { code: 'CHAIN_KYC_LIMIT' };
     default:
-      // AgentNotBound, BadAmount, OrderExists, TransferFailed and everything unknown are not in
-      // the table: INTERNAL, and confirm asks findPaid before any retry (D-19).
+      // BadAmount, TransferFailed and everything unknown are not in the table: INTERNAL, and
+      // confirm asks findPaid before any retry (D-19).
       return { code: 'INTERNAL' };
   }
 }

@@ -529,8 +529,8 @@ describe('preflight', () => {
     ['AgentTransferLimitMetadataInvalid', ['unset'], { code: 'CHAIN_AGENT_LIMIT_UNSET' }],
     ['AgentIsPaused', undefined, { code: 'CHAIN_AGENT_PAUSED' }],
     ['MerchantNotActive', [1n], { code: 'CHAIN_MERCHANT_INACTIVE' }],
-    ['AgentNotBound', undefined, { code: 'INTERNAL' }],
-    ['OrderExists', [REF], { code: 'INTERNAL' }],
+    ['AgentNotBound', undefined, { code: 'CHAIN_AGENT_LIMIT_UNSET' }],
+    ['OrderExists', [REF], { code: 'CHAIN_ORDER_EXISTS' }],
   ] as const)('a simulated %s is decoded to its code', async (name, args, expected) => {
     const t = setup();
     t.pub.pcl.simulatePclProxy.mockResolvedValue({

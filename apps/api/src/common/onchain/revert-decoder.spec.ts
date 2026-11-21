@@ -63,16 +63,17 @@ describe('chainErrorOf and decodeChainFailure (chain-and-pcl.md revert table)', 
     ['AgentIsPaused', undefined, 'CHAIN_AGENT_PAUSED'],
     ['MerchantNotActive', [7n], 'CHAIN_MERCHANT_INACTIVE'],
     ['VolumeAboveMaxLimit', [1n, 2n], 'CHAIN_KYC_LIMIT'],
+    ['OrderExists', [`0x${'ab'.repeat(32)}`], 'CHAIN_ORDER_EXISTS'],
+    ['AgentNotBound', undefined, 'CHAIN_AGENT_LIMIT_UNSET'],
+    ['NotOperator', undefined, 'CHAIN_UNAUTHORIZED'],
+    ['NotAgentOwner', undefined, 'CHAIN_UNAUTHORIZED'],
   ] as const)('%s is %s', (name, args, code) => {
     expect(decodeChainFailure(wrapped(encode(name, args))).code).toBe(code);
   });
 
   it.each([
-    ['AgentNotBound', undefined],
     ['BadAmount', undefined],
-    ['OrderExists', [`0x${'ab'.repeat(32)}`]],
     ['TransferFailed', undefined],
-    ['NotOperator', undefined],
   ] as const)('%s is not in the table: INTERNAL', (name, args) => {
     expect(decodeChainFailure(wrapped(encode(name, args))).code).toBe('INTERNAL');
   });

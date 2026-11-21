@@ -146,7 +146,7 @@ export class OrderConfirmService {
     await this.topUp(userId, row, attempt, checked.wallet, req.amount, nowMs);
     const pre = await this.payment.preflight(req);
     if (!pre.ok) {
-      this.settler.settle(userId, row, pre.error.code, false, nowMs, attempt);
+      await this.settleRefusal(userId, row, pre.error.code, false, nowMs, attempt);
       return;
     }
     // The submit-start marker is committed before anything goes out (D-19).
@@ -174,7 +174,30 @@ export class OrderConfirmService {
       this.receipts.markPaid(row, 'submitting', result.txHash, nowMs, attempt);
       return;
     }
-    this.settler.settle(userId, row, result.error.code, true, nowMs, attempt);
+    await this.settleRefusal(userId, row, result.error.code, true, nowMs, attempt);
+  }
+
+  /**
+   * A refusal ends the order by its class, except OrderExists: that orderRef is already on
+   * chain, so the order was paid by an earlier try (idempotency, rule 9). Ask findPaid and settle
+   * it as paid; with no OrderPlaced found it is an error like any other (never paid again).
+   */
+  private async settleRefusal(
+    userId: string,
+    row: OrderRow,
+    code: AppErrorCode,
+    marked: boolean,
+    nowMs: number,
+    attempt: number,
+  ): Promise<void> {
+    if (code === 'CHAIN_ORDER_EXISTS') {
+      const paid = await this.payment.findPaid(row.orderRef as Hex);
+      if (paid !== null) {
+        this.receipts.markPaid(row, 'submitting', paid.txHash, nowMs, attempt);
+        return;
+      }
+    }
+    this.settler.settle(userId, row, code, marked, nowMs, attempt);
   }
 
   /**

@@ -78,7 +78,10 @@ children: []
 | `EasNoAttestationReceived`, `EasAttestationRevoked`, `EasAttestationExpired` | `CHAIN_EAS_REQUIRED` | 가게 KYB 없음 또는 만료 |
 | `Unauthorized()` | `CHAIN_UNAUTHORIZED` | 잠시 후 다시 시도 (서버 설정 문제), 운영자 알림 |
 | `VolumeAboveMaxLimit(maxLimit, value)` (건당 `VOLUME_POLICY`의 에러) | `CHAIN_KYC_LIMIT` | 소유자 KYC 필요. 전역 KYC 한도가 이 템플릿이라고 보는 것은 (추론, Q-15) |
-| 컨트랙트 `AgentNotBound()`, `BadAmount()`, `OrderExists(orderRef)`, `TransferFailed()` | `INTERNAL` | 표에 없다. 재시도 전에 `findPaid`로 확인 (D-19) |
+| 컨트랙트 `OrderExists(orderRef)` | `CHAIN_ORDER_EXISTS` | 같은 orderRef는 이미 결제됨. confirm은 `findPaid`로 확인해 결제됨으로 마감하고(멱등, 규칙 9), 못 찾으면 오류로 둔다 |
+| 컨트랙트 `AgentNotBound()` | `CHAIN_AGENT_LIMIT_UNSET` | 설정 미완료 |
+| 컨트랙트 `NotOperator()`, `NotAgentOwner()` | `CHAIN_UNAUTHORIZED` | 서버 설정 문제 |
+| 컨트랙트 `BadAmount()`, `TransferFailed()` | `INTERNAL` | 표에 없다. 재시도 전에 `findPaid`로 확인 (D-19) |
 | 컨트랙트 `AgentIsPaused()` | `CHAIN_AGENT_PAUSED` | 용이가 자고 있어요 |
 | 컨트랙트 `MerchantNotActive(id)` | `CHAIN_MERCHANT_INACTIVE` | 주문할 수 없는 가게 |
 | 잔액 부족, MAWS `INSUFFICIENT_BALANCE` | `CHAIN_INSUFFICIENT_FUNDS` | 용돈(float) 부족 |
