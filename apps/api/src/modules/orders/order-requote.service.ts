@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AppError, type CreateOrderResult, parseAokrw } from '@sikyeoyong/shared';
+import { AppError, type CreateOrderResult, aokrwToString, parseAokrw } from '@sikyeoyong/shared';
 import { AgentsService } from '../agents/agents.service.js';
 import { ApprovalsService } from '../approvals/approvals.service.js';
 import { OrderApprovalEffects } from './order-approval-effects.service.js';
@@ -32,7 +32,8 @@ export class OrderRequoteService {
     if (row === undefined) throw new AppError('NOT_FOUND', { reason: 'order not found' });
     if (row.status === 'pending_approval') {
       const approval = this.approvals.pendingForOrder(orderId);
-      const fits = parseAokrw(row.amountAokrw) <= this.agents.getForUser(userId).perOrderLimitAokrw;
+      const perOrderLimit = this.agents.getForUser(userId).perOrderLimitAokrw;
+      const fits = parseAokrw(row.amountAokrw) <= perOrderLimit;
       if (
         approval !== undefined &&
         approval.reason === 'OVER_LEVEL_LIMIT' &&
@@ -44,6 +45,8 @@ export class OrderRequoteService {
           'approved',
           () => {
             this.effects.reopen(orderId, nowMs);
+            // It is quoted again under the raised limit: that is the limit it fit.
+            this.repo.setPerOrderLimitAtQuote(orderId, aokrwToString(perOrderLimit), nowMs);
           },
           nowMs,
         );

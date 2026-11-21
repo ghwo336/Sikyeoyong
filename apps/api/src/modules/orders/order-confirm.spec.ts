@@ -673,3 +673,57 @@ describe('confirm: the top-up is idempotent by order (payment.md "즉시 충전(
     expect(calls).toBe(2);
   });
 });
+
+describe('the limits at quote time ride on the order (the receipt "그때" values)', () => {
+  const lowerLimitTo = (h: DbHandle, won: string) =>
+    h.db
+      .update(agents)
+      .set({ perOrderLimitAokrw: W(won) })
+      .where(eq(agents.id, 'a-u1'))
+      .run();
+
+  it('keeps the per-order limit and the 30-day cap of the quote, whatever they are later', async () => {
+    const { h, quote, confirm, view, row } = await setup();
+    const id = await quote();
+    expect(row(id)).toMatchObject({ perOrderLimitAtQuote: W('10000') });
+    expect(row(id)?.periodCapAtQuote).toMatch(/^[1-9][0-9]*$/);
+    await confirm(id);
+    lowerLimitTo(h, '20000'); // changed after the order
+    const body = zOrderResult.parse((await view(id)).body);
+    expect(body.order.limitsAtOrder).toEqual({
+      perOrderLimit: W('10000'),
+      periodCap: row(id)?.periodCapAtQuote,
+    });
+  });
+
+  it('an order from before the columns has no limitsAtOrder (the screen keeps saying "지금")', async () => {
+    const { h, quote, view } = await setup();
+    const id = await quote();
+    h.db
+      .update(orders)
+      .set({ perOrderLimitAtQuote: null, periodCapAtQuote: null })
+      .where(eq(orders.id, id))
+      .run();
+    const body = zOrderResult.parse((await view(id)).body);
+    expect(body.order.limitsAtOrder).toBeUndefined();
+  });
+
+  it('a requote after a raise records the raised limit it now fits', async () => {
+    const { h, post, row } = await setup();
+    insertMerchant(h.db, 'm2', { name: '처음국수' });
+    insertMenu(h.db, 'x-guksu', 'm2', 7_000n, { name: '잔치국수' });
+    const first = zCreateOrderResult.parse(
+      (
+        await post('u1', '/api/orders', {
+          merchantId: 'm2',
+          items: [{ menuId: 'x-guksu', qty: 2 }],
+          clientOrderId: 'c-raise',
+        })
+      ).body,
+    );
+    expect(row(first.order.id)?.perOrderLimitAtQuote).toBe(W('10000'));
+    lowerLimitTo(h, '15000');
+    await post('u1', `/api/orders/${first.order.id}/requote`);
+    expect(row(first.order.id)?.perOrderLimitAtQuote).toBe(W('15000'));
+  });
+});

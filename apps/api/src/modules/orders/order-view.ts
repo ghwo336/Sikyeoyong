@@ -101,5 +101,13 @@ export function toOrderView(row: OrderRow, ctx: OrderViewContext, nowMs: number)
     dragonMood,
     ...(status === 'failed' && code !== null ? { errorCode: code } : {}),
     ...(row.txHash === null ? {} : { txHash: row.txHash }),
+    ...(row.perOrderLimitAtQuote === null || row.periodCapAtQuote === null
+      ? {}
+      : {
+          limitsAtOrder: {
+            perOrderLimit: row.perOrderLimitAtQuote,
+            periodCap: row.periodCapAtQuote,
+          },
+        }),
   };
 }

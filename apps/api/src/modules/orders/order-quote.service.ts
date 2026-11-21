@@ -124,6 +124,8 @@ export class OrderQuoteService {
       itemsJson: JSON.stringify(lines),
       clientOrderId: req.clientOrderId,
       note: req.note ?? null,
+      perOrderLimitAtQuote: aokrwToString(agent.perOrderLimitAokrw),
+      periodCapAtQuote: aokrwToString(this.config.policy.periodicCapAokrw),
       createdAt: nowMs,
     };
     try {

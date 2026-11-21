@@ -123,6 +123,15 @@ export const zOrderView = z
       .optional(),
     /** Receipt.dc.html 자세히 보기, once the server has written the receipt (receipt_json). */
     receipt: zOrderReceipt.optional(),
+    /**
+     * The limits in force when this order was quoted (the receipt's "그때" values): the
+     * per-order limit and the chain's shared 30-day cap. Absent on orders from before the server
+     * kept them. Additive and optional (2026-11-21).
+     */
+    limitsAtOrder: z
+      .object({ perOrderLimit: zAokrwString, periodCap: zAokrwString })
+      .strict()
+      .optional(),
   })
   .strict();
 export type OrderView = z.infer<typeof zOrderView>;

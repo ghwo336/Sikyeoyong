@@ -62,6 +62,13 @@ export const orders = sqliteTable(
      * committed before the fund call, the hash after it returned. A marker without a hash is a
      * top-up with no result, which is never repeated.
      */
+    /**
+     * The limits in force when the order was quoted (the receipt's "그때" values, aokrw text):
+     * the agent's per-order limit and the chain's shared 30-day cap. Null on orders from before
+     * migration 0013.
+     */
+    perOrderLimitAtQuote: text('per_order_limit_at_quote'),
+    periodCapAtQuote: text('period_cap_at_quote'),
     fundStartedAt: integer('fund_started_at'),
     fundTxHash: text('fund_tx_hash'),
     fundAmountAokrw: text('fund_amount'),

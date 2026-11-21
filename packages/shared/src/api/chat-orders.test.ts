@@ -220,6 +220,19 @@ describe('order schemas (tech-spec 3.2)', () => {
     expect(zOrderResult.parse({ order: paid })).toEqual({ order: paid });
     expect(zOrderView.safeParse({ ...view, txHash: '0x1234' }).success).toBe(false);
     expect(zOrderResult.safeParse({ order: paid, receipt: {} }).success).toBe(false);
+    // limitsAtOrder (2026-11-21): optional, amounts only, nothing else.
+    const limits = { perOrderLimit: W10000, periodCap: W9000 };
+    expect(zOrderView.parse({ ...view, limitsAtOrder: limits }).limitsAtOrder).toEqual(limits);
+    expect(zOrderView.parse(view).limitsAtOrder).toBeUndefined();
+    expect(
+      zOrderView.safeParse({ ...view, limitsAtOrder: { ...limits, periodCap: '1.5' } }).success,
+    ).toBe(false);
+    expect(
+      zOrderView.safeParse({ ...view, limitsAtOrder: { perOrderLimit: W10000 } }).success,
+    ).toBe(false);
+    expect(zOrderView.safeParse({ ...view, limitsAtOrder: { ...limits, extra: 1 } }).success).toBe(
+      false,
+    );
     expect(zOrderIdParam.safeParse('').success).toBe(false);
     const receipt = {
       agentId: '1042',

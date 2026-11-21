@@ -32,6 +32,8 @@ export interface NewOrder {
   readonly status: 'quoted' | 'pending_approval';
   readonly clientOrderId: string | null;
   readonly note: string | null;
+  readonly perOrderLimitAtQuote?: string;
+  readonly periodCapAtQuote?: string;
   readonly createdAt: number;
 }
 
@@ -236,6 +238,15 @@ export class OrdersRepository {
       .where(and(eq(orders.id, id), or(isNull(orders.fundStartedAt), isNotNull(orders.fundTxHash))))
       .run();
     return r.changes === 1;
+  }
+
+  /** After a limit raise the order is quoted again under the new per-order limit (requote). */
+  setPerOrderLimitAtQuote(id: string, amountAokrw: string, nowMs: number): void {
+    this.handle.db
+      .update(orders)
+      .set({ perOrderLimitAtQuote: amountAokrw, updatedAt: nowMs })
+      .where(eq(orders.id, id))
+      .run();
   }
 
   /** The fund call returned: its hash settles the marker. */
