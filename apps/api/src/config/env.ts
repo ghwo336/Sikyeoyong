@@ -1,5 +1,7 @@
 import {
   AppError,
+  DEFAULT_POUCHI_BRIDGE_ISSUER,
+  DEFAULT_POUCHI_VAULT_URL,
   getPolicy,
   isPolicyProfile,
   okrwToAokrw,
@@ -52,8 +54,8 @@ const schema = z.object({
   POUCHI_TENANT_ID: optionalText,
   POUCHI_APP_KEY: optionalText,
   POUCHI_APP_ID: optionalText,
-  POUCHI_VAULT_URL: z.url().default('https://auth.pouchi.io'),
-  POUCHI_BRIDGE_ISSUER: z.url().default('https://auth.pouchi.io'),
+  POUCHI_VAULT_URL: z.url().default(DEFAULT_POUCHI_VAULT_URL),
+  POUCHI_BRIDGE_ISSUER: z.url().default(DEFAULT_POUCHI_BRIDGE_ISSUER),
   POUCHI_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   KAKAO_REST_API_KEY: optionalText,
   KAKAO_CLIENT_SECRET: optionalText,

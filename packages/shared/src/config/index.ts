@@ -7,6 +7,7 @@ export {
   type ChainOverrides,
   type NetworkKey,
 } from './chain.js';
+export { DEFAULT_POUCHI_BRIDGE_ISSUER, DEFAULT_POUCHI_VAULT_URL } from './pouchi.js';
 export {
   LIMIT_INTENT_KEYWORDS,
   NAG_STAGES,

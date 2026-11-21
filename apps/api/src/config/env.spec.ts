@@ -1,4 +1,4 @@
-import { AppError, NETWORKS, okrwToAokrw } from '@sikyeoyong/shared';
+import { AppError, DEFAULT_POUCHI_VAULT_URL, NETWORKS, okrwToAokrw } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import { loadConfig, type RawEnv } from './env.js';
 
@@ -257,6 +257,12 @@ describe('Pouchi login config (D-29)', () => {
         'POUCHI_TENANT_ID',
       );
     }
+  });
+
+  it('the vault URL defaults to the shared default and an explicit value wins', () => {
+    expect(loadConfig(PROD).pouchi?.vaultUrl).toBe(DEFAULT_POUCHI_VAULT_URL);
+    const own = loadConfig({ ...PROD, POUCHI_VAULT_URL: 'https://vault.test' });
+    expect(own.pouchi?.vaultUrl).toBe('https://vault.test');
   });
 
   it('production needs POUCHI_API_URL', () => {
