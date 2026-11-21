@@ -27,3 +27,16 @@ export function canRetryFailed(order: Pick<OrderView, 'status' | 'errorCode'>): 
     RETRYABLE.includes(order.errorCode)
   );
 }
+
+/**
+ * What the dragon says on a stopped order's screen. The server's line for some codes asks a
+ * question ("그래도 시킬까용?") that only a retry could answer; when this order has no retry the
+ * screen has one button (back to the chat), so the line says what is true and where to go
+ * (QA 6 L2). Lines that are not questions, and orders that can retry, keep the server's words.
+ */
+export function stoppedLine(order: Pick<OrderView, 'status' | 'errorCode' | 'dragonLine'>): string {
+  if (canRetryFailed(order) || !order.dragonLine.trim().endsWith('?')) return order.dragonLine;
+  return order.errorCode === 'SERVER_BUDGET_OVER'
+    ? '이번 달 예산을 넘어서 멈췄어용. 다시 시키려면 대화에서 골라 주세용.'
+    : '이 주문은 멈췄어용. 다시 시키려면 대화에서 골라 주세용.';
+}

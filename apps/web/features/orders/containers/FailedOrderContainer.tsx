@@ -4,7 +4,7 @@ import type { DragonSpecies } from '@sikyeoyong/shared';
 import { ActionPair, Button, DragonLine, ErrorLine, ScreenTitle, TopBar } from '@sikyeoyong/ui';
 import type { OrderView } from '../../../lib/api';
 import { useTransitionRouter } from '../../../lib/transition-router';
-import { canRetryFailed } from '../failed';
+import { canRetryFailed, stoppedLine } from '../failed';
 import { useRetryOrder } from '../hooks/useRetryOrder';
 
 /**
@@ -29,7 +29,7 @@ export function FailedOrderContainer({
       <TopBar title="주문 현황" backLabel="대화로 돌아가기" onBack={toChat} />
       <ScreenTitle variant="title" title="주문이 멈췄어요" />
       <DragonLine
-        text={order.dragonLine}
+        text={stoppedLine(order)}
         mood={order.dragonMood}
         layout="inline"
         species={species}
