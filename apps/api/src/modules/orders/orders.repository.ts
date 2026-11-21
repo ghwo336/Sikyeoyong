@@ -134,6 +134,22 @@ export class OrdersRepository {
       .all();
   }
 
+  /** The user's orders at a store still open (waiting for the owner or quoted), newest first. */
+  openAt(userId: string, merchantId: string): OrderRow[] {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, userId),
+          eq(orders.merchantId, merchantId),
+          inArray(orders.status, ['pending_approval', 'quoted']),
+        ),
+      )
+      .orderBy(desc(orders.createdAt), desc(orders.id))
+      .all();
+  }
+
   findByClientOrderId(userId: string, clientOrderId: string): OrderRow | undefined {
     return this.handle.db
       .select()

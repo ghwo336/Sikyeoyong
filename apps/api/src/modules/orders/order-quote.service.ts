@@ -13,6 +13,7 @@ import type { AppConfig } from '../../config/env.js';
 import { type AgentSummary, AgentsService } from '../agents/agents.service.js';
 import {
   type ApprovalReason,
+  APPROVAL_TTL_MS,
   ApprovalsService,
   approvalReasonOf,
 } from '../approvals/approvals.service.js';
@@ -113,6 +114,15 @@ export class OrderQuoteService {
     }
 
     if (approvalOnly && reason === null) return null;
+    // QA 6: the same request again (a re-picked card, the dragon asking twice) is the order that
+    // is already open, never a second approval or a second card for it.
+    const open = this.reusableOrder(userId, req, total, reason, nowMs);
+    if (open !== undefined) {
+      return {
+        result: await this.current(userId, open, nowMs),
+        approvalReason: open.status === 'pending_approval' ? reason : null,
+      };
+    }
     const orderId = uuidv7(nowMs);
     const row = {
       id: orderId,
@@ -177,6 +187,33 @@ export class OrderQuoteService {
       },
       approvalReason: null,
     };
+  }
+
+  /**
+   * The user's open order for the same store, items, price and note: waiting for the owner with a
+   * live approval while the rules still ask the owner, or quoted within the approval window while
+   * they still do not. Anything else (expired, rules changed, price moved) gets a new order.
+   */
+  private reusableOrder(
+    userId: string,
+    req: QuoteRequest,
+    total: bigint,
+    reason: ApprovalReason | null,
+    nowMs: number,
+  ): OrderRow | undefined {
+    return this.repo.openAt(userId, req.merchantId).find((o) => {
+      if (o.amountAokrw !== aokrwToString(total) || o.note !== (req.note ?? null)) return false;
+      const stored = {
+        merchantId: o.merchantId,
+        items: parseStoredLines(o.itemsJson).map((l) => ({ menuId: l.menuId, qty: l.quantity })),
+      };
+      if (!sameRequest(stored, req)) return false;
+      if (o.status === 'pending_approval') {
+        const approval = this.approvals.pendingForOrder(o.id);
+        return reason !== null && approval !== undefined && approval.expiresAt > nowMs;
+      }
+      return reason === null && o.createdAt + APPROVAL_TTL_MS > nowMs;
+    });
   }
 
   private orderableMerchant(

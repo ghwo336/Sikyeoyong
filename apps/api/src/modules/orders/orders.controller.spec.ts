@@ -260,17 +260,17 @@ describe('POST /api/orders: rules that ask the owner (pending_approval with its 
       (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2', 'c1'))).body,
     );
     expect(first.order.status).toBe('pending_approval');
-    // Resending under a new clientOrderId must not slip past the owner.
+    // Resending under a new clientOrderId must not slip past the owner: it is the same waiting order.
     const again = zCreateOrderResult.parse(
       (await as('u1').post(body([{ menuId: 'x-guksu', qty: 1 }], 'm2', 'c2'))).body,
     );
-    expect(again.order.status).toBe('pending_approval');
+    expect(again.order).toEqual(first.order);
     const reasons = h.db
       .select()
       .from(approvals)
       .all()
       .map((a) => a.reason);
-    expect(reasons).toEqual(['NEW_MERCHANT', 'NEW_MERCHANT']);
+    expect(reasons).toEqual(['NEW_MERCHANT']);
   });
 
   it('another user having paid at a store does not make it known to this one', async () => {
@@ -518,6 +518,8 @@ describe('POST /api/orders: clientOrderId', () => {
     const b = body([{ menuId: 'x-dwaeji', qty: 1 }]);
     const first = zCreateOrderResult.parse((await as('u1').post(b)).body);
     const spy = vi.spyOn(repo, 'findByClientOrderId').mockReturnValueOnce(undefined);
+    // The open-order reuse would answer first; hide it so the insert race itself is what runs.
+    vi.spyOn(repo, 'openAt').mockReturnValueOnce([]);
     const lost = await as('u1').post(b);
     expect(lost.status).toBe(200);
     expect(zCreateOrderResult.parse(lost.body)).toEqual(first);
@@ -538,6 +540,53 @@ describe('POST /api/orders: clientOrderId', () => {
     expect(lost).toEqual(first);
     expect(h.db.select().from(orders).all()).toHaveLength(1);
     expect(h.db.select().from(approvals).all()).toHaveLength(1);
+  });
+});
+
+describe('POST /api/orders: the same request again reuses the open order (QA 6)', () => {
+  it('a re-picked card that waits for the owner keeps one order and one approval', async () => {
+    const { h, as } = await setup();
+    const first = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c1'))).body,
+    );
+    const again = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c2'))).body,
+    );
+    expect(first.order.status).toBe('pending_approval');
+    expect(again.order).toEqual(first.order);
+    expect(h.db.select().from(orders).all()).toHaveLength(1);
+    expect(h.db.select().from(approvals).all()).toHaveLength(1);
+  });
+
+  it('a quoted order is answered with its card again, not a second order', async () => {
+    const { h, as } = await setup();
+    const first = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c1'))).body,
+    );
+    const again = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 1 }], 'm1', 'c2'))).body,
+    );
+    expect(first.order.status).toBe('quoted');
+    expect(again.order.id).toBe(first.order.id);
+    expect(again.quote?.orderId).toBe(first.order.id);
+    expect(h.db.select().from(orders).all()).toHaveLength(1);
+  });
+
+  it('other items, an expired approval, or another user get their own order', async () => {
+    const { h, as } = await setup();
+    const one = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c1'))).body,
+    );
+    const other = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 3 }], 'm1', 'c2'))).body,
+    );
+    expect(other.order.id).not.toBe(one.order.id);
+    h.db.update(approvals).set({ expiresAt: 1 }).run();
+    const late = zCreateOrderResult.parse(
+      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c3'))).body,
+    );
+    expect(late.order.id).not.toBe(one.order.id);
+    expect(h.db.select().from(orders).all()).toHaveLength(3);
   });
 });
 
@@ -589,7 +638,18 @@ describe('POST /api/orders/:id/requote: the waiting order after a per-order rais
   it('QA 6 M1: one requote also brings back the other waiting orders that now fit, not the ones still over', async () => {
     const { h, as, id, requote } = await overOrder();
     const second = zCreateOrderResult.parse(
-      (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 2 }], 'm1', 'c-over-2'))).body,
+      (
+        await as('u1').post(
+          body(
+            [
+              { menuId: 'x-dwaeji', qty: 2 },
+              { menuId: 'x-sundae', qty: 1 },
+            ],
+            'm1',
+            'c-over-2',
+          ),
+        )
+      ).body,
     ).order.id;
     const big = zCreateOrderResult.parse(
       (await as('u1').post(body([{ menuId: 'x-dwaeji', qty: 3 }], 'm1', 'c-over-3'))).body,

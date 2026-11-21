@@ -74,6 +74,7 @@ async function setup(
   insertUser(h.db, 'u2');
   insertMerchant(h.db, 'm1', { name: '마루국밥' });
   insertMenu(h.db, 'x-dwaeji', 'm1', 9_000n, { name: '돼지국밥' });
+  insertMenu(h.db, 'x-sundae', 'm1', 1_000n, { name: '순대 추가' });
   h.db.insert(allowedMerchants).values({ userId: 'u1', merchantId: 'm1', approvedAt: 1 }).run();
   let builder = Test.createTestingModule({ imports: [OrdersModule] })
     .useMocker((t) =>
@@ -128,12 +129,13 @@ async function setup(
       .set('Cookie', `sid=${tokens[who]}`)
       .set('X-Requested-With', 'fetch')
       .send(body);
-  const quote = async (clientOrderId = 'c1', qty = 1) =>
+  // A second open order for the same items would be reused (QA 6): vary the menu to get two.
+  const quote = async (clientOrderId = 'c1', qty = 1, menuId = 'x-dwaeji') =>
     zCreateOrderResult.parse(
       (
         await post('u1', '/api/orders', {
           merchantId: 'm1',
-          items: [{ menuId: 'x-dwaeji', qty }],
+          items: [{ menuId, qty }],
           clientOrderId,
         })
       ).body,
@@ -888,7 +890,7 @@ describe('confirm: the owner allowance must cover the top-up outside DEMO_MODE (
       return balance;
     });
     const a = await quote('c1');
-    const b = await quote('c2');
+    const b = await quote('c2', 9, 'x-sundae'); // also 9,000
     await Promise.all([confirm(a), confirm(b)]);
     const statuses = [row(a)?.status, row(b)?.status].sort();
     expect(statuses).toEqual(['failed', 'paid']);
@@ -937,7 +939,7 @@ describe('confirm: one dragon pays one order at a time (AgentLock)', () => {
       return balance;
     });
     const a = await quote('c1');
-    const b = await quote('c2');
+    const b = await quote('c2', 9, 'x-sundae'); // also 9,000
     await Promise.all([confirm(a), confirm(b)]);
     expect([row(a)?.status, row(b)?.status]).toEqual(['paid', 'paid']);
     expect(fund).toHaveBeenCalledTimes(1);
