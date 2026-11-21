@@ -8,6 +8,7 @@ children:
   - CustodyNote.md
   - LookPreview.md
   - SpeciesPicker.md
+  - LeakCompare.md
 ---
 
 # 용이 관리 (wallet)
@@ -24,3 +25,4 @@ children:
 | [CustodyNote](CustodyNote.md) | 지금은 시켜용이 용이 용돈을 대신 맡아 둔다는 한 줄을 그린다. |
 | [LookPreview](LookPreview.md) | 고른 종의 용이를 크게, 이름과 종 이름, 말버릇과 함께 그린다. |
 | [SpeciesPicker](SpeciesPicker.md) | 용이 모습 네 가지 중 하나를 고르게 하고, 바뀌는 것과 그대로인 것 한 줄을 그린다. |
+| [LeakCompare](LeakCompare.md) | 키 유출 비교(데모 5번): 카드번호를 맡겼다면과 시켜용 용이를 숫자로 나란히 그린다. |

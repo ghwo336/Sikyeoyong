@@ -1,0 +1,74 @@
+/* LeakCompare.dc.html: the dragon's line, then two cards stacked at 390px. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.dragon {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-dragon);
+  font-size: var(--type-dragon-greeting-size);
+  line-height: var(--type-dragon-greeting-line-height);
+  letter-spacing: var(--type-dragon-greeting-letter-spacing);
+  text-wrap: balance;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.mine {
+  gap: 14px;
+  border: 0;
+  background: var(--color-leaf-tint);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rule {
+  height: 1px;
+  background: var(--color-surface);
+}
+
+.label,
+.sub {
+  font-size: var(--type-small-size);
+  color: var(--color-ink-secondary);
+}
+
+.sub {
+  font-size: var(--type-caption-size);
+}
+
+.big {
+  font-size: var(--type-wallet-amount-size);
+  font-weight: var(--type-wallet-amount-weight);
+  letter-spacing: var(--type-wallet-amount-letter-spacing);
+  color: var(--color-leaf-pressed);
+  overflow-wrap: anywhere;
+}
+
+.over {
+  color: var(--color-over-ink);
+}
+
+.detail {
+  margin: 0;
+  font-family: var(--font-code);
+  font-size: var(--type-caption-size);
+  line-height: 1.5;
+  color: var(--color-ink-code);
+}
