@@ -15,7 +15,6 @@ export function AllowanceContainer() {
       <AllowanceSummary
         owner={0n}
         pocket={0n}
-        onTopUp={() => undefined}
         onRetry={() => {
           void wallet.refetch();
         }}
@@ -23,14 +22,13 @@ export function AllowanceContainer() {
     );
   }
   if (!wallet.data) {
-    return <AllowanceSummary owner={0n} pocket={0n} loading onTopUp={() => undefined} />;
+    return <AllowanceSummary owner={0n} pocket={0n} loading />;
   }
   return (
     <AllowanceSummary
       owner={parseAokrw(wallet.data.owner)}
       pocket={parseAokrw(wallet.data.pocket)}
-      // Topping up the owner's allowance has no flow yet (web.md "아직").
-      onTopUp={() => undefined}
+      // No top-up flow or endpoint exists yet (Q-41), so no button: it would do nothing.
     />
   );
 }

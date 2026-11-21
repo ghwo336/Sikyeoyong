@@ -48,6 +48,12 @@ describe('AllowanceSummary (AllowanceSummary.md 테스트 기준)', () => {
     expect(onTopUp).toHaveBeenCalledTimes(1);
   });
 
+  it('draws no top-up button when the parent has no top-up to give', () => {
+    const { container } = render(<AllowanceSummary {...base} onTopUp={undefined} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.textContent).toBe('주인님 용돈81,000원용이 주머니에 20,000원');
+  });
+
   it('shows still bars and no numbers while loading', () => {
     const { container } = render(<AllowanceSummary {...base} loading />);
     expect(container.querySelectorAll('[data-part="skeleton"]')).toHaveLength(2);

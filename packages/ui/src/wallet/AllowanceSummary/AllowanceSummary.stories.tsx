@@ -31,3 +31,5 @@ export const Empty: Story = { args: { owner: 0n, pocket: 0n } };
 export const Loading: Story = { args: { loading: true } };
 /** 못 불러옴 */
 export const Failed: Story = { args: { onRetry: () => undefined } };
+/** 채우기 없음 (onTopUp 없음, Q-41) */
+export const NoTopUp: Story = { args: { onTopUp: undefined } };

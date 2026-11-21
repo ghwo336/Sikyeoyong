@@ -9,8 +9,11 @@ export interface AllowanceSummaryProps {
   readonly owner: bigint;
   /** aokrw already in the dragon's pocket for orders. */
   readonly pocket: bigint;
-  /** Topping up is the parent's job (it moves money, so never from the chat). */
-  readonly onTopUp: () => void;
+  /**
+   * Topping up is the parent's job (it moves money, so never from the chat). Without it there is
+   * no button: a button that does nothing is worse than none (Q-41).
+   */
+  readonly onTopUp?: () => void;
   /** Balances still loading: grey bars, no numbers. */
   readonly loading?: boolean;
   /** The balances could not be read: the amounts slot says so with a retry, no numbers, no top-up. */
@@ -44,8 +47,8 @@ export function AllowanceSummary({
           </>
         )}
       </div>
-      {/* No top-up before the balances are known (loading or failed). */}
-      {onRetry ? null : (
+      {/* No top-up before the balances are known (loading or failed) or without a handler. */}
+      {onRetry || !onTopUp ? null : (
         <Button variant="primary" size="md" loading={loading} onPress={onTopUp}>
           채우기
         </Button>

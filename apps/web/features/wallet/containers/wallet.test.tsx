@@ -62,6 +62,8 @@ describe('Wallet screen (Wallet.dc.html)', () => {
     );
     expect(await screen.findByText('81,000원')).toBeInTheDocument();
     expect(screen.getByText('용이 주머니에 20,000원')).toBeInTheDocument();
+    // No top-up API yet: no button that does nothing (Q-41).
+    expect(screen.queryByRole('button', { name: '채우기' })).toBeNull();
     expect(await screen.findByText('한 번에 쓸 돈')).toBeInTheDocument();
     expect(screen.getByText('10,000원')).toBeInTheDocument();
     expect(await screen.findByText('32,000원')).toBeInTheDocument();
