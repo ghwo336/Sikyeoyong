@@ -258,3 +258,23 @@ describe('recommend_merchants reads real order history (RECENT_ORDERS from Order
     expect(await reasonsOf(handlers)).toContain('최근 3일 안 시킨 가게');
   });
 });
+
+describe('finding a store menu by Korean name (QA 7)', () => {
+  const seed = (h: DbHandle) => {
+    insertMerchant(h.db, 'm-night', { name: '새벽분식', category: '분식', tags: ['야식', '24시'] });
+    insertMenu(h.db, 'x-tteok', 'm-night', 5_000n, { name: '떡볶이' });
+    insertMenu(h.db, 'x-eomuk', 'm-night', 6_000n, { name: '어묵탕', tags: ['국물'] });
+    insertUser(h.db, 'u5', { perOrderWon: 5_000n });
+  };
+  it.each([
+    '새벽분식 어묵탕',
+    '새벽분식 어묵탕 시켜 줘',
+    '어묵탕',
+    '새벽 어묵탕',
+    '새벽분식어묵탕',
+  ])('craving %j finds 어묵탕 even over a 5,000 per-order limit', async (craving) => {
+    const handlers = await setup(seed);
+    const out = await handlers.recommend_merchants({ userId: 'u5' }, { craving });
+    expect(recCards(out as ToolReply).map((i) => i.menu)).toContain('어묵탕');
+  });
+});

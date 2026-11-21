@@ -187,9 +187,13 @@ export function cravingWords(craving: string | undefined): string[] {
 }
 
 function wordHits(words: readonly string[], name: string, tags: readonly string[]): boolean {
+  // Spaces in a name do not matter ("한우 등심" vs "한우등심"), and a word that holds the whole
+  // name matches it ("새벽분식어묵탕" holds "어묵탕"), as when the model joins what was said.
+  const compact = name.replace(/\s+/g, '');
   return words.some(
     (w) =>
-      name.includes(w) ||
+      compact.includes(w) ||
+      (compact.length >= MIN_CRAVING_WORD && w.includes(compact)) ||
       tags.some((t) => t.includes(w) || (t.length >= MIN_CRAVING_WORD && w.includes(t))),
   );
 }
