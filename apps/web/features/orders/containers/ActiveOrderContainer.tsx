@@ -2,7 +2,7 @@
 
 import { ActiveOrderCard } from '@sikyeoyong/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { activeCard, activeOrder } from '../active';
 import { orderKey } from '../hooks/useOrder';
 import { useOrders } from '../hooks/useOrders';
@@ -14,7 +14,7 @@ import { ORDER_STEPS } from '../status';
  * order already in the cache so it shows at once (D-23).
  */
 export function ActiveOrderContainer() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const qc = useQueryClient();
   const orders = useOrders().data?.orders;
   const order = orders ? activeOrder(orders) : undefined;

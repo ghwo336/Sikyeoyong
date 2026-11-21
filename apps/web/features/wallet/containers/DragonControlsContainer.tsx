@@ -1,7 +1,7 @@
 'use client';
 
 import { ListRow, LoadingShape, SPECIES_INFO, Switch } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
 import { useDetailsMode } from '../hooks/useDetailsMode';
@@ -9,7 +9,7 @@ import { useSetFrozen } from '../hooks/useWallet';
 
 /** Wallet.dc.html bottom rows: the look (D-32), the ID card, the pause switch and 자세히 보기. */
 export function DragonControlsContainer() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const me = useMe().data;
   const { data: budget, isError } = useBudget();
   const freeze = useSetFrozen();

@@ -10,7 +10,7 @@ import {
   TasteRating,
   TopBar,
 } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useState } from 'react';
 import type { OrderView } from '../../../lib/api';
 import { useBudget } from '../../budget/hooks/useBudget';
@@ -21,7 +21,7 @@ import { useRateOrder } from '../hooks/useOrder';
 
 /** Arrived.dc.html: it is here, this month's spend, saved money, how was it, the receipt. */
 export function ArrivedContainer({ order }: { readonly order: OrderView }) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const me = useMe().data;
   const budget = useBudget().data;
   const wallet = useWallet().data;

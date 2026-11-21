@@ -3,7 +3,7 @@
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import { LimitChangeCard, TopBar } from '@sikyeoyong/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useState } from 'react';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { handQuoteToChat } from '../../chat/hooks/useChat';
@@ -20,7 +20,7 @@ import { useSetLimits } from '../hooks/useSetLimits';
  * (user-flow 12 "O -> I"); paying is still that sheet's button (CLAUDE.md rule 3).
  */
 export function RaiseContainer({ orderId }: { readonly orderId: string }) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const qc = useQueryClient();
   const budget = useBudget().data;
   const orderQuery = useOrder(orderId);

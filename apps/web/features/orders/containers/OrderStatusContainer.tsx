@@ -10,7 +10,7 @@ import {
   StepProgress,
   TopBar,
 } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { routeLine } from '../../../lib/format';
 import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../hooks/useOrder';
@@ -20,7 +20,7 @@ import { ArrivedContainer } from './ArrivedContainer';
 
 /** Order status: cooking (Done.dc.html), on the road (Tracking.dc.html), arrived (Arrived.dc.html). */
 export function OrderStatusContainer({ orderId }: { readonly orderId: string }) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const me = useMe().data;
   const { data: order } = useOrder(orderId);
   const back = () => {

@@ -2,14 +2,14 @@
 
 import { parseAokrw } from '@sikyeoyong/shared';
 import { CapReached, TopBar } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useState } from 'react';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useBackToChat } from '../hooks/useBackToChat';
 
 /** Cap.dc.html: the 30-day cap is used up; when it refills (the chain's resetAt). */
 export function CapContainer() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const budget = useBudget().data;
   // The time the screen opened: CapReached counts the days from it (kept pure, CapReached.md).
   const [now] = useState(() => Date.now());

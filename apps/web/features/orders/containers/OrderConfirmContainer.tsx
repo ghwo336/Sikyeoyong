@@ -2,7 +2,7 @@
 
 import { type DragonSpecies, parseAokrw } from '@sikyeoyong/shared';
 import { OrderConfirmSheet } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import type { OrderQuote } from '../../../lib/api';
 import { routeLine } from '../../../lib/format';
 import { useConfirmOrder } from '../hooks/useConfirmOrder';
@@ -24,7 +24,7 @@ export function OrderConfirmContainer({
   species,
   onClose,
 }: OrderConfirmContainerProps) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const confirm = useConfirmOrder();
   if (!quote) return null;
   const total = parseAokrw(quote.amount);

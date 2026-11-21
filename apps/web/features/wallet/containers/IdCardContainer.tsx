@@ -2,13 +2,13 @@
 
 import { parseAokrw } from '@sikyeoyong/shared';
 import { IdCard, LoadingShape, TopBar } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useMe } from '../../me/hooks/useMe';
 import { useIdCard } from '../hooks/useWallet';
 
 /** IdCard.dc.html: the dragon's ID card. */
 export function IdCardContainer() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const me = useMe().data;
   const card = useIdCard().data;
   const back = () => {

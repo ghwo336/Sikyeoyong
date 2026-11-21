@@ -2,7 +2,7 @@
 
 import { parseAokrw } from '@sikyeoyong/shared';
 import { DragonLine, LimitBlocked, LoadingShape, TopBar } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useMe } from '../../me/hooks/useMe';
 import { useOrder } from '../../orders/hooks/useOrder';
@@ -12,7 +12,7 @@ import { useBackToChat } from '../hooks/useBackToChat';
 
 /** Blocked.dc.html: the order is over what the dragon may spend at once. Raise, or pick again. */
 export function BlockedContainer({ orderId }: { readonly orderId: string }) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const me = useMe().data;
   const budget = useBudget().data;
   const orderQuery = useOrder(orderId);

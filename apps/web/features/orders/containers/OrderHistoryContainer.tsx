@@ -3,7 +3,7 @@
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import { DragonLine, ErrorLine, ListRow, Skeleton, TopBar } from '@sikyeoyong/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { Fragment } from 'react';
 import { OwnerApprovalContainer } from '../../approvals/containers/OwnerApprovalContainer';
 import { useOwnerApprovals } from '../../approvals/hooks/useApprovals';
@@ -21,7 +21,7 @@ import { useOrders } from '../hooks/useOrders';
  * screen; rows with nothing to open are not pressable (orderHref).
  */
 export function OrderHistoryContainer() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const qc = useQueryClient();
   const me = useMe().data;
   const orders = useOrders();

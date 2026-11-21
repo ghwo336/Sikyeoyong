@@ -2,7 +2,7 @@
 
 import type { DragonSpecies } from '@sikyeoyong/shared';
 import { Button, ErrorLine, LookPreview, SpeciesPicker, TopBar } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useEffect, useRef, useState } from 'react';
 import { applySpecies } from '../../../lib/theme';
 import { useMe } from '../../me/hooks/useMe';
@@ -14,7 +14,7 @@ import { useChangeLook } from '../hooks/useChangeLook';
  * the Wallet. Leaving any other way puts the saved look back.
  */
 export function LookContainer() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const me = useMe().data;
   const change = useChangeLook();
   const [picked, setPicked] = useState<DragonSpecies | null>(null);

@@ -3,7 +3,7 @@
 import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import { LoadingShape, OrderSummary, ReceiptDetails, TopBar } from '@sikyeoyong/ui';
 import { amountRatioText } from '../../../lib/format';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { useDetailsMode } from '../../wallet/hooks/useDetailsMode';
 import { useOrder } from '../hooks/useOrder';
@@ -16,7 +16,7 @@ import { orderStep } from '../status';
  * 자세히 보기 setting is on.
  */
 export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { data: order } = useOrder(orderId);
   const budget = useBudget().data;
   const [details] = useDetailsMode();

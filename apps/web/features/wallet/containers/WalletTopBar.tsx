@@ -1,11 +1,11 @@
 'use client';
 
 import { TopBar } from '@sikyeoyong/ui';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '../../../lib/transition-router';
 
 /** Wallet.dc.html title row: 용이 용돈, back to the chat. */
 export function WalletTopBar() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   return (
     <TopBar
       title="용이 용돈"

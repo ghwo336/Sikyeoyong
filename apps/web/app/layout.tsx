@@ -8,6 +8,7 @@ import '@fontsource/gowun-dodum/latin-400.css';
 import './globals.css';
 import { ThemeSync } from '../features/me/containers/ThemeSync';
 import { QueryProvider } from '../lib/query-provider';
+import { TransitionBridge } from '../lib/transition-router';
 import { DEFAULT_SPECIES, THEME_BOOT_SCRIPT } from '../lib/theme';
 import tokens from '../../../design/tokens.json';
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <QueryProvider>
           <ThemeSync />
+          <TransitionBridge />
           {children}
         </QueryProvider>
       </body>
