@@ -1,4 +1,4 @@
-import { createCipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, hkdfSync, randomBytes } from 'node:crypto';
 import { AppError } from '@sikyeoyong/shared';
 import { describe, expect, it } from 'vitest';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
@@ -267,6 +267,50 @@ describe('AgentKeysRepository (agent_keys, migration 0010)', () => {
       }).toThrow();
     } finally {
       handle.close();
+    }
+  });
+});
+
+describe('HKDF key derivation', () => {
+  it('opens a row sealed with an independently derived key (info = documented label + address)', async () => {
+    const m = randomBytes(32);
+    const priv = generatePrivateKey();
+    const address = privateKeyToAccount(priv).address.toLowerCase();
+    const salt = randomBytes(16);
+    const iv = randomBytes(12);
+    const seal = (forAddress: string) => {
+      const k = Buffer.from(
+        hkdfSync('sha256', m, salt, `sikyeoyong/agent-key/v2${forAddress}`, 32),
+      );
+      const cipher = createCipheriv('aes-256-gcm', k, iv);
+      cipher.setAAD(Buffer.from(address));
+      const ct = Buffer.concat([cipher.update(Buffer.from(priv.slice(2), 'hex')), cipher.final()]);
+      return {
+        address,
+        agentId: null,
+        onchainAgentId: null,
+        ciphertext: ct.toString('hex'),
+        iv: iv.toString('hex'),
+        tag: cipher.getAuthTag().toString('hex'),
+        salt: salt.toString('hex'),
+        keyVersion: 2,
+        createdAt: 1,
+      };
+    };
+    const good = new MemoryStore();
+    good.insert(seal(address));
+    const signer = await new AgentKeyVault(m, good).withAccount(address, (a) =>
+      Promise.resolve(a.address.toLowerCase()),
+    );
+    expect(signer).toBe(address);
+
+    // Derived for another address (or without one): the vault must not open it.
+    for (const wrong of [privateKeyToAccount(generatePrivateKey()).address.toLowerCase(), '']) {
+      const bad = new MemoryStore();
+      bad.insert(seal(wrong));
+      await expect(
+        new AgentKeyVault(m, bad).withAccount(address, () => Promise.resolve(1)),
+      ).rejects.toBeInstanceOf(AppError);
     }
   });
 });
