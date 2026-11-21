@@ -164,4 +164,49 @@ describe('ChatContainer', () => {
     setup();
     expect(await screen.findByPlaceholderText('뭐 먹고 싶은지 말해 줘')).toBeInTheDocument();
   });
+
+  it('an order over my 30 days shows the owner card in the chat; 허락하기 opens the sheet and only its button pays', async () => {
+    await mockApi.setLimits({ myPeriodicLimit: okrwToAokrw(50_000n).toString() });
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    const card = await screen.findByRole('region', { name: '주인님 허락' });
+    expect(card).toHaveTextContent('30일에 쓸 돈을 넘어요');
+    expect(card).toHaveTextContent('마루국밥 본점');
+    // Waiting for the owner is neither the Blocked screen nor the sheet, and nothing is paid.
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: '주문 확인' })).not.toBeInTheDocument();
+    await userEvent.click(within(card).getByRole('button', { name: '허락하기' }));
+    const sheet = await screen.findByRole('dialog', { name: '주문 확인' });
+    expect(within(sheet).getByRole('button', { name: /9,000원 시키기/ })).toBeInTheDocument();
+    expect(confirmOrder).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: '주인님 허락' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('안 시킬래요 stops the order: the card goes and the dragon says so, with no sheet and no payment', async () => {
+    await mockApi.setLimits({ myPeriodicLimit: okrwToAokrw(50_000n).toString() });
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    await userEvent.click(
+      within(await screen.findByRole('region', { name: '주인님 허락' })).getByRole('button', {
+        name: '안 시킬래요',
+      }),
+    );
+    expect(await screen.findByText('알겠어용. 안 시킬게용.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: '주인님 허락' })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole('dialog', { name: '주문 확인' })).not.toBeInTheDocument();
+    expect(confirmOrder).not.toHaveBeenCalled();
+  });
+
+  it('a per-order wait is still the Blocked screen, with no owner card', async () => {
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /보쌈 정식/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/limit/order-bossam-set');
+    });
+    expect(screen.queryByRole('region', { name: '주인님 허락' })).not.toBeInTheDocument();
+  });
 });

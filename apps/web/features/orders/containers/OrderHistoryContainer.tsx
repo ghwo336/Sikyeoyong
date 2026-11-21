@@ -4,6 +4,10 @@ import { formatOkrw, parseAokrw } from '@sikyeoyong/shared';
 import { DragonLine, ErrorLine, ListRow, Skeleton, TopBar } from '@sikyeoyong/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { Fragment } from 'react';
+import { OwnerApprovalContainer } from '../../approvals/containers/OwnerApprovalContainer';
+import { useOwnerApprovals } from '../../approvals/hooks/useApprovals';
+import { handQuoteToChat } from '../../chat/hooks/useChat';
 import { useMe } from '../../me/hooks/useMe';
 import { historyLabel, orderHref } from '../active';
 import { orderKey } from '../hooks/useOrder';
@@ -21,6 +25,7 @@ export function OrderHistoryContainer() {
   const me = useMe().data;
   const orders = useOrders();
   const list = orders.data?.orders;
+  const approvals = useOwnerApprovals().data ?? [];
   return (
     <>
       <TopBar
@@ -46,24 +51,37 @@ export function OrderHistoryContainer() {
         <>
           {list.map((o) => {
             const href = orderHref(o, me ? parseAokrw(me.perOrderLimit) : undefined);
+            const approval = approvals.find((a) => a.orderId === o.id);
             // A row with no screen to open is not pressable and has no arrow.
-            return href === undefined ? (
-              <ListRow
-                key={o.id}
-                label={historyLabel(o)}
-                value={formatOkrw(parseAokrw(o.amount))}
-              />
-            ) : (
-              <ListRow
-                key={o.id}
-                label={historyLabel(o)}
-                value={formatOkrw(parseAokrw(o.amount))}
-                trailing="chevron"
-                onPress={() => {
-                  qc.setQueryData(orderKey(o.id), o);
-                  router.push(href);
-                }}
-              />
+            const row =
+              href === undefined ? (
+                <ListRow label={historyLabel(o)} value={formatOkrw(parseAokrw(o.amount))} />
+              ) : (
+                <ListRow
+                  label={historyLabel(o)}
+                  value={formatOkrw(parseAokrw(o.amount))}
+                  trailing="chevron"
+                  onPress={() => {
+                    qc.setQueryData(orderKey(o.id), o);
+                    router.push(href);
+                  }}
+                />
+              );
+            return (
+              <Fragment key={o.id}>
+                {row}
+                {/* An order waiting for the owner carries its yes-or-no card. After a yes the
+                    order is quoted again and the chat opens with its confirm sheet. */}
+                {o.status === 'pending_approval' && approval ? (
+                  <OwnerApprovalContainer
+                    approval={approval}
+                    onQuote={(quote) => {
+                      handQuoteToChat(qc, quote);
+                      router.push('/');
+                    }}
+                  />
+                ) : null}
+              </Fragment>
             );
           })}
         </>

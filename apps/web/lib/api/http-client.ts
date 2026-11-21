@@ -8,6 +8,8 @@ import {
   type AppErrorCode,
   type ChatEvent,
   zAgentSetupView,
+  zApprovalDecision,
+  zApprovalList,
   zBudgetView,
   zChatEvent,
   zChatHistory,
@@ -179,6 +181,15 @@ export function createHttpApi(
     requoteOrder: async (orderId) =>
       zCreateOrderResult.parse(
         await call('POST', `/orders/${encodeURIComponent(orderId)}/requote`),
+      ),
+    listApprovals: async () => zApprovalList.parse(await call('GET', '/approvals?status=pending')),
+    approveApproval: async (approvalId) =>
+      zApprovalDecision.parse(
+        await call('POST', `/approvals/${encodeURIComponent(approvalId)}/approve`),
+      ),
+    rejectApproval: async (approvalId) =>
+      zApprovalDecision.parse(
+        await call('POST', `/approvals/${encodeURIComponent(approvalId)}/reject`),
       ),
     getOrder: async (orderId) =>
       zOrderResult.parse(await call('GET', `/orders/${encodeURIComponent(orderId)}`)),

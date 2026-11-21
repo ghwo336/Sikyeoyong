@@ -3,6 +3,9 @@
 // It never pays: confirmOrder just flips the mock order to preparing (CLAUDE.md rule 3).
 import {
   AppError,
+  type AppErrorCode,
+  type ApprovalDecision,
+  type ApprovalView,
   type BudgetView,
   formatKstDateTime,
   explorerTxUrl,
@@ -99,6 +102,9 @@ export function resetMockSession(next: 'first-visit' | 'hatched'): void {
   wallet = WALLET;
   paid.clear();
   waiting.clear();
+  ownerWaits.clear();
+  approvedOver.clear();
+  rejected.clear();
   saveSession();
 }
 
@@ -221,24 +227,33 @@ function orderAt(rec: RecommendationCard, paidAt: number, now: number): OrderVie
   };
 }
 
+/** A stopped order (status failed, D-19): nothing was spent, and there is no screen for it. */
+function stoppedView(rec: RecommendationCard, now: number, errorCode: AppErrorCode): OrderView {
+  return {
+    ...orderAt(rec, now, now),
+    id: orderIdOf(rec.menuId),
+    status: 'failed',
+    errorCode,
+    remainingMin: 0,
+    dragonLine: '멈췄어용. 돈은 하나도 안 썼어용.',
+    dragonMood: 'worried',
+    txHash: undefined,
+    receipt: undefined,
+  };
+}
+
 /**
- * An older order that stopped (status failed, D-19): the history's 멈춤 row. Nothing was spent and
- * there is no screen to open, so the row is not pressable. It is the oldest in the list, and only once the owner has an order of their own.
+ * An older stopped order, the history's 멈춤 row. It is the oldest in the list, and only once
+ * the owner has an order of their own.
  */
 function stoppedExample(now: number): OrderView {
   const rec = RECOMMENDATIONS[1];
   if (!rec) throw new Error('mock: no menu for the stopped example');
   return {
-    ...orderAt(rec, now, now),
+    ...stoppedView(rec, now, 'CHAIN_PERIODIC_LIMIT'),
     id: 'order-stopped-example',
-    status: 'failed',
-    errorCode: 'CHAIN_PERIODIC_LIMIT',
     etaAt: now - 86_400_000,
-    remainingMin: 0,
     dragonLine: '결제가 안 돼서 멈췄어용. 돈은 하나도 안 썼어용.',
-    dragonMood: 'worried',
-    txHash: undefined,
-    receipt: undefined,
   };
 }
 
@@ -265,6 +280,22 @@ const ratings = new Map<string, 'again' | 'okay' | 'meh'>();
 
 /** Orders waiting for the owner (over the level's limit): the Blocked screen reads them. */
 const waiting = new Map<string, RecommendationCard>();
+
+/** How long the owner has to answer (the server's 10 minutes). */
+const APPROVAL_MS = 10 * 60_000;
+
+/**
+ * Orders waiting for the owner's yes because the 30-day limit would pass (OVER_PERSONAL_BUDGET).
+ * The mock has no new store (D-27: seed stores are already allowed in the demo).
+ */
+const ownerWaits = new Map<string, { rec: RecommendationCard; expiresAt: number }>();
+/** Orders the owner allowed past the 30-day limit: asked again, they are quoted. */
+const approvedOver = new Set<string>();
+/** Orders the owner said no to: they stopped for good (history 멈춤). */
+const rejected = new Map<string, { rec: RecommendationCard; code: AppErrorCode }>();
+
+/** The approval's id is the order's, so the mock needs no second table. */
+const approvalIdOf = (orderId: string) => `approval-${orderId}`;
 
 /** The next hour boundary on unix time: the demo profile's window edge, like the chain's (a time, not money). */
 function anHourFromNowSec(): number {
@@ -295,8 +326,61 @@ function createOrder(body: CreateOrderBody): CreateOrderResult {
     waiting.set(id, rec);
     return { order: { id, status: 'pending_approval' } };
   }
+  // Under the per-order limit but over my 30 days: the owner's yes (tech-spec flow 3).
+  if (
+    !approvedOver.has(id) &&
+    parseAokrw(budget.chainUsed) + parseAokrw(rec.price) > parseAokrw(budget.myPeriodicLimit)
+  ) {
+    ownerWaits.set(id, { rec, expiresAt: Date.now() + APPROVAL_MS });
+    return { order: { id, status: 'pending_approval' } };
+  }
   waiting.delete(id);
+  ownerWaits.delete(id);
   return { order: { id, status: 'quoted' }, quote: quoteFor(rec) };
+}
+
+/** An order that waits, as the history and the status screen show it. */
+function waitingView(rec: RecommendationCard, now: number): OrderView {
+  return {
+    ...orderAt(rec, now, now),
+    status: 'pending_approval',
+    dragonLine: '주인님 허락을 기다려용.',
+    dragonMood: 'worried',
+    txHash: undefined,
+    receipt: undefined,
+  };
+}
+
+/** What GET /approvals says: the owner waits, then the per-order waits (listed like the server). */
+function pendingApprovals(now: number): ApprovalView[] {
+  const view = (
+    orderId: string,
+    rec: RecommendationCard,
+    reason: ApprovalView['reason'],
+    expiresAt: number,
+  ): ApprovalView => ({
+    id: approvalIdOf(orderId),
+    orderId,
+    reason,
+    store: rec.store,
+    amount: rec.price,
+    expiresAt,
+  });
+  return [
+    ...[...ownerWaits.entries()]
+      .filter(([, w]) => w.expiresAt > now)
+      .map(([id, w]) => view(id, w.rec, 'OVER_PERSONAL_BUDGET', w.expiresAt)),
+    ...[...waiting.entries()]
+      .filter(([id]) => !paid.has(id))
+      .map(([id, rec]) => view(id, rec, 'OVER_LEVEL_LIMIT', now + APPROVAL_MS)),
+  ];
+}
+
+/** The approval of an order that waits for the owner, or the server's 404. */
+function pendingOf(approvalId: string, now: number) {
+  const found = pendingApprovals(now).find((a) => a.id === approvalId);
+  if (!found) throw new AppError('NOT_FOUND', { reason: 'mock: approval not found' });
+  return found;
 }
 
 /** A payment uses the 30-day window, like the chain; the nag reads it against my limit (D-31). */
@@ -415,22 +499,51 @@ export const mockApi: ApiClient = {
   getOrder: (orderId) => {
     // Only a confirmed order exists. A reload loses the mock's memory, like a server restart.
     const p = paid.get(orderId);
-    const w = waiting.get(orderId);
-    if (!p && w) {
-      return later({
-        order: {
-          ...orderAt(w, Date.now(), Date.now()),
-          status: 'pending_approval' as const,
-          dragonLine: '주인님 허락을 기다려용.',
-          dragonMood: 'worried' as const,
-          txHash: undefined,
-          receipt: undefined,
-        },
-      });
-    }
+    const w = waiting.get(orderId) ?? ownerWaits.get(orderId)?.rec;
+    if (!p && w) return later({ order: waitingView(w, Date.now()) });
+    const r = rejected.get(orderId);
+    if (!p && r) return later({ order: stoppedView(r.rec, Date.now(), r.code) });
     if (!p) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));
     return later(null).then(() => ({ order: orderAt(p.rec, p.at, Date.now()) }));
   },
+  listApprovals: () => later(null).then(() => ({ approvals: pendingApprovals(Date.now()) })),
+  // Yes: quoted again with its confirm card, never paid (D-19). A per-order wait is the limit's.
+  approveApproval: (approvalId) =>
+    later(null).then((): ApprovalDecision => {
+      const a = pendingOf(approvalId, Date.now());
+      const w = ownerWaits.get(a.orderId);
+      if (!w) {
+        throw new AppError('VALIDATION_FAILED', {
+          public: { issues: [{ path: 'id', message: 'raise the per-order limit instead' }] },
+        });
+      }
+      ownerWaits.delete(a.orderId);
+      approvedOver.add(a.orderId);
+      return {
+        approval: { id: a.id, status: 'approved' },
+        order: { id: a.orderId, status: 'quoted' },
+        quote: quoteFor(w.rec),
+      };
+    }),
+  // No: the order stops for good.
+  rejectApproval: (approvalId) =>
+    later(null).then((): ApprovalDecision => {
+      const a = pendingOf(approvalId, Date.now());
+      const owner = ownerWaits.get(a.orderId)?.rec;
+      const rec = owner ?? waiting.get(a.orderId);
+      if (rec) {
+        rejected.set(a.orderId, {
+          rec,
+          code: owner ? 'SERVER_BUDGET_OVER' : 'SERVER_OVER_LEVEL',
+        });
+      }
+      ownerWaits.delete(a.orderId);
+      waiting.delete(a.orderId);
+      return {
+        approval: { id: a.id, status: 'rejected' },
+        order: { id: a.orderId, status: 'failed' },
+      };
+    }),
   // GET /orders: paid orders as they are now, newest first, like the server (quotes left out).
   listOrders: () =>
     later(null).then(() => {
@@ -439,18 +552,14 @@ export const mockApi: ApiClient = {
       const done = [...paid.values()]
         .sort((a, b) => b.at - a.at)
         .map((p) => orderAt(p.rec, p.at, now));
-      // Orders waiting for the owner are listed too, like the server (first, as the newest).
-      const waits = [...waiting.entries()]
-        .filter(([id]) => !paid.has(id))
-        .map(([, w]) => ({
-          ...orderAt(w, now, now),
-          status: 'pending_approval' as const,
-          dragonLine: '주인님 허락을 기다려용.',
-          dragonMood: 'worried' as const,
-          txHash: undefined,
-          receipt: undefined,
-        }));
-      const fresh = [...waits, ...done];
+      // Orders waiting for the owner are listed too, like the server (first, as the newest), and
+      // the ones the owner said no to stopped for good.
+      const waits = [
+        ...[...waiting.entries()].filter(([id]) => !paid.has(id)).map(([, w]) => w),
+        ...[...ownerWaits.values()].map((w) => w.rec),
+      ].map((w) => waitingView(w, now));
+      const stopped = [...rejected.values()].map((r) => stoppedView(r.rec, now, r.code));
+      const fresh = [...waits, ...stopped, ...done];
       // A first owner has no history yet; from the first order on, the older stopped one shows.
       const all = fresh.length === 0 ? fresh : [...fresh, stoppedExample(now)];
       return { orders: all.slice(0, ORDER_LIST_MAX) };

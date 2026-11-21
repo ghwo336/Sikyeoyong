@@ -365,6 +365,66 @@ describe('createHttpApi: what the server and proxies require', () => {
   });
 });
 
+describe('createHttpApi: owner approvals', () => {
+  const approval = {
+    id: 'ap1',
+    orderId: 'o/1',
+    reason: 'NEW_MERCHANT',
+    store: '한상보쌈',
+    amount: W10000,
+    expiresAt: 1,
+  };
+
+  it('lists only pending ones, checked by the shared schema', async () => {
+    const f = fakeFetch({
+      'GET /api/approvals?status=pending': { body: JSON.stringify({ approvals: [approval] }) },
+    });
+    expect((await createHttpApi(f).listApprovals()).approvals).toEqual([approval]);
+    const bad = fakeFetch({
+      'GET /api/approvals?status=pending': {
+        body: JSON.stringify({ approvals: [{ ...approval, amount: 10000 }] }),
+      },
+    });
+    await expect(createHttpApi(bad).listApprovals()).rejects.toThrow();
+  });
+
+  it('approve and reject are cookie writes to the encoded id; the answer is checked', async () => {
+    const answer = {
+      approval: { id: 'ap/1', status: 'approved' },
+      order: { id: 'o1', status: 'quoted' },
+    };
+    const f = fakeFetch({
+      'POST /api/approvals/ap%2F1/approve': { body: JSON.stringify(answer) },
+      'POST /api/approvals/ap%2F1/reject': {
+        body: JSON.stringify({
+          approval: { id: 'ap/1', status: 'rejected' },
+          order: { id: 'o1', status: 'failed' },
+        }),
+      },
+    });
+    const api = createHttpApi(f);
+    expect(await api.approveApproval('ap/1')).toEqual(answer);
+    expect((await api.rejectApproval('ap/1')).order.status).toBe('failed');
+    for (const call of f.mock.calls) {
+      expect(call[1]?.method).toBe('POST');
+      expect((call[1]?.headers as Record<string, string>)['X-Requested-With']).toBe('fetch');
+      expect(call[1]?.body).toBeUndefined();
+    }
+  });
+
+  it('a per-order wait refused with 400 stays an AppError for the screen', async () => {
+    const f = fakeFetch({
+      'POST /api/approvals/ap1/approve': {
+        status: 400,
+        body: JSON.stringify({ error: { code: 'VALIDATION_FAILED', message: 'raise the limit' } }),
+      },
+    });
+    await expect(createHttpApi(f).approveApproval('ap1')).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+    });
+  });
+});
+
 describe('parseSseEvents', () => {
   it('skips comments and blank frames, refuses an event outside the shared schema', () => {
     expect(parseSseEvents(': ping\n\ndata: {"type":"token","text":"a"}\n\n\n')).toEqual([

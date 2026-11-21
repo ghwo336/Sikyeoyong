@@ -14,6 +14,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { minutes } from '../../../lib/format';
+import { OwnerApprovalContainer } from '../../approvals/containers/OwnerApprovalContainer';
+import { useOwnerApprovals } from '../../approvals/hooks/useApprovals';
 import { useBudget } from '../../budget/hooks/useBudget';
 import { LimitChangeContainer } from '../../limits/containers/LimitChangeContainer';
 import { needsApprovalNow } from '../../limits/fit';
@@ -45,6 +47,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
   // Main.dc.html's "오늘 저녁도 부탁해" assumes earlier orders; a first owner gets a plain ask.
   const ordered = (useOrders().data?.orders.length ?? 0) > 0;
   const createOrder = useCreateOrder();
+  // Orders waiting for the owner's yes (new store, 30-day limit) get their card at the bottom.
+  const approvals = useOwnerApprovals().data ?? [];
   const [draft, setDraft] = useState('');
   const entries = chat.thread?.entries ?? [];
 
@@ -60,7 +64,7 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
       onSuccess: (res) => {
         if (res.quote) chat.showQuote(res.quote);
         // Over the dragon's per-order limit: the Blocked screen (user-flow 12). Other waits
-        // (a new store, the budget) are the owner's approval card, not built yet (web.md).
+        // (a new store, the 30-day limit) come back as the owner's approval card below.
         else if (
           res.order.status === 'pending_approval' &&
           parseAokrw(rec.price) > parseAokrw(me?.perOrderLimit ?? '0')
@@ -134,7 +138,8 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
         <ChatThread
           stamp={chat.thread?.stamp}
           streaming={chat.sending}
-          followKey={lastSent(entries)}
+          // A card that arrives for the owner's pick scrolls into view like a sent message.
+          followKey={`${lastSent(entries) ?? ''}|${approvals.map((a) => a.id).join(',')}`}
         >
           {threadRows(entries).map(({ entry: e, cards, last }) => {
             switch (e.kind) {
@@ -176,6 +181,16 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
               }
             }
           })}
+          {approvals.map((a) => (
+            <OwnerApprovalContainer
+              key={a.id}
+              approval={a}
+              onQuote={chat.showQuote}
+              onRejected={() => {
+                chat.say('알겠어용. 안 시킬게용.');
+              }}
+            />
+          ))}
           {/* Until the first words or card arrive, the dragon is visibly writing (D-23). */}
           {chat.typing ? <TypingIndicator species={me.dragonSpecies} /> : null}
         </ChatThread>

@@ -5,6 +5,8 @@ import type { PouchiBindBody, PouchiCompleteBody, PouchiLoginConfig } from '@sik
 import type {
   AGENT_SETUP_STEP_KEYS,
   AgentSetupView,
+  ApprovalDecision,
+  ApprovalList,
   BudgetView,
   ChatEvent,
   ChatHistory,
@@ -28,6 +30,9 @@ import type { DragonMood } from '@sikyeoyong/ui';
 
 export type {
   AgentSetupView,
+  ApprovalDecision,
+  ApprovalList,
+  ApprovalView,
   LimitChangeCardView,
   IdCardView,
   WalletView,
@@ -76,6 +81,18 @@ export interface ApiClient {
    * comes back with its confirm card (user-flow 12). Never pays; the sheet's button still does.
    */
   requoteOrder(orderId: string): Promise<CreateOrderResult>;
+  /**
+   * GET /approvals?status=pending: orders waiting for the owner's yes (a new store, the 30-day
+   * limit; a per-order wait is listed too but its way out is the limit screens, not this).
+   */
+  listApprovals(): Promise<ApprovalList>;
+  /**
+   * POST /approvals/:id/approve: the owner's button. Never pays: the order is quoted again and
+   * its confirm card comes back. A per-order wait answers 400 (raise the limit instead).
+   */
+  approveApproval(approvalId: string): Promise<ApprovalDecision>;
+  /** POST /approvals/:id/reject: the order stops for good. */
+  rejectApproval(approvalId: string): Promise<ApprovalDecision>;
   getOrder(orderId: string): Promise<{ readonly order: OrderView }>;
   /**
    * GET /orders: the owner's recent orders, newest first, at most ORDER_LIST_MAX, quotes never

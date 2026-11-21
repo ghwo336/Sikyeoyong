@@ -12,10 +12,16 @@ const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 
 const listOrders = vi.fn();
+const listApprovals = vi.fn();
+const approveApproval = vi.fn();
+const confirmOrder = vi.fn();
 vi.mock('../../../lib/api', () => ({
   api: {
     getMe: () => Promise.resolve(ME),
     listOrders: () => listOrders() as unknown,
+    listApprovals: () => listApprovals() as unknown,
+    approveApproval: (id: string) => approveApproval(id) as unknown,
+    confirmOrder: (id: string) => confirmOrder(id) as unknown,
   },
 }));
 
@@ -49,6 +55,10 @@ function wrap(ui: ReactNode) {
 beforeEach(() => {
   push.mockReset();
   listOrders.mockReset();
+  listApprovals.mockReset();
+  listApprovals.mockResolvedValue({ approvals: [] });
+  approveApproval.mockReset();
+  confirmOrder.mockReset();
 });
 
 describe('ActiveOrderContainer (Main.dc.html 진행 중인 주문)', () => {
@@ -130,6 +140,81 @@ describe('OrderHistoryContainer (주문 내역, ListRow list)', () => {
     listOrders.mockRejectedValue(new AppError('INTERNAL'));
     wrap(<OrderHistoryContainer />);
     expect(await screen.findByRole('alert')).toHaveTextContent('주문 내역을 못 불러왔어요');
+  });
+
+  it('an order waiting for the owner carries its approval card; a yes hands the quote to the chat and pays nothing', async () => {
+    listOrders.mockResolvedValue({
+      orders: [
+        view('o9', 'pending_approval', {
+          store: '한상보쌈',
+          items: [{ name: '보쌈 정식', quantity: 1, price: W12000 }],
+          amount: W12000,
+        }),
+        view('o1', 'delivered'),
+      ],
+    });
+    listApprovals.mockResolvedValue({
+      approvals: [
+        {
+          id: 'ap9',
+          orderId: 'o9',
+          reason: 'NEW_MERCHANT',
+          store: '한상보쌈',
+          amount: W12000,
+          expiresAt: 1,
+        },
+      ],
+    });
+    const quote = { orderId: 'o9', store: '한상보쌈', amount: W12000 };
+    approveApproval.mockResolvedValue({
+      approval: { id: 'ap9', status: 'approved' },
+      order: { id: 'o9', status: 'quoted' },
+      quote,
+    });
+    const { qc } = wrap(<OrderHistoryContainer />);
+    const card = await screen.findByRole('region', { name: '주인님 허락' });
+    expect(card).toHaveTextContent('처음 시키는 가게예요');
+    expect(card).toHaveTextContent('12,000원');
+    // Only the waiting row has a card.
+    expect(screen.getAllByRole('region', { name: '주인님 허락' })).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: '허락하기' }));
+    await vi.waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/');
+    });
+    expect(approveApproval).toHaveBeenCalledWith('ap9');
+    expect(qc.getQueryData(['chat', 'handoff'])).toEqual(quote);
+    expect(confirmOrder).not.toHaveBeenCalled();
+  });
+
+  it('a per-order wait gets no owner card here (the limit screens own it); a waiting row without an approval neither', async () => {
+    listOrders.mockResolvedValue({ orders: [view('o9', 'pending_approval', { amount: W12000 })] });
+    listApprovals.mockResolvedValue({
+      approvals: [
+        {
+          id: 'ap9',
+          orderId: 'o9',
+          reason: 'OVER_LEVEL_LIMIT',
+          store: '마루국밥 본점',
+          amount: W12000,
+          expiresAt: 1,
+        },
+      ],
+    });
+    wrap(<OrderHistoryContainer />);
+    await screen.findByText(/허락 기다리는 중/);
+    await vi.waitFor(() => {
+      expect(listApprovals).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('region', { name: '주인님 허락' })).toBeNull();
+  });
+
+  it('shows the stopped order as a 멈춤 row that cannot be opened', async () => {
+    listOrders.mockResolvedValue({
+      orders: [view('o4', 'failed', { errorCode: 'SERVER_NEW_MERCHANT' })],
+    });
+    wrap(<OrderHistoryContainer />);
+    expect(await screen.findByText('돼지국밥, 멈춤')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /멈춤/ })).toBeNull();
   });
 
   it('back goes to the chat', async () => {
