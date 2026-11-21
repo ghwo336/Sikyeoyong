@@ -961,7 +961,8 @@ CONFIRMATIONS=1
 PAYMENT_PATH=B                        # A | B | C | mock(개발·테스트 전용, production 금지). 스파이크 후 확정
 OWNER_MODE=custodial                  # custodial(운영자가 소유자, 테스트넷) | pouch(사용자 파우치 지갑, SDK 출시 후). D-24
 WAAS_AUTH_TOKEN=                      # 경로 A, C
-AGENT_KEY_ENCRYPTION_KEY=             # 경로 B, 32바이트 base64
+AGENT_KEY_ENCRYPTION_KEY=             # 경로 B, 32바이트 base64 (행마다 HKDF로 키 파생, v2)
+AGENT_KEY_ENCRYPTION_KEY_PREVIOUS=    # 마스터 키 교체 중에만, 옛 키 (security.md, pnpm agent-keys:rotate)
 AGENT_FLOAT_MULTIPLIER=2              # 모드 P: 에이전트 지갑 유지액 = 건당 한도 × 이 값
 AGENT_GAS_SHARE_OKRW=100              # 경로 B: 에이전트 지갑에 가스용으로 더 두는 OKRW, 최대 1000 (D-25)
 SUBMITTING_ALERT_MS=600000            # 결제 중(submitting) 주문이 이 시간 넘게 결론이 없으면 운영자 알림 (D-19)

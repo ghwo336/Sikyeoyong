@@ -6,7 +6,7 @@ children: []
 
 # 보관한 작업 기록
 
-`worklog.md`에서 최근 10개를 뺀 오래된 항목이다 (2026-11-21 wiki-gc, 항목 19개). 아래 한 줄 요약 목록 뒤에 원문을 그대로 붙였다. 새 세션은 읽지 않아도 된다. 원문의 레벨, 월 예산, 카카오와 구글 로그인 같은 말은 그때 결정이며 지금은 decisions.md를 따른다.
+`worklog.md`에서 최근 10개를 뺀 오래된 항목이다 (2026-11-21 wiki-gc, 항목 19개, 같은 날 2차로 3개 추가). 아래 한 줄 요약 목록 뒤에 원문을 그대로 붙였다. 새 세션은 읽지 않아도 된다. 원문의 레벨, 월 예산, 카카오와 구글 로그인 같은 말은 그때 결정이며 지금은 decisions.md를 따른다.
 
 ## 한 줄 요약
 - 2026-11-18 기획 세션 (호재 님 + Claude, claude.ai)
@@ -28,6 +28,9 @@ children: []
 - 2026-11-20 가게·메뉴 조회, 추천, recommend_merchants와 get_menu 연결 (Claude, Claude Code)
 - 2026-11-20 수탁 안내 (D-24 밝히는 문구)
 - 2026-11-20 주문: 승인 기반, 견적, confirm 결제
+- 2026-11-20 주문 흐름 마무리: confirm, place_order, 승인 API, request_owner_approval
+- 2026-11-20 데모 유저플로우 전체 조립, D-26/27/28
+- 2026-11-20 파우치 스파이크 S14, http 모드 전환, 파우치 로그인 (D-29)
 
 ## 원문
 #### 2026-11-18 기획 세션 (호재 님 + Claude, claude.ai)
@@ -266,3 +269,51 @@ children: []
   - payment.md "confirm 코드" 절의 "아직" 목록 (TransferLimit 재기록 1회, float 상한, 시작 시 submitting 재확인, 인덱서, 데모 우회, 영수증).
   - 추천 `needsApproval`에 `NEW_MERCHANT` 반영, 최근 주문 읽기 포트.
   - 웹 목을 실제 API로, 지갑 화면 조립(`CustodyNote`), UX 다듬기(D-23 토스급).
+
+#### 2026-11-20 주문 흐름 마무리: confirm, place_order, 승인 API, request_owner_approval
+- 한 일 (모두 검증 PASS):
+  - confirm 결제 (207fc32, 수정 9a6f4ce): 표시 뒤 던짐은 submitting, 30일 재검사, 승인 롤백, attempt는 SQL에서.
+  - place_order 연결 (26c6230, 수정 e77c10c): OrdersService 창구, 모델에는 표시 말만, 승인 필요면 APPROVAL_REQUIRED.
+  - 승인과 거절 API (28b8834, 수정 ccdfe8a): owner-approvals 모듈, 결정과 주문 효과를 한 트랜잭션에, 레벨 승인은 /agents/me/level 몫.
+  - request_owner_approval (6f66ee5, 수정 0dcf4c6): 살아 있는 대기 승인에 메시지, 승인이 필요 없으면 아무것도 만들지 않음.
+- 막힌 것: Q-35 결정 대기.
+- 후속 (검증 MINOR):
+  - 충전 멱등성(요청 ID, 충전 제출 표시)은 실제 경로 연결 전 필수 (payment.md "confirm 코드" 아직).
+  - 같은 가게 60초 쿨다운, 한 메시지 안 대기 승인 중복, 살아 있는 quoted 재사용 검토.
+  - 승인 응답 카드 만들기에서 체인 RPC가 실패하면 500 (돈 문제 없음), 1분 만료 주기 작업, GET /approvals에 메시지.
+  - txHash 대문자 정규화, 결제 지갑과 row.agentId 대조, 경로별 제출 표시(nonce, maws_request_id), 새 견적 전 이전 orderRef 확인.
+- 다음 할 일: 레벨 상향 API(`POST /agents/me/level`, 재인증, TransferLimit 확정 뒤 승인 주문 quoted), `GET /orders/:id`, 경로 B 실제 연결, 웹 목을 실제 API로, 지갑 화면 조립(CustodyNote), UX 다듬기(D-23).
+
+#### 2026-11-20 데모 유저플로우 전체 조립, D-26/27/28
+- 한 일:
+  - 목 모드에서 user-flow 17개 화면을 모두 조립하고 검증 PASS (지갑과 신분증과 멈춤 880f6f7, 주문 화면 7cd95dd, 한도 장면 a380b1d). 로그인부터 시작하는 EntryGate, 목 대화 반복 고침, "…" 404 고침.
+  - 로컬 http 모드: dev 로그인(`DEV_LOGIN`), 신원 확인 `POST /identity/verify`(목 기록).
+  - D-26 데모 LLM 비용 (0f69643, 수정 80bd8c2): `LLM_MODE=replay`(읽기 도구만, API 호출 없음), live는 KST 하루 토큰 상한(캐시 포함), 닿으면 용이가 피곤하다는 한 줄만. effort 기본 low.
+  - D-27 데모 시드 가게는 승인 없이 (4b02b96).
+  - D-28 레벨 바꾸기 `POST /agents/me/level` (760c63c), 웹 http 연결 (7bf6c0c).
+- 막힌 것: 없음. 호재 님 Xcode 설치 후 iOS 시뮬레이터로 폰 화면 보기.
+- 후속:
+  - 레벨 올린 뒤 OVER_LEVEL 승인 주문을 다시 견적으로 (http, approvalId 연결).
+  - http에서 아직 거절하는 것: 지갑, 신분증, 멈춤, 환불, 맛 평가, 체험 용돈.
+  - production에서 replay 허용 여부, 장면 시나리오 재생, 하루 상한 동시성.
+  - 충전 멱등성(실제 경로 전 필수), 60초 쿨다운, 1분 승인 만료 작업, 영수증 시각, 목 30일 창 초기화, 결제 때 주머니 감소.
+  - D-23 UX 다듬기: Skeleton, iOS 키보드(visualViewport), Next dev 표시.
+- 다음 할 일: 위 검증 결과 반영, 경로 B 실제 연결, OAuth.
+
+#### 2026-11-20 파우치 스파이크 S14, http 모드 전환, 파우치 로그인 (D-29)
+- 한 일:
+  - S14 문서 조사와 파우치 앱 등록(tenant_369d04cfd8, localhost:3000, sandbox 키는 git 밖 .env.pouchi). 문의 모음 `docs/_research/pouchi-questions.md` (5개, S14 끝에 호재 님께 정리).
+  - D-29: 로그인은 파우치 로그인 하나, 시작 버튼 "이메일로 시작하기", 웹은 http 모드로.
+  - 서버 API 채움: GET /wallet와 주인 용돈 장부(allowance, 0006), POST /signup/trial, freeze/unfreeze/drain(AgentLock으로 한 줄), GET /me/id-card, POST /orders/:id/rating(0007), 즉시 충전을 장부 fund로, GET /identity.
+  - 파우치 로그인: 서버(pouchi 모듈, users의 config/bind/complete, pouchi_accounts 0008, PKCE challenge 비교, IP당 1분 10회, trust proxy), 웹(세션 입구 lib/session/entry.ts, EmailStart와 TermsLine, /pouchi/callback, 입구가 Verify와 Name을 가름).
+  - 홈 화면 추가용 manifest(주소창 없이), iOS 시뮬레이터(Xcode 27의 DeviceHub).
+  - 로컬 개발: 루트 .env(비밀 없음 + 파우치 키 복사, git 밖), 마이그레이션 0006~0008 적용, 시드.
+- 실수 기록: 커밋 제목이 게이트 상한(콜론 뒤 71자)을 넘은 것 둘. 24d48a9와 ee5c736. dev-loop.md대로 amend하지 않는다. `pnpm verify --precommit`은 메시지를 보지 않으므로 커밋 전에 제목 길이를 따로 센다.
+- 막힌 것: 실제 파우치 금고 로그인(이메일 코드, 패스키)은 사람이 해야 해서 아직 끝까지 돌려 보지 못했다. 테넌트 `pending-approval`이 풀렸는지 모른다.
+- 열린 질문: Q-37(이번 달 아낀 돈), Q-38(장부가 모자라면 주문을 막나).
+- 후속:
+  - Start 시안 갱신(한 버튼), 예산 화면 30일 사용액이 목 체인에서 0(개발 ChainReader가 목 결제를 읽지 않음).
+  - 체험 용돈 버튼 실패 표시, 파우치 BFF 예제의 로그인 전 세션 범위 pending과 Origin 검사, bind만 셀지(IP 제한).
+  - 장부 실체인 전 할 일(영수증 금액, txHash 유일 열쇠, 체인 멈춤 뒤 drain), REVOKED 오류 코드, 동결과 confirm 겹침.
+  - OWNER_MODE=pouch(PouchOwner)와 S14 2단계 실행(배포, 세션 키 실험은 React SDK spikes에서).
+- 다음 할 일: 호재 님 실제 로그인 결과를 보고 고치기, Start 시안, 30일 사용액, D-23 UX 다듬기.
