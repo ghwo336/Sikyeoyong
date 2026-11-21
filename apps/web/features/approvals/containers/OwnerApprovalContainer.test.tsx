@@ -53,12 +53,12 @@ function setup(props: { onQuote?: () => void; onRejected?: () => void } = {}) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onQuote = props.onQuote ?? vi.fn();
   const onRejected = props.onRejected ?? vi.fn();
-  render(
+  const view = render(
     <QueryClientProvider client={qc}>
       <OwnerApprovalContainer approval={approval} onQuote={onQuote} onRejected={onRejected} />
     </QueryClientProvider>,
   );
-  return { onQuote, onRejected, qc };
+  return { onQuote, onRejected, qc, unmount: view.unmount };
 }
 
 beforeEach(() => {
@@ -145,5 +145,32 @@ describe('OwnerApprovalContainer', () => {
     await userEvent.click(screen.getByRole('button', { name: '허락하기' }));
     await userEvent.click(screen.getByRole('button', { name: '안 시킬래요' }));
     expect(rejectApproval).not.toHaveBeenCalled();
+  });
+
+  it('the sheet still opens when the answer takes the card away before it settles (QA 6 H1)', async () => {
+    approveApproval.mockResolvedValue(decision('approved'));
+    const { onQuote, qc, unmount } = setup();
+    // The refetch that removes the card: the card is gone while the answer is still settling.
+    vi.spyOn(qc, 'invalidateQueries').mockImplementation(() => {
+      unmount();
+      return Promise.resolve();
+    });
+    await userEvent.click(screen.getByRole('button', { name: '허락하기' }));
+    await waitFor(() => {
+      expect(onQuote).toHaveBeenCalledWith(quote);
+    });
+  });
+
+  it('a no is told to the parent even when the card is already gone', async () => {
+    rejectApproval.mockResolvedValue(decision('rejected'));
+    const { onRejected, qc, unmount } = setup();
+    vi.spyOn(qc, 'invalidateQueries').mockImplementation(() => {
+      unmount();
+      return Promise.resolve();
+    });
+    await userEvent.click(screen.getByRole('button', { name: '안 시킬래요' }));
+    await waitFor(() => {
+      expect(onRejected).toHaveBeenCalledTimes(1);
+    });
   });
 });

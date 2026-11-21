@@ -116,6 +116,19 @@ describe('ChatContainer', () => {
     expect(confirmOrder).not.toHaveBeenCalled();
   });
 
+  it('the same recommendation again reopens its confirm card, no second order (QA 6 H1)', async () => {
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    await screen.findByRole('dialog', { name: '주문 확인' });
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: '주문 확인' })).toBeNull();
+    });
+    await userEvent.click(screen.getByRole('button', { name: /돼지국밥 9,000원/ }));
+    await screen.findByRole('dialog', { name: '주문 확인' });
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
   it('a quick reply goes to the dragon; its quote opens the sheet without paying', async () => {
     setup();
     await userEvent.click(await screen.findByRole('button', { name: '돼지국밥으로' }));

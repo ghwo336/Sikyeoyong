@@ -25,6 +25,7 @@ import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmConta
 import { dragonLineOf } from '../error-line';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
 import { useOrders } from '../../orders/hooks/useOrders';
+import { openQuoteFor, waitingFor } from '../../orders/same-pick';
 import { type ChatEntry, lastSent, threadRows } from '../hooks/entries';
 import { useChat } from '../hooks/useChat';
 
@@ -61,6 +62,21 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
     // Frozen.dc.html: a sleeping dragon orders nothing; it says so instead of a silent tap.
     if (budget?.frozen === true) {
       chat.say(renderDragonLine('SERVER_FROZEN'));
+      return;
+    }
+    // The same pick again: its order is waiting for the owner (the card is below) or its confirm
+    // card was closed unpaid. Reuse that order; a second tap must not make a second approval.
+    const waiting = waitingFor(rec, orderList);
+    if (waiting) {
+      // Waiting on the per-order limit has no card below: its way out is the Blocked screen.
+      if (approvals.some((a) => a.orderId === waiting.id))
+        chat.say('이 주문은 허락을 기다리고 있어용. 아래 카드에서 답해 주세용.');
+      else router.push(`/limit/${encodeURIComponent(waiting.id)}`);
+      return;
+    }
+    const again = openQuoteFor(rec, chat.quote, orderList);
+    if (again) {
+      chat.showQuote(again);
       return;
     }
     createOrder.mutate(rec, {

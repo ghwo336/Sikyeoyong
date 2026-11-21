@@ -24,7 +24,7 @@ export function OwnerApprovalContainer({
   /** After a no, once the server has stopped the order. */
   readonly onRejected?: () => void;
 }) {
-  const { approve, reject } = useDecideApproval();
+  const { approve, reject } = useDecideApproval({ onQuote, onRejected });
   // One answer per card, decided at the tap (a ref, not render state: two taps before the next
   // render must still send once). A failed answer gives the card back so it can be sent again.
   const sent = useRef(false);
@@ -48,9 +48,6 @@ export function OwnerApprovalContainer({
         if (sent.current) return;
         sent.current = true;
         approve.mutate(approval.id, {
-          onSuccess: (res) => {
-            if (res.quote) onQuote(res.quote);
-          },
           onError: () => {
             sent.current = false;
           },
@@ -60,7 +57,6 @@ export function OwnerApprovalContainer({
         if (sent.current) return;
         sent.current = true;
         reject.mutate(approval.id, {
-          onSuccess: () => onRejected?.(),
           onError: () => {
             sent.current = false;
           },
