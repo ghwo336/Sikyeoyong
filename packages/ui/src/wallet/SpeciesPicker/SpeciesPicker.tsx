@@ -29,6 +29,7 @@ export function SpeciesPicker({ value, onChange }: SpeciesPickerProps) {
         renderOption={(s, state) => (
           <button
             type="button"
+            data-press
             role="radio"
             aria-checked={state.selected}
             tabIndex={state.tabIndex}

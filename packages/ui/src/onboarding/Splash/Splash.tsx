@@ -57,6 +57,7 @@ export function Splash({ species, onSkip }: SplashProps) {
       {onSkip ? (
         <button
           type="button"
+          data-press
           className={styles.skip}
           aria-label={SPLASH_SKIP_LABEL}
           data-part="skip"

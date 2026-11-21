@@ -29,6 +29,7 @@ export function ActiveOrderCard({
   return (
     <button
       type="button"
+      data-press
       className={styles.card}
       aria-label={`진행 중인 주문: ${menu} ${status}, ${eta}`}
       onClick={onPress}

@@ -82,6 +82,7 @@ export function ChatInput({
         />
         <button
           type="submit"
+          data-press
           className={styles.send}
           aria-label="보내기"
           // The design keeps the circle leaf even when empty; only a stopped dragon greys it.

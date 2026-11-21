@@ -30,6 +30,7 @@ export function EggPicker({ value, onChange }: EggPickerProps) {
         renderOption={(s, state) => (
           <button
             type="button"
+            data-press
             role="radio"
             aria-checked={state.selected}
             aria-label={`${SPECIES_INFO[s].name} 알`}

@@ -50,7 +50,12 @@ export function ListRow({ label, value, tone = 'default', trailing, onPress }: L
 
   if (onPress) {
     return (
-      <button type="button" className={`${styles.row} ${styles.pressable}`} onClick={onPress}>
+      <button
+        type="button"
+        data-press
+        className={`${styles.row} ${styles.pressable}`}
+        onClick={onPress}
+      >
         {content}
       </button>
     );

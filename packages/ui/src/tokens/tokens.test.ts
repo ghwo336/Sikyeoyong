@@ -114,6 +114,22 @@ describe('base.css (hand-maintained)', () => {
     expect(vars.get('motion-number')).toBe('400ms');
   });
 
+  it('press feedback for [data-press] surfaces matches motion.press and respects reduced motion', () => {
+    expect(tokens.motion.press).toContain(`scale ${vars.get('motion-press-scale') ?? ''}`);
+    expect(base).toMatch(
+      /\[data-press\]:active:not\(:disabled\)\s*\{\s*transform: scale\(var\(--motion-press-scale\)\);/,
+    );
+    const reduced =
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\[data-press\]:active:not\(:disabled\)\s*\{([^}]*)\}/.exec(
+        base,
+      )?.[1];
+    expect(reduced).toMatch(/transform:\s*none/);
+    // Only transform and opacity ever move (design-and-motion.md).
+    expect(/\[data-press\]\s*\{([^}]*)\}/.exec(base)?.[1]).not.toMatch(
+      /(width|height|top|left|margin)/,
+    );
+  });
+
   it('puts the design fonts first', () => {
     expect(vars.get('font-ui')?.startsWith("'Pretendard Variable'")).toBe(true);
     expect(vars.get('font-dragon')?.startsWith("'Gowun Dodum'")).toBe(true);

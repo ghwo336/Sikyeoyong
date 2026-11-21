@@ -53,6 +53,7 @@ export function RecommendationList({ items, onPick, loading = false }: Recommend
           {i > 0 ? <div className={styles.divider} aria-hidden="true" /> : null}
           <button
             type="button"
+            data-press
             className={styles.row}
             onClick={() => {
               onPick(item.id);

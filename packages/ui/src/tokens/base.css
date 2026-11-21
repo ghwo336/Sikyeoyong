@@ -13,6 +13,8 @@
   --motion-screen-easing: ease-out;
   --motion-number: 400ms;
   --motion-typing: 1200ms;
+  /* motion.press "scale 0.97" (the spring itself is press.ts) */
+  --motion-press-scale: 0.97;
 }
 
 /*
@@ -25,4 +27,26 @@
 [data-species],
 [data-theme='fixed'] {
   --theme-track: color-mix(in srgb, var(--theme-dark) 4%, var(--theme-bg));
+}
+
+/*
+ * Press feedback for pressable surfaces that are not base Button, Chip or Switch (those spring with
+ * Motion): list rows, icon buttons, cards. Same 0.97 as motion.press, transform only, 100ms so it
+ * shows at once (D-23). Under reduced motion nothing moves; the surface only dims.
+ */
+[data-press] {
+  transition:
+    transform 100ms ease-out,
+    opacity 100ms ease-out;
+}
+
+[data-press]:active:not(:disabled) {
+  transform: scale(var(--motion-press-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-press]:active:not(:disabled) {
+    transform: none;
+    opacity: 0.7;
+  }
 }

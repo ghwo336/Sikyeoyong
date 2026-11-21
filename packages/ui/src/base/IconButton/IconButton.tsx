@@ -17,6 +17,7 @@ export function IconButton({ icon, label, onPress, edge }: IconButtonProps) {
   return (
     <button
       type="button"
+      data-press
       className={styles.button}
       aria-label={label}
       data-edge={edge}

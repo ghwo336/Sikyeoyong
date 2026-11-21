@@ -47,6 +47,7 @@ export function ReceiptDetails({
     <div className={styles.card}>
       <button
         type="button"
+        data-press
         className={styles.toggle}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}

@@ -42,6 +42,7 @@ children: []
 ### 움직임 (토스 수준의 부드러움)
 - 애니메이션은 Motion(framer-motion)으로 `transform`과 `opacity`만 움직인다(합성 레이어). `top`, `height` 같은 레이아웃 속성은 애니메이션하지 않는다. 화면 전환은 View Transitions.
 - 누름: 0.97 스프링 (값은 `packages/ui/src/base/press.ts`의 `PRESS`, `PRESS_SPRING` 하나만 쓰고, 누르는 버튼은 base `Button`, `Chip`, `Switch`만 만든다. 테스트가 tokens.json `motion.press`와 맞는지 본다). 시트: 드래그로 닫히는 바텀시트(`Sheet` 컴포넌트, Motion 드래그). 금액 변화: 자리별로 굴러가는 숫자(`Amount`).
+- 스프링 누름을 못 쓰는 눌리는 면(목록 줄, 아이콘 버튼, 카드, 알 고르기, 보내기 원)은 `data-press`를 단다. `tokens/base.css`가 누르는 동안 `scale(--motion-press-scale 0.97)`, 100ms, transform만 준다. 동작 줄이기에서는 움직이지 않고 투명도 0.7만 (2026-11-21, `tokens.test.ts`가 tokens.json과 맞는지 본다). 새 눌리는 면은 Button, Chip이거나 `data-press`.
 - 화면 전환 220ms 안팎, 감속 곡선. 의미 없는 등장 애니메이션(모든 카드 페이드 업) 금지.
 - 진동(`navigator.vibrate`, 지원 기기만)은 결제 완료, 한도 변경, 도착, 막힘에만. iOS 사파리는 지원하지 않는다.
 - 시스템 "동작 줄이기"가 켜지면 이동 없이 페이드만.
