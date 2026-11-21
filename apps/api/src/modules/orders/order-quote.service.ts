@@ -269,6 +269,19 @@ export class OrderQuoteService {
   }
 
   /**
+   * The confirm card still open, for a page that was reloaded (reads only, never pays). Only the
+   * newest quoted order inside the approval window and only while the agent can still order;
+   * anything else (expired, store gone, frozen) is no card.
+   */
+  async openQuote(userId: string, nowMs: number = Date.now()): Promise<OrderQuote | undefined> {
+    const row = this.repo.latestQuoted(userId);
+    if (row === undefined || row.createdAt + APPROVAL_TTL_MS <= nowMs) return undefined;
+    const agent = this.agents.getForUser(userId);
+    if (!agent.ready || agent.frozen) return undefined;
+    return (await this.current(userId, row, nowMs)).quote;
+  }
+
+  /**
    * The order as it is now, with its confirm card while it is quoted and its store can
    * still take it (a resend, or the order quoted again after the owner's approval).
    */

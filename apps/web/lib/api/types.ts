@@ -12,6 +12,7 @@ import type {
   ChatHistory,
   CreateOrderBody,
   CreateOrderResult,
+  OpenQuoteResult,
   DragonMoodKey,
   DragonSpecies,
   IdCardView,
@@ -76,6 +77,8 @@ export interface ApiClient {
     onEvent?: (event: ChatEvent) => void,
   ): Promise<readonly ChatEvent[]>;
   createOrder(body: CreateOrderBody): Promise<CreateOrderResult>;
+  /** GET /orders/open-quote. The confirm card to bring back after a reload (reads only, pays nothing). */
+  getOpenQuote(): Promise<OpenQuoteResult>;
   /** POST /orders/:id/confirm. The only call that pays (CLAUDE.md rule 3). */
   confirmOrder(orderId: string): Promise<{ readonly order: OrderView }>;
   /**

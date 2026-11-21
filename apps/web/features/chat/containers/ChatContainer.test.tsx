@@ -13,10 +13,12 @@ vi.mock('next/navigation', () => ({
 // The mock server answers everything except payment, which is a spy here.
 const confirmOrder = vi.fn();
 const createOrder = vi.fn();
+const getOpenQuote = vi.fn();
 vi.mock('../../../lib/api', () => ({
   api: {
     ...mockApi,
     confirmOrder: (id: string) => confirmOrder(id) as unknown,
+    getOpenQuote: () => getOpenQuote() as ReturnType<typeof mockApi.getOpenQuote>,
     createOrder: (b: Parameters<typeof mockApi.createOrder>[0]) =>
       createOrder(b) as ReturnType<typeof mockApi.createOrder>,
   },
@@ -39,6 +41,8 @@ describe('ChatContainer', () => {
     resetMockSession('hatched');
     push.mockReset();
     createOrder.mockReset();
+    getOpenQuote.mockReset();
+    getOpenQuote.mockResolvedValue({});
     createOrder.mockImplementation((b: Parameters<typeof mockApi.createOrder>[0]) =>
       mockApi.createOrder(b),
     );
@@ -190,6 +194,26 @@ describe('ChatContainer', () => {
       expect(screen.queryByText('허락 필요')).not.toBeInTheDocument();
     });
     expect(confirmOrder).not.toHaveBeenCalled();
+  });
+  it('after a reload the open quote comes back as the sheet, and nothing is paid', async () => {
+    const made = await mockApi.createOrder({
+      merchantId: 'maru-gukbap',
+      items: [{ menuId: 'pork-gukbap', qty: 1 }],
+      clientOrderId: 'c-reload',
+    });
+    getOpenQuote.mockResolvedValue({ quote: made.quote });
+    setup();
+    const sheet = await screen.findByRole('dialog', { name: '주문 확인' });
+    expect(within(sheet).getAllByText(/돼지국밥/).length).toBeGreaterThan(0);
+    expect(confirmOrder).not.toHaveBeenCalled();
+  });
+  it('with no open quote on the server no sheet opens after a reload', async () => {
+    setup();
+    await screen.findByRole('button', { name: /돼지국밥 9,000원/ });
+    await waitFor(() => {
+      expect(getOpenQuote).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
   it('while the dragon sleeps the input is off and says so (Frozen.dc.html)', async () => {
     await mockApi.setFrozen(true);

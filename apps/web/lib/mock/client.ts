@@ -470,6 +470,8 @@ export const mockApi: ApiClient = {
     ),
   // Refusals come back as a rejected promise, like the HTTP client, never a sync throw.
   createOrder: (body) => later(null).then(() => createOrder(body)),
+  // The mock keeps no server across a reload, so there is never an old card to bring back.
+  getOpenQuote: () => later(null).then(() => ({})),
   confirmOrder: (orderId) => {
     const rec = RECOMMENDATIONS.find((r) => orderIdOf(r.menuId) === orderId);
     if (!rec) return Promise.reject(new AppError('NOT_FOUND', { reason: 'mock order' }));

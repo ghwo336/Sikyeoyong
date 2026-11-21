@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs
 import {
   type CreateOrderBody,
   type CreateOrderResult,
+  type OpenQuoteResult,
   type OrderList,
   type OrderResult,
   type RateOrderBody,
@@ -92,6 +93,13 @@ export class OrdersController {
   @Get()
   list(@CurrentUser() user: SessionUser): OrderList {
     return { orders: this.views.listFor(user.userId) };
+  }
+
+  /** The confirm card to bring back after a reload. Reads only; declared before :id. */
+  @Get('open-quote')
+  async openQuote(@CurrentUser() user: SessionUser): Promise<OpenQuoteResult> {
+    const quote = await this.quotes.openQuote(user.userId);
+    return quote === undefined ? {} : { quote };
   }
 
   /** The status screens (Done, Tracking, Arrived). Reads only. */

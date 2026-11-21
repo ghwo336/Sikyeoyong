@@ -14,6 +14,7 @@ import {
   zChatEvent,
   zChatHistory,
   zCreateOrderResult,
+  zOpenQuoteResult,
   zFreezeResult,
   zIdCardView,
   zRefundResult,
@@ -177,6 +178,7 @@ export function createHttpApi(
       return events;
     },
     createOrder: async (body) => zCreateOrderResult.parse(await call('POST', '/orders', body)),
+    getOpenQuote: async () => zOpenQuoteResult.parse(await call('GET', '/orders/open-quote')),
     confirmOrder: async (orderId) =>
       zOrderResult.parse(await call('POST', `/orders/${encodeURIComponent(orderId)}/confirm`)),
     requoteOrder: async (orderId) =>

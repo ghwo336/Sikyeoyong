@@ -150,6 +150,16 @@ export class OrdersRepository {
       .all();
   }
 
+  /** The user's newest quoted order (a confirm card never paid), if any. */
+  latestQuoted(userId: string): OrderRow | undefined {
+    return this.handle.db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.userId, userId), eq(orders.status, 'quoted')))
+      .orderBy(desc(orders.createdAt), desc(orders.id))
+      .get();
+  }
+
   findByClientOrderId(userId: string, clientOrderId: string): OrderRow | undefined {
     return this.handle.db
       .select()

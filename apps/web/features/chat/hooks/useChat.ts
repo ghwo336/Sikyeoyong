@@ -17,6 +17,7 @@ export interface ChatThreadData {
 
 const THREAD_KEY = ['chat', 'thread'] as const;
 const HANDOFF_KEY = ['chat', 'handoff'] as const;
+const OPEN_QUOTE_KEY = ['chat', 'open-quote'] as const;
 
 /**
  * Another screen hands the chat a confirm card to open on arrival: the order quoted again after
@@ -62,6 +63,21 @@ export function useChat(
     setQuote(q);
     setQuoteOpen(true);
   };
+  // After a reload the server still holds the card the owner had not pressed yet (unexpired,
+  // unpaid). Bring it back once; the sheet only opens, paying stays its button (rule 3).
+  const open = useQuery({
+    queryKey: OPEN_QUOTE_KEY,
+    queryFn: () => api.getOpenQuote(),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const reopened = open.data?.quote;
+  useEffect(() => {
+    if (reopened === undefined) return;
+    // Spent either way: a card picked meanwhile wins, and a later visit must not reopen it.
+    qc.setQueryData(OPEN_QUOTE_KEY, {});
+    if (quote === undefined) showQuote(reopened);
+  }, [reopened]);
 
   const update = (fn: (entries: readonly ChatEntry[]) => readonly ChatEntry[]) => {
     qc.setQueryData<ChatThreadData>(THREAD_KEY, (old) =>

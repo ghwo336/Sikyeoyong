@@ -185,3 +185,11 @@ export const zCreateOrderResult = z
   })
   .strict();
 export type CreateOrderResult = z.infer<typeof zCreateOrderResult>;
+
+/**
+ * GET /orders/open-quote: the user's newest confirm card that is still open (quoted, within the
+ * approval window, store and agent still able). Absent after a refresh found nothing to reopen.
+ * Reads only; paying stays the card's button (CLAUDE.md rule 3).
+ */
+export const zOpenQuoteResult = z.object({ quote: zOrderQuote.optional() }).strict();
+export type OpenQuoteResult = z.infer<typeof zOpenQuoteResult>;

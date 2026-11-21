@@ -9,6 +9,7 @@ import {
   type OwnerAuthority,
   type PaymentProvider,
   zCreateOrderResult,
+  zOpenQuoteResult,
   zOrderResult,
 } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
@@ -146,8 +147,11 @@ async function setup(
   const view = (id: string, who: 'u1' | 'u2' = 'u1') =>
     http().get(`/api/orders/${id}`).set('Cookie', `sid=${tokens[who]}`);
   const row = (id: string) => h.db.select().from(orders).where(eq(orders.id, id)).get();
+  const openQuote = (who: 'u1' | 'u2' = 'u1') =>
+    http().get('/api/orders/open-quote').set('Cookie', `sid=${tokens[who]}`);
   return {
     h,
+    openQuote,
     post,
     view,
     payment,
@@ -1191,5 +1195,48 @@ describe('confirm: one dragon pays one order at a time (AgentLock)', () => {
     release();
     await Promise.all([paying, freeze]);
     expect(events).toEqual(['paid', 'freeze']);
+  });
+});
+
+describe('GET /api/orders/open-quote: the confirm card comes back after a reload, pays nothing', () => {
+  const MIN = 60_000;
+
+  it('an open quote comes back as the same card and stays quoted', async () => {
+    const { quote, openQuote, row, payment } = await setup();
+    const pay = vi.spyOn(payment, 'pay');
+    const fund = vi.spyOn(payment, 'fund');
+    const id = await quote();
+    const res = await openQuote();
+    expect(res.status).toBe(200);
+    const body = zOpenQuoteResult.parse(res.body);
+    expect(body.quote).toMatchObject({ orderId: id, amount: W('9000'), store: '마루국밥' });
+    expect(row(id)?.status).toBe('quoted');
+    expect(pay).not.toHaveBeenCalled();
+    expect(fund).not.toHaveBeenCalled();
+  });
+
+  it('nothing to bring back with no order, after paying, or for another user', async () => {
+    const { quote, confirm, openQuote } = await setup();
+    expect(zOpenQuoteResult.parse((await openQuote()).body).quote).toBeUndefined();
+    const id = await quote();
+    expect(zOpenQuoteResult.parse((await openQuote('u2')).body).quote).toBeUndefined();
+    await confirm(id);
+    expect(zOpenQuoteResult.parse((await openQuote()).body).quote).toBeUndefined();
+  });
+
+  it('an expired quote is not payable again from here', async () => {
+    const { quote, openQuote } = await setup();
+    await quote();
+    vi.setSystemTime(NOW + 10 * MIN - 1);
+    expect(zOpenQuoteResult.parse((await openQuote()).body).quote).toBeDefined();
+    vi.setSystemTime(NOW + 10 * MIN);
+    expect(zOpenQuoteResult.parse((await openQuote()).body).quote).toBeUndefined();
+  });
+
+  it('a frozen dragon has no card to reopen', async () => {
+    const { h, quote, openQuote } = await setup();
+    await quote();
+    h.db.update(agents).set({ status: 'FROZEN' }).where(eq(agents.id, 'a-u1')).run();
+    expect(zOpenQuoteResult.parse((await openQuote()).body).quote).toBeUndefined();
   });
 });

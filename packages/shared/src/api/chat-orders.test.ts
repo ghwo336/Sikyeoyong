@@ -14,6 +14,7 @@ import {
   ORDER_STATUSES,
   zCreateOrderBody,
   zCreateOrderResult,
+  zOpenQuoteResult,
   zOrderQuote,
   zOrderIdParam,
   zRateOrderBody,
@@ -362,5 +363,14 @@ describe('zChatEvent approval_request (QA 6)', () => {
     expect(zChatEvent.safeParse({ ...ok, reason: 'MODEL_GUESS' }).success).toBe(false);
     expect(zChatEvent.safeParse({ ...ok, orderId: '' }).success).toBe(false);
     expect(zChatEvent.safeParse({ ...ok, paid: true }).success).toBe(false);
+  });
+});
+
+describe('zOpenQuoteResult (GET /orders/open-quote)', () => {
+  it('is empty or one card, and nothing else', () => {
+    expect(zOpenQuoteResult.safeParse({}).success).toBe(true);
+    expect(zOpenQuoteResult.safeParse({ quote: QUOTE }).success).toBe(true);
+    expect(zOpenQuoteResult.safeParse({ quote: { ...QUOTE, items: [] } }).success).toBe(false);
+    expect(zOpenQuoteResult.safeParse({ quote: QUOTE, extra: 1 }).success).toBe(false);
   });
 });
