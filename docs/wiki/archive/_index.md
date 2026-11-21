@@ -1,7 +1,8 @@
 ---
-node: leaf
+node: internal
 parent: ../README.md
-children: []
+children:
+  - questions.md
 ---
 
 # 보관함
@@ -10,4 +11,4 @@ children: []
 
 | 보관 파일 | 내용 |
 | --- | --- |
-| (아직 없음) | |
+| [questions.md](questions.md) | 닫힌 질문 (Q-09, 11, 13, 14, 18, 29, 35, 36, 38, 39) |
