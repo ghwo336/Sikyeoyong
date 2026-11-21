@@ -66,6 +66,8 @@ const schema = z.object({
   LLM_PROVIDER: z.enum(['anthropic', 'openai']).default('anthropic'),
   OPENAI_API_KEY: optionalText,
   LLM_MODEL: optionalText,
+  /** D-35: the small model that judges whether the dragon's reply is in scope; blank = LLM_MODEL. */
+  LLM_GUARD_MODEL: optionalText,
   /** D-26: low by default for the demo (cost); raise it per run when a scene needs it. */
   LLM_EFFORT: z.enum(LLM_EFFORTS).default('low'),
   /** D-26: replay plays fixed dragon turns with the real tools, no API call; live calls Claude. */
@@ -151,6 +153,8 @@ export interface AppConfig {
   };
   readonly llm: {
     readonly model: string | undefined;
+    /** D-35: topic judge model; undefined falls back to `model`. */
+    readonly guardModel: string | undefined;
     /** Claude effort for the chat agent (D-26: default low). */
     readonly effort: LlmEffort;
     /** D-26: live Claude, or replayed dragon turns (no API call). */
@@ -292,6 +296,7 @@ export function loadConfig(raw: RawEnv): AppConfig {
     },
     llm: {
       model: env.LLM_MODEL,
+      guardModel: env.LLM_GUARD_MODEL,
       effort: env.LLM_EFFORT,
       provider: env.LLM_PROVIDER,
       mode: env.LLM_MODE,

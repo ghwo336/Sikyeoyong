@@ -7,6 +7,8 @@ export interface LlmTurnRequest {
   readonly messages: Anthropic.MessageParam[];
   /** Whose turn this is, for the per-user daily token cap. Absent counts against no one. */
   readonly userId?: string;
+  /** Output ceiling for this call; absent means the adapter's default (REPLY_MAX_OUTPUT_TOKENS). */
+  readonly maxTokens?: number;
 }
 
 /**

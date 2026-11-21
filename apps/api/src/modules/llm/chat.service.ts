@@ -16,7 +16,8 @@ import { OrdersService } from '../orders/orders.service.js';
 import { approvalWaitEvents } from './approval-wait.js';
 import { ChatRepository } from './chat.repository.js';
 import { LLM_PROVIDER, type LlmProvider } from './llm-provider.js';
-import { AgentRuntime, type RuntimeEvent } from './runtime.js';
+import { REPLY_GUARD, type ReplyGuard } from './reply-guard.js';
+import { AgentRuntime, DEFAULT_LIMITS, type RuntimeEvent } from './runtime.js';
 import { LlmToolHandlers } from './tools/handlers.js';
 import type { ToolCard, ToolName } from './tools/index.js';
 
@@ -93,6 +94,8 @@ export class ChatService {
     private readonly repo: ChatRepository,
     private readonly limiter: RateLimiter,
     private readonly orders: OrdersService,
+    /** D-35: checks every reply of the dragon before the user sees it. */
+    @Inject(REPLY_GUARD) private readonly guard: ReplyGuard,
   ) {}
 
   /** Checks and records the message before any byte is sent, so errors can still be HTTP errors. */
@@ -206,7 +209,12 @@ export class ChatService {
       if (checked.type !== 'tool_status') sent.push(checked);
       emit(checked);
     };
-    const runtime = new AgentRuntime(this.provider, this.handlers.build());
+    const runtime = new AgentRuntime(
+      this.provider,
+      this.handlers.build(),
+      DEFAULT_LIMITS,
+      this.guard,
+    );
     const turn = { refused: false };
     const onEvent = (e: RuntimeEvent) => {
       switch (e.type) {

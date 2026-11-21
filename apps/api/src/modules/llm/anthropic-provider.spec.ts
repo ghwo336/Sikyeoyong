@@ -1,4 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import { REPLY_MAX_OUTPUT_TOKENS } from '@sikyeoyong/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
@@ -33,7 +34,7 @@ describe('AnthropicProvider', () => {
     const params = stream.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(params).toMatchObject({
       model: 'claude-opus-5-5',
-      max_tokens: 16_000,
+      max_tokens: REPLY_MAX_OUTPUT_TOKENS,
       tools: TOOL_DEFINITIONS,
       messages,
       output_config: { effort: 'medium' },
@@ -44,6 +45,18 @@ describe('AnthropicProvider', () => {
     expect(params).not.toHaveProperty('tool_choice');
     expect(params).not.toHaveProperty('thinking');
     expect(params).not.toHaveProperty('temperature');
+  });
+
+  it('a request ceiling wins, and no effort leaves output_config out (small judge model)', async () => {
+    const { client, stream } = fakeClient();
+    const provider = new AnthropicProvider(client, { model: 'small' });
+    await provider.turn(
+      { system: 's', tools: [], messages: [{ role: 'user', content: 'x' }], maxTokens: 16 },
+      () => undefined,
+    );
+    const params = stream.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(params.max_tokens).toBe(16);
+    expect(params).not.toHaveProperty('output_config');
   });
 
   it('passes the abort signal to the SDK request', async () => {

@@ -1,5 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type OpenAI from 'openai';
+import { REPLY_MAX_OUTPUT_TOKENS } from '@sikyeoyong/shared';
 import type { Effort } from './anthropic-provider.js';
 import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
 import { toChatTools } from './tools/openai-tools.js';
@@ -11,7 +12,7 @@ export interface OpenAiProviderOptions {
   /** From LLM_MODEL (config only, never hardcoded, D-30). */
   readonly model: string;
   /** LLM_EFFORT, sent as reasoning_effort (D-26: low by default). */
-  readonly effort: Effort;
+  readonly effort?: Effort;
   readonly maxTokens?: number;
 }
 
@@ -114,8 +115,9 @@ export class OpenAiProvider implements LlmProvider {
         model: this.options.model,
         messages: toChatMessages(request.system, request.messages),
         tools: toChatTools(request.tools),
-        reasoning_effort: this.options.effort,
-        max_completion_tokens: this.options.maxTokens ?? 16_000,
+        ...(this.options.effort === undefined ? {} : { reasoning_effort: this.options.effort }),
+        max_completion_tokens:
+          request.maxTokens ?? this.options.maxTokens ?? REPLY_MAX_OUTPUT_TOKENS,
         stream: true,
         stream_options: { include_usage: true },
       },

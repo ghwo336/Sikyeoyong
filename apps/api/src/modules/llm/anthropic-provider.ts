@@ -1,4 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import { REPLY_MAX_OUTPUT_TOKENS } from '@sikyeoyong/shared';
 import type { AppConfig } from '../../config/env.js';
 import type { LlmProvider, LlmTurnRequest } from './llm-provider.js';
 
@@ -8,8 +9,8 @@ export type Effort = AppConfig['llm']['effort'];
 export interface AnthropicProviderOptions {
   /** From LLM_MODEL (config only, never hardcoded). Demo: claude-opus-5-5 (D-22). */
   readonly model: string;
-  readonly effort: Effort;
-  /** Chat turns are short; 16k leaves room for thinking plus a tool call. */
+  readonly effort?: Effort;
+  /** Default REPLY_MAX_OUTPUT_TOKENS (D-35): a reply is short, and a tool call still fits. */
   readonly maxTokens?: number;
 }
 
@@ -39,11 +40,14 @@ export class AnthropicProvider implements LlmProvider {
     const stream = this.client.messages.stream(
       {
         model: this.options.model,
-        max_tokens: this.options.maxTokens ?? 16_000,
+        max_tokens: request.maxTokens ?? this.options.maxTokens ?? REPLY_MAX_OUTPUT_TOKENS,
         system: [{ type: 'text', text: request.system, cache_control: { type: 'ephemeral' } }],
         tools: request.tools,
         messages: request.messages,
-        output_config: { effort: this.options.effort },
+        // A small classifier model may not take an effort setting, so it is optional.
+        ...(this.options.effort === undefined
+          ? {}
+          : { output_config: { effort: this.options.effort } }),
         cache_control: { type: 'ephemeral' },
       },
       { signal },

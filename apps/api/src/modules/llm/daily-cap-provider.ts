@@ -71,6 +71,22 @@ export class DailyCapProvider implements LlmProvider {
     return message;
   }
 
+  /**
+   * D-35: the reply judge spends tokens too, against the same per-user and daily caps. It asks
+   * first and, once a cap is reached, makes no call (the reply then does not pass).
+   */
+  exhausted(userId: string): boolean {
+    this.roll();
+    if (this.cap > 0 && this.used >= this.cap) return true;
+    return this.userCap > 0 && (this.usedByUser.get(userId) ?? 0) >= this.userCap;
+  }
+
+  charge(userId: string, tokens: number): void {
+    this.roll();
+    this.used += tokens;
+    this.usedByUser.set(userId, (this.usedByUser.get(userId) ?? 0) + tokens);
+  }
+
   /** Tokens one user spent today (for tests and logs). */
   usedTodayBy(userId: string): number {
     this.roll();

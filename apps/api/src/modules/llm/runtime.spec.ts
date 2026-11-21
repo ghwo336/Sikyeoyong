@@ -391,11 +391,11 @@ describe('AgentRuntime guards (layer 1 harness)', () => {
     const em = String.fromCharCode(0x2014);
     const en = String.fromCharCode(0x2013);
     const { events } = await run(
-      [{ blocks: [{ text: `국밥 ${em} 돼지국밥 9,000${en}9,500원` }] }],
+      [{ blocks: [{ text: `국밥 ${em} 돼지국밥 9,000${en}9,500원이에용` }] }],
       '점심',
     );
     const said = events.flatMap((e) => (e.type === 'token' ? [e.text] : [])).join('');
-    expect(said).toBe('국밥, 돼지국밥 9,000, 9,500원');
+    expect(said).toBe('국밥, 돼지국밥 9,000, 9,500원이에용');
     expect(said).not.toContain(em);
     expect(said).not.toContain(en);
   });

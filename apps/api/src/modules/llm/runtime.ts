@@ -1,10 +1,11 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AppError, hasLimitIntent } from '@sikyeoyong/shared';
+import { AppError, hasLimitIntent, SCOPE_LINE } from '@sikyeoyong/shared';
 import type { ApprovalReason } from '../approvals/approvals.service.js';
 import { ApprovalClaimScreen, stripApprovalClaims } from './approval-claims.js';
 import { stripStaleState } from './stale-state.js';
 import { MenuCatalog } from './chosen-menu.js';
 import type { LlmProvider } from './llm-provider.js';
+import { ReplyGuard } from './reply-guard.js';
 import { SYSTEM_PROMPT } from './system-prompt.js';
 import {
   ApprovalWait,
@@ -166,6 +167,8 @@ export class AgentRuntime {
     private readonly provider: LlmProvider,
     private readonly handlers: ToolHandlers,
     private readonly limits: RuntimeLimits = DEFAULT_LIMITS,
+    /** D-35: the dragon's words reach the screen only after this passes them. */
+    private readonly guard: ReplyGuard = new ReplyGuard(),
   ) {}
 
   async run(
@@ -202,18 +205,37 @@ export class AgentRuntime {
     // The model never reports an approval outcome (approval-claims.ts); the server does.
     const screen = new ApprovalClaimScreen();
     const shown = { text: false, card: false };
-    const say = (text: string) => {
-      const out = screenText(text);
-      if (out === '') return;
+    // D-35: the model's words are held and shown only after the guard passes them. Cards and
+    // tool events are not held (they follow the server rules, not this check).
+    let held = '';
+    let blocked = false;
+    const show = (text: string) => {
       shown.text = true;
-      emit({ type: 'token', text: out });
+      emit({ type: 'token', text });
+    };
+    const say = (text: string) => {
+      held += screenText(text);
+    };
+    /** Judges the held words of one model turn. A blocked reply becomes the scope line, once. */
+    const release = async () => {
+      const text = held;
+      held = '';
+      if (text.trim() === '' || blocked) return;
+      const verdict = await this.guard.vet(text, input.ctx.userId, signal);
+      if (signal?.aborted) return;
+      if (verdict.ok) {
+        show(text);
+        return;
+      }
+      blocked = true;
+      show(SCOPE_LINE);
     };
     const stop = (reason: Extract<RuntimeEvent, { type: 'stopped' }>['reason']) => {
       if (wait.reason !== null && reason !== 'aborted') {
         emit({ type: 'approval_wait', reason: wait.reason, orderId: wait.orderId });
       } else if (screen.dropped && !shown.text && !shown.card && reason !== 'aborted') {
         // Everything the model said was an approval claim: say what is true instead of nothing.
-        say(NOTHING_DECIDED);
+        show(NOTHING_DECIDED);
       }
       emit({ type: 'stopped', reason });
     };
@@ -233,6 +255,11 @@ export class AgentRuntime {
       if (wait.reason === null) say(screen.flush());
       if (signal?.aborted) {
         // Gone while the model answered: run no tools for nobody.
+        stop('aborted');
+        return messages;
+      }
+      await release();
+      if (signal?.aborted) {
         stop('aborted');
         return messages;
       }

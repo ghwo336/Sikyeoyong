@@ -325,11 +325,11 @@ describe('POST /api/chat/messages (SSE)', () => {
             'x-requested-with': 'fetch',
           },
         },
-        (res) => {
-          res.once('data', () => {
-            req.destroy(); // the user closed the app after the first word
-            done();
-          });
+        () => {
+          // The reply words are held until the guard passes them (D-35), so the stream has
+          // started with its headers only: the user closes the app while the answer is running.
+          req.destroy();
+          done();
         },
       );
       req.end(JSON.stringify({ text: '피자 시켜 줘', clientMessageId: 'sock' }));

@@ -6,6 +6,8 @@ import { AnthropicProvider, type MessagesClient } from './anthropic-provider.js'
 import { DailyCapProvider } from './daily-cap-provider.js';
 import { type ChatClient, OpenAiProvider } from './openai-provider.js';
 import type { LlmProvider } from './llm-provider.js';
+import { ReplyGuard } from './reply-guard.js';
+import { LlmReplyJudge } from './reply-judge.js';
 import { ReplayProvider, TiredProvider } from './replay-provider.js';
 
 /** The production OpenAI client (D-30). The SDK stream is the async iterable the adapter reads. */
@@ -56,4 +58,28 @@ export function createLlmProvider(
     config.llm.dailyTokenCap,
     config.llm.userDailyTokenCap,
   );
+}
+
+/**
+ * D-35: the reply guard. Rules always run. The topic judge is a second, small model behind the
+ * same provider adapters (model from LLM_GUARD_MODEL, else LLM_MODEL), with no effort setting
+ * and no tools, and its tokens count against the same daily caps as the chat turns. Replay mode
+ * and a server without live model settings have no live words to judge, so rules only.
+ */
+export function createReplyGuard(
+  config: AppConfig,
+  chat: LlmProvider,
+  makeClient: (apiKey: string) => MessagesClient = defaultMessagesClient,
+  makeChatClient: (apiKey: string) => ChatClient = defaultChatClient,
+): ReplyGuard {
+  if (config.llm.mode === 'replay') return new ReplyGuard(null);
+  const model = config.llm.guardModel ?? config.llm.model;
+  const openai = config.llm.provider === 'openai';
+  const apiKey = openai ? config.secrets.openaiApiKey : config.secrets.anthropicApiKey;
+  if (model === undefined || apiKey === undefined) return new ReplyGuard(null);
+  const provider: LlmProvider = openai
+    ? new OpenAiProvider(makeChatClient(apiKey), { model })
+    : new AnthropicProvider(makeClient(apiKey), { model });
+  const budget = chat instanceof DailyCapProvider ? chat : null;
+  return new ReplyGuard(new LlmReplyJudge(provider, budget));
 }
