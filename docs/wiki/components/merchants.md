@@ -44,7 +44,7 @@ children: []
 - 멱등, 이어서 실행 가능: 체인의 `merchantIdByPayout`을 먼저 묻고, 등록만 되고 기록이 없으면 이벤트 로그에서 해시를 복구한다. 가게마다 기록 파일을 바로 저장한다.
 - `metadataURI`는 DB의 `metadata_uri`(`--db`로 읽기 전용 조회)다. 로컬 DB는 `http://localhost:3000/...`이라 체인에는 이 값이 남는다. 공개 도메인 값으로 다시 쓸 수 없다(컨트랙트에 수정 함수 없음).
 - 기록 파일 `seed/onchain/450815.demo.json`(공개 정보만: merchantKey, onchainId, payout, 트랜잭션 해시, 블록. 키 없음). 파싱은 shared `parseMerchantOnchain`. 동기화(`pnpm merchants:sync-onchain`)는 payout 주소로 맞춰 `onchain_id`를 채우며(`apps/api/src/db/merchant-onchain-sync.ts`), 이미 다른 값이 있으면 멈춘다.
-- 비용 (확인, 2026-11-21): `registerMerchant`는 가게당 약 3.0 tOKRW(334,618 가스 x 9,000 gwei), `setMerchantStatus` 약 1.6, 가스비 송금 약 0.2. 가게당 약 4.8, 가스비 여유분(약 0.5)은 payout 지갑에 남는다(`pnpm merchants:sweep`로 회수). 65곳 전부는 약 310 tOKRW가 필요하다. 예산 250으로 46곳(id 1~46)을 등록했고 나머지 19곳은 예산을 더 받은 뒤 같은 명령을 다시 돌리면 이어서 등록한다.
+- 비용 (확인, 2026-11-21): `registerMerchant`는 가게당 약 3.0 tOKRW(334,618 가스 x 9,000 gwei), `setMerchantStatus` 약 1.6, 가스비 송금 약 0.2. 가게당 약 4.8, 가스비 여유분(약 0.5)은 payout 지갑에 남는다(`pnpm merchants:sweep`로 회수). 65곳 전부는 약 310 tOKRW가 필요하다. 예산 250으로 46곳(id 1~46)을 먼저 등록했고, 2026-11-21 저녁 나머지 19곳(id 47~65)을 같은 명령으로 이어서 등록했다(약 108 tOKRW, 가스 가격 10,600 gwei). 지금 65곳 모두 Active (확인).
 
 ## 실제 가게 등록 (2단계 규칙)
 1. 사장님 가입 (카카오 로그인, 역할 `merchant`).
@@ -57,7 +57,7 @@ children: []
 8. 메뉴 등록, 영업 시작.
 
 ## 반드시 지킬 규칙 (MUST)
-- 온체인 등록이 성공하고 Active인 가게만 추천·주문 대상이다. DB에만 있고 체인에 없거나 Active가 아닌 가게는 숨긴다. 지금 코드는 DB의 `verified=true`와 `active=true`로만 판정한다. 체인 등록 스크립트(`infra/scripts/register-merchants.ts`)는 생겼고 데모 프로필에 46곳이 등록됐지만(위 "온체인 등록 절차"), 나머지 19곳은 `onchain_id=null`인 채로 보인다. 경로 B에서 이 가게의 confirm은 결제 전에 멈춘다(`OrderConfirmService`, `onchain_id`가 null이고 경로가 mock이 아니면). `onchain_id`가 있어야 보이게 바꿀지는 open-questions Q-34.
+- 온체인 등록이 성공하고 Active인 가게만 추천·주문 대상이다. DB에만 있고 체인에 없거나 Active가 아닌 가게는 숨긴다. 지금 코드는 DB의 `verified=true`와 `active=true`로만 판정한다. 체인 등록 스크립트(`infra/scripts/register-merchants.ts`)로 데모 프로필에 65곳 모두 등록됐고(위 "온체인 등록 절차"), 개발 DB에는 `pnpm merchants:sync-onchain`으로 `onchain_id`를 채운다. 새로 시드한 가게가 아직 등록 전이면 `onchain_id=null`로 보이고, 경로 B에서 이 가게의 confirm은 결제 전에 멈춘다(`OrderConfirmService`, `onchain_id`가 null이고 경로가 mock이 아니면). `onchain_id`가 있어야 보이게 바꿀지는 open-questions Q-34.
 - 메뉴 가격의 기준은 서버 DB다. LLM이나 앱이 준 가격은 쓰지 않는다.
 - 판매자는 자기 가게 주문만 본다. 판매자 API는 `merchant` 역할 + 가게 소유 확인.
 - payout 주소 변경은 운영자 확인과 재등록 절차를 거친다 (돈이 새는 길).
