@@ -49,6 +49,7 @@ export function placeOrderReply(outcome: QuoteOutcome): unknown {
     return new ApprovalWait(
       { status: 'APPROVAL_REQUIRED', ...WAITING, reason: approvalReason },
       approvalReason,
+      result.order.id,
     );
   }
   // place_order sends no clientOrderId, so it never resends: any other state is a server bug.
@@ -67,5 +68,6 @@ export function approvalRequestReply(outcome: ApprovalRequestOutcome): unknown {
   return new ApprovalWait(
     { status: 'APPROVAL_REQUESTED', ...WAITING, reason: outcome.reason },
     outcome.reason,
+    outcome.orderId,
   );
 }

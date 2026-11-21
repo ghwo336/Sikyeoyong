@@ -79,7 +79,11 @@ export type RuntimeEvent =
    * An order waits for the owner, who has decided nothing yet. Sent once, just before
    * 'stopped'; the caller says the wait in server words (agent-runtime.md "허락 대기").
    */
-  | { readonly type: 'approval_wait'; readonly reason: ApprovalReason }
+  | {
+      readonly type: 'approval_wait';
+      readonly reason: ApprovalReason;
+      readonly orderId: string;
+    }
   | { readonly type: 'stopped'; readonly reason: 'end' | 'refusal' | 'limit' | 'aborted' };
 
 export interface RuntimeLimits {
@@ -187,7 +191,10 @@ export class AgentRuntime {
      * (it has claimed approvals that never happened, browser QA) and only the approval
      * request may still run; the wait is said by the caller in server words.
      */
-    const wait: { reason: ApprovalReason | null } = { reason: null };
+    const wait: { reason: ApprovalReason | null; orderId: string } = {
+      reason: null,
+      orderId: '',
+    };
     // The model never reports an approval outcome (approval-claims.ts); the server does.
     const screen = new ApprovalClaimScreen();
     const shown = { text: false, card: false };
@@ -199,7 +206,7 @@ export class AgentRuntime {
     };
     const stop = (reason: Extract<RuntimeEvent, { type: 'stopped' }>['reason']) => {
       if (wait.reason !== null && reason !== 'aborted') {
-        emit({ type: 'approval_wait', reason: wait.reason });
+        emit({ type: 'approval_wait', reason: wait.reason, orderId: wait.orderId });
       } else if (screen.dropped && !shown.text && !shown.card && reason !== 'aborted') {
         // Everything the model said was an approval claim: say what is true instead of nothing.
         say(NOTHING_DECIDED);
@@ -288,7 +295,7 @@ export class AgentRuntime {
     input: RunInput,
     intent: boolean,
     used: Readonly<Record<LimitedKind, number>>,
-    wait: { reason: ApprovalReason | null },
+    wait: { reason: ApprovalReason | null; orderId: string },
     catalog: MenuCatalog,
     emit: (event: RuntimeEvent) => void,
   ): Promise<Anthropic.ToolResultBlockParam> {
@@ -330,7 +337,10 @@ export class AgentRuntime {
       const handler = this.handlers[name] as (ctx: SessionContext, i: unknown) => Promise<unknown>;
       const output = await handler(input.ctx, parsed.data);
       // A ToolReply splits into the model's text and the screen's card; only forModel is wrapped.
-      if (output instanceof ApprovalWait) wait.reason = output.reason;
+      if (output instanceof ApprovalWait) {
+        wait.reason = output.reason;
+        wait.orderId = output.orderId;
+      }
       const forModel =
         output instanceof ToolReply || output instanceof ApprovalWait ? output.forModel : output;
       catalog.learn(forModel);

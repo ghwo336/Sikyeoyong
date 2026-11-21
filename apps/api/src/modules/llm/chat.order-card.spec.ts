@@ -10,7 +10,7 @@ import { loadConfig } from '../../config/env.js';
 import { type DbHandle, openDb } from '../../db/client.js';
 import { DB } from '../../db/db.module.js';
 import { runMigrations } from '../../db/migrate.js';
-import { allowedMerchants, approvals, orders } from '../../db/schema/index.js';
+import { allowedMerchants, approvals, orders, users } from '../../db/schema/index.js';
 import { insertMenu, insertMerchant, insertUser } from '../../test/fixtures.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CHAIN_READER } from '../chain/chain.service.js';
@@ -181,6 +181,43 @@ describe('place_order in the chat stream: a confirm card, never a payment', () =
     // The chip's words open the limit card only through the user's own message (D-21).
     expect(hasLimitIntent(APPROVAL_WAIT.OVER_LEVEL_LIMIT.replies[0]?.label ?? '')).toBe(true);
     expect(hasLimitIntent(APPROVAL_WAIT.OVER_PERSONAL_BUDGET.replies[0]?.label ?? '')).toBe(true);
+  });
+
+  it('QA 6 M2: a chat order held for the owner sends the approval_request event (order id, reason), pays nothing', async () => {
+    // Over the owner's own 30-day limit: 45,000 used + 9,000 > 50,000.
+    const provider = placeTurns(1);
+    const { h, post, setChainUsed } = await setup(provider);
+    h.db.update(users).set({ myPeriodicLimitAokrw: '50000000000000000000000' }).run();
+    setChainUsed(BigInt('45000000000000000000000'));
+    const list = events((await post('u1', '국밥 시켜 줘', 'c1')).text);
+    const order = h.db.select().from(orders).get();
+    expect(order?.status).toBe('pending_approval');
+    expect(h.db.select().from(approvals).get()).toMatchObject({
+      reason: 'OVER_PERSONAL_BUDGET',
+      orderId: order?.id,
+      status: 'pending',
+    });
+    expect(list.find((e) => e.type === 'approval_request')).toEqual({
+      type: 'approval_request',
+      orderId: order?.id,
+      reason: 'OVER_PERSONAL_BUDGET',
+    });
+    expect(list.some((e) => e.type === 'order_confirm')).toBe(false);
+    expect(order?.txHash ?? null).toBeNull();
+  });
+
+  it('QA 6 M2: a new store from chat sends the same event; a plain quote sends none', async () => {
+    const waiting = await setup(placeTurns(1));
+    const list = events((await waiting.post('u2', '시켜 줘', 'c1')).text);
+    const order = waiting.h.db.select().from(orders).get();
+    expect(list.find((e) => e.type === 'approval_request')).toEqual({
+      type: 'approval_request',
+      orderId: order?.id,
+      reason: 'NEW_MERCHANT',
+    });
+    const plain = await setup(placeTurns(1));
+    const quoted = events((await plain.post('u1', '시켜 줘', 'c1')).text);
+    expect(quoted.some((e) => e.type === 'approval_request')).toBe(false);
   });
 
   it('orders for the session user only (the input has no user)', async () => {

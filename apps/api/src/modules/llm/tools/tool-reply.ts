@@ -32,5 +32,7 @@ export class ApprovalWait {
   constructor(
     readonly forModel: unknown,
     readonly reason: ApprovalReason,
+    /** The waiting order, so the screen can show the owner's approval card for it. */
+    readonly orderId: string,
   ) {}
 }

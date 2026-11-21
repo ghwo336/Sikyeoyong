@@ -351,3 +351,13 @@ describe('look change schema (D-32)', () => {
     );
   });
 });
+
+describe('zChatEvent approval_request (QA 6)', () => {
+  it('names the waiting order and the server reason, nothing else', () => {
+    const ok = { type: 'approval_request', orderId: 'o-1', reason: 'OVER_PERSONAL_BUDGET' };
+    expect(zChatEvent.safeParse(ok).success).toBe(true);
+    expect(zChatEvent.safeParse({ ...ok, reason: 'MODEL_GUESS' }).success).toBe(false);
+    expect(zChatEvent.safeParse({ ...ok, orderId: '' }).success).toBe(false);
+    expect(zChatEvent.safeParse({ ...ok, paid: true }).success).toBe(false);
+  });
+});

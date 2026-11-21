@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { APP_ERROR_CODES } from '../errors/app-error-code.js';
 import { zAokrwString } from '../money/money.js';
+import { zApprovalReason } from './approvals.js';
 import { zOrderQuote, zRecommendationCard } from './orders.js';
 
 export const zQuickReply = z
@@ -50,6 +51,18 @@ export const zChatEvent = z.discriminatedUnion('type', [
       type: z.literal('order_failed'),
       code: z.enum(APP_ERROR_CODES),
       dragonLine: z.string().min(1),
+    })
+    .strict(),
+  /**
+   * An order now waits for the owner (new store, 30-day limit, or over the per-order limit).
+   * The screen shows the owner's approval card for orderId (or the Blocked screen for the
+   * per-order reason); the dragon's words for the wait follow as token events.
+   */
+  z
+    .object({
+      type: z.literal('approval_request'),
+      orderId: z.string().min(1).max(64),
+      reason: zApprovalReason,
     })
     .strict(),
   z.object({ type: z.literal('limit_change_card'), card: zLimitChangeCardView }).strict(),

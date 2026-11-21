@@ -199,6 +199,8 @@ export class ChatService {
           return;
         case 'approval_wait':
           // Server words for the wait, never the model's (agent-runtime.md "허락 대기").
+          // The card event first: the screen shows the owner's approval card for this order.
+          send({ type: 'approval_request', orderId: e.orderId, reason: e.reason });
           approvalWaitEvents(
             e.reason,
             sent.some((s) => s.type === 'token' && s.text !== ''),

@@ -495,7 +495,7 @@ describe('an order waiting for the owner (agent-runtime.md "허락 대기")', ()
     expect(h.recommend_merchants).not.toHaveBeenCalled();
     expect(provider.resultsAfter(3)[0]?.is_error).toBe(true);
     expect(events.slice(-2)).toEqual([
-      { type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT' },
+      { type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT', orderId: 'o-1' },
       { type: 'stopped', reason: 'end' },
     ]);
     expect(events.filter((e) => e.type === 'approval_wait')).toHaveLength(1);
@@ -512,7 +512,11 @@ describe('an order waiting for the owner (agent-runtime.md "허락 대기")', ()
       h,
     );
     expect(events.some((e) => e.type === 'token')).toBe(false);
-    expect(events.at(-2)).toEqual({ type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT' });
+    expect(events.at(-2)).toEqual({
+      type: 'approval_wait',
+      reason: 'OVER_LEVEL_LIMIT',
+      orderId: 'o-1',
+    });
   });
 
   it('the wait is said even when the turn ends on the turn limit', async () => {
@@ -528,7 +532,7 @@ describe('an order waiting for the owner (agent-runtime.md "허락 대기")', ()
     const { events } = await run(turns, '시켜 줘', waiting());
     expect(events.some((e) => e.type === 'token')).toBe(false);
     expect(events.slice(-2)).toEqual([
-      { type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT' },
+      { type: 'approval_wait', reason: 'OVER_LEVEL_LIMIT', orderId: 'o-1' },
       { type: 'stopped', reason: 'limit' },
     ]);
   });
