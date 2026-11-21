@@ -22,6 +22,7 @@ import { LimitChangeContainer } from '../../limits/containers/LimitChangeContain
 import { needsApprovalNow } from '../../limits/fit';
 import { useMe } from '../../me/hooks/useMe';
 import { OrderConfirmContainer } from '../../orders/containers/OrderConfirmContainer';
+import { dragonLineOf } from '../error-line';
 import { useCreateOrder } from '../../orders/hooks/useCreateOrder';
 import { useOrders } from '../../orders/hooks/useOrders';
 import { type ChatEntry, lastSent, threadRows } from '../hooks/entries';
@@ -78,12 +79,9 @@ export function ChatContainer({ header, top }: ChatContainerProps) {
         // The 30-day cap is used up: the Cap screen (user-flow 14).
         if (err instanceof AppError && err.code === 'CHAIN_PERIODIC_LIMIT')
           router.push('/limit/cap');
-        // Frozen since the screen loaded (423): the same sleeping line.
-        else if (
-          err instanceof AppError &&
-          (err.code === 'SERVER_FROZEN' || err.code === 'CHAIN_AGENT_PAUSED')
-        )
-          chat.say(renderDragonLine(err.code));
+        // Anything else the server refused (frozen since the screen loaded, an old card whose
+        // store is gone: 422 CHAIN_MERCHANT_INACTIVE): the dragon says it, never a silent tap.
+        else chat.say(dragonLineOf(err));
       },
     });
   }

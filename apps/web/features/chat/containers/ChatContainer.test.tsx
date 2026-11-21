@@ -1,4 +1,4 @@
-import { okrwToAokrw } from '@sikyeoyong/shared';
+import { AppError, okrwToAokrw } from '@sikyeoyong/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -12,8 +12,14 @@ vi.mock('next/navigation', () => ({
 
 // The mock server answers everything except payment, which is a spy here.
 const confirmOrder = vi.fn();
+const createOrder = vi.fn();
 vi.mock('../../../lib/api', () => ({
-  api: { ...mockApi, confirmOrder: (id: string) => confirmOrder(id) as unknown },
+  api: {
+    ...mockApi,
+    confirmOrder: (id: string) => confirmOrder(id) as unknown,
+    createOrder: (b: Parameters<typeof mockApi.createOrder>[0]) =>
+      createOrder(b) as ReturnType<typeof mockApi.createOrder>,
+  },
 }));
 
 const { ChatContainer } = await import('./ChatContainer');
@@ -31,6 +37,41 @@ function setup() {
 describe('ChatContainer', () => {
   beforeEach(() => {
     resetMockSession('hatched');
+    push.mockReset();
+    createOrder.mockReset();
+    createOrder.mockImplementation((b: Parameters<typeof mockApi.createOrder>[0]) =>
+      mockApi.createOrder(b),
+    );
+  });
+
+  it('an old card whose store is gone (422) gets the dragon line from the error (QA 5)', async () => {
+    createOrder.mockRejectedValue(
+      new AppError('CHAIN_MERCHANT_INACTIVE', {
+        status: 422,
+        dragonLine: '이 가게는 등록이 안 돼 있어용',
+      }),
+    );
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    expect(await screen.findByText('이 가게는 등록이 안 돼 있어용')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '주문 확인' })).toBeNull();
+    expect(push).not.toHaveBeenCalledWith('/limit/cap');
+  });
+
+  it('any other refusal, even without a server line, is said by the dragon', async () => {
+    createOrder.mockRejectedValue(new AppError('NOT_FOUND', { status: 404 }));
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    expect(await screen.findByText('어디 있는지 못 찾겠어용')).toBeInTheDocument();
+  });
+
+  it('the used-up 30 days still opens the Cap screen, not a chat line', async () => {
+    createOrder.mockRejectedValue(new AppError('CHAIN_PERIODIC_LIMIT'));
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /돼지국밥 9,000원/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/limit/cap');
+    });
   });
 
   it('draws the Main conversation from history', async () => {

@@ -20,6 +20,7 @@ children: []
 ## 의존과 인터페이스 경계
 - `packages/ui`(그리기), `packages/shared`(타입, zod 스키마, API 클라이언트, 금액 포맷)만 import한다. 구조 규칙은 `conventions/architecture.md`.
 - API는 같은 도메인 `/api`로 부른다 (Caddy가 API 서버로 넘김). 세션은 API가 발급한 httpOnly 쿠키라 웹 코드가 토큰을 만지지 않는다.
+- 추천을 눌렀는데 서버가 거절하면(`POST /orders` 오류, 예: 가게가 사라진 옛 카드의 422 `CHAIN_MERCHANT_INACTIVE`) 용이가 오류의 대사를 대화에 말한다(`features/chat/error-line.ts` `dragonLineOf`: 서버가 보낸 `dragonLine`, 없으면 shared 표의 대사, 값이 필요한 대사는 `message`, API 오류가 아니면 일반 한 줄). 30일 상한(`CHAIN_PERIODIC_LIMIT`)만 Cap 화면으로 간다. 말없이 아무 일도 없는 눌림은 없다 (QA 5차).
 - 서버 상태는 TanStack Query. 로컬 상태는 컴포넌트 안 `useState`로 충분하면 그것만, 여러 화면이 같이 쓰면 zustand.
 - 대화 스트리밍은 API의 SSE(`packages/shared/src/api/chat.ts`의 `zChatEvent`). 이벤트를 프레임 단위로 묶어 그린다.
 
