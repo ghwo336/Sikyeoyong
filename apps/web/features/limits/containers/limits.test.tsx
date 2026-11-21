@@ -70,6 +70,7 @@ describe('limit screens', () => {
     wrap(<BlockedContainer orderId="o-bossam" />);
     expect(await screen.findByText(/보쌈 정식은/)).toBeInTheDocument();
     expect(screen.getByText('12,000원')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     await userEvent.click(
       screen.getByRole('button', { name: /한 번에 15,000원으로 올리고 시키기/ }),
     );
@@ -117,6 +118,7 @@ describe('limit screens', () => {
     });
     wrap(<CapContainer />);
     expect(await screen.findByText(/다시 채워져요/)).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
   it('Cap with no 30-day window yet (a direct visit) goes back to the chat, not a blank screen', async () => {

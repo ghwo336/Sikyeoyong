@@ -173,6 +173,7 @@ describe('a sleeping dragon', () => {
     wrap(<FrozenContainer />);
     expect(await screen.findByRole('button', { name: '용이 깨우기' })).toBeInTheDocument();
     expect(screen.queryByText(/원 남음/)).toBeNull();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /돌려받기/ })).toBeNull();
   });
 

@@ -7,6 +7,8 @@ import styles from './TopBar.module.css';
 export interface TopBarProps {
   /** Screen title next to the back button (Receipt "주문 상세", IdCard "용이 신분증"). */
   readonly title?: string;
+  /** The screen's h1 when the design shows no title: visually hidden, read by screen readers. */
+  readonly hiddenTitle?: string;
   /** Going back is the parent's routing; no callback means no back button. */
   readonly onBack?: () => void;
   /** Name of the back button. Default "뒤로"; Done and Tracking say "대화로 돌아가기". */
@@ -16,7 +18,7 @@ export interface TopBarProps {
 }
 
 /** Draws the back button and title at the top of a screen (TopBar.md). */
-export function TopBar({ title, onBack, backLabel = '뒤로', trailing }: TopBarProps) {
+export function TopBar({ title, hiddenTitle, onBack, backLabel = '뒤로', trailing }: TopBarProps) {
   // null and false mean nothing to show, like undefined.
   const hasTrailing = trailing !== undefined && trailing !== null && trailing !== false;
   return (
@@ -27,7 +29,11 @@ export function TopBar({ title, onBack, backLabel = '뒤로', trailing }: TopBar
         // Budget.dc.html keeps the bar aligned with a 34px spacer when there is no way back.
         <div className={styles.spacer} aria-hidden="true" />
       ) : null}
-      {title !== undefined ? <h1 className={styles.title}>{title}</h1> : null}
+      {title !== undefined ? (
+        <h1 className={styles.title}>{title}</h1>
+      ) : hiddenTitle !== undefined ? (
+        <h1 className={styles.srOnly}>{hiddenTitle}</h1>
+      ) : null}
       {hasTrailing ? <div className={styles.trailing}>{trailing}</div> : null}
     </div>
   );

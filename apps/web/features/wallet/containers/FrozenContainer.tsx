@@ -42,7 +42,7 @@ export function FrozenContainer() {
   if (wallet.isError) {
     return (
       <>
-        {top}
+        <TopBar hiddenTitle="용이가 자고 있어요" onBack={back} backLabel="대화로 돌아가기" />
         <Button variant="primary" loading={wake.isPending} onPress={onWake}>
           용이 깨우기
         </Button>

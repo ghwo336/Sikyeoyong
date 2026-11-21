@@ -45,3 +45,8 @@ export const StepsNoBack: Story = {
 export const BackToChat: Story = {
   args: { onBack: back, backLabel: '대화로 돌아가기', title: '주문 현황' },
 };
+
+/** 제목이 시안에 없을 때: 보이지 않는 h1 (Blocked, Cap, Budget) */
+export const HiddenTitle: Story = {
+  args: { onBack: back, backLabel: '대화로 돌아가기', hiddenTitle: '한도에 닿았어요' },
+};

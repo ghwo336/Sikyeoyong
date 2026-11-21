@@ -20,11 +20,11 @@ export function CapContainer() {
   // chat instead of a blank screen (browser QA 2).
   useBackToChat(budget !== undefined && budget.chainResetAtSec === null);
   if (!budget || budget.chainResetAtSec === null) {
-    return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
+    return <TopBar hiddenTitle="30일 한도" onBack={back} backLabel="대화로 돌아가기" />;
   }
   return (
     <>
-      <TopBar onBack={back} backLabel="대화로 돌아가기" />
+      <TopBar hiddenTitle="30일 한도" onBack={back} backLabel="대화로 돌아가기" />
       <CapReached
         resetAt={budget.chainResetAtSec}
         cap={parseAokrw(budget.chainCap)}

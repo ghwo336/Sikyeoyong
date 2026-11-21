@@ -148,6 +148,7 @@ describe('BudgetSetupContainer', () => {
     setLimits.mockResolvedValue(undefined);
     wrap(<BudgetSetupContainer />);
     const more = await screen.findByRole('button', { name: '한 번에 쓸 돈 5,000원 올리기' });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     await userEvent.click(more);
     await userEvent.click(more);
     await userEvent.click(screen.getByRole('button', { name: '30일에 쓸 돈 10,000원 내리기' }));

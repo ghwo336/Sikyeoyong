@@ -42,6 +42,7 @@ describe('PouchiCallbackContainer (/pouchi/callback)', () => {
     resumeSession.mockRejectedValue(new Error('401'));
     wrap(<PouchiCallbackContainer />);
     expect(await screen.findByRole('alert')).toHaveTextContent('로그인을 마치지 못했어요');
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(replace).not.toHaveBeenCalledWith('/');
     await userEvent.click(screen.getByRole('button', { name: '처음으로' }));
     expect(replace).toHaveBeenCalledWith('/start');

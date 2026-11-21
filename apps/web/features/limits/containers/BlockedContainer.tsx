@@ -31,12 +31,12 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   useBackToChat(orderQuery.isError || fits);
   // A failed query ends in the bare screen, never a shape that waits forever.
   if (orderQuery.isError || meQuery.isError || budgetQuery.isError) {
-    return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
+    return <TopBar hiddenTitle="한 번에 쓸 한도" onBack={back} backLabel="대화로 돌아가기" />;
   }
   if (!me || !budget || !order) {
     return (
       <>
-        <TopBar onBack={back} backLabel="대화로 돌아가기" />
+        <TopBar hiddenTitle="한 번에 쓸 한도" onBack={back} backLabel="대화로 돌아가기" />
         <LoadingShape kind="detail" />
       </>
     );
@@ -45,13 +45,14 @@ export function BlockedContainer({ orderId }: { readonly orderId: string }) {
   const limit = parseAokrw(budget.perOrderLimit);
   // Only an order over the per-order limit belongs here; other waits (a new store, the budget)
   // are the owner's approval, not a limit raise.
-  if (attempted <= limit) return <TopBar onBack={back} backLabel="대화로 돌아가기" />;
+  if (attempted <= limit)
+    return <TopBar hiddenTitle="한 번에 쓸 한도" onBack={back} backLabel="대화로 돌아가기" />;
   // No offer when no raise can let it through (raisePlan, D-31).
   const raiseTo = raisePlan(attempted, budget)?.perOrder;
   const menu = order.items[0]?.name ?? '이 메뉴';
   return (
     <>
-      <TopBar onBack={back} backLabel="대화로 돌아가기" />
+      <TopBar hiddenTitle="한 번에 쓸 한도" onBack={back} backLabel="대화로 돌아가기" />
       <DragonLine
         text={`앗, ${withEunNeun(menu)}\n제가 한 번에 쓸 수 있는 돈보다 커용.`}
         mood="worried"

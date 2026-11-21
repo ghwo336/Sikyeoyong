@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, ErrorLine } from '@sikyeoyong/ui';
+import { Button, ErrorLine, TopBar } from '@sikyeoyong/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -31,6 +31,7 @@ export function PouchiCallbackContainer() {
   if (!failed) return null;
   return (
     <>
+      <TopBar hiddenTitle="로그인" />
       <ErrorLine align="center">로그인을 마치지 못했어요. 처음부터 다시 해 주세요.</ErrorLine>
       <Button
         variant="primary"

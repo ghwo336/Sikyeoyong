@@ -86,6 +86,21 @@ describe('TopBar (TopBar.md 테스트 기준)', () => {
     expect(svg?.querySelector('path')).toHaveAttribute('d', 'M15 5l-7 7 7 7');
   });
 
+  it('hiddenTitle is the one h1 when there is no visible title, and the bar keeps its look', () => {
+    const { container } = render(<TopBar onBack={vi.fn()} hiddenTitle="한도가 닿았어요" />);
+    const h1 = screen.getByRole('heading', { level: 1, name: '한도가 닿았어요' });
+    expect(h1).toHaveClass(styles.srOnly ?? '');
+    expect(h1).not.toHaveClass(styles.title ?? '');
+    expect(container.querySelectorAll('h1')).toHaveLength(1);
+    expect(rule('.srOnly')).toMatch(/clip-path:\s*inset\(50%\)/);
+  });
+
+  it('a visible title wins over hiddenTitle (still one h1)', () => {
+    const { container } = render(<TopBar title="주문 상세" hiddenTitle="x" />);
+    expect(container.querySelectorAll('h1')).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('주문 상세');
+  });
+
   // Name.dc.html 22-23, Receipt.dc.html 22-24, Budget.dc.html 22-23.
   it('matches the design values', () => {
     expect(rule('.bar')).toMatch(/height:\s*var\(--size-top-bar\)/);

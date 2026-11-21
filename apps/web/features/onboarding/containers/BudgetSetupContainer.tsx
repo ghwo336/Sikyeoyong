@@ -33,7 +33,12 @@ export function BudgetSetupContainer() {
     if (onboarded) router.replace('/dragon');
   }, [onboarded, router]);
   if (onboarded || !me || !budget || !draft || !config) {
-    return <TopBar trailing={<StepProgress steps={SIGNUP_STEPS} current={3} />} />;
+    return (
+      <TopBar
+        hiddenTitle="한도 정하기"
+        trailing={<StepProgress steps={SIGNUP_STEPS} current={3} />}
+      />
+    );
   }
   const start = () => {
     const body = limitsBody(budget, draft);
@@ -51,7 +56,10 @@ export function BudgetSetupContainer() {
   };
   return (
     <>
-      <TopBar trailing={<StepProgress steps={SIGNUP_STEPS} current={3} />} />
+      <TopBar
+        hiddenTitle="한도 정하기"
+        trailing={<StepProgress steps={SIGNUP_STEPS} current={3} />}
+      />
       <DragonLine
         text={`안녕하세용!\n${nameIs(me.dragonName)}. 얼마까지 맡겨 줄래용?`}
         layout="greeting"
