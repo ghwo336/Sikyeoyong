@@ -32,7 +32,7 @@ export function FrozenPanel({
         {/* size.eggSleeping 168 (tokens.json); a test keeps them equal. */}
         <Egg state="sleeping" species={species} size={168} />
         <div className={styles.heading}>
-          <p className={styles.title}>용이가 자고 있어요</p>
+          <h1 className={styles.title}>용이가 자고 있어요</h1>
           <p className={styles.subtitle}>모든 주문이 멈췄어요</p>
         </div>
       </div>

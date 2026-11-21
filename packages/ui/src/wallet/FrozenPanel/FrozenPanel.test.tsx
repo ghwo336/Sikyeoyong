@@ -64,7 +64,9 @@ describe('FrozenPanel (FrozenPanel.md 테스트 기준)', () => {
 
   it('says the design words and the pocket with formatOkrw', () => {
     render(<FrozenPanel {...base} pocket={won(123_456_789_012_345_678n)} />);
-    expect(screen.getByText('용이가 자고 있어요')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: '용이가 자고 있어요' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('모든 주문이 멈췄어요')).toBeInTheDocument();
     expect(screen.getByText('123,456,789,012,345,678원 남음')).toBeInTheDocument();
   });

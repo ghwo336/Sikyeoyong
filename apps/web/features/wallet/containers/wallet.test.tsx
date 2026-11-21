@@ -168,6 +168,7 @@ describe('a sleeping dragon', () => {
   });
 
   it('with the wallet unknown, it shows no made-up pocket, only waking', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, frozen: true });
     getWallet.mockRejectedValue(new AppError('INTERNAL'));
     wrap(<FrozenContainer />);
     expect(await screen.findByRole('button', { name: '용이 깨우기' })).toBeInTheDocument();
@@ -176,6 +177,7 @@ describe('a sleeping dragon', () => {
   });
 
   it('has a way back to the chat', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, frozen: true });
     wrap(<FrozenContainer />);
     await userEvent.click(await screen.findByRole('button', { name: '대화로 돌아가기' }));
     expect(push).toHaveBeenCalledWith('/');
@@ -207,6 +209,7 @@ describe('ID card and the sleeping dragon', () => {
   });
 
   it('돌려받기 takes the pocket back; 깨우기 wakes and goes to the chat', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, frozen: true });
     getWallet.mockResolvedValue({ ...WALLET, pocket: won(20_000n) });
     wrap(<FrozenContainer />);
     await userEvent.click(await screen.findByRole('button', { name: /돌려받기/ }));
@@ -216,6 +219,25 @@ describe('ID card and the sleeping dragon', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/');
     });
+    // Waking is not bounced back to the Wallet by the not-frozen redirect.
+    expect(replace).not.toHaveBeenCalledWith('/dragon');
+  });
+
+  it('opened while the dragon is awake it goes to /dragon (replace) and never says it sleeps', async () => {
+    wrap(<FrozenContainer />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/dragon');
+    });
+    expect(screen.queryByText('용이가 자고 있어요')).toBeNull();
+  });
+
+  it('opened while the dragon sleeps it stays and has one h1', async () => {
+    getBudget.mockResolvedValue({ ...BUDGET, frozen: true });
+    wrap(<FrozenContainer />);
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      '용이가 자고 있어요',
+    );
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('IdCard: a failed query ends in the bare top bar, with no loading shape (D-23)', async () => {
