@@ -4,6 +4,7 @@ node_modules/
 dist/
 build/
 .next/
+.next-rehearsal/
 out/
 .turbo/
 coverage/
@@ -59,3 +60,6 @@ spikes/**/vendor/
 
 # local dev HTTPS certificates (scripts/dev-certs.sh), never committed
 .certs/
+
+# demo rehearsal screenshots (pnpm demo:rehearse)
+infra/rehearsal-out/

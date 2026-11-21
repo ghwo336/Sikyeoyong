@@ -90,6 +90,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/.next/**',
+      '**/.next-rehearsal/**',
       '**/coverage/**',
       '**/storybook-static/**',
       '**/next-env.d.ts',

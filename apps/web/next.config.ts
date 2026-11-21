@@ -47,6 +47,8 @@ export const securityHeaders = [
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // `pnpm demo:rehearse` runs its own next dev beside a developer's (one lock per distDir).
+  distDir: set(process.env.NEXT_DIST_DIR) ?? '.next',
   env: {
     NEXT_PUBLIC_DEMO_MODE: DEMO_MODE,
     NEXT_PUBLIC_API_MODE: API_MODE,
