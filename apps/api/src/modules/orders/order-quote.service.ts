@@ -139,7 +139,7 @@ export class OrderQuoteService {
       clientOrderId: req.clientOrderId,
       note: req.note ?? null,
       perOrderLimitAtQuote: aokrwToString(agent.perOrderLimitAokrw),
-      periodCapAtQuote: aokrwToString(this.config.policy.periodicCapAokrw),
+      periodCapAtQuote: aokrwToString(this.shownPeriodCap(userId)),
       createdAt: nowMs,
     };
     try {
@@ -243,9 +243,7 @@ export class OrderQuoteService {
     periodUsed: bigint,
     note: string | null,
   ): OrderQuote {
-    const policy = this.config.policy;
     const first = lines[0]?.name ?? '';
-    const mine = this.users.getMyPeriodicLimitAokrw(userId);
     return {
       orderId,
       store: merchant.name,
@@ -259,8 +257,15 @@ export class OrderQuoteService {
       periodUsedAfter: aokrwToString(periodUsed + total),
       // D-31: the card shows the owner's own 30-day limit (the meter on the budget screen) when it
       // is below the chain's shared cap; at the cap both are the same number.
-      periodCap: aokrwToString(mine < policy.periodicCapAokrw ? mine : policy.periodicCapAokrw),
+      periodCap: aokrwToString(this.shownPeriodCap(userId)),
     };
+  }
+
+  /** The 30-day number the user sees: min(own 30-day limit, chain cap) (D-31). Quote card and receipt share it. */
+  private shownPeriodCap(userId: string): bigint {
+    const cap = this.config.policy.periodicCapAokrw;
+    const mine = this.users.getMyPeriodicLimitAokrw(userId);
+    return mine < cap ? mine : cap;
   }
 
   /**

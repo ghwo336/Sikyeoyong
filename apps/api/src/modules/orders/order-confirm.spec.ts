@@ -983,6 +983,20 @@ describe('the limits at quote time ride on the order (the receipt "그때" value
     });
   });
 
+  it("the 30-day number is the owner's own limit when it is below the chain cap (QA path B)", async () => {
+    const { h, quote, confirm, view, row } = await setup();
+    h.db
+      .update(users)
+      .set({ myPeriodicLimitAokrw: W('100000') })
+      .where(eq(users.id, 'u1'))
+      .run();
+    const id = await quote();
+    expect(row(id)?.periodCapAtQuote).toBe(W('100000'));
+    await confirm(id);
+    const body = zOrderResult.parse((await view(id)).body);
+    expect(body.order.limitsAtOrder?.periodCap).toBe(W('100000'));
+  });
+
   it('an order from before the columns has no limitsAtOrder (the screen keeps saying "지금")', async () => {
     const { h, quote, view } = await setup();
     const id = await quote();
