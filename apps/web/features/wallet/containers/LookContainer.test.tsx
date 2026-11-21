@@ -42,9 +42,26 @@ describe('LookContainer (Look.dc.html, D-32)', () => {
     draw();
     expect(await screen.findByRole('heading', { name: '용이 모습' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '뒤로' })).toBeInTheDocument();
-    expect(screen.getByText('"천천히 먹어용"')).toBeInTheDocument();
+    expect(await screen.findByText('"천천히 먹어용"')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '숲용' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('button', { name: '이 모습으로 바꾸기' })).toBeInTheDocument();
+  });
+
+  it('keeps the header and back while /me loads, and shows a retry when it fails', async () => {
+    getMe.mockReturnValue(new Promise(() => undefined));
+    const first = draw();
+    expect(screen.getByRole('heading', { name: '용이 모습' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
+    expect(replace).toHaveBeenCalledWith('/dragon');
+    first.unmount();
+    getMe.mockReset();
+    getMe.mockRejectedValueOnce(new AppError('INTERNAL'));
+    draw();
+    expect(await screen.findByText('용이를 못 불러왔어요')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '뒤로' })).toBeInTheDocument();
+    getMe.mockResolvedValue({ ...ME, dragonSpecies: 'forest' });
+    await userEvent.click(screen.getByRole('button', { name: '다시 불러오기' }));
+    expect(await screen.findByRole('radio', { name: '숲용' })).toBeInTheDocument();
   });
 
   it('a pick changes the dragon, its line and the app color at once, without saving', async () => {

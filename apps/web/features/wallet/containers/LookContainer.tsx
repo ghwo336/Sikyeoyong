@@ -1,7 +1,15 @@
 'use client';
 
 import type { DragonSpecies } from '@sikyeoyong/shared';
-import { Button, ErrorLine, LookPreview, SpeciesPicker, TopBar } from '@sikyeoyong/ui';
+import {
+  Button,
+  ErrorLine,
+  LoadingShape,
+  LookPreview,
+  RetryLine,
+  SpeciesPicker,
+  TopBar,
+} from '@sikyeoyong/ui';
 import { useTransitionRouter } from '../../../lib/transition-router';
 import { useEffect, useRef, useState } from 'react';
 import { applySpecies } from '../../../lib/theme';
@@ -15,7 +23,8 @@ import { useChangeLook } from '../hooks/useChangeLook';
  */
 export function LookContainer() {
   const router = useTransitionRouter();
-  const me = useMe().data;
+  const meQuery = useMe();
+  const me = meQuery.data;
   const change = useChangeLook();
   const [picked, setPicked] = useState<DragonSpecies | null>(null);
   // The look to go back to when the screen closes: the saved one, or the new one once saved.
@@ -34,11 +43,29 @@ export function LookContainer() {
     [],
   );
 
-  if (!me) return null;
-  const species = picked ?? me.dragonSpecies;
   const back = () => {
     router.replace('/dragon');
   };
+  // The header and the way back stay while /me loads or fails (QA: a blank screen had no way out).
+  if (!me) {
+    return (
+      <>
+        <TopBar title="용이 모습" onBack={back} />
+        {meQuery.isError ? (
+          <RetryLine
+            onRetry={() => {
+              void meQuery.refetch();
+            }}
+          >
+            용이를 못 불러왔어요
+          </RetryLine>
+        ) : (
+          <LoadingShape kind="rows" count={2} />
+        )}
+      </>
+    );
+  }
+  const species = picked ?? me.dragonSpecies;
   return (
     <>
       <TopBar title="용이 모습" onBack={back} />
