@@ -89,6 +89,8 @@ export function webEnv(ports: Ports): Record<string, string> {
     NODE_ENV: 'development',
     API_DEV_ORIGIN: `http://localhost:${String(ports.api)}`,
     NEXT_PUBLIC_API_MODE: 'http',
+    // Demo scene 5 (/demo/leak) exists only in a demo build; the rehearsal api runs DEMO_MODE=true.
+    NEXT_PUBLIC_DEMO_MODE: 'true',
     NEXT_PUBLIC_DEV_LOGIN_KEY: DEV_LOGIN_KEY,
     NEXT_TELEMETRY_DISABLED: '1',
     NEXT_DIST_DIR: '.next-rehearsal',

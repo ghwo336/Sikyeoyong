@@ -166,8 +166,15 @@ export async function playStep(
     case 'say': {
       await page.waitForSelector('input', { visible: true, timeout: DEFAULT_WAIT_MS });
       await page.type('input', step.text);
-      if (!(await tapText(page, '보내기', 5_000))) throw new Error('no send button');
-      return;
+      // A press during hydration can be lost: the input still holds the text then, so press again
+      // (the text is sent once; a sent message empties the input).
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        if (!(await tapText(page, '보내기', 5_000))) throw new Error('no send button');
+        await new Promise((r) => setTimeout(r, 1_500));
+        const left = await page.$eval('input', (el) => el.value);
+        if (left === '') return;
+      }
+      throw new Error('the message was not sent');
     }
     case 'expect': {
       const text = await bodyText(page);

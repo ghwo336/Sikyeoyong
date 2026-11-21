@@ -35,7 +35,7 @@ children: []
 
 ## 데모 리허설 (`pnpm demo:rehearse`)
 - 주인이 직접 돌리는 스크립트(`infra/scripts/demo-rehearse.ts`, 부품은 `infra/src/rehearsal/`). 자기 api와 web을 따로 띄운다: 빈 포트, 임시 SQLite, `PAYMENT_PATH=mock`, `DEMO_MODE=true`, `POLICY_PROFILE=demo`, `LLM_MODE=replay`(D-26, 비용 없음), `DEV_LOGIN=true`, 날씨 `비`, http. 개발자의 `.env` 비밀과 체인 설정은 빈 값으로 덮어 쓰고, 3000번과 돌고 있는 dev 서버는 건드리지 않는다(web은 `NEXT_DIST_DIR=.next-rehearsal`로 잠금 파일을 따로 쓴다). 끝나면 자식 프로세스를 모두 내린다(오류, Ctrl+C 포함).
-- 시스템 Chrome을 `puppeteer-core`(infra devDependency, 정확한 버전)로 390x844 모바일 화면에 띄워 장면을 user-flow 순서로 돈다: 1 시작에서 부화, 2 정상 주문과 기다림(6 to 10, 목 배달 3분), 3 한도 초과와 말로 올리기(12 to 13), 4 30일 한도(14), 5 키 유출 비교(`/demo` 경로가 없으면 건너뜀), 6 멈추고 깨우기(17, 돌려받기는 주머니가 비어 있어 못 보임), 7 영수증 자세히 보기(11, 서버가 영수증을 아직 안 써서 건너뜀). 장면은 `scenes.ts`의 데이터이고 `run.ts`가 한 단계씩 실행한다. 화면 문구, 블록체인 말(자세히 보기 밖), 콘솔 오류를 검사하고 스크린샷을 `infra/rehearsal-out/`(git 밖)에 둔다. 통과표를 찍고 실패가 있으면 종료 코드 1.
+- 시스템 Chrome을 `puppeteer-core`(infra devDependency, 정확한 버전)로 390x844 모바일 화면에 띄워 장면을 user-flow 순서로 돈다: 1 시작에서 부화, 2 정상 주문과 기다림(6 to 10, 목 배달 3분), 3 한도 초과와 말로 올리기(12 to 13), 4 30일 한도(14), 5 키 유출 비교(`/demo/leak`, web은 `NEXT_PUBLIC_DEMO_MODE=true`로 띄우고 정확한 문장을 확인), 6 멈추고 돌려받기(17, 데모 목 체인이 경로 B처럼 가스 몫을 주머니에 남겨 돌려받기가 보인다), 7 영수증 자세히 보기(11, 서버가 쓴 영수증의 흉내 체인 규칙 2개). api는 `apps/api/dist-rehearsal`에 따로 빌드해 개발 서버의 dist를 건드리지 않고, Chrome 경로는 `CHROME_PATH`로 바꾼다. 장면은 `scenes.ts`의 데이터이고 `run.ts`가 한 단계씩 실행한다. 화면 문구, 블록체인 말(자세히 보기 밖), 콘솔 오류를 검사하고 스크린샷을 `infra/rehearsal-out/`(git 밖)에 둔다. 통과표를 찍고 실패가 있으면 종료 코드 1.
 - 용이의 말은 `llm/harness/demo-turns.ts`의 손으로 쓴 턴이다(돼지국밥, 보쌈, "5만 원까지 올려 줘"). 도구는 진짜라 카드와 숫자는 실제다.
 - 알려 둔 것: 목 부화가 너무 빨라 예산 화면(5)을 거치지 않고 바로 대화로 간다(부화를 본 사람만 예산 단계를 받는다). 그래서 체험 용돈은 시나리오가 `POST /signup/trial`로 대신 받는다.
 

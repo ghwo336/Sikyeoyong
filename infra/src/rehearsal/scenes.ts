@@ -2,8 +2,6 @@
  * The demo scenes as data (design/user-flow.md "데모에서 보여 줄 순서"). Each scene is a list
  * of steps the interpreter (`run.ts`) plays in a real browser. The texts are what the screens
  * show; the dragon's words come from the replay turns (`harness/demo-turns.ts`).
- *
- * Scene 5 (the key-leak comparison) is a placeholder until its route exists.
  */
 export type Step =
   /** Tap the button or card whose text contains `text` (the last match, as the newest card is last). */
@@ -135,9 +133,25 @@ export function buildScenes(): readonly Scene[] {
     {
       id: '5',
       title: '키 유출 비교 (DEMO_MODE)',
-      needsRoute: '/demo',
+      needsRoute: '/demo/leak',
       steps: [
-        { do: 'goto', path: '/demo' },
+        { do: 'goto', path: '/demo/leak' },
+        { do: 'wait', text: '카드번호를 맡겼다면' },
+        // The dragon's one sentence and the card-number side, word for word (rule 11).
+        {
+          do: 'expect',
+          texts: [
+            '주문으로는 큰돈이 막히고, 다른 길로 새도 주머니만 잃어용.',
+            '전부 가져가요',
+            '앱 안의 한도는 열쇠가 있으면 건너뛰어요',
+            '시켜용 용이',
+            '주문으로는 한 번에',
+            '50,000원까지만',
+            '1시간 동안 합쳐서',
+            '다른 길로 보내도 용이 주머니에는',
+            '지금 주머니에',
+          ],
+        },
         { do: 'shot', name: '5-compare' },
       ],
     },
@@ -152,8 +166,13 @@ export function buildScenes(): readonly Scene[] {
         { do: 'wait', text: '용이가 자고 있어요' },
         { do: 'expect', texts: ['모든 주문이 멈췄어요', '용이 깨우기'] },
         { do: 'shot', name: '6-frozen' },
-        // 돌려받기 shows only while the pocket holds money; the mock pays each order exactly, so
-        // the pocket is empty here and the refund itself is not rehearsed (infra.md).
+        // 돌려받기 shows while the pocket holds money: the demo mock keeps the gas share in it
+        // after each order (like path B, D-25), so there is something to take back.
+        { do: 'expect', texts: ['용이 주머니', '돌려받기'] },
+        { do: 'tap', text: '돌려받기' },
+        { do: 'wait', text: '용이 주머니 0원 남음' },
+        { do: 'expectNo', texts: ['돌려받기'] },
+        { do: 'shot', name: '6-refunded' },
         { do: 'tap', text: '용이 깨우기' },
         { do: 'wait', text: '용이에게 말하기' },
         { do: 'shot', name: '6-awake' },
@@ -168,14 +187,22 @@ export function buildScenes(): readonly Scene[] {
         { do: 'tap', text: '돼지국밥' },
         { do: 'wait', text: '결제한 금액' },
         { do: 'expect', texts: ['돼지국밥 1개', '결제 수단'] },
-        {
-          do: 'waitOrSkip',
-          text: '자세히 보기',
-          note: 'the server does not write the receipt (OrderView.receipt) yet',
-        },
+        { do: 'wait', text: '자세히 보기' },
         { do: 'shot', name: '7-receipt' },
         { do: 'tap', text: '자세히 보기' },
         { do: 'wait', text: '결제 기록 번호' },
+        // The rules the server wrote, by layer: the mock chain says it is the mock chain (rule 11).
+        {
+          do: 'expect',
+          texts: [
+            '용이 신분증 번호',
+            '통과한 마루 규칙 2개',
+            '건당 한도 (흉내 체인)',
+            '30일 한도 (흉내 체인)',
+            '마루 탐색기에서 보기',
+          ],
+        },
+        { do: 'expectNo', texts: ['전역 KYC 한도'] },
         { do: 'shot', name: '7-receipt-detail', chainWordsOk: true },
       ],
     },
