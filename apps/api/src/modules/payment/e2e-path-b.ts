@@ -1,5 +1,5 @@
 /**
- * pnpm e2e:path-b -- --run [--merchant <onchainId>]
+ * pnpm e2e:path-b -- --run [--merchant <onchainId>] [--limit <whole OKRW>]
  *
  * Owner-run, REAL testnet transactions (payment path B, D-25). It makes a throwaway agent through
  * ManagedEoaPaymentProvider and walks the whole money path on Maroo testnet with the demo policy
@@ -9,16 +9,12 @@
  * operator. Keys come from the environment (node --env-file), are never printed, never retried:
  * a failing step stops the run and says what already happened. The throwaway agent key is kept in
  * ./data/e2e-path-b.db so a stopped run can be drained with --drain <agent address>.
+ * Amounts derive from the per-order limit (default 10,000 OKRW): fund limit + 5%, order A 90%,
+ * tightened limit 5%, refused order 10%, frozen probe 4% (e2e-path-b-amounts.ts).
  */
 import { mkdirSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import {
-  explorerTxUrl,
-  formatOkrw,
-  okrwToAokrw,
-  type AgentWallet,
-  type Hex,
-} from '@sikyeoyong/shared';
+import { explorerTxUrl, formatOkrw, type AgentWallet, type Hex } from '@sikyeoyong/shared';
 import { formatEther, keccak256, toHex } from 'viem';
 import { createMarooPublicClient } from '../../common/onchain/clients.js';
 import { ordersAbi } from '../../common/onchain/orders-abi.js';
@@ -28,15 +24,13 @@ import { openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { createChainReader } from '../chain/chain.service.js';
 import { AgentKeysRepository } from './agent-keys.repository.js';
+import { parseLimitWon, planAmounts } from './e2e-path-b-amounts.js';
 import { assertOperatorCovers, drainWithoutMasking } from './e2e-path-b-guards.js';
 import { createManagedEoaProvider, operatorAccountOf } from './managed-eoa.factory.js';
 
 const out = (line: string): void => {
   process.stdout.write(`${line}\n`);
 };
-const OKRW = (won: bigint): bigint => okrwToAokrw(won);
-/** The agent float for the run: one 9,000 order, 1,000 left for the refused order, and gas. */
-const FUND_WON = 10_500n;
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -44,10 +38,13 @@ async function main(): Promise<void> {
       merchant: { type: 'string' },
       drain: { type: 'string' },
       scan: { type: 'boolean' },
+      limit: { type: 'string' },
     },
   });
   if (values.run !== true && values.drain === undefined && values.scan !== true) {
-    out('usage: e2e:path-b --run [--merchant <onchainId>] | --drain <agent address>');
+    out(
+      'usage: e2e:path-b --run [--merchant <onchainId>] [--limit <whole OKRW, default 10000>] | --drain <agent address>',
+    );
     out('REAL testnet transactions. Needs OPERATOR_KEY and AGENT_KEY_ENCRYPTION_KEY in the env.');
     return;
   }
@@ -108,7 +105,8 @@ async function main(): Promise<void> {
   out(`merchant on chain: ${merchantId}`);
 
   // The operator pays the float and every owner-side write: stop before anything is sent.
-  assertOperatorCovers(startBalance, OKRW(FUND_WON));
+  const amt = planAmounts(parseLimitWon(values.limit));
+  assertOperatorCovers(startBalance, amt.fund);
 
   // 1. the agent: key, 8004 register, wallet link
   out('\n1. createAgent (register + setAgentWallet)');
@@ -130,16 +128,18 @@ async function main(): Promise<void> {
 
   try {
     // 2. TransferLimit, bind, fund
-    out('\n2. setTransferLimit 10,000 / bindAgent / fund 10,500');
-    out(`  setTransferLimit ${link(await provider.setTransferLimit(agent, OKRW(10_000n)))}`);
+    out(
+      `\n2. setTransferLimit ${formatOkrw(amt.limit)} / bindAgent / fund ${formatOkrw(amt.fund)}`,
+    );
+    out(`  setTransferLimit ${link(await provider.setTransferLimit(agent, amt.limit))}`);
     out(`  bindAgent ${link(await provider.bindAgent(agent))}`);
-    out(`  fund ${link(await provider.fund(agent, OKRW(FUND_WON)))}`);
+    out(`  fund ${link(await provider.fund(agent, amt.fund))}`);
     out(`  agent balance ${formatEther(await provider.balanceOf(agent.address))} OKRW`);
 
     // 3a. an order that passes
-    out('\n3a. order 9,000 OKRW (limit 10,000)');
+    out(`\n3a. order ${formatOkrw(amt.orderA)} (limit ${formatOkrw(amt.limit)})`);
     const refA = keccak256(toHex(`e2e-a-${String(Date.now())}`));
-    const reqA = { agent, merchantOnchainId: merchantId, amount: OKRW(9_000n), orderRef: refA };
+    const reqA = { agent, merchantOnchainId: merchantId, amount: amt.orderA, orderRef: refA };
     out(`  preflight ${JSON.stringify(await provider.preflight(reqA))}`);
     const signed: { hash: Hex | null } = { hash: null };
     const payA = await provider.pay({
@@ -158,16 +158,18 @@ async function main(): Promise<void> {
     out(`  findPaid ${found === null ? 'null' : `${found.txHash} block ${found.blockNumber}`}`);
 
     // 3b. over the per-order limit
-    out('\n3b. TransferLimit 500, order 1,000 (over the per-order limit)');
-    const payAgain = await provider.preflight({ ...reqA, amount: OKRW(1_000n) });
+    out(
+      `\n3b. TransferLimit ${formatOkrw(amt.tightLimit)}, order ${formatOkrw(amt.refusal)} (over the per-order limit)`,
+    );
+    const payAgain = await provider.preflight({ ...reqA, amount: amt.refusal });
     out(
       `  same orderRef again, preflight ${JSON.stringify(payAgain)} (OrderExists is not in the table: INTERNAL)`,
     );
-    out(`  setTransferLimit ${link(await provider.setTransferLimit(agent, OKRW(500n)))}`);
+    out(`  setTransferLimit ${link(await provider.setTransferLimit(agent, amt.tightLimit))}`);
     const reqB = {
       agent,
       merchantOnchainId: merchantId,
-      amount: OKRW(1_000n),
+      amount: amt.refusal,
       orderRef: keccak256(toHex(`e2e-b-${String(Date.now())}`)),
     };
     const preB = await provider.preflight(reqB);
@@ -192,7 +194,7 @@ async function main(): Promise<void> {
     out('\n4. freeze and unfreeze');
     out(`  freeze ${(await provider.freeze(agent)).map(link).join(' ')}`);
     out(
-      `  preflight while frozen ${JSON.stringify(await provider.preflight({ ...reqB, amount: OKRW(400n) }))}`,
+      `  preflight while frozen ${JSON.stringify(await provider.preflight({ ...reqB, amount: amt.frozenProbe }))}`,
     );
     out(`  unfreeze ${(await provider.unfreeze(agent)).map(link).join(' ')}`);
   } catch (e) {
