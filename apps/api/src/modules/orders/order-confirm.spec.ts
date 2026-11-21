@@ -363,6 +363,9 @@ describe('confirm: failures (payment.md "실패 분류")', () => {
     expect(res.order).toMatchObject({ status: 'paid', txHash: tx });
     expect(pay).not.toHaveBeenCalled();
     expect(row(id)).toMatchObject({ status: 'paid', txHash: tx, errorCode: null });
+    // The failed-to-paid move writes the receipt too (every paid transition does).
+    expect(row(id)?.receiptJson).not.toBeNull();
+    expect(res.order.receipt?.explorerUrl.endsWith(`/tx/${tx}`)).toBe(true);
   });
 
   it('a chain refusal at preflight that asks the owner goes to pending_approval with its approval row', async () => {
