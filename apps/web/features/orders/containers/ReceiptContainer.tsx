@@ -28,10 +28,16 @@ export function ReceiptContainer({ orderId }: { readonly orderId: string }) {
   if (orderStep(order.status) === null) return <TopBar title="주문 상세" onBack={back} />;
   const amount = parseAokrw(order.amount);
   const rows = [{ label: '결제 수단', value: '용이 용돈' }];
-  // The order keeps no limits from its time (orders has no such column), so these rows are
-  // today's limits and say so ("지금"), never posing as the limit the order was paid under
-  // (browser QA 2: 20,000 / 30,000원 when the limit was 20,000 then).
-  if (budget) {
+  const at = order.limitsAtOrder;
+  if (at) {
+    // The limits kept at quote time: what the order was really paid under, so no "지금".
+    rows.push(
+      { label: '한 번에 쓸 수 있는 돈', value: formatOkrw(parseAokrw(at.perOrderLimit)) },
+      { label: '30일 한도', value: formatOkrw(parseAokrw(at.periodCap)) },
+    );
+  } else if (budget) {
+    // An older order kept no limits: these rows are today's limits and say so ("지금"), never
+    // posing as the limit the order was paid under (browser QA 2).
     rows.push(
       {
         label: '지금 한 번에 쓸 수 있는 돈',

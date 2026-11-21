@@ -130,6 +130,25 @@ describe('after the order (Tracking, Arrived, Receipt)', () => {
     expect(thirty.nextElementSibling?.textContent).toBe('42,000 / 60,000원');
   });
 
+  it('a receipt with limitsAtOrder shows the limits of that time, without 지금', async () => {
+    getOrder.mockResolvedValue({
+      order: {
+        ...base,
+        status: 'delivered',
+        limitsAtOrder: {
+          perOrderLimit: '20000000000000000000000',
+          periodCap: '50000000000000000000000',
+        },
+      },
+    });
+    wrap(<ReceiptContainer orderId="o1" />);
+    const perOrder = await screen.findByText('한 번에 쓸 수 있는 돈');
+    expect(perOrder.nextElementSibling?.textContent).toBe('20,000원');
+    const thirty = screen.getByText('30일 한도');
+    expect(thirty.nextElementSibling?.textContent).toBe('50,000원');
+    expect(screen.queryByText(/지금/)).toBeNull();
+  });
+
   it.each(['failed', 'cancelled', 'refunded'] as const)(
     'a %s order shows no receipt: nothing looks paid',
     async (status) => {
