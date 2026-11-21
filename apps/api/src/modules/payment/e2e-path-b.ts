@@ -28,6 +28,7 @@ import { openDb } from '../../db/client.js';
 import { runMigrations } from '../../db/migrate.js';
 import { createChainReader } from '../chain/chain.service.js';
 import { AgentKeysRepository } from './agent-keys.repository.js';
+import { assertOperatorCovers, drainWithoutMasking } from './e2e-path-b-guards.js';
 import { createManagedEoaProvider, operatorAccountOf } from './managed-eoa.factory.js';
 
 const out = (line: string): void => {
@@ -36,7 +37,6 @@ const out = (line: string): void => {
 const OKRW = (won: bigint): bigint => okrwToAokrw(won);
 /** The agent float for the run: one 9,000 order, 1,000 left for the refused order, and gas. */
 const FUND_WON = 10_500n;
-
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -106,6 +106,9 @@ async function main(): Promise<void> {
   }
   const merchantId = await pickMerchant(publicClient, target.proxy, values.merchant);
   out(`merchant on chain: ${merchantId}`);
+
+  // The operator pays the float and every owner-side write: stop before anything is sent.
+  assertOperatorCovers(startBalance, OKRW(FUND_WON));
 
   // 1. the agent: key, 8004 register, wallet link
   out('\n1. createAgent (register + setAgentWallet)');
@@ -192,14 +195,27 @@ async function main(): Promise<void> {
       `  preflight while frozen ${JSON.stringify(await provider.preflight({ ...reqB, amount: OKRW(400n) }))}`,
     );
     out(`  unfreeze ${(await provider.unfreeze(agent)).map(link).join(' ')}`);
+  } catch (e) {
+    // Say what stopped the run first, so a later drain problem cannot hide it.
+    process.stderr.write(`e2e step failed: ${messageOf(e)}\n`);
+    throw e;
   } finally {
-    // 5. whatever happened, take the money back
+    // 5. whatever happened, take the money back. A drain failure is reported on its own and never
+    // replaces the error above (nothing here throws).
     out('\n5. drain');
-    const hashes = await provider.drain(agent);
-    out(`  drain ${hashes.length === 0 ? 'nothing to drain' : hashes.map(link).join(' ')}`);
-    out(`  agent balance ${formatEther(await provider.balanceOf(agent.address))} OKRW`);
-    const end = await publicClient.getBalance({ address: operator.address });
-    out(`\noperator balance ${formatEther(end)} OKRW (change ${formatEther(end - startBalance)})`);
+    const drained = await drainWithoutMasking(
+      async () => {
+        const hashes = await provider.drain(agent);
+        out(`  drain ${hashes.length === 0 ? 'nothing to drain' : hashes.map(link).join(' ')}`);
+        out(`  agent balance ${formatEther(await provider.balanceOf(agent.address))} OKRW`);
+        const end = await publicClient.getBalance({ address: operator.address });
+        out(
+          `\noperator balance ${formatEther(end)} OKRW (change ${formatEther(end - startBalance)})`,
+        );
+      },
+      (line) => process.stderr.write(`${line}\nrun again with --drain ${agent.address}\n`),
+    );
+    if (!drained) process.exitCode = 1;
   }
 }
 
@@ -228,7 +244,11 @@ async function pickMerchant(
   throw new Error(`no Active merchant on chain (next id ${String(next)}); register one first`);
 }
 
+function messageOf(e: unknown): string {
+  return e instanceof Error ? e.message : 'unknown error';
+}
+
 main().catch((e: unknown) => {
-  process.stderr.write(`e2e stopped: ${e instanceof Error ? e.message : 'unknown error'}\n`);
+  process.stderr.write(`e2e stopped: ${messageOf(e)}\n`);
   process.exitCode = 1;
 });
