@@ -1,4 +1,4 @@
-import { AppError, type Hex, type PaymentProvider } from '@sikyeoyong/shared';
+import { type AppErrorCode, AppError, type Hex, type PaymentProvider } from '@sikyeoyong/shared';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type DbHandle, openDb } from '../../db/client.js';
@@ -15,7 +15,10 @@ afterEach(() => {
 
 const ref = (n: number) => `0x${n.toString(16).padStart(64, '0')}`;
 
-function setup(findPaid: PaymentProvider['findPaid']) {
+function setup(
+  findPaid: PaymentProvider['findPaid'],
+  receiptOf: PaymentProvider['receiptOf'] = () => Promise.resolve({ status: 'unknown' }),
+) {
   const h = openDb(':memory:');
   runMigrations(h.db);
   handles.push(h);
@@ -47,14 +50,20 @@ function setup(findPaid: PaymentProvider['findPaid']) {
   const find = vi.fn(findPaid);
   // Only findPaid is read here. A pay() on this fake would be a bug: it throws.
   const pay = vi.fn(() => Promise.reject(new Error('the recheck must never pay')));
-  const payment = { path: 'B', findPaid: find, pay } as unknown as PaymentProvider;
+  const receipt = vi.fn(receiptOf);
+  const payment = {
+    path: 'B',
+    findPaid: find,
+    receiptOf: receipt,
+    pay,
+  } as unknown as PaymentProvider;
   const read = (n: number) =>
     h.db
       .select()
       .from(orders)
       .where(eq(orders.id, `o${String(n)}`))
       .get();
-  return { svc: new OrderBootRecheck(payment, repo), add, find, pay, read };
+  return { svc: new OrderBootRecheck(payment, repo), add, find, pay, receipt, read };
 }
 
 describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () => {
@@ -89,6 +98,54 @@ describe('OrderBootRecheck (payment.md "submitting을 끝내는 규칙")', () =>
     expect(await t.svc.run()).toEqual({ paid: 0, failed: 1, waiting: 0 });
     expect(t.read(1)).toMatchObject({ status: 'failed', errorCode: 'INTERNAL' });
     expect(t.find).not.toHaveBeenCalled();
+  });
+
+  const H = `0x${'cd'.repeat(32)}`;
+  const reverted = (code: AppErrorCode) => () =>
+    Promise.resolve({
+      status: 'reverted' as const,
+      blockNumber: 3n,
+      error: { code },
+    });
+
+  it.each(['CHAIN_PERIODIC_LIMIT', 'CHAIN_MERCHANT_INACTIVE', 'CHAIN_AGENT_LIMIT'] as const)(
+    'a reverted receipt (%s) ends the order failed with that reason, never re-sent',
+    async (code) => {
+      const t = setup(() => Promise.resolve(null), reverted(code));
+      t.add(1, 'submitting', { startedAt: 5, txHash: H });
+      expect(await t.svc.run(99)).toEqual({ paid: 0, failed: 1, waiting: 0 });
+      expect(t.receipt).toHaveBeenCalledWith(H);
+      expect(t.read(1)).toMatchObject({ status: 'failed', errorCode: code });
+      expect(t.pay).not.toHaveBeenCalled();
+    },
+  );
+
+  it('a reverted receipt with an unreadable reason (INTERNAL) stays submitting', async () => {
+    const t = setup(() => Promise.resolve(null), reverted('INTERNAL'));
+    t.add(1, 'submitting', { startedAt: 5, txHash: H });
+    expect(await t.svc.run()).toEqual({ paid: 0, failed: 0, waiting: 1 });
+    expect(t.read(1)?.status).toBe('submitting');
+  });
+
+  it('an unknown or unreadable receipt stays submitting; no hash means no receipt lookup', async () => {
+    const t = setup(
+      () => Promise.resolve(null),
+      () => Promise.reject(new AppError('INTERNAL', { reason: 'rpc down' })),
+    );
+    t.add(1, 'submitting', { startedAt: 5, txHash: H });
+    t.add(2, 'submitting', { startedAt: 5 });
+    expect(await t.svc.run()).toEqual({ paid: 0, failed: 0, waiting: 2 });
+    expect(t.receipt).toHaveBeenCalledTimes(1);
+  });
+
+  it('OrderPlaced on chain wins over a reverted receipt lookup (paid, no receipt asked)', async () => {
+    const t = setup(
+      () => Promise.resolve({ txHash: `0x${'ab'.repeat(32)}`, blockNumber: 7n }),
+      reverted('CHAIN_PERIODIC_LIMIT'),
+    );
+    t.add(1, 'submitting', { startedAt: 5, txHash: H });
+    expect(await t.svc.run()).toEqual({ paid: 1, failed: 0, waiting: 0 });
+    expect(t.receipt).not.toHaveBeenCalled();
   });
 
   it('leaves every other status alone', async () => {

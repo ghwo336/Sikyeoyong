@@ -10,6 +10,7 @@ import {
   type PayResult,
   type PaymentProvider,
   type PolicyConfig,
+  type ReceiptOutcome,
 } from '@sikyeoyong/shared';
 
 interface MockWallet {
@@ -122,6 +123,19 @@ export class MockPaymentProvider implements PaymentProvider {
 
   findPaid(orderRef: Hex): Promise<{ txHash: Hex; blockNumber: bigint } | null> {
     return Promise.resolve(this.paid.get(orderRef) ?? null);
+  }
+
+  /**
+   * The mock mines every payment at once and never leaves a reverted one on chain (a refusal
+   * returns no hash), so a hash is either a payment it made or unknown.
+   */
+  receiptOf(txHash: Hex): Promise<ReceiptOutcome> {
+    for (const done of this.paid.values()) {
+      if (done.txHash === txHash) {
+        return Promise.resolve({ status: 'success', blockNumber: done.blockNumber });
+      }
+    }
+    return Promise.resolve({ status: 'unknown' });
   }
 
   balanceOf(address: Hex): Promise<bigint> {

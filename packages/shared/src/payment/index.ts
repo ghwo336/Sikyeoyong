@@ -52,6 +52,22 @@ export type PayResult =
       readonly txHash?: Hex;
     };
 
+/**
+ * What a recorded transaction hash turned into (boot recheck of `submitting` orders):
+ * - success: mined and executed;
+ * - reverted: mined and refused, with the reason decoded from replaying the call in its block
+ *   (INTERNAL when the reason cannot be read);
+ * - unknown: no receipt (not mined yet, dropped, or never broadcast).
+ */
+export type ReceiptOutcome =
+  | { readonly status: 'success'; readonly blockNumber: bigint }
+  | {
+      readonly status: 'reverted';
+      readonly blockNumber: bigint;
+      readonly error: DecodedChainError;
+    }
+  | { readonly status: 'unknown' };
+
 export interface PaymentProvider {
   readonly path: PaymentPath;
   /**
@@ -80,6 +96,11 @@ export interface PaymentProvider {
   pay(req: PayRequest): Promise<PayResult>;
   /** Has OrderPlaced(orderRef) happened on chain? Confirm asks before a retry (D-19). */
   findPaid(orderRef: Hex): Promise<{ readonly txHash: Hex; readonly blockNumber: bigint } | null>;
+  /**
+   * The receipt of a transaction we recorded before broadcasting. Read only: never sends. An
+   * unreadable chain throws (the caller keeps the order as it is).
+   */
+  receiptOf(txHash: Hex): Promise<ReceiptOutcome>;
   /** aokrw balance of a wallet (float top-up math). */
   balanceOf(address: Hex): Promise<bigint>;
 }

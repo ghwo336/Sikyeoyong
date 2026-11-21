@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
-import type { Hex, PaymentProvider } from '@sikyeoyong/shared';
+import type { AppErrorCode, Hex, PaymentProvider } from '@sikyeoyong/shared';
+import { classify } from './failure-class.js';
 import { PAYMENT_PROVIDER } from '../payment/payment.service.js';
 import { type OrderRow, OrdersRepository } from './orders.repository.js';
 
@@ -16,6 +17,10 @@ export interface RecheckResult {
  * (CLAUDE.md rule 9, D-19).
  *  - no submit-start marker: nothing was ever broadcast, so a retryable failed order.
  *  - marker, and the chain has OrderPlaced(orderRef): paid.
+ *  - marker, no OrderPlaced, and the recorded hash has a reverted receipt: the call was refused
+ *    and nothing was paid, so failed with the decoded reason when its class is retryable, final or
+ *    approval (a new quote or a retry with the same orderRef, by the class). A reason that cannot
+ *    be read (INTERNAL) or is unclassified stays submitting. Never re-sent.
  *  - marker, nothing on chain (or the chain cannot be asked): stays submitting. A missing hash is
  *    not "not sent" and an unseen receipt is not "reverted"; a person checks it.
  * The orders are read once, synchronously, before the server listens: an order a request starts
@@ -79,6 +84,19 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
         if (moved) paid += 1;
         continue;
       }
+      if (row.submitTxHash !== null) {
+        const code = await this.revertedCode(row.id, row.submitTxHash as Hex);
+        if (code !== null) {
+          const moved = this.repo.transition(
+            row.id,
+            'submitting',
+            { status: 'failed', errorCode: code },
+            nowMs,
+          );
+          if (moved) failed += 1;
+          continue;
+        }
+      }
       waiting += 1;
       this.logger.warn(`order ${row.id} still submitting, no OrderPlaced for its orderRef yet`);
     }
@@ -86,5 +104,20 @@ export class OrderBootRecheck implements OnApplicationBootstrap {
       this.logger.log(`submitting recheck: ${paid} paid, ${failed} failed, ${waiting} waiting`);
     }
     return { paid, failed, waiting };
+  }
+
+  /** The error code of a reverted submit receipt that may end the order, else null (keep waiting). */
+  private async revertedCode(orderId: string, txHash: Hex): Promise<AppErrorCode | null> {
+    try {
+      const out = await this.payment.receiptOf(txHash);
+      if (out.status !== 'reverted') return null;
+      const cls = classify(out.error.code);
+      // An unknown class (INTERNAL, unlisted) is not a reason: a person looks.
+      if (cls === 'unknown' || cls === 'unrelated') return null;
+      return out.error.code;
+    } catch (e) {
+      this.logger.warn(`order ${orderId} receipt not readable (${(e as Error).name})`);
+      return null;
+    }
   }
 }

@@ -98,6 +98,18 @@ function setup(opts: { balance?: bigint } = {}) {
       if (r === undefined) return Promise.reject(new Error(`no receipt for ${h}`));
       return r instanceof Error ? Promise.reject(r) : Promise.resolve(r);
     }),
+    getTransactionReceipt: vi.fn(({ hash: h }: { hash: Hex }) => {
+      const r = receipts.get(h);
+      if (r === undefined || r instanceof Error) {
+        return Promise.reject(
+          Object.assign(new Error('not found'), { name: 'TransactionReceiptNotFoundError' }),
+        );
+      }
+      return Promise.resolve(r);
+    }),
+    getTransaction: vi.fn((): Promise<{ from: Hex; to: Hex | null; input: Hex; value: bigint }> =>
+      Promise.resolve({ from: OPERATOR.address, to: PROXY, input: '0xabcd', value: 9n }),
+    ),
     sendRawTransaction: vi.fn((): Promise<Hex> => {
       calls.push('broadcast');
       return Promise.resolve(hash(0));
@@ -722,6 +734,51 @@ describe('findPaid', () => {
   it('is null when no such event exists', async () => {
     const t = setup();
     expect(await t.provider.findPaid(REF)).toBeNull();
+  });
+});
+
+describe('receiptOf', () => {
+  it('is success for a mined, executed transaction', async () => {
+    const t = setup();
+    t.receipts.set(hash(7), success(7, [], 55n));
+    expect(await t.provider.receiptOf(hash(7))).toEqual({ status: 'success', blockNumber: 55n });
+  });
+
+  it('is unknown when there is no receipt', async () => {
+    const t = setup();
+    expect(await t.provider.receiptOf(hash(8))).toEqual({ status: 'unknown' });
+  });
+
+  it('throws (never a guess) when the chain cannot be read', async () => {
+    const t = setup();
+    t.pub.getTransactionReceipt.mockRejectedValue(new Error('rpc down'));
+    await expect(t.provider.receiptOf(hash(8))).rejects.toBeInstanceOf(AppError);
+  });
+
+  it('decodes a reverted receipt by replaying the recorded call at its block', async () => {
+    const t = setup();
+    t.receipts.set(hash(9), { ...success(9, [], 777n), status: 'reverted' });
+    t.pub.call.mockRejectedValue(
+      reverted(revertData('ExceededAgentTransferLimit', [W(5_000n), W(9_000n)])),
+    );
+    expect(await t.provider.receiptOf(hash(9))).toEqual({
+      status: 'reverted',
+      blockNumber: 777n,
+      error: { code: 'CHAIN_AGENT_LIMIT', params: { max: '5,000원' } },
+    });
+    expect(t.pub.call).toHaveBeenCalledWith(
+      expect.objectContaining({ blockNumber: 777n, data: '0xabcd', value: 9n }),
+    );
+  });
+
+  it('a reverted receipt whose reason cannot be read is INTERNAL', async () => {
+    const t = setup();
+    t.receipts.set(hash(9), { ...success(9), status: 'reverted' });
+    t.pub.getTransaction.mockRejectedValue(new Error('gone'));
+    expect(await t.provider.receiptOf(hash(9))).toMatchObject({
+      status: 'reverted',
+      error: { code: 'INTERNAL' },
+    });
   });
 });
 

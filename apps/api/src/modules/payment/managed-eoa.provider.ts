@@ -7,6 +7,7 @@ import {
   type PayRequest,
   type PayResult,
   type PaymentProvider,
+  type ReceiptOutcome,
 } from '@sikyeoyong/shared';
 import {
   type Abi,
@@ -65,6 +66,11 @@ export interface PublicPort {
     timeout?: number;
     confirmations?: number;
   }): Promise<ReceiptLike>;
+  /** Rejects with viem's TransactionReceiptNotFoundError when there is no receipt (yet). */
+  getTransactionReceipt(a: { hash: Hex }): Promise<ReceiptLike>;
+  getTransaction(a: {
+    hash: Hex;
+  }): Promise<{ from: Hex; to: Hex | null; input: Hex; value: bigint }>;
   sendRawTransaction(a: { serializedTransaction: Hex }): Promise<Hex>;
   getLogs(a: {
     address: Hex;
@@ -454,6 +460,32 @@ export class ManagedEoaPaymentProvider implements PaymentProvider {
     const hit = logs[0];
     if (hit?.transactionHash == null || hit.blockNumber == null) return null;
     return { txHash: hit.transactionHash, blockNumber: hit.blockNumber };
+  }
+
+  async receiptOf(txHash: Hex): Promise<ReceiptOutcome> {
+    let receipt: ReceiptLike;
+    try {
+      receipt = await this.d.publicClient.getTransactionReceipt({ hash: txHash });
+    } catch (e) {
+      // No receipt is a plain answer; any other failure means the chain could not be read.
+      if (e instanceof Error && e.name === 'TransactionReceiptNotFoundError') {
+        return { status: 'unknown' };
+      }
+      throw unknown('receipt lookup failed', { txHash, ...cause(e) });
+    }
+    if (receipt.status === 'success') {
+      return { status: 'success', blockNumber: receipt.blockNumber };
+    }
+    let error: DecodedChainError = { code: 'INTERNAL' };
+    try {
+      const tx = await this.d.publicClient.getTransaction({ hash: txHash });
+      if (tx.to !== null) {
+        error = await this.replayRevert(tx.from, tx.to, tx.input, tx.value, receipt.blockNumber);
+      }
+    } catch {
+      // The reason stays unread (INTERNAL): the order is then left to a person.
+    }
+    return { status: 'reverted', blockNumber: receipt.blockNumber, error };
   }
 
   // ------------------------------------------------------------ internals

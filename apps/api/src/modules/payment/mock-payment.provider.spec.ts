@@ -73,6 +73,15 @@ describe('MockPaymentProvider (refusals follow chain-and-pcl.md)', () => {
     expect(await p.findPaid(REF(2))).toBeNull();
   });
 
+  it('receiptOf knows the payments it made and nothing else', async () => {
+    const { p } = setup();
+    const agent = await ready(p, won(10_000n), won(20_000n));
+    const r = await p.pay(req(agent, won(9_000n)));
+    if (!r.ok) throw new Error('expected a payment');
+    expect(await p.receiptOf(r.txHash)).toEqual({ status: 'success', blockNumber: r.blockNumber });
+    expect(await p.receiptOf(`0x${'ee'.repeat(32)}`)).toEqual({ status: 'unknown' });
+  });
+
   it('refuses over the per-order limit with the max for the dragon line', async () => {
     const { p } = setup();
     const agent = await ready(p, won(10_000n), won(50_000n));

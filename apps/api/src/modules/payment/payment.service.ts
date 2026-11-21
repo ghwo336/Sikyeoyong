@@ -28,6 +28,7 @@ function unavailable(path: PaymentProvider['path'], reason: string): PaymentProv
     preflight: fail,
     pay: fail,
     findPaid: fail,
+    receiptOf: fail,
     balanceOf: fail,
   };
 }
