@@ -148,3 +148,15 @@ children: []
   - `ui/onboarding/KakaoVerify.md` 32행 "구글로 가입했어도 카카오톡으로 인증해요"는 코드 문구와 시안(Verify.dc.html)을 같이 고쳐야 한다. SocialLogin 문서와 `Start.dc.html`, `design/tokens.json`의 카카오 버튼 메모도 시안 갱신 때 함께.
   - `design/` 시안과 코드는 건드리지 않았다.
 - 다음 할 일: 위 보류 항목 결정. 열린 질문은 `open-questions.md`.
+
+### 2026-11-21 낮 (호재 님 외출 중 6시간 큐)
+- 한 일 (모두 Sonnet 개발, Sonnet 검증 PASS 뒤 main push, 마지막 cdb29d9):
+  - 후속: LLM 사용자별 하루 상한과 동시 턴 1개, 메뉴 부분 이름과 부정 말, 부팅 때 submitting 재확인(receiptOf, 승인 분류는 OrderSettler로 confirm과 같은 경로), OrderPlaced 인덱서(멱등, 금액과 가게 대조, 커서 0014), 충전 멱등(0012), 체인 ID 부팅 검사, 견적 때 한도 저장(0013)과 영수증, 주인 허락 카드, 영수증 작성(paid 네 전이).
+  - 새 기능: 데모 자동 리허설 `pnpm demo:rehearse`(장면 1~7 통과, 자체 포트와 임시 DB, dist-rehearsal), 키 유출 비교 화면(데모 장면 5, `/demo/leak`), "내 주문" 시안 제안(design/proposals/my-orders.md, 호재 님 결정 대기), 한도 바꾸기 화면(`/dragon/limits`), 멈춘 주문 화면.
+  - 보안 점검과 수정: 사용자별 레이트 리밋, production VERIFY_MODE=mock 거절(D-16 한 줄), Q-38 닫힘(운영은 장부 보류, 데모는 예전), 충전과 결제를 AgentLock 안에서, 웹과 API 보안 헤더 4종(CSP는 후속).
+  - D-23 다듬기: 실제 모양 뼈대(실패 때 끝남), View Transitions, iOS 키보드, 누름 반응, dev 배지 숨김, 재시도 줄.
+  - 흉내 체인이 API 재시작 뒤 DB에서 되살아남, 승인 주장 문장 거르기(과거형과 결과형만), 확인 카드 30일 숫자는 min(내 한도, 체인 상한).
+  - 위키 정리(닫힌 질문 10개, worklog 19개 보관).
+- 실수 기록: 7c1761c 이후 없음. 검증에서 FAIL은 모두 수정 커밋으로 고침(amend 없음). 승인 필터는 3차에서 PASS.
+- 막힌 것: 운영자 잔액 약 1,691 tOKRW (가게 지갑 회수나 faucet 허락 필요), 남은 가게 19곳 등록, 실체인 화면 주문.
+- 후속: 승인 필터 미탐 몇 개(놨, 넣었, 날렸, 보내졌, 끝!, OK), tech-spec 로그인과 월 예산 문구, KakaoVerify "구글로 가입했어도", CSP(nonce 미들웨어), AgentLock 상한 시간, 충전 보류 대사 절차, 에이전트 키 HKDF와 교체, 내 주문 페이지 구현(시안 결정 뒤), worklog 11개(다음 정리 때 보관).
