@@ -39,13 +39,16 @@ export function HatchContainer() {
     );
   }
   if (!me || !setup) return null;
+  // Hatch.dc.html draws the wobbling words while steps run; once all three are done the title
+  // says so instead of still wobbling (the design has no separate frame, 2026-11-22 QA).
+  const allDone = setup.steps.every((s) => s.status === 'done');
   return (
     <>
       <Hero gap="md" art={<Egg state="wobble" species={me.dragonSpecies} size={176} />}>
         <ScreenTitle
           variant="dragon"
-          title="알이 흔들려용..."
-          description="1~3분 걸려요. 다 되면 알려 드릴게요."
+          title={allDone ? '다 됐어용!' : '알이 흔들려용...'}
+          description={allDone ? '곧 용이가 나와요.' : '1~3분 걸려요. 다 되면 알려 드릴게요.'}
         />
       </Hero>
       <HatchProgress

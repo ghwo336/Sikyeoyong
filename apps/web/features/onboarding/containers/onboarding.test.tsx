@@ -337,6 +337,28 @@ describe('HatchContainer', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('with all three steps done the title no longer wobbles, and with any left it does', async () => {
+    getAgentSetup.mockResolvedValue({
+      status: 'PENDING',
+      steps: steps(['done', 'done', 'done']),
+    });
+    const { unmount } = wrap(<HatchContainer />);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '다 됐어용!' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('알이 흔들려용...')).toBeNull();
+    expect(screen.queryByText(/1~3분 걸려요/)).toBeNull();
+    unmount();
+    getAgentSetup.mockResolvedValue({
+      status: 'PENDING',
+      steps: steps(['done', 'done', 'doing']),
+    });
+    wrap(<HatchContainer />);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '알이 흔들려용...' }),
+    ).toBeInTheDocument();
+  });
+
   it('moves on to /budget once the dragon it watched hatching is up', async () => {
     localStorage.clear();
     getAgentSetup
