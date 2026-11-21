@@ -2,6 +2,8 @@
 // request in proxy.ts because the nonce must differ each time; the other four security headers
 // stay in next.config.ts (one place per header, no CSP there).
 
+import { DEFAULT_POUCHI_VAULT_URL } from '@sikyeoyong/shared';
+
 export interface CspOptions {
   nonce: string;
   dev: boolean;
@@ -9,8 +11,8 @@ export interface CspOptions {
   vaultOrigin?: string;
 }
 
-/** The vault the API hands to the login flow when POUCHI_VAULT_URL is empty (.env.example). */
-export const DEFAULT_VAULT_ORIGIN = 'https://auth.pouchi.io';
+/** The vault the API hands to the login flow when POUCHI_VAULT_URL is empty (shared config). */
+export const DEFAULT_VAULT_ORIGIN = new URL(DEFAULT_POUCHI_VAULT_URL).origin;
 
 /** A fresh unguessable value for one response: 16 random bytes, base64. */
 export function createNonce(): string {

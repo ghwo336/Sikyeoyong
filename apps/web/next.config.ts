@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 import type { NextConfig } from 'next';
+import { vaultOriginFrom } from './lib/csp';
 
 // Local development shares the repo root .env with apps/api. It is parsed here
 // instead of loaded into process.env: `next dev --port 3000` sets PORT=3000 for
@@ -31,6 +32,18 @@ const DEMO_MODE =
   set(rootEnv.DEMO_MODE) ??
   'false';
 
+/**
+ * The login vault origin the CSP allows (proxy.ts). Same variable and order as the API reads
+ * (POUCHI_VAULT_URL): the root .env, then the environment, then the shared default. An
+ * origin only (a public value, never a secret).
+ */
+export function resolveVaultOrigin(
+  env: Record<string, string | undefined>,
+  root: Record<string, string | undefined>,
+): string {
+  return vaultOriginFrom(set(root.POUCHI_VAULT_URL) ?? set(env.POUCHI_VAULT_URL));
+}
+
 // Headers on every response (security.md "웹 응답 헤더"). The Content-Security-Policy is not here:
 // it needs a per-request nonce, so proxy.ts sets it (lib/csp.ts).
 export const securityHeaders = [
@@ -51,6 +64,7 @@ const config: NextConfig = {
   env: {
     NEXT_PUBLIC_DEMO_MODE: DEMO_MODE,
     NEXT_PUBLIC_API_MODE: API_MODE,
+    CSP_VAULT_ORIGIN: resolveVaultOrigin(process.env, rootEnv),
     NEXT_PUBLIC_DEV_LOGIN_KEY:
       set(process.env.NEXT_PUBLIC_DEV_LOGIN_KEY) ?? set(rootEnv.NEXT_PUBLIC_DEV_LOGIN_KEY) ?? '',
   },
